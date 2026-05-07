@@ -106,7 +106,7 @@ function HomePage() {
             </div>
           </div>
           <div className="overflow-hidden rounded-lg border border-border shadow-[var(--shadow-glow)]">
-            <img src={featuredImg} alt="Independent Beer Fest" loading="lazy" className="h-full w-full object-cover" />
+            <img src={featuredImg} alt="Frontier Beer Fest" loading="lazy" className="h-full w-full object-cover" />
           </div>
         </div>
       </section>
