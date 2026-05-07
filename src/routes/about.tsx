@@ -76,8 +76,8 @@ function AboutPage() {
       <section className="mx-auto max-w-6xl px-4 py-20 md:px-6">
         <SectionHeader eyebrow="Leadership" title="Board of directors." />
         <div className="mt-10 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-          {board.map((m) => (
-            <div key={m.name} className="rounded-lg border border-border bg-card p-5">
+          {board.map((m, i) => (
+            <div key={i} className="rounded-lg border border-border bg-card p-5">
               <div className="text-lg font-semibold text-foreground">{m.name}</div>
               <div className="text-sm text-primary">{m.role}</div>
               <div className="text-sm text-muted-foreground">{m.brewery}</div>
