@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { Beer, Instagram, Facebook, Menu, X } from "lucide-react";
+import { Instagram, Facebook, Menu, X } from "lucide-react";
 import { useState } from "react";
+import logo from "@/assets/logo.jpg";
 
 const nav = [
   { to: "/", label: "Home" },
@@ -17,7 +18,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
         <Link to="/" className="flex items-center gap-2 font-display text-lg tracking-wider">
-          <Beer className="h-6 w-6 text-primary" />
+          <img src={logo} alt="IE Brewers Guild" className="h-9 w-9 rounded-sm object-contain" />
           <span>IE Brewers Guild</span>
         </Link>
 
