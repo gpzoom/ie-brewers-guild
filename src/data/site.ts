@@ -132,34 +132,13 @@ export const members: Member[] = [
 
 export const events = [
   {
-    slug: "independent-beer-fest",
-    title: "Independent Beer Fest",
-    date: "Saturday, June 14",
-    location: "Harbor Park",
+    slug: "frontier-beer-fest",
+    title: "Frontier Beer Fest",
+    date: "Saturday, May 30",
+    location: "Idyllwild",
     excerpt:
-      "Our flagship beer-week kick-off festival brings 40+ independent breweries together for an afternoon of tastings, food, and live music.",
+      "Our flagship beer festival brings independent breweries together for an afternoon of tastings, food, and live music in the mountains.",
     featured: true,
-  },
-  {
-    slug: "members-summit",
-    title: "Spring Members Summit",
-    date: "Thursday, May 22",
-    location: "Brightline Brewhouse",
-    excerpt: "Quarterly meeting for guild members. Industry updates, legislative briefings, and a round-table.",
-  },
-  {
-    slug: "collab-brew-day",
-    title: "Collaboration Brew Day",
-    date: "Sunday, July 6",
-    location: "Foundry & Foam",
-    excerpt: "Brewers from across the guild join for a single-day collab brew. Proceeds support local food banks.",
-  },
-  {
-    slug: "homebrew-clinic",
-    title: "Homebrew Clinic",
-    date: "Saturday, August 9",
-    location: "Hollow Oak Beer Co.",
-    excerpt: "Pro brewers walk homebrewers through recipe design, water chemistry, and dialing in your fermentation.",
   },
 ] as const;
 
