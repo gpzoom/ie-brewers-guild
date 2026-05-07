@@ -12,9 +12,9 @@ import featuredImg from "@/assets/event-featured.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Craft Brewers Guild — Home" },
+      { title: "IE Brewers Guild — Home" },
       { name: "description", content: "The home of independent craft breweries. Advocacy, education, and events that strengthen our local brewing community." },
-      { property: "og:title", content: "Craft Brewers Guild — Home" },
+      { property: "og:title", content: "IE Brewers Guild — Home" },
       { property: "og:description", content: "The home of independent craft breweries." },
       { property: "og:image", content: heroImg },
       { property: "twitter:image", content: heroImg },
@@ -50,7 +50,7 @@ function HomePage() {
       <PageHero
         image={heroImg}
         title="Welcome to the home of independent craft breweries."
-        subtitle="The Craft Brewers Guild promotes and protects local independently-owned breweries and advocates for the strengthening of the craft beer industry."
+        subtitle="The IE Brewers Guild promotes and protects local independently-owned breweries and advocates for the strengthening of the craft beer industry."
         minHeight="min-h-[85vh]"
       >
         <Button asChild size="lg"><Link to="/members">Meet our brewers</Link></Button>

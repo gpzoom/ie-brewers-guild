@@ -66,9 +66,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Craft Brewers Guild — Independent Craft Breweries" },
+      { title: "IE Brewers Guild — Independent Craft Breweries" },
       { name: "description", content: "Promoting and protecting independent craft breweries through advocacy, education, and community events." },
-      { property: "og:title", content: "Craft Brewers Guild" },
+      { property: "og:title", content: "IE Brewers Guild" },
       { property: "og:description", content: "Independent craft brewing — advocacy, education, and events." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
