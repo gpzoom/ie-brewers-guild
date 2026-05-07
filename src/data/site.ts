@@ -1,19 +1,134 @@
-export const members = [
-  { name: "Idyllwild BrewPub", neighborhood: "Idyllwild", style: "Mountain-town craft ales", website: "#" },
-  { name: "Euryale Brewing Co.", neighborhood: "Riverside", style: "Belgian-inspired ales", website: "#" },
-  { name: "Metabolic Brewing Co.", neighborhood: "Hemet", style: "Experimental small batches", website: "#" },
-  { name: "Luchador Brewing Co.", neighborhood: "Moreno Valley", style: "Mexican-style lagers", website: "#" },
-  { name: "Mars Brewing Co.", neighborhood: "Riverside", style: "Hop-forward IPAs", website: "#" },
-  { name: "Carbon Nation Brewing Co.", neighborhood: "Corona", style: "Modern hazy IPAs", website: "#" },
-  { name: "Left Coast Brewing Co.", neighborhood: "San Clemente", style: "West Coast classics", website: "#" },
-  { name: "Hangar 24 Brewing Co.", neighborhood: "Redlands", style: "Orange Wheat & lagers", website: "#" },
-  { name: "All Points Brewing Co.", neighborhood: "Corona", style: "Balanced sessionables", website: "#" },
-  { name: "Indio Brewing Co.", neighborhood: "Indio", style: "Desert-inspired ales", website: "#" },
-  { name: "Coachella Valley Brewing Co.", neighborhood: "Thousand Palms", style: "Valley-grown craft beer", website: "#" },
-  { name: "Consbeeracy Brewing", neighborhood: "Inland Empire", style: "Bold, unconventional brews", website: "#" },
-  { name: "GreyWolf Brewing Co.", neighborhood: "Temecula", style: "Wine-country ales", website: "#" },
-  { name: "Norco Brewing Co.", neighborhood: "Norco", style: "Horsetown small-batch ales", website: "#" },
-] as const;
+export type Member = {
+  name: string;
+  locations: string[];
+  website: string;
+  logo: string | null;
+  facebook?: string;
+  instagram?: string;
+  untappd?: string;
+};
+
+export const members: Member[] = [
+  {
+    name: "Idyllwild BrewPub",
+    locations: ["Idyllwild"],
+    website: "https://www.idyllwildbrewpub.com/",
+    logo: "/members/idyllwild.png",
+    facebook: "https://www.facebook.com/pg/euryalebrewing",
+    instagram: "https://www.instagram.com/idyllwildbrewpub/",
+    untappd: "https://untappd.com/w/idyllwild-brewpub/326785",
+  },
+  {
+    name: "Euryale Brewing Co.",
+    locations: ["Riverside"],
+    website: "https://euryalebrewing.com/",
+    logo: "/members/euryale.png",
+    facebook: "https://www.facebook.com/pg/euryalebrewing",
+    instagram: "https://www.instagram.com/euryalebrewing/",
+    untappd: "https://untappd.com/EuryaleBrewingCo",
+  },
+  {
+    name: "Metabolic Brewing Co.",
+    locations: ["Ontario", "Chino"],
+    website: "https://metabolicbrewing.com/",
+    logo: "/members/metabolic.png",
+    facebook: "https://www.facebook.com/people/Metabolic-Brewing-Co/100093501022631/",
+    instagram: "https://www.instagram.com/metabolicbrewingco/",
+    untappd: "https://untappd.com/MetabolicBrewingCo",
+  },
+  {
+    name: "Luchador Brewing Co.",
+    locations: ["Chino Hills", "Cathedral City"],
+    website: "https://www.luchadorbrew.com/",
+    logo: "/members/luchador.jpg",
+    facebook: "https://www.facebook.com/LuchadorBrewingCo/",
+    untappd: "https://untappd.com/LuchadorBrewingCompany",
+  },
+  {
+    name: "Mars Brewing Co.",
+    locations: ["Rancho Cucamonga"],
+    website: "https://www.marsbrewing.com/",
+    logo: "/members/mars.jpg",
+    facebook: "https://www.facebook.com/MarsBrewingCo/",
+    instagram: "https://www.instagram.com/marsbrewingco/",
+    untappd: "https://untappd.com/marsbrewingco",
+  },
+  {
+    name: "Carbon Nation Brewing Co.",
+    locations: ["Riverside"],
+    website: "https://carbonnationbrewing.com/",
+    logo: "/members/carbon.jpg",
+    facebook: "https://www.facebook.com/carbonnationbrewing",
+    instagram: "http://instagram.com/carbonnationbrewing",
+    untappd: "https://untappd.com/w/carbon-nation-brewing/540272",
+  },
+  {
+    name: "Left Coast Brewing Co.",
+    locations: ["Ontario", "Irvine", "San Clemente", "John Wayne Airport"],
+    website: "https://www.leftcoastbrewing.com/",
+    logo: "/members/leftcoast.gif",
+    untappd: "https://untappd.com/leftcoastbrewco",
+  },
+  {
+    name: "Hangar 24 Brewing Co.",
+    locations: ["Redlands", "Riverside", "Lake Havasu City", "Orange County"],
+    website: "https://hangar24brewing.com/",
+    logo: "/members/hangar24.png",
+    untappd: "https://untappd.com/hangar24brewing",
+  },
+  {
+    name: "All Points Brewing Co.",
+    locations: ["Riverside"],
+    website: "https://www.facebook.com/allpointsbrewingcompany/",
+    logo: "/members/allpoints.png",
+    untappd: "https://untappd.com/w/all-points-brewing-co/421291",
+  },
+  {
+    name: "Indio Brewing Co.",
+    locations: ["Indio"],
+    website: "https://www.indiobrewingca.com/",
+    logo: "/members/indio.png",
+    facebook: "https://www.facebook.com/Indio.Brewing.SoCal/",
+    instagram: "https://www.instagram.com/indio_brewing/",
+    untappd: "https://untappd.com/Indio_Brewing",
+  },
+  {
+    name: "Coachella Valley Brewing Co.",
+    locations: ["Thousand Palms", "Palm Springs"],
+    website: "https://www.cvbco.com/",
+    logo: "/members/cvbco.png",
+    facebook: "https://www.facebook.com/Coachella-Valley-Brewing-Co-432901963394552",
+    instagram: "https://www.instagram.com/coachellavalleybrewing/",
+    untappd: "https://untappd.com/CoachellaValleyBrewingCompany",
+  },
+  {
+    name: "Consbeeracy Brewing",
+    locations: ["Hesperia"],
+    website: "https://consbeeracybrewing.com/",
+    logo: "/members/consbeeracy.jpg",
+    facebook: "https://www.facebook.com/profile.php?id=61552937806945",
+    instagram: "https://www.instagram.com/followthefroggg/",
+    untappd: "https://untappd.com/w/consbeeracy-brewing/550174",
+  },
+  {
+    name: "GreyWolf Brewing Co.",
+    locations: ["Norco"],
+    website: "https://greywolfbrewing.com/",
+    logo: "/members/greywolf.png",
+    facebook: "https://www.facebook.com/1562359227155737",
+    instagram: "https://www.instagram.com/greywolfbrewing",
+    untappd: "https://untappd.com/GreyWolfBrewingCo",
+  },
+  {
+    name: "Norco Brewing Co.",
+    locations: ["Norco"],
+    website: "https://www.norcobrewingcompany.com/",
+    logo: null,
+    facebook: "https://www.facebook.com/profile.php?id=100089868368137",
+    instagram: "https://www.instagram.com/norco_brewing_co",
+    untappd: "https://untappd.com/Norco_Brewing_Co",
+  },
+];
 
 export const events = [
   {
