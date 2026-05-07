@@ -47,7 +47,11 @@ function EventsPage() {
                 <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> {featured.location}</span>
               </div>
               <p className="mt-4 text-muted-foreground">{featured.excerpt}</p>
-              <div className="mt-6"><Button size="lg">Get tickets</Button></div>
+              <div className="mt-6">
+                <Button size="lg" asChild>
+                  <a href="https://iebrewers.ticketspice.com/2026-iebg-beer-fest" target="_blank" rel="noopener noreferrer">Get tickets</a>
+                </Button>
+              </div>
             </div>
           </div>
         </section>
