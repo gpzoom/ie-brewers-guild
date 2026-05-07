@@ -4,7 +4,7 @@ import { PageHero } from "@/components/site/PageHero";
 import { SectionHeader } from "@/components/site/SectionHeader";
 import { ArrowRight, Calendar, MapPin } from "lucide-react";
 import heroImg from "@/assets/hero-home.jpg";
-import advocacyImg from "@/assets/pillar-advocacy.jpg";
+import advocacyImg from "@/assets/hero-news.jpg";
 import educationImg from "@/assets/pillar-education.jpg";
 import eventsImg from "@/assets/pillar-events.jpg";
 const featuredImg = "/events/frontier-beer-fest.png";
