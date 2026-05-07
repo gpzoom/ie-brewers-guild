@@ -54,21 +54,9 @@ function EventsPage() {
       )}
 
       <section className="mx-auto max-w-5xl px-4 py-20 md:px-6">
-        <h2 className="text-3xl">More events</h2>
-        <div className="mt-8 space-y-4">
-          {rest.map((e) => (
-            <article key={e.slug} className="flex flex-col gap-3 rounded-lg border border-border bg-card p-6 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h3 className="text-xl text-foreground">{e.title}</h3>
-                <div className="mt-2 flex flex-wrap gap-4 text-sm text-foreground/80">
-                  <span className="inline-flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" /> {e.date}</span>
-                  <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> {e.location}</span>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">{e.excerpt}</p>
-              </div>
-              <Button variant="outline">Details</Button>
-            </article>
-          ))}
+        <div className="rounded-lg border border-border bg-card p-10 text-center">
+          <h2 className="text-3xl">More events coming soon</h2>
+          <p className="mt-3 text-muted-foreground">Sign up for our newsletter to stay updated.</p>
         </div>
       </section>
     </>
