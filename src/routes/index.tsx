@@ -93,14 +93,13 @@ function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-20 md:grid-cols-2 md:items-center md:px-6">
           <div>
             <div className="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary">Featured Event</div>
-            <h2 className="text-4xl md:text-5xl">Independent Beer Fest</h2>
+            <h2 className="text-4xl md:text-5xl">Frontier Beer Fest</h2>
             <p className="mt-4 text-muted-foreground">
-              Our annual Beer Week kick-off festival is just around the corner. Join us at Harbor Park
-              on June 14th for the definitive independent beer festival — 40+ breweries, food, and music.
+              Our flagship beer festival brings independent breweries together for an afternoon of tastings, food, and live music in the mountains.
             </p>
             <div className="mt-5 flex flex-wrap gap-5 text-sm text-foreground/80">
-              <span className="inline-flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" /> Sat, June 14</span>
-              <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> Harbor Park</span>
+              <span className="inline-flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" /> Saturday, May 30</span>
+              <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> Idyllwild</span>
             </div>
             <div className="mt-7">
               <Button asChild size="lg"><Link to="/events">More info</Link></Button>
