@@ -18,12 +18,12 @@ export const Route = createFileRoute("/about")({
 });
 
 const board = [
-  { name: "Marisol Vega", role: "President", brewery: "Brightline Brewhouse" },
-  { name: "Daniel Okafor", role: "Vice President", brewery: "Hollow Oak Beer Co." },
-  { name: "Jules Tanaka", role: "Treasurer", brewery: "Foundry & Foam" },
-  { name: "Priya Shah", role: "Secretary", brewery: "Sunset Wort Works" },
-  { name: "Wes Halloran", role: "At-Large", brewery: "Ironwheel Brewing" },
-  { name: "Camila Rivera", role: "At-Large", brewery: "Coastline Cellars" },
+  { name: "Name", role: "President", brewery: "Brewery Name" },
+  { name: "Name", role: "Vice President", brewery: "Brewery Name" },
+  { name: "Name", role: "Treasurer", brewery: "Brewery Name" },
+  { name: "Name", role: "Secretary", brewery: "Brewery Name" },
+  { name: "Name", role: "At-Large", brewery: "Brewery Name" },
+  { name: "Name", role: "At-Large", brewery: "Brewery Name" },
 ];
 
 function AboutPage() {
