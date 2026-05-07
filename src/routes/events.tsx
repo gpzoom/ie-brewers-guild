@@ -3,7 +3,7 @@ import { PageHero } from "@/components/site/PageHero";
 import { events } from "@/data/site";
 import { Calendar, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import featuredImg from "@/assets/event-featured.jpg";
+const featuredImg = "/events/frontier-beer-fest.png";
 
 export const Route = createFileRoute("/events")({
   head: () => ({
