@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { Beer, Instagram, Facebook, Twitter } from "lucide-react";
+import { Instagram, Facebook, Twitter } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import logo from "@/assets/logo.jpg";
 
 export function Footer() {
   const [email, setEmail] = useState("");
