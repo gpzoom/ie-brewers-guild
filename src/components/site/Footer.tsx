@@ -21,7 +21,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-4 md:px-6">
         <div className="md:col-span-2">
           <Link to="/" className="flex items-center gap-2 font-display text-xl tracking-wider">
-            <Beer className="h-6 w-6 text-primary" />
+            <img src={logo} alt="IE Brewers Guild" className="h-10 w-10 rounded-sm object-contain" />
             IE Brewers Guild
           </Link>
           <p className="mt-3 max-w-md text-sm text-muted-foreground">
