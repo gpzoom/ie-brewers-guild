@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { Beer, Instagram, Facebook, Menu, X } from "lucide-react";
+import { Instagram, Facebook, Menu, X } from "lucide-react";
 import { useState } from "react";
+import logo from "@/assets/logo.jpg";
 
 const nav = [
   { to: "/", label: "Home" },
