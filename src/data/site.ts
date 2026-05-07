@@ -123,7 +123,7 @@ export const members: Member[] = [
     name: "Norco Brewing Co.",
     locations: ["Norco"],
     website: "https://www.norcobrewingcompany.com/",
-    logo: null,
+    logo: "/members/norco.jpg",
     facebook: "https://www.facebook.com/profile.php?id=100089868368137",
     instagram: "https://www.instagram.com/norco_brewing_co",
     untappd: "https://untappd.com/Norco_Brewing_Co",
