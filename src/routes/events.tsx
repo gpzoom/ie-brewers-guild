@@ -8,9 +8,9 @@ import featuredImg from "@/assets/event-featured.jpg";
 export const Route = createFileRoute("/events")({
   head: () => ({
     meta: [
-      { title: "Events — Craft Brewers Guild" },
-      { name: "description", content: "Upcoming festivals, member meetups, and brew days hosted by the Craft Brewers Guild." },
-      { property: "og:title", content: "Events — Craft Brewers Guild" },
+      { title: "Events — IE Brewers Guild" },
+      { name: "description", content: "Upcoming festivals, member meetups, and brew days hosted by the IE Brewers Guild." },
+      { property: "og:title", content: "Events — IE Brewers Guild" },
       { property: "og:description", content: "Upcoming festivals and community events." },
       { property: "og:image", content: featuredImg },
       { property: "twitter:image", content: featuredImg },

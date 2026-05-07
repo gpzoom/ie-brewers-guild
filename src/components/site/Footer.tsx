@@ -21,7 +21,7 @@ export function Footer() {
         <div className="md:col-span-2">
           <Link to="/" className="flex items-center gap-2 font-display text-xl tracking-wider">
             <Beer className="h-6 w-6 text-primary" />
-            Craft Brewers Guild
+            IE Brewers Guild
           </Link>
           <p className="mt-3 max-w-md text-sm text-muted-foreground">
             Promoting and protecting independent craft breweries through advocacy, education,
@@ -62,7 +62,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-border/60 py-5 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Craft Brewers Guild. All rights reserved.
+        © {new Date().getFullYear()} IE Brewers Guild. All rights reserved.
       </div>
     </footer>
   );

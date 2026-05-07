@@ -1,6 +1,6 @@
 ## Overview
 
-Build a multi-page marketing site inspired by labrewersguild.org — a regional craft brewers guild. Same vibe and structure (bold hero photo, dark overlay, three-pillar mission, featured event, clean nav), but with our own branding, colors, and freshly generated imagery. You can rebrand it for any city later — I'll use a generic "Craft Brewers Guild" placeholder name you can rename in one pass.
+Build a multi-page marketing site inspired by labrewersguild.org — a regional craft brewers guild. Same vibe and structure (bold hero photo, dark overlay, three-pillar mission, featured event, clean nav), but with our own branding, colors, and freshly generated imagery. You can rebrand it for any city later — I'll use a generic "IE Brewers Guild" placeholder name you can rename in one pass.
 
 ## Pages (separate TanStack routes)
 

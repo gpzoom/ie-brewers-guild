@@ -7,8 +7,8 @@ import heroImg from "@/assets/pillar-events.jpg";
 export const Route = createFileRoute("/members")({
   head: () => ({
     meta: [
-      { title: "Member Breweries — Craft Brewers Guild" },
-      { name: "description", content: "Discover the independent craft breweries that make up the Craft Brewers Guild." },
+      { title: "Member Breweries — IE Brewers Guild" },
+      { name: "description", content: "Discover the independent craft breweries that make up the IE Brewers Guild." },
       { property: "og:title", content: "Member Breweries" },
       { property: "og:description", content: "Independent breweries in the guild." },
     ],
