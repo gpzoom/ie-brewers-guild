@@ -7,7 +7,7 @@ import heroImg from "@/assets/hero-home.jpg";
 import advocacyImg from "@/assets/pillar-advocacy.jpg";
 import educationImg from "@/assets/pillar-education.jpg";
 import eventsImg from "@/assets/pillar-events.jpg";
-import featuredImg from "@/assets/event-featured.jpg";
+const featuredImg = "/events/frontier-beer-fest.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
