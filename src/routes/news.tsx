@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageHero } from "@/components/site/PageHero";
 import { news } from "@/data/site";
 import { ArrowRight } from "lucide-react";
-import heroImg from "@/assets/pillar-advocacy.jpg";
+import heroImg from "@/assets/hero-news.jpg";
 
 export const Route = createFileRoute("/news")({
   head: () => ({
