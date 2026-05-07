@@ -1,13 +1,18 @@
 export const members = [
-  { name: "Ironwheel Brewing", neighborhood: "Eastside", style: "Hop-forward IPAs", website: "#" },
-  { name: "Coastline Cellars", neighborhood: "Harbor District", style: "Coastal lagers", website: "#" },
-  { name: "Hollow Oak Beer Co.", neighborhood: "North Hills", style: "Barrel-aged stouts", website: "#" },
-  { name: "Brightline Brewhouse", neighborhood: "Downtown", style: "Belgian & farmhouse", website: "#" },
-  { name: "Foundry & Foam", neighborhood: "Industrial Arts", style: "Classic pilsners", website: "#" },
-  { name: "Sunset Wort Works", neighborhood: "South Bay", style: "Hazy & fruited sours", website: "#" },
-  { name: "Granary Street Brewing", neighborhood: "Old Town", style: "English session ales", website: "#" },
-  { name: "Mesa Verde Brewery", neighborhood: "West End", style: "Mexican lagers", website: "#" },
-  { name: "Cascade & Crown", neighborhood: "Riverside", style: "PNW-style IPAs", website: "#" },
+  { name: "Idyllwild BrewPub", neighborhood: "Idyllwild", style: "Mountain-town craft ales", website: "#" },
+  { name: "Euryale Brewing Co.", neighborhood: "Riverside", style: "Belgian-inspired ales", website: "#" },
+  { name: "Metabolic Brewing Co.", neighborhood: "Hemet", style: "Experimental small batches", website: "#" },
+  { name: "Luchador Brewing Co.", neighborhood: "Moreno Valley", style: "Mexican-style lagers", website: "#" },
+  { name: "Mars Brewing Co.", neighborhood: "Riverside", style: "Hop-forward IPAs", website: "#" },
+  { name: "Carbon Nation Brewing Co.", neighborhood: "Corona", style: "Modern hazy IPAs", website: "#" },
+  { name: "Left Coast Brewing Co.", neighborhood: "San Clemente", style: "West Coast classics", website: "#" },
+  { name: "Hangar 24 Brewing Co.", neighborhood: "Redlands", style: "Orange Wheat & lagers", website: "#" },
+  { name: "All Points Brewing Co.", neighborhood: "Corona", style: "Balanced sessionables", website: "#" },
+  { name: "Indio Brewing Co.", neighborhood: "Indio", style: "Desert-inspired ales", website: "#" },
+  { name: "Coachella Valley Brewing Co.", neighborhood: "Thousand Palms", style: "Valley-grown craft beer", website: "#" },
+  { name: "Consbeeracy Brewing", neighborhood: "Inland Empire", style: "Bold, unconventional brews", website: "#" },
+  { name: "GreyWolf Brewing Co.", neighborhood: "Temecula", style: "Wine-country ales", website: "#" },
+  { name: "Norco Brewing Co.", neighborhood: "Norco", style: "Horsetown small-batch ales", website: "#" },
 ] as const;
 
 export const events = [
