@@ -35,8 +35,8 @@ export function Header() {
             </Link>
           ))}
           <div className="ml-3 flex items-center gap-2 border-l border-border/60 pl-3 text-foreground/70">
-            <a href="#" aria-label="Instagram" className="hover:text-primary"><Instagram className="h-4 w-4" /></a>
-            <a href="#" aria-label="Facebook" className="hover:text-primary"><Facebook className="h-4 w-4" /></a>
+            <a href="https://www.instagram.com/iebrewers/" target="_blank" rel="noreferrer" aria-label="Instagram" className="hover:text-primary"><Instagram className="h-4 w-4" /></a>
+            <a href="https://www.facebook.com/iebrewersguild/" target="_blank" rel="noreferrer" aria-label="Facebook" className="hover:text-primary"><Facebook className="h-4 w-4" /></a>
           </div>
         </nav>
 
