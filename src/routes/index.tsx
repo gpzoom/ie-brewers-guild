@@ -53,7 +53,7 @@ function HomePage() {
         subtitle="The IE Brewers Guild promotes and protects local independently-owned breweries and advocates for the strengthening of the craft beer industry."
         minHeight="min-h-[85vh]"
       >
-        <Button asChild size="lg"><Link to="/members">Meet our brewers</Link></Button>
+        <Button asChild size="lg"><Link to="/members">Meet our members</Link></Button>
         <Button asChild size="lg" variant="outline"><Link to="/events">Upcoming events</Link></Button>
       </PageHero>
 
