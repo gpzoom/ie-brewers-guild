@@ -29,8 +29,8 @@ export function Footer() {
             and community events.
           </p>
           <div className="mt-5 flex gap-3 text-foreground/70">
-            <a href="#" aria-label="Instagram" className="hover:text-primary"><Instagram className="h-5 w-5" /></a>
-            <a href="#" aria-label="Facebook" className="hover:text-primary"><Facebook className="h-5 w-5" /></a>
+            <a href="https://www.instagram.com/iebrewers/" target="_blank" rel="noreferrer" aria-label="Instagram" className="hover:text-primary"><Instagram className="h-5 w-5" /></a>
+            <a href="https://www.facebook.com/iebrewersguild/" target="_blank" rel="noreferrer" aria-label="Facebook" className="hover:text-primary"><Facebook className="h-5 w-5" /></a>
             <a href="#" aria-label="Twitter" className="hover:text-primary"><Twitter className="h-5 w-5" /></a>
           </div>
         </div>
