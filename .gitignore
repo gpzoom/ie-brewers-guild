@@ -20,6 +20,16 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Local env (Google Maps API keys, etc.)
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# Output of one-time geocode script — review then merge into src/data/site.ts
+scripts/geocoded-members.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

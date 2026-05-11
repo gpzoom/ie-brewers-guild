@@ -1,7 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { PageHero } from "@/components/site/PageHero";
-import { members } from "@/data/site";
-import { Beer, ExternalLink, Facebook, Instagram, MapPin } from "lucide-react";
+import { SectionHeader } from "@/components/site/SectionHeader";
+import { MembersMap } from "@/components/site/MembersMap";
+import { members, type Location } from "@/data/site";
+import { Beer, ExternalLink, Facebook, Instagram, MapPin, Navigation } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import heroImg from "@/assets/pillar-events.jpg";
 
 export const Route = createFileRoute("/members")({
@@ -25,7 +37,15 @@ function UntappdIcon({ className }: { className?: string }) {
   );
 }
 
+type SelectedLocation = {
+  brewery: string;
+  website: string;
+  location: Location;
+};
+
 function MembersPage() {
+  const [selected, setSelected] = useState<SelectedLocation | null>(null);
+
   return (
     <>
       <PageHero
@@ -35,6 +55,19 @@ function MembersPage() {
         subtitle="Every member is independently owned and proud of it."
         minHeight="min-h-[50vh]"
       />
+
+      <section className="mx-auto max-w-7xl px-4 pt-20 md:px-6">
+        <SectionHeader
+          eyebrow="Find a member"
+          title="Breweries on the map."
+          subtitle="Click any pin for the address, website, and driving directions."
+          align="center"
+        />
+        <div className="mt-10">
+          <MembersMap members={members} />
+        </div>
+      </section>
+
       <section className="mx-auto max-w-7xl px-4 py-20 md:px-6">
         <div className="grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {members.map((m) => (
@@ -94,9 +127,24 @@ function MembersPage() {
               </div>
 
               <h3 className="mt-4 text-xl text-foreground">{m.name}</h3>
-              <p className="mt-1 inline-flex items-start gap-1 text-sm text-primary">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{m.locations.join(", ")}</span>
+
+              {/* Clickable location chips — each opens the address modal */}
+              <p className="mt-1 inline-flex flex-wrap items-start gap-x-1 gap-y-0.5 text-sm">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                {m.locations.map((loc, i) => (
+                  <span key={`${loc.city}-${i}`} className="text-primary">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelected({ brewery: m.name, website: m.website, location: loc })
+                      }
+                      className="rounded underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      {loc.city}
+                    </button>
+                    {i < m.locations.length - 1 && <span className="text-muted-foreground">, </span>}
+                  </span>
+                ))}
               </p>
 
               <a
@@ -111,6 +159,37 @@ function MembersPage() {
           ))}
         </div>
       </section>
+
+      {/* Address modal — shared across all cards */}
+      <Dialog open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
+        <DialogContent>
+          {selected && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl">{selected.brewery}</DialogTitle>
+                <DialogDescription className="text-primary">{selected.location.city}</DialogDescription>
+              </DialogHeader>
+              <p className="text-sm text-foreground/85">{selected.location.address}</p>
+              <DialogFooter className="gap-2 sm:gap-2">
+                <Button asChild variant="outline">
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${selected.location.lat},${selected.location.lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Navigation className="h-4 w-4" /> Directions
+                  </a>
+                </Button>
+                <Button asChild>
+                  <a href={selected.website} target="_blank" rel="noreferrer">
+                    <ExternalLink className="h-4 w-4" /> Visit website
+                  </a>
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
