@@ -38,7 +38,9 @@ function FitToPins({ pins }: { pins: Pin[] }) {
 }
 
 export function MembersMap({ members }: { members: Member[] }) {
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+  // Lovable's secret manager blocks VITE_* names, so we use AVITE_* and
+  // wire it through Vite's `define` in vite.config.ts.
+  const apiKey = import.meta.env.AVITE_GOOGLE_MAPS_API_KEY as string | undefined;
   const pins = useMemo(() => membersToPins(members), [members]);
   const [active, setActive] = useState<Pin | null>(null);
 
@@ -48,10 +50,9 @@ export function MembersMap({ members }: { members: Member[] }) {
         <p className="text-sm text-muted-foreground">
           Map will appear here once{" "}
           <code className="rounded bg-background px-1.5 py-0.5 text-foreground">
-            VITE_GOOGLE_MAPS_API_KEY
+            AVITE_GOOGLE_MAPS_API_KEY
           </code>{" "}
-          is set in <code className="rounded bg-background px-1.5 py-0.5 text-foreground">.env</code>{" "}
-          and the dev server is restarted.
+          is set and the dev server is restarted.
         </p>
       </div>
     );
