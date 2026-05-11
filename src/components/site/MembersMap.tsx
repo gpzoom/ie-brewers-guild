@@ -37,29 +37,17 @@ function FitToPins({ pins }: { pins: Pin[] }) {
   return null;
 }
 
+// Public Google Maps browser key. Safe to commit because it is restricted
+// by HTTP referrer in Google Cloud Console to our prod + local-dev domains.
+// If this is rotated, remember to update the referrer restrictions too.
+const MAPS_API_KEY = "AIzaSyCJD5vzXD88lEamqpj9jSY7eyv8jCD-hX4";
+
 export function MembersMap({ members }: { members: Member[] }) {
-  // Lovable's secret manager blocks VITE_* names, so we use AVITE_* and
-  // wire it through Vite's `define` in vite.config.ts.
-  const apiKey = import.meta.env.AVITE_GOOGLE_MAPS_API_KEY as string | undefined;
   const pins = useMemo(() => membersToPins(members), [members]);
   const [active, setActive] = useState<Pin | null>(null);
 
-  if (!apiKey) {
-    return (
-      <div className="rounded-lg border border-dashed border-border bg-card/40 p-10 text-center">
-        <p className="text-sm text-muted-foreground">
-          Map will appear here once{" "}
-          <code className="rounded bg-background px-1.5 py-0.5 text-foreground">
-            AVITE_GOOGLE_MAPS_API_KEY
-          </code>{" "}
-          is set and the dev server is restarted.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <APIProvider apiKey={apiKey}>
+    <APIProvider apiKey={MAPS_API_KEY}>
       <div className="relative h-[500px] w-full overflow-hidden rounded-lg border border-border shadow-[var(--shadow-glow)] md:h-[600px]">
         <Map
           defaultCenter={{ lat: 33.95, lng: -117.3 }}
