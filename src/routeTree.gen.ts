@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SurveyResultsRouteImport } from './routes/survey-results'
+import { Route as SurveyRouteImport } from './routes/survey'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as MembersRouteImport } from './routes/members'
 import { Route as EventsRouteImport } from './routes/events'
@@ -16,6 +18,16 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SurveyResultsRoute = SurveyResultsRouteImport.update({
+  id: '/survey-results',
+  path: '/survey-results',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SurveyRoute = SurveyRouteImport.update({
+  id: '/survey',
+  path: '/survey',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NewsRoute = NewsRouteImport.update({
   id: '/news',
   path: '/news',
@@ -54,6 +66,8 @@ export interface FileRoutesByFullPath {
   '/events': typeof EventsRoute
   '/members': typeof MembersRoute
   '/news': typeof NewsRoute
+  '/survey': typeof SurveyRoute
+  '/survey-results': typeof SurveyResultsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +76,8 @@ export interface FileRoutesByTo {
   '/events': typeof EventsRoute
   '/members': typeof MembersRoute
   '/news': typeof NewsRoute
+  '/survey': typeof SurveyRoute
+  '/survey-results': typeof SurveyResultsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,12 +87,30 @@ export interface FileRoutesById {
   '/events': typeof EventsRoute
   '/members': typeof MembersRoute
   '/news': typeof NewsRoute
+  '/survey': typeof SurveyRoute
+  '/survey-results': typeof SurveyResultsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/contact' | '/events' | '/members' | '/news'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/contact'
+    | '/events'
+    | '/members'
+    | '/news'
+    | '/survey'
+    | '/survey-results'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/contact' | '/events' | '/members' | '/news'
+  to:
+    | '/'
+    | '/about'
+    | '/contact'
+    | '/events'
+    | '/members'
+    | '/news'
+    | '/survey'
+    | '/survey-results'
   id:
     | '__root__'
     | '/'
@@ -85,6 +119,8 @@ export interface FileRouteTypes {
     | '/events'
     | '/members'
     | '/news'
+    | '/survey'
+    | '/survey-results'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -94,10 +130,26 @@ export interface RootRouteChildren {
   EventsRoute: typeof EventsRoute
   MembersRoute: typeof MembersRoute
   NewsRoute: typeof NewsRoute
+  SurveyRoute: typeof SurveyRoute
+  SurveyResultsRoute: typeof SurveyResultsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/survey-results': {
+      id: '/survey-results'
+      path: '/survey-results'
+      fullPath: '/survey-results'
+      preLoaderRoute: typeof SurveyResultsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/survey': {
+      id: '/survey'
+      path: '/survey'
+      fullPath: '/survey'
+      preLoaderRoute: typeof SurveyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/news': {
       id: '/news'
       path: '/news'
@@ -150,6 +202,8 @@ const rootRouteChildren: RootRouteChildren = {
   EventsRoute: EventsRoute,
   MembersRoute: MembersRoute,
   NewsRoute: NewsRoute,
+  SurveyRoute: SurveyRoute,
+  SurveyResultsRoute: SurveyResultsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

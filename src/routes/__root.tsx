@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -102,16 +103,22 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Routes that render standalone, without the site header/footer.
+const BARE_ROUTES = ["/survey-results"];
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isBare = BARE_ROUTES.includes(pathname.replace(/\/+$/, "") || "/");
+
   return (
     <QueryClientProvider client={queryClient}>
       <div className="flex min-h-screen flex-col">
-        <Header />
+        {!isBare && <Header />}
         <main className="flex-1">
           <Outlet />
         </main>
-        <Footer />
+        {!isBare && <Footer />}
         <Toaster />
       </div>
     </QueryClientProvider>
