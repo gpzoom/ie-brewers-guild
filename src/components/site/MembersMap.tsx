@@ -37,10 +37,11 @@ function FitToPins({ pins }: { pins: Pin[] }) {
   return null;
 }
 
-// Public Google Maps browser key. Safe to commit because it is restricted
-// by HTTP referrer in Google Cloud Console to our prod + local-dev domains.
+// Public Google Maps browser key, restricted by HTTP referrer in Google
+// Cloud Console to our prod + local-dev domains. Sourced from an env var
+// (set VITE_GOOGLE_MAPS_API_KEY locally and as a Cloudflare build variable).
 // If this is rotated, remember to update the referrer restrictions too.
-const MAPS_API_KEY = "AIzaSyCJD5vzXD88lEamqpj9jSY7eyv8jCD-hX4";
+const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 export function MembersMap({ members }: { members: Member[] }) {
   const pins = useMemo(() => membersToPins(members), [members]);
