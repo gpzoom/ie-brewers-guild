@@ -13,6 +13,9 @@ import appCss from "../styles.css?url";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Toaster } from "@/components/ui/sonner";
+import { UnderConstruction } from "@/components/site/UnderConstruction";
+
+const UNDER_CONSTRUCTION = import.meta.env.VITE_UNDER_CONSTRUCTION === "true";
 
 function NotFoundComponent() {
   return (
@@ -64,7 +67,15 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
-    meta: [
+    meta: UNDER_CONSTRUCTION
+      ? [
+          { charSet: "utf-8" },
+          { name: "viewport", content: "width=device-width, initial-scale=1" },
+          { title: "IE Brewers Guild — Under Construction" },
+          { name: "description", content: "Our site is currently under construction. Check back soon." },
+          { name: "robots", content: "noindex" },
+        ]
+      : [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "IE Brewers Guild — Independent Craft Breweries" },
@@ -110,6 +121,10 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isBare = BARE_ROUTES.includes(pathname.replace(/\/+$/, "") || "/");
+
+  if (UNDER_CONSTRUCTION) {
+    return <UnderConstruction />;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
