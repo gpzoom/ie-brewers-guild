@@ -86,7 +86,7 @@ export function MembersMap({ members }: { members: Member[] }) {
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 rounded-md bg-amber-700 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white hover:bg-amber-800"
                   >
-                    <ExternalLink className="h-3 w-3" /> Visit
+                    <ExternalLink className="h-3 w-3" /> Website
                   </a>
                   <a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${active.lat},${active.lng}`}
