@@ -13,6 +13,9 @@ export type Member = {
   facebook?: string;
   instagram?: string;
   untappd?: string;
+  // Set once a member has a self-guided/booked tour link; the map popup's
+  // "Take A Tour" button stays disabled for members without one.
+  tourUrl?: string;
 };
 
 export const members: Member[] = [

@@ -1,7 +1,7 @@
 import { APIProvider, Map, Marker, InfoWindow, useMap } from "@vis.gl/react-google-maps";
 import { useEffect, useMemo, useState } from "react";
 import type { Member } from "@/data/site";
-import { ExternalLink, Navigation } from "lucide-react";
+import { Compass, ExternalLink, Navigation } from "lucide-react";
 
 type Pin = {
   brewery: string;
@@ -10,6 +10,7 @@ type Pin = {
   lat: number;
   lng: number;
   website: string;
+  tourUrl?: string;
 };
 
 function membersToPins(members: Member[]): Pin[] {
@@ -21,6 +22,7 @@ function membersToPins(members: Member[]): Pin[] {
       lat: l.lat,
       lng: l.lng,
       website: m.website,
+      tourUrl: m.tourUrl,
     })),
   );
 }
@@ -79,7 +81,7 @@ export function MembersMap({ members }: { members: Member[] }) {
                 </div>
                 <div className="mt-1 text-xs font-medium text-amber-700">{active.city}</div>
                 <div className="mt-2 text-xs leading-snug text-gray-700">{active.address}</div>
-                <div className="mt-3 flex gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
                   <a
                     href={active.website}
                     target="_blank"
@@ -88,6 +90,25 @@ export function MembersMap({ members }: { members: Member[] }) {
                   >
                     <ExternalLink className="h-3 w-3" /> Website
                   </a>
+                  {active.tourUrl ? (
+                    <a
+                      href={active.tourUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 rounded-md bg-amber-700 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white hover:bg-amber-800"
+                    >
+                      <Compass className="h-3 w-3" /> Take A Tour
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      title="Tour booking coming soon"
+                      className="inline-flex cursor-not-allowed items-center gap-1 rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-gray-400"
+                    >
+                      <Compass className="h-3 w-3" /> Take A Tour
+                    </button>
+                  )}
                   <a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${active.lat},${active.lng}`}
                     target="_blank"
