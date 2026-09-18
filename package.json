@@ -7,8 +7,10 @@
     "dev": "vite dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "build:staging": "vite build --mode staging",
     "preview": "vite preview",
     "deploy": "vite build && wrangler deploy",
+    "deploy:staging": "npm run build:staging && wrangler deploy",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

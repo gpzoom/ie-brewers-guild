@@ -8,7 +8,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 // was intentionally dropped (Lovable-sandbox-only plugins) vs. kept.
 // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
-export default defineConfig(async ({ command }) => {
+export default defineConfig(async ({ command, mode }) => {
   const plugins = [
     tailwindcss(),
     tsConfigPaths({ projects: ["./tsconfig.json"] }),
@@ -29,7 +29,8 @@ export default defineConfig(async ({ command }) => {
   // original config's behavior (it never ran in `vite dev`).
   if (command === "build") {
     const { cloudflare } = await import("@cloudflare/vite-plugin");
-    plugins.push(cloudflare({ viteEnvironment: { name: "ssr" } }));
+    const configPath = mode === "staging" ? "./wrangler.staging.jsonc" : "./wrangler.jsonc";
+    plugins.push(cloudflare({ configPath, viteEnvironment: { name: "ssr" } }));
   }
 
   return {
