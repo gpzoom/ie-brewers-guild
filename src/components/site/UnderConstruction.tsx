@@ -17,10 +17,10 @@ export function UnderConstruction() {
       </p>
 
       <a
-        href="mailto:hello@craftbrewersguild.org"
+        href="mailto:iscbrewersguild@gmail.com"
         className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
       >
-        <Mail className="h-4 w-4" /> hello@craftbrewersguild.org
+        <Mail className="h-4 w-4" /> iscbrewersguild@gmail.com
       </a>
 
       <div className="mt-8 flex items-center gap-4 text-foreground/70">
