@@ -1,5 +1,4 @@
 {
-  // Test commit to confirm Cloudflare Workers Builds is wired to this branch.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "ie-brewers-guild-staging",
   "compatibility_date": "2025-09-24",
