@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w \"staging /: %{http_code}\\\\n\" https://ie-brewers-guild-staging.boblelle77.workers.dev/)",
+      "Bash(curl -s -o /dev/null -w \"staging /about: %{http_code}\\\\n\" https://ie-brewers-guild-staging.boblelle77.workers.dev/about)",
+      "Bash(curl -s https://ie-brewers-guild-staging.boblelle77.workers.dev/)"
+    ]
+  }
+}
