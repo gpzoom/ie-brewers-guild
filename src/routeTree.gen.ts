@@ -20,6 +20,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
 
 const SurveyResultsRoute = SurveyResultsRouteImport.update({
@@ -77,6 +78,11 @@ const MembersSlugRoute = MembersSlugRouteImport.update({
   path: '/members/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMemberMediaAssetIdRoute = ApiMemberMediaAssetIdRouteImport.update({
   id: '/api/member-media/$assetId',
   path: '/api/member-media/$assetId',
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/news': typeof NewsRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/members/$slug': typeof MembersSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/news': typeof NewsRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/members/$slug': typeof MembersSlugRoute
   '/admin': typeof AdminIndexRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/news': typeof NewsRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/members_/$slug': typeof MembersSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/survey'
     | '/survey-results'
+    | '/auth/callback'
     | '/members/$slug'
     | '/admin/'
     | '/api/member-media/$assetId'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/survey'
     | '/survey-results'
+    | '/auth/callback'
     | '/members/$slug'
     | '/admin'
     | '/api/member-media/$assetId'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/survey'
     | '/survey-results'
+    | '/auth/callback'
     | '/members_/$slug'
     | '/admin/'
     | '/api/member-media/$assetId'
@@ -179,6 +191,7 @@ export interface RootRouteChildren {
   NewsRoute: typeof NewsRoute
   SurveyRoute: typeof SurveyRoute
   SurveyResultsRoute: typeof SurveyResultsRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   MembersSlugRoute: typeof MembersSlugRoute
   ApiMemberMediaAssetIdRoute: typeof ApiMemberMediaAssetIdRoute
 }
@@ -262,6 +275,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MembersSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/member-media/$assetId': {
       id: '/api/member-media/$assetId'
       path: '/api/member-media/$assetId'
@@ -292,6 +312,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewsRoute: NewsRoute,
   SurveyRoute: SurveyRoute,
   SurveyResultsRoute: SurveyResultsRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   MembersSlugRoute: MembersSlugRoute,
   ApiMemberMediaAssetIdRoute: ApiMemberMediaAssetIdRoute,
 }
