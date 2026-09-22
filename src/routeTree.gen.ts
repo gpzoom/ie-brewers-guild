@@ -22,9 +22,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminHoursRouteImport } from './routes/admin.hours'
 import { Route as AdminBasicsRouteImport } from './routes/admin.basics'
 import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
+import { Route as ApiAdminMediaAssetIdRouteImport } from './routes/api.admin-media.$assetId'
 
 const SurveyResultsRoute = SurveyResultsRouteImport.update({
   id: '/survey-results',
@@ -91,6 +93,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminMediaRoute = AdminMediaRouteImport.update({
+  id: '/media',
+  path: '/media',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminHoursRoute = AdminHoursRouteImport.update({
   id: '/hours',
   path: '/hours',
@@ -104,6 +111,11 @@ const AdminBasicsRoute = AdminBasicsRouteImport.update({
 const ApiMemberMediaAssetIdRoute = ApiMemberMediaAssetIdRouteImport.update({
   id: '/api/member-media/$assetId',
   path: '/api/member-media/$assetId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminMediaAssetIdRoute = ApiAdminMediaAssetIdRouteImport.update({
+  id: '/api/admin-media/$assetId',
+  path: '/api/admin-media/$assetId',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -120,9 +132,11 @@ export interface FileRoutesByFullPath {
   '/survey-results': typeof SurveyResultsRoute
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/hours': typeof AdminHoursRoute
+  '/admin/media': typeof AdminMediaRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/members/$slug': typeof MembersSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRoutesByTo {
@@ -137,9 +151,11 @@ export interface FileRoutesByTo {
   '/survey-results': typeof SurveyResultsRoute
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/hours': typeof AdminHoursRoute
+  '/admin/media': typeof AdminMediaRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/members/$slug': typeof MembersSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRoutesById {
@@ -156,9 +172,11 @@ export interface FileRoutesById {
   '/survey-results': typeof SurveyResultsRoute
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/hours': typeof AdminHoursRoute
+  '/admin/media': typeof AdminMediaRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/members_/$slug': typeof MembersSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRouteTypes {
@@ -176,9 +194,11 @@ export interface FileRouteTypes {
     | '/survey-results'
     | '/admin/basics'
     | '/admin/hours'
+    | '/admin/media'
     | '/auth/callback'
     | '/members/$slug'
     | '/admin/'
+    | '/api/admin-media/$assetId'
     | '/api/member-media/$assetId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -193,9 +213,11 @@ export interface FileRouteTypes {
     | '/survey-results'
     | '/admin/basics'
     | '/admin/hours'
+    | '/admin/media'
     | '/auth/callback'
     | '/members/$slug'
     | '/admin'
+    | '/api/admin-media/$assetId'
     | '/api/member-media/$assetId'
   id:
     | '__root__'
@@ -211,9 +233,11 @@ export interface FileRouteTypes {
     | '/survey-results'
     | '/admin/basics'
     | '/admin/hours'
+    | '/admin/media'
     | '/auth/callback'
     | '/members_/$slug'
     | '/admin/'
+    | '/api/admin-media/$assetId'
     | '/api/member-media/$assetId'
   fileRoutesById: FileRoutesById
 }
@@ -230,6 +254,7 @@ export interface RootRouteChildren {
   SurveyResultsRoute: typeof SurveyResultsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   MembersSlugRoute: typeof MembersSlugRoute
+  ApiAdminMediaAssetIdRoute: typeof ApiAdminMediaAssetIdRoute
   ApiMemberMediaAssetIdRoute: typeof ApiMemberMediaAssetIdRoute
 }
 
@@ -326,6 +351,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/media': {
+      id: '/admin/media'
+      path: '/media'
+      fullPath: '/admin/media'
+      preLoaderRoute: typeof AdminMediaRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/hours': {
       id: '/admin/hours'
       path: '/hours'
@@ -347,18 +379,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMemberMediaAssetIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin-media/$assetId': {
+      id: '/api/admin-media/$assetId'
+      path: '/api/admin-media/$assetId'
+      fullPath: '/api/admin-media/$assetId'
+      preLoaderRoute: typeof ApiAdminMediaAssetIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AdminRouteChildren {
   AdminBasicsRoute: typeof AdminBasicsRoute
   AdminHoursRoute: typeof AdminHoursRoute
+  AdminMediaRoute: typeof AdminMediaRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminBasicsRoute: AdminBasicsRoute,
   AdminHoursRoute: AdminHoursRoute,
+  AdminMediaRoute: AdminMediaRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
@@ -377,6 +418,7 @@ const rootRouteChildren: RootRouteChildren = {
   SurveyResultsRoute: SurveyResultsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   MembersSlugRoute: MembersSlugRoute,
+  ApiAdminMediaAssetIdRoute: ApiAdminMediaAssetIdRoute,
   ApiMemberMediaAssetIdRoute: ApiMemberMediaAssetIdRoute,
 }
 export const routeTree = rootRouteImport
