@@ -67,6 +67,20 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
   const specialHoursDays = toSpecialHoursDay(specialHours);
   const hasCarousel = carouselSlides.length > 0;
 
+  // Mirrors each component's own null condition so its grid-row wrapper
+  // is never rendered empty -- an empty grid item still occupies a row
+  // and still gets `gap-6` on both sides, which is real, visible dead
+  // space (unlike the old flex-col-with-gap layout, where an empty child
+  // just collapsed to nothing).
+  const scheduleVisible = member.member_type !== "mobile" && weekdayHours.length > 0;
+  const visibleEventsCount = events.filter((event) => !event.is_hidden).length;
+  const eventsVisible = member.member_type === "mobile" || visibleEventsCount > 0;
+  const showScheduleGroup = scheduleVisible || eventsVisible;
+  const linksVisible = links.length > 0;
+  const contactLocationText = member.member_type === "mobile" ? member.service_area : member.street_address;
+  const contactHasEmail = member.member_type === "allied" && Boolean(member.contact_email);
+  const contactVisible = Boolean(contactLocationText) || Boolean(member.phone) || contactHasEmail;
+
   const now = new Date();
   const nextEvent =
     events.find((event) => {
@@ -106,30 +120,45 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
             : "mt-6 grid grid-cols-1 gap-6 px-4 md:px-6"
         }
       >
-        <div className="flex flex-col gap-6 md:col-start-2 md:row-start-1">
+        <div className={hasCarousel ? "flex flex-col gap-6 md:col-start-2" : "flex flex-col gap-6"}>
           <StatusBlock member={member} hours={weekdayHours} specialHours={specialHoursDays} tonightEvent={tonightEvent} />
           <DiscountBlock member={member} />
           <CategoryChips categories={categories} />
         </div>
 
         {hasCarousel && (
-          <div className="md:col-start-1 md:row-start-1 md:row-span-4">
+          // md:order-first (rather than an explicit md:row-start) makes this
+          // item the FIRST one the grid's auto-placement algorithm places at
+          // the md breakpoint -- order-modified document order, not visual
+          // order -- so it lands in row 1 of column 1 regardless of coming
+          // after the status group in the DOM (required for the phone
+          // order). The other column-2 items then auto-place into
+          // successive rows with no explicit row numbers at all, so
+          // whichever of schedule/links/contact happen to be hidden simply
+          // compacts the rest upward -- no manual row bookkeeping, no gaps.
+          <div className="md:order-first md:col-start-1">
             <MediaCarousel slides={carouselSlides} memberName={member.business_name} theme={member.theme} />
           </div>
         )}
 
-        <div className="flex flex-col gap-6 md:col-start-2 md:row-start-2">
-          <ScheduleChips hours={weekdayHours} memberType={member.member_type} />
-          <EventsModule events={events} memberType={member.member_type} />
-        </div>
+        {showScheduleGroup && (
+          <div className={hasCarousel ? "flex flex-col gap-6 md:col-start-2" : "flex flex-col gap-6"}>
+            <ScheduleChips hours={weekdayHours} memberType={member.member_type} />
+            <EventsModule events={events} memberType={member.member_type} />
+          </div>
+        )}
 
-        <div className="md:col-start-2 md:row-start-3">
-          <LinkPills links={links} />
-        </div>
+        {linksVisible && (
+          <div className={hasCarousel ? "md:col-start-2" : undefined}>
+            <LinkPills links={links} />
+          </div>
+        )}
 
-        <div className="md:col-start-2 md:row-start-4">
-          <ContactBlock member={member} />
-        </div>
+        {contactVisible && (
+          <div className={hasCarousel ? "md:col-start-2" : undefined}>
+            <ContactBlock member={member} />
+          </div>
+        )}
       </div>
 
       {crossLink && (
