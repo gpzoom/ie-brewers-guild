@@ -52,7 +52,34 @@ export function CarouselEditor({
   const savedCropRef = useRef<Record<string, CarouselSlideRow["crop"]>>(
     Object.fromEntries(initialSlides.map((slide) => [slide.id, slide.crop])),
   );
+  // The crop a debounced/flushed save should actually send. Deliberately
+  // NOT read off `slides` state or captured in a closure at
+  // setTimeout-schedule time: onCropChange/saveCropNow/flushCropSave are
+  // plain functions redefined every render, so a closure captures
+  // whichever render was active when the timer was armed -- which is
+  // BEFORE that same event's own setSlides call has taken effect (React
+  // batches state updates to the next render). If a member pans/zooms
+  // and then holds the pointer down, motionless, for the full debounce
+  // window without releasing, a closure-based read would fire the save
+  // using the crop from one render-tick before the hold, not the
+  // position actually being held -- and if that stale write's response
+  // resolves AFTER the correct release-triggered flush's response
+  // (ordinary network reordering), the server and `savedCropRef` (the
+  // rollback snapshot) both end up holding the stale value. This ref is
+  // written SYNCHRONOUSLY inside onCropChange, on every call, before the
+  // timer is (re)armed -- so whatever the timer callback or the
+  // pointerup/pointercancel flush reads at FIRE time is always the
+  // latest actual crop, with no render lag and no closure to go stale.
+  const latestCropRef = useRef<Record<string, CarouselSlideRow["crop"]>>(
+    Object.fromEntries(initialSlides.map((slide) => [slide.id, slide.crop])),
+  );
   const cropDebounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  // Lets a failed assign clear the <select>'s own DOM value back to "" --
+  // see onAssign's catch block for why: it's an uncontrolled element, so
+  // resetting React state alone wouldn't touch what the browser is
+  // actually showing, and a browser <select> never fires `change` for
+  // re-picking the option that's already selected.
+  const selectRefs = useRef<Record<number, HTMLSelectElement | null>>({});
 
   useEffect(() => {
     const timers = cropDebounceTimers.current;
@@ -91,11 +118,20 @@ export function CarouselEditor({
         data: { memberId, sortOrder: slot, assetId: asset.id, asset: { width: asset.width, height: asset.height } },
       });
       savedCropRef.current[id] = crop;
+      latestCropRef.current[id] = crop;
       setSlides((prev) => [
         ...prev.filter((slide) => slide.sort_order !== slot),
         { id, member_id: memberId, asset_id: asset.id, crop, outbound_url: null, sort_order: slot },
       ]);
     } catch (error) {
+      // Reset the uncontrolled <select>'s own DOM value -- otherwise the
+      // browser keeps showing the just-picked (but never actually saved)
+      // option, and re-picking that SAME option again to retry does
+      // nothing (no `change` event fires for re-selecting an
+      // already-selected value), forcing the member to pick a different
+      // photo first or reload the page just to retry.
+      const select = selectRefs.current[slot];
+      if (select) select.value = "";
       setSlotError(slot, friendlyMessage(error, "Couldn't assign this photo — try again."));
     }
   }
@@ -120,17 +156,22 @@ export function CarouselEditor({
     try {
       await unassignCarouselSlide({ data: { id: slide.id } });
       delete savedCropRef.current[slide.id];
+      delete latestCropRef.current[slide.id];
     } catch (error) {
       setSlides((prev) => (prev.some((s) => s.id === slide.id) ? prev : [...prev, slide]));
       setSlotError(slide.sort_order, friendlyMessage(error, "Couldn't remove this slide — try again."));
     }
   }
 
-  /** Sends whatever crop is CURRENTLY in `slides` for this slide id -- not a value captured in an earlier closure. */
+  /**
+   * Sends whatever crop is CURRENTLY in `latestCropRef` for this slide id
+   * -- read at CALL time, not captured in a closure at schedule time. See
+   * latestCropRef's own doc comment above for why that distinction is
+   * exactly the fix for the hold-and-pause race.
+   */
   function saveCropNow(slideId: string, slot: number) {
-    const current = slides.find((s) => s.id === slideId);
-    if (!current) return;
-    const cropToSave = current.crop;
+    const cropToSave = latestCropRef.current[slideId];
+    if (!cropToSave) return;
 
     updateCarouselSlideCrop({ data: { id: slideId, crop: cropToSave } })
       .then(() => {
@@ -140,6 +181,11 @@ export function CarouselEditor({
       .catch((error: unknown) => {
         const rollback = savedCropRef.current[slideId];
         if (rollback) {
+          // Keep the ref in sync with what's now actually displayed --
+          // otherwise a later flush (e.g. a stray pointerup) would read
+          // this ref and re-send the crop that just failed instead of
+          // the rolled-back one the member is now looking at.
+          latestCropRef.current[slideId] = rollback;
           setSlides((prev) => prev.map((s) => (s.id === slideId ? { ...s, crop: rollback } : s)));
         }
         setSlotError(slot, friendlyMessage(error, "Couldn't save this crop — try again."));
@@ -157,6 +203,11 @@ export function CarouselEditor({
   }
 
   function onCropChange(slide: CarouselSlideRow, crop: CarouselSlideRow["crop"]) {
+    // Written SYNCHRONOUSLY, before anything else below -- this is what
+    // makes latestCropRef always current regardless of React's render
+    // timing. See its doc comment above.
+    latestCropRef.current[slide.id] = crop;
+
     // Local/visual update is instant on every call -- dragging must stay
     // responsive regardless of the network debounce below.
     setSlides((prev) => prev.map((s) => (s.id === slide.id ? { ...s, crop } : s)));
@@ -238,6 +289,9 @@ export function CarouselEditor({
                 <div className="flex aspect-[4/5] flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border p-2">
                   <span className="text-xs text-muted-foreground">Slot {slot + 1}</span>
                   <select
+                    ref={(el) => {
+                      selectRefs.current[slot] = el;
+                    }}
                     className="h-11 w-full rounded-md border border-border bg-background text-sm"
                     aria-label={`Choose a photo for slot ${slot + 1}`}
                     defaultValue=""
