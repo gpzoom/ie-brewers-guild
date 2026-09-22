@@ -33,21 +33,27 @@ function formatEventDate(iso: string): string {
 export function EventsModule({ events, memberType }: EventsModuleProps) {
   const visibleEvents = events.filter((event) => !event.is_hidden);
 
-  if (memberType === "mobile" && visibleEvents.filter((e) => e.overlay_status !== "canceled").length === 0) {
-    // Spec, "Empty and error states": "Mobile member, no upcoming events ->
-    // 'No dates announced yet' with the booking button still present --
-    // never an empty list." The booking button itself lives in
-    // StatusBlock for mobile members, so this module just steps aside
-    // rather than rendering a duplicate CTA.
-    return (
-      <section>
-        <h2 className="font-display text-lg text-ink">{HEADINGS[memberType]}</h2>
-        <p className="mt-2 text-sm text-ink-muted">No dates announced yet</p>
-      </section>
-    );
-  }
-
   if (visibleEvents.length === 0) {
+    if (memberType === "mobile") {
+      // Spec, "Empty and error states": "Mobile member, no upcoming events ->
+      // 'No dates announced yet' with the booking button still present --
+      // never an empty list." The booking button itself lives in
+      // StatusBlock for mobile members, so this module just steps aside
+      // rather than rendering a duplicate CTA.
+      //
+      // This must key off "no events at all", not "no non-canceled
+      // events": a canceled event still has to render (spec, "a canceled
+      // event stays visible rather than disappearing") -- if a mobile
+      // member's only upcoming event is canceled, the fix is to show that
+      // canceled row below, not to fall back to this empty state.
+      return (
+        <section>
+          <h2 className="font-display text-lg text-ink">{HEADINGS[memberType]}</h2>
+          <p className="mt-2 text-sm text-ink-muted">No dates announced yet</p>
+        </section>
+      );
+    }
+
     // Spec's general rule: a module with nothing in it disappears rather
     // than rendering an empty container -- this is the "no exceptions
     // listed" case for producer/Allied Member.
@@ -71,6 +77,11 @@ export function EventsModule({ events, memberType }: EventsModuleProps) {
                 isCanceled && "opacity-60",
               )}
             >
+              {event.title && (
+                <span className={cn("text-sm font-semibold text-ink", isCanceled && "line-through")}>
+                  {event.title}
+                </span>
+              )}
               <div className="flex items-center gap-2">
                 <span className={cn("text-sm text-ink", (isPostponed || isCanceled) && "line-through")}>
                   {formatEventDate(event.starts_at)}
@@ -86,12 +97,16 @@ export function EventsModule({ events, memberType }: EventsModuleProps) {
                   New time: {formatEventDate(event.overlay_starts_at)}
                 </span>
               )}
-              {(event.venue_name || event.city) && !isCanceled && (
-                <span className="text-xs text-ink-muted">
+              {(event.venue_name || event.city) && (
+                <span className={cn("text-xs text-ink-muted", isCanceled && "line-through")}>
                   {[event.venue_name, event.city].filter(Boolean).join(", ")}
                 </span>
               )}
-              {event.overlay_note && <span className="text-xs text-ink-muted">{event.overlay_note}</span>}
+              {event.overlay_note && (
+                <span className={cn("text-xs text-ink-muted", isCanceled && "line-through")}>
+                  {event.overlay_note}
+                </span>
+              )}
             </li>
           );
         })}
