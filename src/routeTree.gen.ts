@@ -17,6 +17,7 @@ import { Route as EventsRouteImport } from './routes/events'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
 
 const SurveyResultsRoute = SurveyResultsRouteImport.update({
   id: '/survey-results',
@@ -58,6 +59,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMemberMediaAssetIdRoute = ApiMemberMediaAssetIdRouteImport.update({
+  id: '/api/member-media/$assetId',
+  path: '/api/member-media/$assetId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/news': typeof NewsRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/news': typeof NewsRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/news': typeof NewsRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/survey'
     | '/survey-results'
+    | '/api/member-media/$assetId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/survey'
     | '/survey-results'
+    | '/api/member-media/$assetId'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/survey'
     | '/survey-results'
+    | '/api/member-media/$assetId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,6 +144,7 @@ export interface RootRouteChildren {
   NewsRoute: typeof NewsRoute
   SurveyRoute: typeof SurveyRoute
   SurveyResultsRoute: typeof SurveyResultsRoute
+  ApiMemberMediaAssetIdRoute: typeof ApiMemberMediaAssetIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/member-media/$assetId': {
+      id: '/api/member-media/$assetId'
+      path: '/api/member-media/$assetId'
+      fullPath: '/api/member-media/$assetId'
+      preLoaderRoute: typeof ApiMemberMediaAssetIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -204,6 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewsRoute: NewsRoute,
   SurveyRoute: SurveyRoute,
   SurveyResultsRoute: SurveyResultsRoute,
+  ApiMemberMediaAssetIdRoute: ApiMemberMediaAssetIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
