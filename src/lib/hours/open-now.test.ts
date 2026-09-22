@@ -114,4 +114,62 @@ describe("computeOpenNow", () => {
     });
     expect(result).toEqual({ status: "closed", nextOpenLabel: "Opens Tuesday 5pm", note: null });
   });
+
+  it("a special_hours row for today does not suppress a genuine bleed-over from yesterday's weekly row", () => {
+    // Saturday 2026-09-26, 07:30 UTC = 00:30 PDT. Friday's weekly row runs
+    // 17:00-01:00 (closesNextDay), still open. Saturday separately has its
+    // own unrelated special_hours override that only starts later (2pm) --
+    // that override must not switch off the yesterday bleed-over check.
+    const result = computeOpenNow({
+      now: new Date("2026-09-26T07:30:00Z"),
+      timezone: PT,
+      hours: [{ weekday: 5, opensAt: "17:00", closesAt: "01:00", closesNextDay: true, isClosed: false }],
+      specialHours: [
+        {
+          date: "2026-09-26",
+          isClosed: false,
+          opensAt: "14:00",
+          closesAt: "22:00",
+          closesNextDay: false,
+          note: "Weekend event hours",
+        },
+      ],
+    });
+    expect(result).toEqual({ status: "open", closesInLabel: "Closes in 0 hr 30 min", note: null });
+  });
+
+  it("surfaces the note from yesterday's own special_hours row when that row is the one bleeding over, not today's unrelated special", () => {
+    // Saturday 2026-09-26, 07:30 UTC = 00:30 PDT. Friday's special_hours
+    // row (with its own note) runs 18:00-01:00 (closesNextDay) and is what's
+    // keeping the member open right now. Saturday has a different,
+    // unrelated special_hours row with its own note that doesn't apply yet.
+    const result = computeOpenNow({
+      now: new Date("2026-09-26T07:30:00Z"),
+      timezone: PT,
+      hours: [],
+      specialHours: [
+        {
+          date: "2026-09-25",
+          isClosed: false,
+          opensAt: "18:00",
+          closesAt: "01:00",
+          closesNextDay: true,
+          note: "New Year's Eve — open late",
+        },
+        {
+          date: "2026-09-26",
+          isClosed: false,
+          opensAt: "14:00",
+          closesAt: "22:00",
+          closesNextDay: false,
+          note: "Boxing Day hours",
+        },
+      ],
+    });
+    expect(result).toEqual({
+      status: "open",
+      closesInLabel: "Closes in 0 hr 30 min",
+      note: "New Year's Eve — open late",
+    });
+  });
 });

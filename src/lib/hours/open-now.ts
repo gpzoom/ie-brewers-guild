@@ -89,7 +89,13 @@ export function getZonedNow(instant: Date, timeZone: string): { date: string; we
   return { date, weekday: weekdayOf(date), minutes: hour * 60 + minute };
 }
 
-type Interval = { startMinutes: number; endMinutes: number }; // relative to today's local midnight = 0
+// relative to today's local midnight = 0. `note` travels with the interval
+// itself (null for a plain weekly row, the special_hours row's own note when
+// the interval came from one) so that whichever interval actually contains
+// "now" is what supplies the note shown to the visitor -- not necessarily
+// today's special_hours row, since the containing interval can belong to
+// yesterday's data (see rule 4/5 bleed-over below).
+type Interval = { startMinutes: number; endMinutes: number; note: string | null };
 
 function intervalsForDate(params: {
   weekday: number;
@@ -103,7 +109,7 @@ function intervalsForDate(params: {
     if (special.isClosed || !special.opensAt || !special.closesAt) return [];
     const start = toMinutes(special.opensAt) + dayOffsetMinutes;
     const end = toMinutes(special.closesAt) + dayOffsetMinutes + (special.closesNextDay ? MINUTES_PER_DAY : 0);
-    return [{ startMinutes: start, endMinutes: end }];
+    return [{ startMinutes: start, endMinutes: end, note: special.note }];
   }
 
   return hours
@@ -112,6 +118,7 @@ function intervalsForDate(params: {
       startMinutes: toMinutes(row.opensAt as string) + dayOffsetMinutes,
       endMinutes:
         toMinutes(row.closesAt as string) + dayOffsetMinutes + (row.closesNextDay ? MINUTES_PER_DAY : 0),
+      note: null,
     }));
 }
 
@@ -138,33 +145,43 @@ export function computeOpenNow(params: {
     dayOffsetMinutes: 0,
   });
 
-  // A special_hours row for today wins outright (spec, rule 2: "if one
-  // exists it wins outright"), so it replaces both today's weekly hours
-  // AND any overnight bleed-over from yesterday -- an explicit override
-  // for today is absolute, full stop.
-  const yesterdayIntervals = todaySpecial
-    ? []
-    : intervalsForDate({
-        weekday: (zoned.weekday + 6) % 7,
-        hours,
-        special: specialByDate.get(addDays(zoned.date, -1)),
-        dayOffsetMinutes: -MINUTES_PER_DAY,
-      });
+  // Yesterday's bleed-over (spec rule 4/5) is a structural property of
+  // YESTERDAY's own row -- rule 4's own example is "a taproom open until
+  // 1am on Saturday is a Friday row... not a Saturday row." Today's
+  // special_hours row (rule 2) only ever overrides TODAY's own hours; it
+  // must never suppress an interval that structurally belongs to
+  // yesterday. So this is always computed, never gated on whether today
+  // has a special row of its own.
+  const yesterdayIntervals = intervalsForDate({
+    weekday: (zoned.weekday + 6) % 7,
+    hours,
+    special: specialByDate.get(addDays(zoned.date, -1)),
+    dayOffsetMinutes: -MINUTES_PER_DAY,
+  });
 
-  const note = todaySpecial?.note ?? null;
   const openInterval = [...todayIntervals, ...yesterdayIntervals].find(
     (interval) => zoned.minutes >= interval.startMinutes && zoned.minutes < interval.endMinutes,
   );
 
   if (openInterval) {
+    // The note beside an "open" status belongs to whichever interval is
+    // actually keeping the member open right now -- today's own hours (or
+    // special override), or yesterday's bleed-over (and *that* row's own
+    // special note, if it has one) -- never blindly "today's special,"
+    // which may be an unrelated override that doesn't even apply yet.
     return {
       status: "open",
       closesInLabel: `Closes in ${formatDurationLabel(openInterval.endMinutes - zoned.minutes)}`,
-      note,
+      note: openInterval.note,
     };
   }
 
-  // Closed. Find the earliest future interval across the next 7 days,
+  // Closed. The note shown beside a closed status is about TODAY's own
+  // special_hours row, if any (e.g. "Thanksgiving") -- there is no
+  // containing interval to attribute it to instead.
+  const closedNote = todaySpecial?.note ?? null;
+
+  // Find the earliest future interval across the next 7 days,
   // special_hours applied per date (spec, rule 7).
   for (let dayOffset = 0; dayOffset <= 7; dayOffset++) {
     const candidateDate = addDays(zoned.date, dayOffset);
@@ -185,10 +202,10 @@ export function computeOpenNow(params: {
       return {
         status: "closed",
         nextOpenLabel: `Opens ${WEEKDAY_NAMES[candidateWeekday]} ${clock}`,
-        note,
+        note: closedNote,
       };
     }
   }
 
-  return { status: "closed", nextOpenLabel: null, note };
+  return { status: "closed", nextOpenLabel: null, note: closedNote };
 }
