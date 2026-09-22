@@ -18,12 +18,13 @@ const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 // blurring still gets an autosave attempt fired on this timer.
 const SAVE_DEBOUNCE_MS = 400;
 
-// Mirrors hours-editor.server.ts's TIME_RE. Kept as a separate client-side
-// copy rather than importing a value out of the ".server.ts" module --
-// same precedent as BasicsForm's own duplicated MIN_MEMBER_SINCE_YEAR --
-// so a malformed value never even gets scheduled for a save, let alone
-// reaches the server unvalidated.
+// Mirrors hours-editor.server.ts's TIME_RE/DATE_RE. Kept as separate
+// client-side copies rather than importing values out of the
+// ".server.ts" module -- same precedent as BasicsForm's own duplicated
+// MIN_MEMBER_SINCE_YEAR -- so a malformed value never even gets
+// scheduled for a save, let alone reaches the server unvalidated.
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 type SaveState = { status: "idle" | "saving" | "saved" | "error"; message?: string };
 const IDLE: SaveState = { status: "idle" };
@@ -511,7 +512,34 @@ export function HoursEditor({
                       specialAutosave.markInvalid(row.id, "date", "Date can't be empty.");
                       return;
                     }
-                    specialAutosave.saveNow(row.id, "date", { date: value }, (patch) =>
+                    if (!DATE_RE.test(value)) {
+                      specialAutosave.markInvalid(row.id, "date", "Enter a valid date.");
+                      return;
+                    }
+                    // Debounced, not saveNow -- a native date input fires
+                    // onChange per keystroke while a segment (e.g. the
+                    // year) is still mid-edit, and each of those
+                    // intermediate values is a syntactically well-formed
+                    // ISO date (e.g. "0002-12-25" while typing "2026").
+                    // saveNow would have persisted every one of those on
+                    // its way to the real value; scheduleSave + blur-flush
+                    // (below) is the same pattern the time fields in this
+                    // file already use for exactly this reason.
+                    specialAutosave.scheduleSave(row.id, "date", { date: value }, (patch) =>
+                      saveSpecialField(row.id, "date", patch.date as SpecialHoursRow["date"]),
+                    );
+                  }}
+                  onBlur={(e) => {
+                    const value = e.target.value;
+                    if (value === "") {
+                      specialAutosave.markInvalid(row.id, "date", "Date can't be empty.");
+                      return;
+                    }
+                    if (!DATE_RE.test(value)) {
+                      specialAutosave.markInvalid(row.id, "date", "Enter a valid date.");
+                      return;
+                    }
+                    specialAutosave.flushSave(row.id, "date", { date: value }, (patch) =>
                       saveSpecialField(row.id, "date", patch.date as SpecialHoursRow["date"]),
                     );
                   }}

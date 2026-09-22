@@ -230,6 +230,22 @@ function validateSpecialHoursPatch(patch: SpecialHoursPatch) {
   }
 }
 
+/**
+ * `special_hours` has a `unique (member_id, date)` constraint
+ * (supabase/migrations/20260922153458_final_review_fixes.sql, "10." --
+ * named `special_hours_member_id_date_key`), added specifically to make a
+ * duplicate-date row impossible at the DB level rather than merely
+ * discouraged in the UI. A violation surfaces via PostgREST as Postgres
+ * error code 23505 with the raw constraint name in the message -- fine
+ * for a log, not for the "Couldn't save" banner a member actually reads.
+ */
+function specialHoursErrorMessage(error: { code?: string; message: string }): string {
+  if (error.code === "23505" && error.message.includes("special_hours_member_id_date_key")) {
+    return "You already have hours set for this date -- edit the existing entry instead.";
+  }
+  return error.message;
+}
+
 export const upsertSpecialHoursRow = createServerFn({ method: "POST" })
   .inputValidator((data: { memberId: string; id?: string; patch: SpecialHoursPatch }) => data)
   .handler(async ({ data }) => {
@@ -247,7 +263,7 @@ export const upsertSpecialHoursRow = createServerFn({ method: "POST" })
         .update(patch)
         .eq("id", data.id)
         .select("id");
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(specialHoursErrorMessage(error));
       if (!updated || updated.length === 0) {
         throw new Error("Save failed -- you may not have permission to edit this row.");
       }
@@ -262,7 +278,7 @@ export const upsertSpecialHoursRow = createServerFn({ method: "POST" })
       .insert({ member_id: data.memberId, ...patch })
       .select("id")
       .single();
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(specialHoursErrorMessage(error));
     return { id: created.id as string };
   });
 
