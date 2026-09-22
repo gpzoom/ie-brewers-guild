@@ -22,6 +22,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AdminHoursRouteImport } from './routes/admin.hours'
 import { Route as AdminBasicsRouteImport } from './routes/admin.basics'
 import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
 
@@ -90,6 +91,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminHoursRoute = AdminHoursRouteImport.update({
+  id: '/hours',
+  path: '/hours',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBasicsRoute = AdminBasicsRouteImport.update({
   id: '/basics',
   path: '/basics',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/admin/basics': typeof AdminBasicsRoute
+  '/admin/hours': typeof AdminHoursRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/members/$slug': typeof MembersSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/admin/basics': typeof AdminBasicsRoute
+  '/admin/hours': typeof AdminHoursRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/members/$slug': typeof MembersSlugRoute
   '/admin': typeof AdminIndexRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/admin/basics': typeof AdminBasicsRoute
+  '/admin/hours': typeof AdminHoursRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/members_/$slug': typeof MembersSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/survey'
     | '/survey-results'
     | '/admin/basics'
+    | '/admin/hours'
     | '/auth/callback'
     | '/members/$slug'
     | '/admin/'
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/survey'
     | '/survey-results'
     | '/admin/basics'
+    | '/admin/hours'
     | '/auth/callback'
     | '/members/$slug'
     | '/admin'
@@ -199,6 +210,7 @@ export interface FileRouteTypes {
     | '/survey'
     | '/survey-results'
     | '/admin/basics'
+    | '/admin/hours'
     | '/auth/callback'
     | '/members_/$slug'
     | '/admin/'
@@ -314,6 +326,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/hours': {
+      id: '/admin/hours'
+      path: '/hours'
+      fullPath: '/admin/hours'
+      preLoaderRoute: typeof AdminHoursRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/basics': {
       id: '/admin/basics'
       path: '/basics'
@@ -333,11 +352,13 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminBasicsRoute: typeof AdminBasicsRoute
+  AdminHoursRoute: typeof AdminHoursRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminBasicsRoute: AdminBasicsRoute,
+  AdminHoursRoute: AdminHoursRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

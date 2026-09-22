@@ -27,27 +27,29 @@ export default defineConfig(async ({ command, mode }) => {
           // nothing to keep both patterns active.
           files: ["**/*.server.*", "**/server/**"],
           // src/lib/members/member-profile.server.ts,
-          // src/lib/auth/require-member-session.server.ts, and
-          // src/lib/members/member-basics.server.ts are the files in this
+          // src/lib/auth/require-member-session.server.ts,
+          // src/lib/members/member-basics.server.ts, and
+          // src/lib/hours/hours-editor.server.ts are the files in this
           // repo the restored "**/*.server.*" default pattern would now
-          // also catch, and all three are deliberate exceptions, not a
+          // also catch, and all four are deliberate exceptions, not a
           // gap: every export of each file (`getMemberProfileData`;
-          // `requireMemberSession`; `getMemberBasics`/`updateMemberBasics`)
-          // is a createServerFn().handler(...) call -- already the exact
-          // safe client/server RPC boundary this deny rule exists to push
+          // `requireMemberSession`; `getMemberBasics`/`updateMemberBasics`;
+          // `listHours`/`upsertHoursRow`/`deleteHoursRow`/
+          // `upsertSpecialHoursRow`/`deleteSpecialHoursRow`) is a
+          // createServerFn().handler(...) call -- already the exact safe
+          // client/server RPC boundary this deny rule exists to push
           // people toward (see the plugin's own "Import denied" message).
-          // src/routes/members_.$slug.tsx, src/routes/admin.tsx, and
+          // src/routes/members_.$slug.tsx, src/routes/admin.tsx,
           // src/routes/admin.basics.tsx (plus BasicsForm.tsx, which calls
-          // updateMemberBasics from an onBlur/onValueChange handler --
-          // exactly the RPC-bridge shape the plugin's own suggestion
-          // describes) import them directly by design, per TanStack
-          // Start's own createServerFn convention -- that is not a
-          // violation to catch, so all three are excluded here rather
-          // than renamed off the *.server.* convention project-wide. The
-          // next file added to this list should get the same treatment:
-          // update this comment to describe it too, so the gap that broke
-          // the build for require-member-session.server.ts doesn't
-          // repeat.
+          // updateMemberBasics from an onBlur/onValueChange handler), and
+          // src/routes/admin.hours.tsx (plus HoursEditor.tsx, same
+          // pattern) import them directly by design, per TanStack Start's
+          // own createServerFn convention -- that is not a violation to
+          // catch, so all four are excluded here rather than renamed off
+          // the *.server.* convention project-wide. The next file added
+          // to this list should get the same treatment: update this
+          // comment to describe it too, so the gap that broke the build
+          // for require-member-session.server.ts doesn't repeat.
           //
           // "**/node_modules/**" MUST stay listed here too -- a custom
           // `excludeFiles` array replaces the framework's own default
@@ -63,6 +65,7 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/members/member-profile.server.ts",
             "src/lib/auth/require-member-session.server.ts",
             "src/lib/members/member-basics.server.ts",
+            "src/lib/hours/hours-editor.server.ts",
           ],
           specifiers: ["server-only"],
         },
