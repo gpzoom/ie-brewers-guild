@@ -22,6 +22,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AdminBasicsRouteImport } from './routes/admin.basics'
 import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
 
 const SurveyResultsRoute = SurveyResultsRouteImport.update({
@@ -89,6 +90,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminBasicsRoute = AdminBasicsRouteImport.update({
+  id: '/basics',
+  path: '/basics',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ApiMemberMediaAssetIdRoute = ApiMemberMediaAssetIdRouteImport.update({
   id: '/api/member-media/$assetId',
   path: '/api/member-media/$assetId',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/signin': typeof SigninRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/admin/basics': typeof AdminBasicsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/members/$slug': typeof MembersSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/signin': typeof SigninRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/admin/basics': typeof AdminBasicsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/members/$slug': typeof MembersSlugRoute
   '/admin': typeof AdminIndexRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/signin': typeof SigninRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/admin/basics': typeof AdminBasicsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/members_/$slug': typeof MembersSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/survey'
     | '/survey-results'
+    | '/admin/basics'
     | '/auth/callback'
     | '/members/$slug'
     | '/admin/'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/survey'
     | '/survey-results'
+    | '/admin/basics'
     | '/auth/callback'
     | '/members/$slug'
     | '/admin'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/survey'
     | '/survey-results'
+    | '/admin/basics'
     | '/auth/callback'
     | '/members_/$slug'
     | '/admin/'
@@ -302,6 +314,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/basics': {
+      id: '/admin/basics'
+      path: '/basics'
+      fullPath: '/admin/basics'
+      preLoaderRoute: typeof AdminBasicsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/api/member-media/$assetId': {
       id: '/api/member-media/$assetId'
       path: '/api/member-media/$assetId'
@@ -313,10 +332,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminBasicsRoute: typeof AdminBasicsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminBasicsRoute: AdminBasicsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
