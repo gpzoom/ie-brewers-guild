@@ -6,72 +6,186 @@
  * Workers runtime, Node, and the browser -- unlike an image-processing
  * library, whose Workers compatibility would need to be individually
  * verified (this plan's Decision 9).
+ *
+ * DESIGN (allowlist, not denylist -- see task-11-report.md, "fix round"):
+ * a first version tried to recognize and drop specific known-bad segments
+ * (APP1/Exif by signature, PNG eXIf/tEXt/...) and fell back to returning
+ * the ORIGINAL bytes unchanged whenever parsing hit anything it didn't
+ * expect. For a privacy control that's exactly backwards: a JPEG with a
+ * stray byte, a desynced length, or GPS carried in XMP instead of literal
+ * "Exif\0\0" all silently kept their location data. This version instead
+ * keeps ONLY the specific segments/chunks that are structurally necessary
+ * to reconstruct a valid, renderable image, discards everything else
+ * unconditionally (so it doesn't matter whether the metadata calls itself
+ * EXIF, XMP, IPTC, or a comment -- it's not on the keep-list, so it's
+ * gone), and THROWS rather than returning anything on any byte pattern it
+ * can't cleanly account for. Callers MUST treat a thrown error as "reject
+ * this upload", never as "fall back to the original bytes".
  */
 
+function isJpeg(bytes: Uint8Array): boolean {
+  return bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xd8;
+}
+
+function isPng(bytes: Uint8Array): boolean {
+  return bytes.length >= 8 && PNG_SIGNATURE.every((b, i) => bytes[i] === b);
+}
+
+const JPEG_EOI = 0xd9;
+const JPEG_SOS = 0xda;
+
+// Markers that carry NO length field and must never appear before the
+// first SOS (RSTn/TEM only occur inside entropy-coded scan data, which is
+// copied through opaquely once SOS is hit -- see below). Seeing one here
+// means the byte stream is desynced, not that we found real content.
+const JPEG_UNEXPECTED_BEFORE_SOS = new Set<number>([
+  0x00, // stuffed byte -- only legal inside scan data
+  0x01, // TEM
+  0xd8, // a second SOI
+  0xd0,
+  0xd1,
+  0xd2,
+  0xd3,
+  0xd4,
+  0xd5,
+  0xd6,
+  0xd7, // RSTn
+]);
+
+// The ONLY segments kept: everything structurally required to decode and
+// render the image. APP1 (EXIF or XMP), APP2-APP15, COM, and any marker
+// this parser doesn't specifically recognize are dropped unconditionally.
+const JPEG_KEEP_MARKERS = new Set<number>([
+  0xe0, // APP0 / JFIF -- density + optional thumbnail, no location data
+  0xdb, // DQT -- quantization table, required to decode
+  0xc4, // DHT -- Huffman table, required to decode
+  0xdd, // DRI -- restart interval, required if restart markers are used
+  // SOF0-SOF3, SOF5-SOF7, SOF9-SOF11, SOF13-SOF15 -- frame header, required.
+  // (0xc4 DHT and 0xc8 "JPG" reserved / 0xcc DAC are deliberately excluded:
+  // DHT is handled above, and JPG-reserved/arithmetic-coded JPEGs are rare
+  // enough in practice that we reject them rather than risk mishandling.)
+  0xc0,
+  0xc1,
+  0xc2,
+  0xc3,
+  0xc5,
+  0xc6,
+  0xc7,
+  0xc9,
+  0xca,
+  0xcb,
+  0xcd,
+  0xce,
+  0xcf,
+]);
+
 export function stripJpegExif(bytes: Uint8Array): Uint8Array {
-  if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) {
-    return bytes; // Not a JPEG (missing SOI) -- caller already validated the signature before calling this.
+  if (!isJpeg(bytes)) {
+    throw new Error("stripJpegExif: input is not a JPEG (missing SOI marker)");
   }
 
   const chunks: Uint8Array[] = [bytes.subarray(0, 2)]; // SOI
   let offset = 2;
 
-  while (offset < bytes.length - 1) {
+  while (true) {
+    if (offset >= bytes.length) {
+      throw new Error("stripJpegExif: truncated JPEG (ran off the end before EOI)");
+    }
     if (bytes[offset] !== 0xff) {
-      return bytes; // Not aligned on a marker -- bail out rather than risk corrupting the file.
-    }
-    const marker = bytes[offset + 1];
-
-    if (marker === 0xd9) {
-      chunks.push(bytes.subarray(offset, offset + 2)); // EOI
-      offset += 2;
-      break;
+      throw new Error(
+        `stripJpegExif: expected a marker at offset ${offset}, found 0x${bytes[offset].toString(16)} -- refusing to guess`,
+      );
     }
 
-    if (marker === 0xda) {
-      chunks.push(bytes.subarray(offset)); // SOS -- scan data through EOI, copied through untouched.
-      offset = bytes.length;
-      break;
+    // A marker may legally be preceded by any number of 0xFF fill bytes
+    // (FF FF FF ... FF xx). Walk past the fill to the real marker code
+    // instead of misreading a fill byte as the marker itself.
+    let markerOffset = offset;
+    while (markerOffset + 1 < bytes.length && bytes[markerOffset + 1] === 0xff) {
+      markerOffset += 1;
+    }
+    if (markerOffset + 1 >= bytes.length) {
+      throw new Error(
+        "stripJpegExif: truncated JPEG (fill bytes ran off the end before a marker code)",
+      );
+    }
+    const marker = bytes[markerOffset + 1];
+
+    if (marker === JPEG_EOI) {
+      chunks.push(bytes.subarray(markerOffset, markerOffset + 2));
+      return concatUint8Arrays(chunks);
     }
 
-    if ((marker >= 0xd0 && marker <= 0xd7) || marker === 0x01) {
-      chunks.push(bytes.subarray(offset, offset + 2)); // RSTn / TEM: no length field.
-      offset += 2;
-      continue;
+    if (marker === JPEG_SOS) {
+      // Entropy-coded scan data follows, and it can legitimately contain
+      // 0xFF bytes (stuffed as FF 00) and restart markers (FFD0-FFD7).
+      // None of that can carry APPn/COM metadata -- real-world encoders
+      // only ever place metadata in the header, before the first SOS --
+      // so once SOS is reached it's both safe and necessary (scan data
+      // can't be reliably re-parsed marker-by-marker) to copy everything
+      // from here through EOI verbatim.
+      chunks.push(bytes.subarray(markerOffset));
+      const tail = bytes.subarray(bytes.length - 2);
+      if (tail[0] !== 0xff || tail[1] !== JPEG_EOI) {
+        throw new Error("stripJpegExif: scan data does not end in EOI (truncated or corrupt JPEG)");
+      }
+      return concatUint8Arrays(chunks);
     }
 
-    const length = (bytes[offset + 2] << 8) | bytes[offset + 3];
-    const segmentEnd = offset + 2 + length;
-
-    const isApp1Exif =
-      marker === 0xe1 &&
-      length >= 8 &&
-      bytes[offset + 4] === 0x45 && // 'E'
-      bytes[offset + 5] === 0x78 && // 'x'
-      bytes[offset + 6] === 0x69 && // 'i'
-      bytes[offset + 7] === 0x66; // 'f'
-
-    if (!isApp1Exif) {
-      chunks.push(bytes.subarray(offset, segmentEnd));
+    if (JPEG_UNEXPECTED_BEFORE_SOS.has(marker)) {
+      throw new Error(
+        `stripJpegExif: unexpected marker 0x${marker.toString(16)} at offset ${markerOffset} before SOS`,
+      );
     }
+
+    if (markerOffset + 3 >= bytes.length) {
+      throw new Error(`stripJpegExif: truncated segment header at offset ${markerOffset}`);
+    }
+    const length = (bytes[markerOffset + 2] << 8) | bytes[markerOffset + 3];
+    if (length < 2) {
+      throw new Error(`stripJpegExif: invalid segment length ${length} at offset ${markerOffset}`);
+    }
+    const segmentEnd = markerOffset + 2 + length;
+    if (segmentEnd > bytes.length) {
+      throw new Error(
+        `stripJpegExif: segment at offset ${markerOffset} overruns the end of the file`,
+      );
+    }
+
+    if (JPEG_KEEP_MARKERS.has(marker)) {
+      chunks.push(bytes.subarray(markerOffset, segmentEnd));
+    }
+    // Anything not in JPEG_KEEP_MARKERS -- APP1 (EXIF or XMP), APP2-APP15,
+    // COM, and anything else -- is dropped unconditionally, regardless of
+    // its payload's content or signature.
+
     offset = segmentEnd;
   }
-
-  return concatUint8Arrays(chunks);
 }
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-const PNG_STRIPPED_CHUNK_TYPES = new Set(["eXIf", "tEXt", "zTXt", "iTXt"]);
+
+// The ONLY chunks kept: IHDR/IDAT/IEND are mandatory for any PNG; PLTE is
+// mandatory for palette images; tRNS carries palette/simple transparency
+// (logos routinely rely on it for a transparent background) and is kept
+// for correct rendering. Everything else -- eXIf, tEXt/zTXt/iTXt (which
+// can carry XMP, and XMP routinely carries GPS), gAMA/cHRM/sRGB/iCCP/
+// pHYs/tIME/etc -- is dropped unconditionally.
+const PNG_KEEP_CHUNK_TYPES = new Set(["IHDR", "PLTE", "IDAT", "IEND", "tRNS"]);
 
 export function stripPngMetadata(bytes: Uint8Array): Uint8Array {
-  if (bytes.length < 8 || !PNG_SIGNATURE.every((b, i) => bytes[i] === b)) {
-    return bytes;
+  if (!isPng(bytes)) {
+    throw new Error("stripPngMetadata: input is not a PNG (missing signature)");
   }
 
   const chunks: Uint8Array[] = [bytes.subarray(0, 8)];
   let offset = 8;
+  let sawIend = false;
 
-  while (offset + 8 <= bytes.length) {
+  while (offset < bytes.length) {
+    if (offset + 8 > bytes.length) {
+      throw new Error(`stripPngMetadata: truncated chunk header at offset ${offset}`);
+    }
     const length =
       ((bytes[offset] << 24) |
         (bytes[offset + 1] << 16) |
@@ -84,23 +198,70 @@ export function stripPngMetadata(bytes: Uint8Array): Uint8Array {
       bytes[offset + 6],
       bytes[offset + 7],
     );
-    const chunkEnd = offset + 8 + length + 4; // + 4-byte CRC
+    const chunkEnd = offset + 8 + length + 4; // + 4-byte CRC (not validated -- see note below)
 
-    if (!PNG_STRIPPED_CHUNK_TYPES.has(type)) {
+    if (chunkEnd > bytes.length) {
+      throw new Error(
+        `stripPngMetadata: chunk "${type}" at offset ${offset} overruns the end of the file`,
+      );
+    }
+
+    if (PNG_KEEP_CHUNK_TYPES.has(type)) {
       chunks.push(bytes.subarray(offset, chunkEnd));
     }
 
     offset = chunkEnd;
-    if (type === "IEND") break;
+    if (type === "IEND") {
+      sawIend = true;
+      break;
+    }
+  }
+
+  if (!sawIend) {
+    throw new Error("stripPngMetadata: truncated PNG (no IEND chunk found)");
   }
 
   return concatUint8Arrays(chunks);
+  // Note: this does not verify each chunk's CRC32. That's a data-integrity
+  // concern, not a metadata-leak concern -- dropping a chunk only ever
+  // depends on its declared length and type, never its content, so a
+  // corrupt CRC can't cause metadata to survive. Bounds-checking every
+  // declared length against the actual buffer size (above) is what
+  // prevents desync/overrun, independent of CRC validity.
+}
+
+function looksLikeSvgText(bytes: Uint8Array): boolean {
+  let i = 0;
+  // Skip a UTF-8 BOM if present.
+  if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+    i = 3;
+  }
+  // Skip leading ASCII whitespace.
+  while (
+    i < bytes.length &&
+    (bytes[i] === 0x20 || bytes[i] === 0x09 || bytes[i] === 0x0a || bytes[i] === 0x0d)
+  ) {
+    i += 1;
+  }
+  return i < bytes.length && bytes[i] === 0x3c; // '<'
 }
 
 export function stripImageMetadata(bytes: Uint8Array, mimeType: string): Uint8Array {
-  if (mimeType === "image/jpeg") return stripJpegExif(bytes);
-  if (mimeType === "image/png") return stripPngMetadata(bytes);
-  return bytes; // SVG carries no binary EXIF; video is out of scope for this phase's metadata concern.
+  // Format is determined by sniffing the actual leading bytes, never by
+  // trusting the caller-supplied mimeType -- a mislabeled or spoofed
+  // mimeType must not be able to route real image bytes around the
+  // stripper (this is what closed a mimeType-trust hole in the review).
+  if (isJpeg(bytes)) return stripJpegExif(bytes);
+  if (isPng(bytes)) return stripPngMetadata(bytes);
+  if (mimeType === "image/svg+xml" && looksLikeSvgText(bytes)) {
+    return bytes; // SVG is XML text; it carries no binary EXIF/XMP GPS payload.
+  }
+  // HEIC (iPhone's default capture format, which carries full EXIF+GPS),
+  // WebP, and anything else this module doesn't explicitly parse: reject
+  // rather than silently pass through unstripped bytes.
+  throw new Error(
+    `stripImageMetadata: unsupported or unrecognized image format (mimeType: ${mimeType}); refusing to pass through unstripped bytes`,
+  );
 }
 
 function concatUint8Arrays(chunks: Uint8Array[]): Uint8Array {
