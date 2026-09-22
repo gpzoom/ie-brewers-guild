@@ -1588,7 +1588,12 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
 
     const { data: member, error: memberError } = await supabase
       .from("members")
-      .select("*")
+      // Explicit column list, not select("*") -- application_note,
+      // dues_received_at, approved_at, and approved_by_user_id are
+      // revoked from anon at the column level and must not be requested.
+      .select(
+        "id, slug, member_type, business_name, tagline, city, state, street_address, postal_code, latitude, longitude, service_area, lead_time, phone, contact_email, timezone, theme, logo_asset_id, cover_asset_id, cover_crop, member_since_year, discount_percent, discount_no_fixed_percent, discount_redeem_text, status, hours_confirmed_at, published_at, trail_eligible, created_at, updated_at",
+      )
       .eq("slug", data.slug)
       .maybeSingle();
 
