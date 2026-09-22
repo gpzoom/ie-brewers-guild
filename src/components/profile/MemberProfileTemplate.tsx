@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { ProfileHero } from "@/components/profile/ProfileHero";
 import { StatusBlock } from "@/components/profile/StatusBlock";
 import { ScheduleChips } from "@/components/profile/ScheduleChips";
@@ -81,6 +82,16 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
   const contactHasEmail = member.member_type === "allied" && Boolean(member.contact_email);
   const contactVisible = Boolean(contactLocationText) || Boolean(member.phone) || contactHasEmail;
 
+  // The carousel (420px wide, aspect-[4/5] slides plus a dot row) is
+  // almost always taller than the status group alone, so without an
+  // explicit span it just occupies row 1 by itself and pushes every
+  // column-2 row below it down by the difference -- a big dead gap under
+  // the status group, not a small one. Spanning it across the actual
+  // number of visible column-2 rows (not a fixed 4) lets CSS Grid's row
+  // sizing distribute that slack across the real rows instead of parking
+  // it all in one gap, and keeps the span correct when a row is hidden.
+  const contentRows = 1 + Number(showScheduleGroup) + Number(linksVisible) + Number(contactVisible);
+
   const now = new Date();
   const nextEvent =
     events.find((event) => {
@@ -136,7 +147,23 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
           // successive rows with no explicit row numbers at all, so
           // whichever of schedule/links/contact happen to be hidden simply
           // compacts the rest upward -- no manual row bookkeeping, no gaps.
-          <div className="md:order-first md:col-start-1">
+          //
+          // The row span itself is a CSS custom property set inline (its
+          // value, `contentRows`, is only known at render time, and a
+          // dynamically-built class like `md:row-span-${contentRows}`
+          // can't be picked up by Tailwind's build-time JIT scan) that a
+          // `md:`-scoped arbitrary-property utility reads. Scoping the
+          // *utility* to `md:` -- rather than setting `grid-row-end`
+          // directly via inline style -- is what keeps this inert on
+          // phone: at the base breakpoint no rule reads the custom
+          // property, so the item stays a normal single-row grid item
+          // there (an unscoped inline `grid-row-end` would apply at every
+          // width and, in the single-column phone grid, push every
+          // sibling below it down by the same number of rows).
+          <div
+            className="md:order-first md:col-start-1 md:[grid-row-end:var(--carousel-row-span)]"
+            style={{ "--carousel-row-span": `span ${contentRows}` } as CSSProperties}
+          >
             <MediaCarousel slides={carouselSlides} memberName={member.business_name} theme={member.theme} />
           </div>
         )}
