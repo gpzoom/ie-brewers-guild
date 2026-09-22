@@ -12,7 +12,8 @@
     "deploy": "vite build && wrangler deploy",
     "deploy:staging": "npm run build:staging && wrangler deploy",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

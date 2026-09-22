@@ -25,13 +25,14 @@ export default defineConfig(async ({ command, mode }) => {
     viteReact(),
   ];
 
-  // Cloudflare plugin only applies to production builds, matching the
-  // original config's behavior (it never ran in `vite dev`).
-  if (command === "build") {
-    const { cloudflare } = await import("@cloudflare/vite-plugin");
-    const configPath = mode === "staging" ? "./wrangler.staging.jsonc" : "./wrangler.jsonc";
-    plugins.push(cloudflare({ configPath, viteEnvironment: { name: "ssr" } }));
-  }
+  // The Cloudflare plugin must also run in `vite dev` so that
+  // `import { env } from "cloudflare:workers"` resolves locally inside
+  // createServerFn/createServerOnlyFn handlers (src/lib/supabase/server.ts
+  // and the private-media streaming route depend on this). It previously
+  // only ran for `command === "build"" -- that gate is gone.
+  const { cloudflare } = await import("@cloudflare/vite-plugin");
+  const configPath = mode === "staging" ? "./wrangler.staging.jsonc" : "./wrangler.jsonc";
+  plugins.push(cloudflare({ configPath, viteEnvironment: { name: "ssr" } }));
 
   return {
     plugins,

@@ -1,0 +1,12 @@
+# Cloudflare Worker secrets for local `vite dev` / `wrangler dev`.
+# Copy this file to `.dev.vars` (gitignored) and fill in real values from
+# the Supabase dashboard (Project Settings -> API).
+#
+# These are read at runtime via `cloudflare:workers`' `env`, inside
+# createServerFn/createServerOnlyFn handlers only -- see
+# src/lib/supabase/server.ts. This is a *different* mechanism from the
+# VITE_* build-time variables in .env.example: those get inlined into the
+# client bundle at build time, these stay server-only at request time.
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
