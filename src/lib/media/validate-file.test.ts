@@ -424,6 +424,125 @@ describe("validateUploadedImage", () => {
       expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
     });
   });
+
+  // --- Fix round 2: reviewer-confirmed regressions in the fix-round-1 code
+  // (a ReDoS in the comment-tolerance regex, an unhandled RangeError in the
+  // entity decoder) plus one more real bypass (SMIL indirectly targeting
+  // href/xlink:href) left open after round 1.
+
+  describe("SVG comment-tolerance ReDoS (fix round 2)", () => {
+    it("does not hang on a long run of empty comments that never resolves to a real <svg> root -- linear time, not exponential", async () => {
+      // The pre-fix-round-2 code used one interleaved
+      // `(?:\s|<!--...-->)*` regex repeated across several optional
+      // sections; when the overall match failed, the engine could
+      // partition a run of comments exponentially many ways before giving
+      // up. Review measured ~186 bytes of this already taking 357ms and
+      // roughly doubling per added comment unit. This payload is bigger
+      // (700 bytes) and deliberately never reaches a real `<svg>` tag, so
+      // the old code would have to exhaust the full ambiguous search
+      // before failing -- the worst case for that pattern.
+      const payload = new TextEncoder().encode("<!---->".repeat(100));
+      const start = performance.now();
+      const result = await validateUploadedImage({
+        bytes: payload,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      const elapsedMs = performance.now() - start;
+      expect(result.valid).toBe(false);
+      // Generous bound (the manual scanner should be sub-millisecond) --
+      // this is here to catch a reintroduced exponential-time regex, not
+      // to pin an exact number. The pre-fix code measurably took hundreds
+      // of milliseconds on a payload a quarter this size.
+      expect(elapsedMs).toBeLessThan(50);
+    });
+
+    it("still accepts a real Illustrator/Inkscape-shaped export with a generator comment (manual scanner didn't regress the round-1 fix)", async () => {
+      const svg = new TextEncoder().encode(
+        '<?xml version="1.0" encoding="UTF-8"?>\n' +
+          "<!-- Generator: Adobe Illustrator 24.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n" +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+  });
+
+  describe("entity-decoding RangeError (fix round 2)", () => {
+    it("does not throw for an out-of-range decimal character reference -- rejects cleanly instead", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a href="&#99999999;"><text>click</text></a></svg>',
+      );
+      await expect(
+        validateUploadedImage({ bytes: svg, claimedMimeType: "image/svg+xml", allowSvg: true }),
+      ).resolves.toMatchObject({ valid: false });
+    });
+
+    it("does not throw for an out-of-range hex character reference -- rejects cleanly instead", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a href="&#x7FFFFFFF;"><text>click</text></a></svg>',
+      );
+      await expect(
+        validateUploadedImage({ bytes: svg, claimedMimeType: "image/svg+xml", allowSvg: true }),
+      ).resolves.toMatchObject({ valid: false });
+    });
+  });
+
+  describe("SMIL indirect href/xlink:href targeting (fix round 2)", () => {
+    it('rejects <animate attributeName="xlink:href" values="javascript:..."> -- the exact bypass payload from review', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+          '<a><animate attributeName="xlink:href" values="javascript:alert(1)" begin="0s" dur="1s" repeatCount="indefinite"/><text x="10" y="20">click me</text></a>' +
+          "</svg>",
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it('rejects the same bypass using attributeName="href" (no xlink prefix) and to= instead of values=', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a><set attributeName="href" to="javascript:alert(1)"/><text>click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("still accepts <animate> targeting a harmless attribute (proves the fix doesn't blanket-reject SMIL animation)", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"><animate attributeName="opacity" values="0;1" dur="1s"/></rect></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+
+    it('still accepts <set attributeName="href" to="#fragment"> targeting a safe same-document fragment', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a><set attributeName="href" to="#target"/><text>click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+  });
 });
 
 describe("readPngHeight", () => {

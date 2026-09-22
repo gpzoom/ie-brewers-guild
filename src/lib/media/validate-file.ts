@@ -20,9 +20,24 @@ import { fileTypeFromBuffer } from "file-type";
  * URL as `og:image`/`twitter:image` (falling back from the cover image, see
  * `ogImageUrl` in `member-profile.server.ts`) when a member has no cover
  * photo. A user (or a crawler, or a social-media unfurler) can navigate
- * directly to that public SVG URL, which most browsers will parse as a
- * top-level HTML document, not a sandboxed image -- at which point any
- * script this module's denylist failed to catch executes for real.
+ * directly to that public SVG URL. Correction from an earlier draft of this
+ * comment: Supabase Storage serves the object with its real content type
+ * (`image/svg+xml`), so a direct navigation is parsed by the browser's
+ * strict XML/SVG parser, NOT the lenient HTML5 parser -- it does not become
+ * a "top-level HTML document" the way, say, an `.html` file would. That
+ * distinction matters for judging severity: several HTML5-parser-specific
+ * tricks (unquoted attribute values, a `<script/onload=>`-style slash
+ * separator, `<embed>`/`<object>` HTML-foreign-content breakouts) do NOT
+ * apply here, because there is no lenient HTML tokenizer in this path to
+ * exploit. What direct navigation DOES still do is execute any script this
+ * module's denylist fails to catch, exactly as the strict XML/SVG parser
+ * would: `<script>`, event-handler attributes, and SMIL-driven `href`
+ * targeting (see containsDangerousSvgContent below) are all live in a
+ * directly-navigated, strictly-XML-parsed SVG document, same as they would
+ * be if this were somehow rendered inline. So the underlying risk (a
+ * denylist bypass reaching real script execution once this is directly
+ * navigable) is real and unchanged; only the specific parser -- and
+ * therefore which bypass *shapes* apply -- was misstated.
  *
  * This isn't exploitable yet -- there is no logo upload path until Task 17
  * ships, so no attacker-controlled SVG can reach `member-logos` today. It
@@ -84,18 +99,80 @@ function allowedRasterMimeTypes(allowSvg: boolean): ReadonlySet<string> {
  * subset (`<!DOCTYPE svg [ ... ]>`) rather than bailing out on the first
  * `>` inside it -- see the comment on ENTITY_DECLARATION_PATTERN below for
  * why that specifically matters.
+ *
+ * This is deliberately NOT one interleaved regex (`(?:\s|<!--...-->)*`
+ * repeated across several optional sections, as an earlier version of this
+ * function did). That pattern is catastrophically ambiguous: when the
+ * overall match ultimately fails, the engine can partition a run of
+ * comments/whitespace exponentially many ways before giving up --
+ * confirmed by review as a real ReDoS, ~186 bytes of `"<!---->".repeat(n)`
+ * already took 357ms and roughly doubled per added comment unit, well
+ * within the 2048-byte window read below, which would pin a Worker isolate
+ * on a single malicious upload. The functions below instead advance a
+ * single position pointer past whitespace and complete `<!-- ... -->`
+ * blocks one at a time -- every step is a bounded `indexOf`/`startsWith`
+ * or a fixed-length slice test, so the whole scan is strictly linear in
+ * the input length with no possibility of backtracking.
  */
-const COMMENT_OR_WS = /(?:\s|<!--[\s\S]*?-->)*/.source;
-const SVG_SNIFF_PATTERN = new RegExp(
-  `^${COMMENT_OR_WS}(?:<\\?xml[^>]*\\?>${COMMENT_OR_WS})?(?:<!DOCTYPE[^[>]*(?:\\[[\\s\\S]*?\\])?\\s*>${COMMENT_OR_WS})?<svg[\\s>]`,
-  "i",
-);
+function skipWhitespaceAndComments(text: string, start: number): number | null {
+  let i = start;
+  while (i < text.length) {
+    if (/\s/.test(text[i])) {
+      i += 1;
+      continue;
+    }
+    if (text.startsWith("<!--", i)) {
+      const end = text.indexOf("-->", i + 4);
+      if (end === -1) return null; // unterminated comment -- not recognizable as SVG
+      i = end + 3;
+      continue;
+    }
+    break;
+  }
+  return i;
+}
+
+function skipXmlProlog(text: string, i: number): number | null {
+  if (!text.startsWith("<?xml", i)) return i; // no prolog present -- unchanged, not an error
+  const closeAngle = text.indexOf(">", i + 5);
+  if (closeAngle === -1 || text[closeAngle - 1] !== "?") return null; // truncated or malformed
+  return closeAngle + 1;
+}
+
+function skipDoctype(text: string, i: number): number | null {
+  if (!/^<!DOCTYPE/i.test(text.slice(i, i + 9))) return i; // no DOCTYPE -- unchanged, not an error
+  let j = i + 9;
+  while (j < text.length && text[j] !== "[" && text[j] !== ">") j += 1;
+  if (j >= text.length) return null; // truncated
+  if (text[j] === "[") {
+    // Internal subset: find its closing ']' by direct search, ignoring any
+    // '>' characters that may appear inside it (e.g. inside an
+    // `<!ENTITY ... "...">` declaration) -- only ']' ends the subset.
+    const closeBracket = text.indexOf("]", j + 1);
+    if (closeBracket === -1) return null;
+    j = closeBracket + 1;
+  }
+  const closeAngle = text.indexOf(">", j);
+  return closeAngle === -1 ? null : closeAngle + 1;
+}
 
 function looksLikeSvg(bytes: Uint8Array): boolean {
   const head = new TextDecoder("utf-8", { fatal: false })
     .decode(bytes.subarray(0, 2048))
     .replace(/^\uFEFF/, "");
-  return SVG_SNIFF_PATTERN.test(head);
+
+  let i: number | null = skipWhitespaceAndComments(head, 0);
+  if (i === null) return false;
+  i = skipXmlProlog(head, i);
+  if (i === null) return false;
+  i = skipWhitespaceAndComments(head, i);
+  if (i === null) return false;
+  i = skipDoctype(head, i);
+  if (i === null) return false;
+  i = skipWhitespaceAndComments(head, i);
+  if (i === null) return false;
+
+  return /^<svg[\s>]/i.test(head.slice(i));
 }
 
 /**
@@ -105,20 +182,36 @@ function looksLikeSvg(bytes: Uint8Array): boolean {
  * `href="javascript&#58;alert(1)"` hides the string a naive pattern is
  * looking for -- the browser decodes character references before it does
  * anything else with an attribute value, so any check that runs on the raw
- * bytes is looking at the wrong string. This is a single decode pass, not a
- * loop to a fixed point -- a double-encoded reference (e.g. `&amp;#106;`)
- * would survive it. That's a known, accepted gap in this denylist, not
- * something this pass claims to close.
+ * bytes is looking at the wrong string.
+ *
+ * This is a single decode pass, not a loop to a fixed point, which matches
+ * how a real XML/HTML parser actually behaves: character-reference decoding
+ * happens once, during tokenization, and its OUTPUT is not re-scanned for
+ * further references. So a double-encoded reference like `&amp;#106;`
+ * decodes to the literal text `&#106;` here (the `&amp;` becomes `&`, but
+ * that new `&` is not re-examined by the numeric-reference passes that
+ * already ran) -- and that's not a gap, because a real browser resolves the
+ * exact same input to the exact same inert literal text, not to `j`. There
+ * is nothing further to decode.
+ *
+ * `Number.parseInt` on the captured digits can produce a code point outside
+ * `String.fromCodePoint`'s valid range (0..0x10FFFF) -- e.g. `&#99999999;`
+ * or `&#x7FFFFFFF;` -- which throws a `RangeError` if passed straight
+ * through. Bounds-checking before calling it (rather than only checking
+ * `Number.isFinite`, which a too-large-but-finite code point still
+ * satisfies) avoids turning a malformed upload into an unhandled crash;
+ * out-of-range references are left as their original literal text, same as
+ * a reference that isn't valid at all.
  */
 function decodeXmlEntities(text: string): string {
   return text
-    .replace(/&#x([0-9a-f]+);/gi, (_match, hex: string) => {
+    .replace(/&#x([0-9a-f]+);/gi, (match, hex: string) => {
       const code = Number.parseInt(hex, 16);
-      return Number.isFinite(code) ? String.fromCodePoint(code) : _match;
+      return code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : match;
     })
-    .replace(/&#(\d+);/g, (_match, dec: string) => {
+    .replace(/&#(\d+);/g, (match, dec: string) => {
       const code = Number.parseInt(dec, 10);
-      return Number.isFinite(code) ? String.fromCodePoint(code) : _match;
+      return code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : match;
     })
     .replace(/&amp;/gi, "&")
     .replace(/&lt;/gi, "<")
@@ -133,9 +226,12 @@ function decodeXmlEntities(text: string): string {
  * validated here are still only ever served via <img src>, never inlined
  * into the page (this plan's Decision 10). This is still a denylist over
  * decoded text, not a real XML parser or sanitizer: a determined adversary
- * using a trick not enumerated here (double-encoded entities, CDATA games,
- * exotic whitespace, ...) could still get past it. What it does cover, each
- * closing a confirmed bypass of an earlier, more naive version of this
+ * using a trick not enumerated here could still get past it (double-encoded
+ * entities are NOT such a trick -- see decodeXmlEntities' doc comment for
+ * why that one's actually inert; CDATA content inside `<style>`, and
+ * `<style>` `@import`/`url()` external-resource loading, are known,
+ * currently-open gaps, not addressed by this pass). What it does cover,
+ * each closing a confirmed bypass of an earlier, more naive version of this
  * check:
  *
  * - DANGEROUS_ELEMENT_PATTERN is namespace-prefix-agnostic
@@ -176,18 +272,98 @@ function decodeXmlEntities(text: string): string {
  *   external links or data:-URI-embedded raster that a real design tool
  *   might emit. That's a deliberate false-positive trade-off in the safe
  *   direction, not an oversight.
+ * - hasUnsafeSmilHrefTargeting closes a bypass of the two checks above,
+ *   found in review: SMIL's `<animate>`/`<set>` can target `href` or
+ *   `xlink:href` *indirectly* via `attributeName="href"` (or
+ *   `"xlink:href"`) combined with `to=`/`values=`/`from=` carrying the
+ *   actual dangerous value, e.g.
+ *   `<animate attributeName="xlink:href" values="javascript:alert(1)" .../>`.
+ *   Neither SMIL_ATTRIBUTE_NAME_PATTERN (which only looks for an `on...`
+ *   target) nor hasUnsafeHrefValue (which only looks at literal
+ *   `href=`/`xlink:href=` attributes) sees this, since the dangerous string
+ *   never appears in a `href`-named attribute at all -- it's smuggled
+ *   through an unrelated attribute name and only becomes a real `href`
+ *   value once SMIL applies it at runtime. This is well-formed XML (unlike
+ *   the HTML5-parser-quirk bypasses noted in the module-level comment
+ *   above, which don't apply to a strictly-XML-parsed SVG), so it's in
+ *   scope here. extractStartTags below does the (regex-free, linear-time)
+ *   work of finding each element's own start-tag text so `to=`/`values=`/
+ *   `from=` are only checked when they belong to the SAME element that
+ *   targets `href` via `attributeName` -- not just anywhere in the
+ *   document.
  */
 const DANGEROUS_ELEMENT_PATTERN = /<\s*(?:[a-z0-9_.-]+:)?(?:script|foreignobject|iframe)\b/i;
 const EVENT_HANDLER_ATTR_PATTERN = /\son\w+\s*=/i;
 const SMIL_ATTRIBUTE_NAME_PATTERN = /attributename\s*=\s*["']?\s*on/i;
 const ENTITY_DECLARATION_PATTERN = /<!entity/i;
 const HREF_ATTR_PATTERN = /(?:xlink:)?href\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+const ATTRIBUTE_NAME_TARGETS_HREF_PATTERN = /attributename\s*=\s*["']?\s*(?:[a-z0-9_.-]+:)?href\b/i;
+const SMIL_VALUE_ATTR_PATTERN = /\b(?:to|values|from)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+
+function isUnsafeReference(value: string): boolean {
+  const trimmed = value.trim();
+  return trimmed !== "" && !trimmed.startsWith("#"); // empty or a same-document fragment: safe
+}
 
 function hasUnsafeHrefValue(decodedText: string): boolean {
   for (const match of decodedText.matchAll(HREF_ATTR_PATTERN)) {
-    const value = (match[1] ?? match[2] ?? "").trim();
-    if (value === "" || value.startsWith("#")) continue; // empty, or a same-document fragment: safe
-    return true; // any other scheme/reference (javascript:, data:, http(s):, relative paths, ...): unsafe
+    if (isUnsafeReference(match[1] ?? match[2] ?? "")) return true;
+  }
+  return false;
+}
+
+/**
+ * Splits decoded SVG text into each element's own start-tag substring
+ * (`<tag attr="..." .../>` or `<tag attr="...">`), respecting quoted
+ * attribute values so a literal `>` inside a quoted value (legal,
+ * unescaped, in XML attribute content) doesn't prematurely end a tag. A
+ * single linear pass with no regex involved in finding tag boundaries --
+ * no backtracking is possible. Comments, DOCTYPE, and processing
+ * instructions are skipped rather than returned as tags.
+ */
+function extractStartTags(text: string): string[] {
+  const tags: string[] = [];
+  let i = 0;
+  while (i < text.length) {
+    const start = text.indexOf("<", i);
+    if (start === -1) break;
+    if (text.startsWith("<!--", start)) {
+      const end = text.indexOf("-->", start + 4);
+      i = end === -1 ? text.length : end + 3;
+      continue;
+    }
+    if (text[start + 1] === "!" || text[start + 1] === "?") {
+      // DOCTYPE / CDATA / processing instruction -- not a start tag; best
+      // effort, skip to the next unquoted '>'.
+      const end = text.indexOf(">", start + 1);
+      i = end === -1 ? text.length : end + 1;
+      continue;
+    }
+    let j = start + 1;
+    let quote: string | null = null;
+    while (j < text.length) {
+      const ch = text[j];
+      if (quote) {
+        if (ch === quote) quote = null;
+      } else if (ch === '"' || ch === "'") {
+        quote = ch;
+      } else if (ch === ">") {
+        break;
+      }
+      j += 1;
+    }
+    tags.push(text.slice(start, Math.min(j + 1, text.length)));
+    i = j + 1;
+  }
+  return tags;
+}
+
+function hasUnsafeSmilHrefTargeting(decodedText: string): boolean {
+  for (const tag of extractStartTags(decodedText)) {
+    if (!ATTRIBUTE_NAME_TARGETS_HREF_PATTERN.test(tag)) continue;
+    for (const match of tag.matchAll(SMIL_VALUE_ATTR_PATTERN)) {
+      if (isUnsafeReference(match[1] ?? match[2] ?? "")) return true;
+    }
   }
   return false;
 }
@@ -200,7 +376,8 @@ function containsDangerousSvgContent(bytes: Uint8Array): boolean {
     EVENT_HANDLER_ATTR_PATTERN.test(decoded) ||
     SMIL_ATTRIBUTE_NAME_PATTERN.test(decoded) ||
     ENTITY_DECLARATION_PATTERN.test(decoded) ||
-    hasUnsafeHrefValue(decoded)
+    hasUnsafeHrefValue(decoded) ||
+    hasUnsafeSmilHrefTargeting(decoded)
   );
 }
 
