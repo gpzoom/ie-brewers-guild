@@ -5,6 +5,10 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* This block only emits the specific --color-*/--font-* names listed below as
+     real, usable CSS custom properties. Raw brand tokens like --brand, --ink,
+     --canvas, etc. are NOT separately emitted as --color-brand and friends --
+     hand-written CSS must reference var(--brand) directly, never var(--color-brand). */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -97,7 +101,7 @@
   --muted: var(--surface-2);
   --muted-foreground: var(--text-muted);
   --accent: var(--brand);
-  --accent-foreground: var(--text);
+  --accent-foreground: oklch(1 0 0);
   --destructive: var(--danger);
   --destructive-foreground: var(--text);
   --border: var(--border-dark);
@@ -131,7 +135,7 @@
   --muted: var(--surface-2);
   --muted-foreground: var(--text-muted);
   --accent: var(--brand);
-  --accent-foreground: var(--text);
+  --accent-foreground: oklch(1 0 0);
   --destructive: var(--danger);
   --destructive-foreground: var(--text);
   --border: var(--border-dark);
@@ -145,6 +149,7 @@
   body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
   h1, h2, h3, h4, .font-display {
     font-family: var(--font-display);
+    font-weight: 800;
     letter-spacing: 0.01em;
     text-transform: uppercase;
   }
