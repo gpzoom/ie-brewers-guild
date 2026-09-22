@@ -543,6 +543,91 @@ describe("validateUploadedImage", () => {
       expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
     });
   });
+
+  // --- Fix round 3: values= is a semicolon-separated keyframe LIST, not a
+  // single value -- a safe first keyframe followed by an unsafe later one
+  // slipped through round 2's whole-string check. Also closes the by=
+  // keyframe attribute, which round 2 didn't examine at all.
+
+  describe("SMIL values= keyframe-list bypass (fix round 3)", () => {
+    it('rejects attributeName="href" values="#a;javascript:alert(1)" -- unsafe SECOND keyframe, safe first one', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a>' +
+          '<animate attributeName="href" values="#a;javascript:alert(1)" dur="2s" repeatCount="indefinite"/>' +
+          '<text x="10" y="20">click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it('rejects attributeName="xlink:href" values="#a;javascript:alert(1)" -- same bypass, xlink-prefixed target', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><a>' +
+          '<animate attributeName="xlink:href" values="#a;javascript:alert(1)" dur="2s" repeatCount="indefinite"/>' +
+          '<text x="10" y="20">click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects the same bypass with whitespace padding around the semicolon-separated keyframes", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a>' +
+          '<animate attributeName="href" values=" #a ; javascript:alert(1) " dur="2s" repeatCount="indefinite"/>' +
+          '<text x="10" y="20">click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it('rejects attributeName="href" by="javascript:alert(1)" -- the by= keyframe attribute, previously unexamined', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a><animate attributeName="href" by="javascript:alert(1)"/><text>click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it('still accepts attributeName="opacity" values="0;1" -- unrelated keyframe list on a harmless attribute (existing negative control, must keep passing)', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"><animate attributeName="opacity" values="0;1" dur="1s"/></rect></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+
+    it('still accepts attributeName="href" values="#a;#b" -- every keyframe safe, proves this isn\'t a blanket SMIL-values ban', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a><animate attributeName="href" values="#a;#b" dur="2s"/><text>click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+  });
 });
 
 describe("readPngHeight", () => {

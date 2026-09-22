@@ -20,35 +20,58 @@ import { fileTypeFromBuffer } from "file-type";
  * URL as `og:image`/`twitter:image` (falling back from the cover image, see
  * `ogImageUrl` in `member-profile.server.ts`) when a member has no cover
  * photo. A user (or a crawler, or a social-media unfurler) can navigate
- * directly to that public SVG URL. Correction from an earlier draft of this
- * comment: Supabase Storage serves the object with its real content type
- * (`image/svg+xml`), so a direct navigation is parsed by the browser's
- * strict XML/SVG parser, NOT the lenient HTML5 parser -- it does not become
- * a "top-level HTML document" the way, say, an `.html` file would. That
- * distinction matters for judging severity: several HTML5-parser-specific
- * tricks (unquoted attribute values, a `<script/onload=>`-style slash
- * separator, `<embed>`/`<object>` HTML-foreign-content breakouts) do NOT
- * apply here, because there is no lenient HTML tokenizer in this path to
- * exploit. What direct navigation DOES still do is execute any script this
- * module's denylist fails to catch, exactly as the strict XML/SVG parser
- * would: `<script>`, event-handler attributes, and SMIL-driven `href`
- * targeting (see containsDangerousSvgContent below) are all live in a
- * directly-navigated, strictly-XML-parsed SVG document, same as they would
- * be if this were somehow rendered inline. So the underlying risk (a
- * denylist bypass reaching real script execution once this is directly
- * navigable) is real and unchanged; only the specific parser -- and
- * therefore which bypass *shapes* apply -- was misstated.
+ * directly to that public SVG URL.
+ *
+ * What parser handles that direct navigation depends entirely on the
+ * response's `Content-Type` header, which is NOT yet a settled fact --
+ * there is no storage-upload call anywhere in this repo yet (Tasks
+ * 14/17/20 haven't been built), so nothing has actually set it. Supabase
+ * Storage's upload method takes an explicit `contentType` option, but if a
+ * future implementation omits it, supabase-js falls back to the
+ * client-supplied `File.type` -- i.e. whatever MIME type an attacker's
+ * multipart request declares, which
+ * this module deliberately never trusts for validation (see
+ * `allowedRasterMimeTypes` above: "Validate the actual file signature, not
+ * the extension") but which supabase-js WOULD trust for the stored
+ * `Content-Type` header if the uploader doesn't override it. If that
+ * happens, a malicious upload can declare `Content-Type: text/html` (or
+ * anything else) at upload time, and every HTML5-parser-quirk bypass this
+ * module deliberately deferred -- reasoning that a strict XML/SVG parser
+ * would apply on direct navigation (unquoted attribute values, a
+ * `<script/onload=>`-style slash separator, `<embed>`/`<object>`
+ * HTML-foreign-content breakouts) -- becomes live again, on top of
+ * whatever this denylist already fails to catch.
+ *
+ * **REQUIREMENT for whoever builds Task 17 (not optional, not a
+ * nice-to-have):** the uploader MUST pass `contentType` explicitly on the
+ * `.upload()` call, pinned to THIS module's own returned
+ * `detectedMimeType` from `validateUploadedImage` -- never to
+ * `file.type`/the client's claimed MIME type, and never left to
+ * supabase-js's default. Only with that pin does "served with its real,
+ * validated content type" become true, which is the precondition every
+ * "strict XML parser, not lenient HTML5 parser" reasoning in this module
+ * depends on.
+ *
+ * Even with that pin correctly in place, direct navigation still executes
+ * any script this module's denylist fails to catch, same as it would under
+ * strict XML/SVG parsing: `<script>`, event-handler attributes, and
+ * SMIL-driven `href` targeting (see containsDangerousSvgContent below) are
+ * all live in a directly-navigated SVG document, same as they'd be if this
+ * were somehow rendered inline. So the underlying risk (a denylist bypass
+ * reaching real script execution once this is directly navigable) is real
+ * regardless of the content-type question above -- that question only
+ * changes which *additional* bypass shapes are also in play.
  *
  * This isn't exploitable yet -- there is no logo upload path until Task 17
  * ships, so no attacker-controlled SVG can reach `member-logos` today. It
  * WILL become exploitable the moment logo upload lands unless the serving
  * path is also fixed. Whoever builds Task 17 must do one of:
- *   (a) serve SVG logos through a route that enforces safe delivery (e.g.
- *       forces `Content-Disposition: inline` is not enough by itself --
- *       needs a response that a browser will not parse as HTML even on
- *       direct navigation, such as a hardened `Content-Type` + `CSP:
- *       sandbox` on that specific route), rather than a raw public bucket
- *       URL, or
+ *   (a) serve SVG logos through a route that enforces safe delivery --
+ *       pinning `contentType` to `detectedMimeType` as required above is
+ *       the minimum; `Content-Disposition: inline` is not enough by
+ *       itself; consider whether a hardened `Content-Type` + CSP `sandbox`
+ *       on that specific route is warranted too, rather than a raw public
+ *       bucket URL, or
  *   (b) exclude SVG from the direct-public-URL / og:image path specifically
  *       (e.g. never use an SVG logo as `ogImageUrl`, and/or route SVG
  *       requests through something other than `getPublicUrl`), or
@@ -275,7 +298,7 @@ function decodeXmlEntities(text: string): string {
  * - hasUnsafeSmilHrefTargeting closes a bypass of the two checks above,
  *   found in review: SMIL's `<animate>`/`<set>` can target `href` or
  *   `xlink:href` *indirectly* via `attributeName="href"` (or
- *   `"xlink:href"`) combined with `to=`/`values=`/`from=` carrying the
+ *   `"xlink:href"`) combined with `to=`/`values=`/`from=`/`by=` carrying the
  *   actual dangerous value, e.g.
  *   `<animate attributeName="xlink:href" values="javascript:alert(1)" .../>`.
  *   Neither SMIL_ATTRIBUTE_NAME_PATTERN (which only looks for an `on...`
@@ -288,9 +311,14 @@ function decodeXmlEntities(text: string): string {
  *   above, which don't apply to a strictly-XML-parsed SVG), so it's in
  *   scope here. extractStartTags below does the (regex-free, linear-time)
  *   work of finding each element's own start-tag text so `to=`/`values=`/
- *   `from=` are only checked when they belong to the SAME element that
- *   targets `href` via `attributeName` -- not just anywhere in the
- *   document.
+ *   `from=`/`by=` are only checked when they belong to the SAME element
+ *   that targets `href` via `attributeName` -- not just anywhere in the
+ *   document. `values=` specifically is a semicolon-separated list of
+ *   keyframes, not one value (e.g. `values="#a;javascript:alert(1)"`
+ *   animates through a SAFE first keyframe into an UNSAFE second one, so
+ *   the live href genuinely becomes dangerous partway through the
+ *   animation cycle) -- hasUnsafeKeyframeList below splits on `;` and
+ *   checks every keyframe, not just the captured string as a whole.
  */
 const DANGEROUS_ELEMENT_PATTERN = /<\s*(?:[a-z0-9_.-]+:)?(?:script|foreignobject|iframe)\b/i;
 const EVENT_HANDLER_ATTR_PATTERN = /\son\w+\s*=/i;
@@ -298,11 +326,30 @@ const SMIL_ATTRIBUTE_NAME_PATTERN = /attributename\s*=\s*["']?\s*on/i;
 const ENTITY_DECLARATION_PATTERN = /<!entity/i;
 const HREF_ATTR_PATTERN = /(?:xlink:)?href\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
 const ATTRIBUTE_NAME_TARGETS_HREF_PATTERN = /attributename\s*=\s*["']?\s*(?:[a-z0-9_.-]+:)?href\b/i;
-const SMIL_VALUE_ATTR_PATTERN = /\b(?:to|values|from)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+const SMIL_VALUE_ATTR_PATTERN = /\b(?:to|values|from|by)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
 
 function isUnsafeReference(value: string): boolean {
   const trimmed = value.trim();
   return trimmed !== "" && !trimmed.startsWith("#"); // empty or a same-document fragment: safe
+}
+
+/**
+ * SMIL's `values` attribute is a semicolon-separated list of keyframes, not
+ * a single value -- `values="#a;javascript:alert(1)"` animates the target
+ * attribute from `#a` through `javascript:alert(1)` over the duration, so
+ * during the second half of the cycle the live `href` genuinely IS the
+ * dangerous value; a click in that window fires it. Checking the whole
+ * captured string as one reference (as an earlier version of this function
+ * did) missed any unsafe keyframe after a safe first one. `to=`/`from=`/
+ * `by=` are single-valued in SMIL, so splitting them on `;` is a no-op in
+ * the common case -- and harmless even if a value legitimately contained a
+ * literal `;`, since a real URI containing `;` would still fail the scheme
+ * allowlist on whichever split part it landed in. Splitting unconditionally
+ * (rather than branching on which attribute matched) keeps this simple and
+ * can't accidentally miss a case.
+ */
+function hasUnsafeKeyframeList(value: string): boolean {
+  return value.split(";").some(isUnsafeReference);
 }
 
 function hasUnsafeHrefValue(decodedText: string): boolean {
@@ -362,7 +409,7 @@ function hasUnsafeSmilHrefTargeting(decodedText: string): boolean {
   for (const tag of extractStartTags(decodedText)) {
     if (!ATTRIBUTE_NAME_TARGETS_HREF_PATTERN.test(tag)) continue;
     for (const match of tag.matchAll(SMIL_VALUE_ATTR_PATTERN)) {
-      if (isUnsafeReference(match[1] ?? match[2] ?? "")) return true;
+      if (hasUnsafeKeyframeList(match[1] ?? match[2] ?? "")) return true;
     }
   }
   return false;
