@@ -113,12 +113,28 @@ export function BasicsForm({ member }: { member: BasicsMember }) {
     }, SAVE_DEBOUNCE_MS);
   }
 
-  /** ...and flush immediately on blur, so leaving the field never waits out the timer. */
-  function flushSave(field: string, patch: BasicsPatch) {
+  /**
+   * Clears a field's pending debounced save, if any. Every client-side
+   * validation rejection below calls this FIRST -- otherwise an earlier,
+   * still-valid keystroke's timer keeps counting down in the background
+   * and fires anyway once it elapses, saving stale data while the field
+   * shows a rejection (or nothing at all). That's exactly the regression
+   * Finding B caught in member_since_year's range check before this
+   * helper existed: type "2020" (arms a save), then keep typing to
+   * "20205" (out of range) -- without canceling here, the "2020" timer
+   * still fires, saves successfully, and flips the indicator to "Saved"
+   * while the input reads "20205" and the DB holds "2020".
+   */
+  function cancelPendingSave(field: string) {
     if (debounceTimers.current[field]) {
       clearTimeout(debounceTimers.current[field]);
       delete debounceTimers.current[field];
     }
+  }
+
+  /** ...and flush immediately on blur, so leaving the field never waits out the timer. */
+  function flushSave(field: string, patch: BasicsPatch) {
+    cancelPendingSave(field);
     performSave(field, patch);
   }
 
@@ -130,11 +146,22 @@ export function BasicsForm({ member }: { member: BasicsMember }) {
    */
   function requireNonEmpty(field: string, value: string): boolean {
     if (value.trim() !== "") return true;
-    if (debounceTimers.current[field]) {
-      clearTimeout(debounceTimers.current[field]);
-      delete debounceTimers.current[field];
-    }
+    cancelPendingSave(field);
     setStatus((prev) => ({ ...prev, [field]: { status: "error", message: "Can't be empty." } }));
+    return false;
+  }
+
+  /** member_since_year's client-side range guard -- see cancelPendingSave's doc comment. */
+  function requireValidYear(value: number | null): boolean {
+    if (value === null || (value >= MIN_MEMBER_SINCE_YEAR && value <= MAX_MEMBER_SINCE_YEAR)) return true;
+    cancelPendingSave("member_since_year");
+    setStatus((prev) => ({
+      ...prev,
+      member_since_year: {
+        status: "error",
+        message: `Must be between ${MIN_MEMBER_SINCE_YEAR} and ${MAX_MEMBER_SINCE_YEAR}.`,
+      },
+    }));
     return false;
   }
 
@@ -291,23 +318,15 @@ export function BasicsForm({ member }: { member: BasicsMember }) {
             className="mt-1 h-11"
             onChange={(e) => {
               const value = e.target.value ? Number(e.target.value) : null;
-              if (value !== null && (value < MIN_MEMBER_SINCE_YEAR || value > MAX_MEMBER_SINCE_YEAR)) {
-                setLocal((prev) => ({ ...prev, member_since_year: value }));
-                setStatus((prev) => ({
-                  ...prev,
-                  member_since_year: {
-                    status: "error",
-                    message: `Must be between ${MIN_MEMBER_SINCE_YEAR} and ${MAX_MEMBER_SINCE_YEAR}.`,
-                  },
-                }));
-                return;
+              if (requireValidYear(value)) {
+                scheduleSave("member_since_year", { member_since_year: value });
               }
-              scheduleSave("member_since_year", { member_since_year: value });
             }}
             onBlur={(e) => {
               const value = e.target.value ? Number(e.target.value) : null;
-              if (value !== null && (value < MIN_MEMBER_SINCE_YEAR || value > MAX_MEMBER_SINCE_YEAR)) return;
-              flushSave("member_since_year", { member_since_year: value });
+              if (requireValidYear(value)) {
+                flushSave("member_since_year", { member_since_year: value });
+              }
             }}
           />
           <SaveIndicator state={status.member_since_year ?? IDLE} />

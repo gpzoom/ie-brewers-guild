@@ -3,43 +3,47 @@ import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { isValidIanaTimezone } from "@/lib/timezone/timezones";
 import type { MemberRow, MemberType } from "@/lib/supabase/types";
 
-export type BasicsPatch = Partial<
-  Pick<
-    MemberRow,
-    | "business_name"
-    | "tagline"
-    | "city"
-    | "state"
-    | "street_address"
-    | "service_area"
-    | "lead_time"
-    | "member_since_year"
-    | "timezone"
-    | "member_type"
-  >
->;
-
 /**
- * The exact set of columns this editor is allowed to touch, used both as
- * the runtime allowlist below AND to keep it mechanically in sync with
- * BasicsPatch's type-level Pick list (the `satisfies` clause fails to
- * compile if the two ever drift apart).
+ * The exact set of `members` columns this editor is allowed to touch --
+ * this array is the source of truth; BasicsPatch (below) is DERIVED from
+ * it, not the other way around. That inversion is what makes drift
+ * structurally impossible in the direction that actually matters: there
+ * is no way to add a field to BasicsPatch without adding it here first,
+ * because BasicsPatch has no independent definition to add a field to --
+ * it's computed as `Pick<MemberRow, (typeof BASICS_KEYS)[number]>`.
  *
- * This exists because BasicsPatch is a TypeScript type -- erased at
- * runtime, enforcing nothing once this handler is actually running on the
- * server. Without filtering `data.patch` down to this list before it
- * reaches `.update()`, any caller of this createServerFn (not just
- * BasicsForm) could POST an arbitrary members column -- e.g.
- * `{ status: "published", hours_confirmed_at: "<forged date>" }` to
- * self-publish past the not-yet-built Publish gate, or point
- * `logo_asset_id`/`cover_asset_id` at another member's media_assets row.
- * RLS and the write-limits trigger block some dangerous columns (slug,
- * dues_received_at, approved_at, approved_by_user_id, trail_eligible) but
- * not all of them -- this allowlist is the actual enforcement boundary,
- * not a convention callers have to remember. Every later section-mutation
- * task (hours, media, events, ...) should copy this exact shape: a
- * `satisfies readonly (keyof <Patch>)[]` key list, filtered into the patch
- * before it ever reaches a `.update()` call.
+ * (An earlier version of this file defined BasicsPatch independently and
+ * checked this list against it with `satisfies readonly (keyof
+ * BasicsPatch)[]`. That direction only catches a STALE entry left behind
+ * after a field is removed from BasicsPatch -- `satisfies` verifies every
+ * array element IS a valid key, it does not verify every key of
+ * BasicsPatch IS in the array. It silently let a field be added to
+ * BasicsPatch and never added here, which is exactly the direction this
+ * editor grows in: a new field would simply never save, with no
+ * compile-time warning. Fixed by making this list the thing BasicsPatch
+ * is generated from, so that failure mode no longer has anywhere to
+ * happen.)
+ *
+ * This remains the runtime enforcement boundary too -- BasicsPatch is
+ * still a TypeScript type, erased at runtime, so without filtering
+ * `data.patch` down to this list before it reaches `.update()`, any
+ * caller of this createServerFn (not just BasicsForm, whose own object
+ * literals the type system happens to constrain) could POST an arbitrary
+ * members column -- e.g. `{ status: "published", hours_confirmed_at:
+ * "<forged date>" }` to self-publish past the not-yet-built Publish gate,
+ * or point `logo_asset_id`/`cover_asset_id` at another member's
+ * media_assets row. RLS and the write-limits trigger block some
+ * dangerous columns (slug, dues_received_at, approved_at,
+ * approved_by_user_id, trail_eligible) but not all of them -- this
+ * allowlist is the actual enforcement boundary, not a convention callers
+ * have to remember.
+ *
+ * Every later section-mutation task (hours, media, events, ...) should
+ * copy this exact shape: a `satisfies readonly (keyof <Row>)[]` key list
+ * as the one source of truth, a `Patch` type derived FROM it via `Pick<Row,
+ * (typeof KEYS)[number]>` (never defined independently), and a runtime
+ * filter of the incoming patch against that same array before it ever
+ * reaches a `.update()` call.
  */
 const BASICS_KEYS = [
   "business_name",
@@ -52,7 +56,9 @@ const BASICS_KEYS = [
   "member_since_year",
   "timezone",
   "member_type",
-] as const satisfies readonly (keyof BasicsPatch)[];
+] as const satisfies readonly (keyof MemberRow)[];
+
+export type BasicsPatch = Partial<Pick<MemberRow, (typeof BASICS_KEYS)[number]>>;
 
 const MIN_MEMBER_SINCE_YEAR = 1800;
 
@@ -69,6 +75,16 @@ const MIN_MEMBER_SINCE_YEAR = 1800;
 export const updateMemberBasics = createServerFn({ method: "POST" })
   .inputValidator((data: { memberId: string; patch: BasicsPatch }) => data)
   .handler(async ({ data }) => {
+    // inputValidator above is an identity function, so `data.patch`'s type
+    // is only ever a compile-time promise -- a raw request (not built
+    // through BasicsForm's typed object literals) can still send `null`,
+    // a string, an array, etc. Object.entries() on those throws a raw
+    // TypeError that would otherwise reach the user through the error UI
+    // Finding 2 built, instead of a clean message.
+    if (typeof data.patch !== "object" || data.patch === null) {
+      throw new Error("Invalid update.");
+    }
+
     // Column allowlist -- see BASICS_KEYS's doc comment. Must run before
     // any of the validation below, so a disallowed key can never smuggle
     // itself through by piggybacking on a request that also happens to
