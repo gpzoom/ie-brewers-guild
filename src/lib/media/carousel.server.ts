@@ -47,12 +47,19 @@ async function assertAssetOwnedByMember(
   assetId: string,
   memberId: string,
 ) {
-  const { data: owned } = await supabase
+  const { data: owned, error } = await supabase
     .from("media_assets")
     .select("id")
     .eq("id", assetId)
     .eq("member_id", memberId)
     .maybeSingle();
+  // A genuine DB/network failure on this query must surface as its own
+  // error, not fall through to "not owned" -- otherwise a transient
+  // failure here would show the member the misleading "that photo isn't
+  // in your gallery" message for a photo that actually is theirs.
+  if (error) {
+    throw new Error(`Couldn't verify this photo's ownership: ${error.message}`);
+  }
   if (!owned) {
     throw new Error("That photo isn't in this member's gallery.");
   }
