@@ -38,7 +38,7 @@ export function StatusBlock({ member, hours, specialHours, tonightEvent }: Statu
       <div className="rounded-inset bg-canvas-2 p-4">
         {tonightEvent ? (
           <>
-            <p className="font-display text-lg text-ink">Next appearance: {new Date(tonightEvent.starts_at).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}</p>
+            <p className="font-display text-lg text-ink">Next appearance: {new Date(tonightEvent.overlay_starts_at ?? tonightEvent.starts_at).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}</p>
             <p className="text-sm text-ink-muted">{tonightEvent.venue_name ?? member.service_area}{tonightEvent.city ? `, ${tonightEvent.city}` : ""}</p>
           </>
         ) : (
