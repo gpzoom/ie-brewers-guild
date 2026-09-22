@@ -20,6 +20,10 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Subagent-driven-development scratch workspace (ledgers, briefs, review
+# packages) -- git history is the record once a plan's workspace is deleted.
+.superpowers/
+
 # npm is the maintained package manager (package-lock.json); bun.lock is not
 # kept in sync and its presence makes Cloudflare's build auto-detection pick
 # bun over npm, which then fails frozen-lockfile installs.
