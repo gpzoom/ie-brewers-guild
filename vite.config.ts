@@ -17,7 +17,27 @@ export default defineConfig(async ({ command, mode }) => {
       importProtection: {
         behavior: "error",
         client: {
-          files: ["**/server/**"],
+          // A custom `files` array REPLACES TanStack Start's own default
+          // (["**/*.server.*"]) rather than merging with it, so the
+          // default pattern must be listed explicitly alongside our own
+          // "**/server/**" or every *.server.ts file loses file-based
+          // import protection project-wide. This is defense-in-depth --
+          // createServerOnlyFn's compile-time body-stripping is the real,
+          // still-working guarantee against secret leaks -- but it costs
+          // nothing to keep both patterns active.
+          files: ["**/*.server.*", "**/server/**"],
+          // src/lib/members/member-profile.server.ts is the one file in
+          // this repo the restored "**/*.server.*" default pattern would
+          // now also catch, and it's a deliberate exception, not a gap:
+          // its ONLY export is `getMemberProfileData`, a
+          // createServerFn().handler(...) call -- already the exact safe
+          // client/server RPC boundary this deny rule exists to push
+          // people toward (see the plugin's own "Import denied" message).
+          // src/routes/members_.$slug.tsx imports it directly by design,
+          // per TanStack Start's own createServerFn convention -- that is
+          // not a violation to catch, so it's excluded here rather than
+          // renamed off the *.server.* convention project-wide.
+          excludeFiles: ["src/lib/members/member-profile.server.ts"],
           specifiers: ["server-only"],
         },
       },

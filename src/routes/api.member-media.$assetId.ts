@@ -1,6 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 
+// media_assets.kind is check-constrained to (image, video) -- this is the
+// raster/video allowlist for what this route will echo back as its real
+// Content-Type. image/svg+xml is deliberately excluded: the spec permits
+// SVG uploads (for logos, served through the separate public
+// member-logos bucket, never through this route) and an SVG is active
+// content -- a same-origin response with Content-Type: image/svg+xml can
+// be directly navigated to and executed, and X-Content-Type-Options:
+// nosniff does not protect against that (it only stops the browser from
+// overriding a *different* declared type). Anything not in this list,
+// including svg, is served as application/octet-stream instead, which
+// browsers download rather than render/execute.
+const ALLOWED_MEDIA_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+]);
+
 /**
  * Streams an original file out of the private `member-media` bucket.
  * `member-media` has no anon/public storage policy at all (schema plan,
@@ -76,7 +97,9 @@ export const Route = createFileRoute("/api/member-media/$assetId")({
 
         return new Response(file, {
           headers: {
-            "Content-Type": asset.mime_type,
+            "Content-Type": ALLOWED_MEDIA_MIME_TYPES.has(asset.mime_type)
+              ? asset.mime_type
+              : "application/octet-stream",
             // Public is correct here: eligibility was already re-checked
             // above and this is public marketing content once eligible,
             // not identity-scoped data (see start-core/server-functions

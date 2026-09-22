@@ -32,6 +32,14 @@ export type MemberProfileData = {
   headerNext: DirectoryEntry | null;
   ogImageUrl: string | null;
   siteOrigin: string;
+  // A single "now", computed once on the server and serialized as an ISO
+  // string, rather than every consumer (MemberProfileTemplate, StatusBlock,
+  // EventsModule) independently calling `new Date()`/`Date.now()` during
+  // render. Reusing one instant everywhere is what avoids the SSR/hydration
+  // mismatch class of bug: the server renders against this exact value, and
+  // the client's first render reconstructs the identical Date from the same
+  // string instead of reading its own (later, different) clock.
+  now: string;
 };
 
 type GetMemberProfileInput = {
@@ -53,6 +61,9 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
     const supabase = await getSupabaseServerClient();
     const request = getRequest();
     const siteOrigin = new URL(request.url).origin;
+    // Computed once, here, and threaded through the whole response --
+    // see MemberProfileData.now's own doc comment.
+    const now = new Date();
 
     const { data: member, error: memberError } = await supabase
       .from("members")
@@ -104,6 +115,28 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
       ? await supabase.from("media_assets").select("*").in("id", Array.from(assetIds))
       : { data: [] as MediaAssetRow[] };
     const assetsById = new Map((assets ?? []).map((asset) => [(asset as MediaAssetRow).id, asset as MediaAssetRow]));
+
+    // "Coming up"/"Where we'll be" only ever shows the future (spec's
+    // events table has no notion of a past-events view on the public
+    // profile) -- filter to events whose EFFECTIVE start (the overlay date
+    // when rescheduled, falling back to the original starts_at) is still
+    // ahead of `now`. A canceled event is exempt from this date filter and
+    // always stays visible even once its original date has passed (spec,
+    // "Events": "a canceled event stays visible rather than disappearing")
+    // -- a rescheduled-then-canceled event, or one canceled after the fact,
+    // would otherwise have no future date at all and get swept up here.
+    // is_hidden filtering is intentionally NOT done here -- it happens in
+    // application code (EventsModule's own filter, and
+    // MemberProfileTemplate's nextEvent/tonightEvent computation), not at
+    // this layer or via RLS (RLS on `events` has no is_hidden predicate at
+    // all -- public select is gated only on the parent member being
+    // published).
+    const upcomingOrCanceledEvents = (events ?? []).filter((row) => {
+      const event = row as EventRow;
+      if (event.overlay_status === "canceled") return true;
+      const effectiveStart = new Date(event.overlay_starts_at ?? event.starts_at).getTime();
+      return effectiveStart >= now.getTime();
+    });
 
     const categoryIds = (memberCategories ?? []).map((row) => row.category_id as string);
     const { data: categories } = categoryIds.length
@@ -169,12 +202,24 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
       member: typedMember,
       hours: (hours ?? []) as HoursRow[],
       specialHours: (specialHours ?? []) as SpecialHoursRow[],
-      carouselSlides: (slides ?? []).map((slide) => ({
-        ...(slide as CarouselSlideRow),
-        asset: assetsById.get((slide as CarouselSlideRow).asset_id) as MediaAssetRow,
-      })),
+      carouselSlides: (slides ?? [])
+        .map((slide) => {
+          const typedSlide = slide as CarouselSlideRow;
+          const asset = assetsById.get(typedSlide.asset_id);
+          // carousel_slides' public-read policy only requires the parent
+          // member be published; media_assets' public-read policy ALSO
+          // requires review_status = 'approved'. A slide can therefore be
+          // readable while the asset it points at is not (moderated to
+          // pending/rejected), in which case assetsById.get() returns
+          // undefined here. Drop that slide rather than casting through
+          // the undefined -- MediaCarousel reads slide.asset.id
+          // unconditionally and would throw, turning this into an SSR 500
+          // for every visitor of that member's profile.
+          return asset ? { ...typedSlide, asset } : null;
+        })
+        .filter((slide): slide is CarouselSlideRow & { asset: MediaAssetRow } => slide !== null),
       links: (links ?? []) as MemberLinkRow[],
-      events: (events ?? []) as EventRow[],
+      events: upcomingOrCanceledEvents as EventRow[],
       categories: (categories ?? []) as CategoryRow[],
       logoAsset,
       coverAsset,
@@ -184,5 +229,6 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
       headerNext,
       ogImageUrl,
       siteOrigin,
+      now: now.toISOString(),
     };
   });

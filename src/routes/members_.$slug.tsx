@@ -86,7 +86,11 @@ export const Route = createFileRoute("/members_/$slug")({
   // the preview instead of throwing notFound(). Tracked here, not
   // silently dropped.
   notFoundComponent: () => (
-    <div className="mx-auto flex max-w-[1120px] flex-col items-center gap-4 px-4 py-24 text-center">
+    // bg-canvas is required here for the exact reason it's required on
+    // MemberProfileTemplate's own card wrapper: text-ink/text-ink-muted
+    // are "text on canvas" tokens and render near-invisible without a
+    // light ground under them, on the site's dark chrome.
+    <div className="mx-auto my-6 flex max-w-[1120px] flex-col items-center gap-4 rounded-card bg-canvas px-4 py-24 text-center md:my-10">
       <h1 className="font-display text-2xl text-ink">We couldn't find that member</h1>
       <p className="text-ink-muted">They may have moved, or the profile isn't published yet.</p>
       <Link

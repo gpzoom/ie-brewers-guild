@@ -22,10 +22,10 @@ export const Route = createFileRoute("/members")({
   validateSearch: validateDirectorySearch,
   head: () => ({
     meta: [
-      { title: "Member Breweries — IE Brewers Guild" },
-      { name: "description", content: "Discover the independent craft breweries that make up the IE Brewers Guild." },
-      { property: "og:title", content: "Member Breweries" },
-      { property: "og:description", content: "Independent breweries in the guild." },
+      { title: "Member Directory — IE Brewers Guild" },
+      { name: "description", content: "Discover the independent producers, mobile members, and Allied Members that make up the IE Brewers Guild." },
+      { property: "og:title", content: "Member Directory" },
+      { property: "og:description", content: "The independent producers, mobile members, and Allied Members behind the guild." },
     ],
   }),
   component: MembersPage,
@@ -61,7 +61,7 @@ function MembersPage() {
       <PageHero
         image={heroImg}
         eyebrow="Our members"
-        title="The breweries behind the guild."
+        title="The independent producers, mobile members, and Allied Members behind the guild."
         subtitle="Every member is independently owned and proud of it."
         minHeight="min-h-[50vh]"
       />
@@ -69,7 +69,7 @@ function MembersPage() {
       <section className="mx-auto max-w-7xl px-4 pt-20 md:px-6">
         <SectionHeader
           eyebrow="Find a member"
-          title="Breweries on the map."
+          title="Members on the map."
           subtitle="Click any pin for the address, website, and driving directions."
           align="center"
         />

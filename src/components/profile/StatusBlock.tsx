@@ -7,14 +7,23 @@ type StatusBlockProps = {
   hours: WeekdayHours[];
   specialHours: SpecialHoursDay[];
   tonightEvent: EventRow | null; // the earliest non-postponed/canceled event starting today, if any
+  // Server-computed instant (MemberProfileData.now, reconstructed by the
+  // caller), not read fresh here via `new Date()`/`Date.now()`. Cloudflare
+  // Workers render in UTC and the visitor's browser renders in its own
+  // local zone -- either reading its own clock at render time would
+  // produce a different string on the server than on the client, a
+  // guaranteed SSR/hydration mismatch on top of it also being wrong (open
+  // status must be computed in the member's OWN timezone, not the
+  // server's or the visitor's).
+  now: Date;
 };
 
-function formatHoursConfirmedLabel(hoursConfirmedAt: string | null): string | null {
+function formatHoursConfirmedLabel(hoursConfirmedAt: string | null, now: Date, timezone: string): string | null {
   if (!hoursConfirmedAt) return null;
   const confirmedDate = new Date(hoursConfirmedAt);
-  const ninetyDaysAgo = Date.now() - 90 * 24 * 60 * 60 * 1000;
+  const ninetyDaysAgo = now.getTime() - 90 * 24 * 60 * 60 * 1000;
   if (confirmedDate.getTime() > ninetyDaysAgo) return null;
-  return `Hours confirmed ${confirmedDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}`;
+  return `Hours confirmed ${confirmedDate.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: timezone })}`;
 }
 
 /**
@@ -26,19 +35,19 @@ function formatHoursConfirmedLabel(hoursConfirmedAt: string | null): string | nu
  * hours (spec, "Events": "for a mobile member, events *are* the
  * schedule").
  */
-export function StatusBlock({ member, hours, specialHours, tonightEvent }: StatusBlockProps) {
+export function StatusBlock({ member, hours, specialHours, tonightEvent, now }: StatusBlockProps) {
   const hasHours = hours.length > 0 || specialHours.length > 0;
   const openNow: OpenNowResult = hasHours
-    ? computeOpenNow({ now: new Date(), timezone: member.timezone, hours, specialHours })
+    ? computeOpenNow({ now, timezone: member.timezone, hours, specialHours })
     : { status: "unknown" };
-  const staleLabel = formatHoursConfirmedLabel(member.hours_confirmed_at);
+  const staleLabel = formatHoursConfirmedLabel(member.hours_confirmed_at, now, member.timezone);
 
   if (member.member_type === "mobile") {
     return (
       <div className="rounded-inset bg-canvas-2 p-4">
         {tonightEvent ? (
           <>
-            <p className="font-display text-lg text-ink">Next appearance: {new Date(tonightEvent.overlay_starts_at ?? tonightEvent.starts_at).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}</p>
+            <p className="font-display text-lg text-ink">Next appearance: {new Date(tonightEvent.overlay_starts_at ?? tonightEvent.starts_at).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: member.timezone })}</p>
             <p className="text-sm text-ink-muted">{tonightEvent.venue_name ?? member.service_area}{tonightEvent.city ? `, ${tonightEvent.city}` : ""}</p>
           </>
         ) : (

@@ -4,6 +4,13 @@ import { cn } from "@/lib/utils";
 type EventsModuleProps = {
   events: EventRow[];
   memberType: MemberType;
+  // The member's own IANA timezone (spec, "Computing 'open now'", rule 1 --
+  // the same rule applies to displaying an event's time: it must be the
+  // member's own zone, never the server's (Cloudflare Workers render in
+  // UTC) or the visitor's. Formatting without an explicit timeZone lets
+  // Intl fall back to the runtime's local zone, which differs between
+  // server and browser and is also simply the wrong zone for the event.
+  timezone: string;
 };
 
 const HEADINGS: Record<MemberType, string> = {
@@ -12,13 +19,14 @@ const HEADINGS: Record<MemberType, string> = {
   allied: "Coming up",
 };
 
-function formatEventDate(iso: string): string {
+function formatEventDate(iso: string, timezone: string): string {
   return new Date(iso).toLocaleString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: timezone,
   });
 }
 
@@ -30,7 +38,7 @@ function formatEventDate(iso: string): string {
  * strikes its details but the row stays visible (spec: "a silently
  * vanished row teaches them nothing").
  */
-export function EventsModule({ events, memberType }: EventsModuleProps) {
+export function EventsModule({ events, memberType, timezone }: EventsModuleProps) {
   const visibleEvents = events.filter((event) => !event.is_hidden);
 
   if (visibleEvents.length === 0) {
@@ -84,7 +92,7 @@ export function EventsModule({ events, memberType }: EventsModuleProps) {
               )}
               <div className="flex items-center gap-2">
                 <span className={cn("text-sm text-ink", (isPostponed || isCanceled) && "line-through")}>
-                  {formatEventDate(event.starts_at)}
+                  {formatEventDate(event.starts_at, timezone)}
                 </span>
                 {event.overlay_status && (
                   <span className="rounded-pill bg-warn/20 px-2 py-0.5 text-[11px] font-semibold uppercase text-warn">
@@ -94,7 +102,7 @@ export function EventsModule({ events, memberType }: EventsModuleProps) {
               </div>
               {isRescheduled && event.overlay_starts_at && (
                 <span className="text-sm font-medium text-ink">
-                  New time: {formatEventDate(event.overlay_starts_at)}
+                  New time: {formatEventDate(event.overlay_starts_at, timezone)}
                 </span>
               )}
               {(event.venue_name || event.city) && (

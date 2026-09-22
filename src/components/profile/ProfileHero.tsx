@@ -23,6 +23,25 @@ const MEMBER_TYPE_BADGE: Record<MemberRow["member_type"], string> = {
  * an independently-composed 4:1 crop.
  */
 export function ProfileHero({ member, coverUrl, logoUrl }: ProfileHeroProps) {
+  // The -mt-9/-mt-13 pull-up exists so the LOGO overlaps the cover's
+  // lower edge (spec, "Profile hero and theme": "the logo chip
+  // overlapping its lower edge, the name and badge alongside"). It
+  // assumes the row's own height is set by the logo (a fixed 72px/104px
+  // chip via LogoChip), with the shorter text column just riding along,
+  // bottom-aligned via items-end. LogoChip renders nothing at all for a
+  // null src (spec, "Migrating the existing members": most launch
+  // profiles have no logo yet) -- with no logo, the row collapses to
+  // just the text column's own height, which varies with the business
+  // name's length and the viewport width (it wraps to 2 lines on a long
+  // name at 390px). No fixed min-height can safely absorb an unbounded
+  // text height, so the negative margin is applied only when there's
+  // actually a logo to overlap; with no logo, the row stays in normal
+  // flow (with its own small top padding instead) and can never be
+  // pulled into the cover no matter how tall the text gets.
+  const heroRowClassName = logoUrl
+    ? "relative -mt-9 flex items-end gap-4 px-4 md:-mt-13 md:px-6"
+    : "relative flex items-end gap-4 px-4 pt-3 md:px-6 md:pt-4";
+
   return (
     <div className="relative">
       <MemberImage
@@ -33,7 +52,7 @@ export function ProfileHero({ member, coverUrl, logoUrl }: ProfileHeroProps) {
         aspectClassName="aspect-[2.5/1] md:aspect-[4/1]"
         className="rounded-none md:rounded-card"
       />
-      <div className="relative -mt-9 flex items-end gap-4 px-4 md:-mt-13 md:px-6">
+      <div className={heroRowClassName}>
         <LogoChip src={logoUrl} alt={`${member.business_name} logo`} size={72} className="md:hidden" />
         <LogoChip src={logoUrl} alt={`${member.business_name} logo`} size={104} className="hidden md:flex" />
         <div className="flex flex-1 flex-col pb-1">
