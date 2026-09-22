@@ -1,9 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { PageHero } from "@/components/site/PageHero";
 import { SectionHeader } from "@/components/site/SectionHeader";
 import { MembersMap } from "@/components/site/MembersMap";
 import { members, type Location } from "@/data/site";
+import { slugify } from "@/lib/slug";
+import { validateDirectorySearch } from "@/lib/directory/search-params";
 import { Beer, ExternalLink, Facebook, Instagram, MapPin, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +19,7 @@ import {
 import heroImg from "@/assets/pillar-events.jpg";
 
 export const Route = createFileRoute("/members")({
+  validateSearch: validateDirectorySearch,
   head: () => ({
     meta: [
       { title: "Member Breweries — IE Brewers Guild" },
@@ -45,6 +48,13 @@ type SelectedLocation = {
 
 function MembersPage() {
   const [selected, setSelected] = useState<SelectedLocation | null>(null);
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/members" });
+
+  const initialView =
+    search.mapLat !== undefined && search.mapLng !== undefined && search.mapZoom !== undefined
+      ? { lat: search.mapLat, lng: search.mapLng, zoom: search.mapZoom }
+      : undefined;
 
   return (
     <>
@@ -64,7 +74,17 @@ function MembersPage() {
           align="center"
         />
         <div className="mt-10">
-          <MembersMap members={members} />
+          <MembersMap
+            members={members}
+            linkSearch={search}
+            initialView={initialView}
+            onViewChange={(view) =>
+              navigate({
+                search: (prev) => ({ ...prev, mapLat: view.lat, mapLng: view.lng, mapZoom: view.zoom }),
+                replace: true,
+              })
+            }
+          />
         </div>
       </section>
 
@@ -146,6 +166,15 @@ function MembersPage() {
                   </span>
                 ))}
               </p>
+
+              <Link
+                to="/members/$slug"
+                params={{ slug: slugify(m.name) }}
+                search={search}
+                className="mt-2 inline-flex min-h-11 items-center gap-1 text-sm font-semibold uppercase tracking-wider text-primary hover:underline"
+              >
+                View profile
+              </Link>
 
               <a
                 href={m.website}
