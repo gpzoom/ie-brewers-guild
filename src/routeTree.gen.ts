@@ -15,8 +15,10 @@ import { Route as NewsRouteImport } from './routes/news'
 import { Route as MembersRouteImport } from './routes/members'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
 import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
 
@@ -50,6 +52,11 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -59,6 +66,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const MembersSlugRoute = MembersSlugRouteImport.update({
   id: '/members_/$slug',
@@ -74,6 +86,7 @@ const ApiMemberMediaAssetIdRoute = ApiMemberMediaAssetIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/members': typeof MembersRoute
@@ -81,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/members/$slug': typeof MembersSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRoutesByTo {
@@ -93,12 +107,14 @@ export interface FileRoutesByTo {
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/members/$slug': typeof MembersSlugRoute
+  '/admin': typeof AdminIndexRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/members': typeof MembersRoute
@@ -106,6 +122,7 @@ export interface FileRoutesById {
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/members_/$slug': typeof MembersSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRouteTypes {
@@ -113,6 +130,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/admin'
     | '/contact'
     | '/events'
     | '/members'
@@ -120,6 +138,7 @@ export interface FileRouteTypes {
     | '/survey'
     | '/survey-results'
     | '/members/$slug'
+    | '/admin/'
     | '/api/member-media/$assetId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,11 +151,13 @@ export interface FileRouteTypes {
     | '/survey'
     | '/survey-results'
     | '/members/$slug'
+    | '/admin'
     | '/api/member-media/$assetId'
   id:
     | '__root__'
     | '/'
     | '/about'
+    | '/admin'
     | '/contact'
     | '/events'
     | '/members'
@@ -144,12 +165,14 @@ export interface FileRouteTypes {
     | '/survey'
     | '/survey-results'
     | '/members_/$slug'
+    | '/admin/'
     | '/api/member-media/$assetId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AdminRoute: typeof AdminRouteWithChildren
   ContactRoute: typeof ContactRoute
   EventsRoute: typeof EventsRoute
   MembersRoute: typeof MembersRoute
@@ -204,6 +227,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -217,6 +247,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/members_/$slug': {
       id: '/members_/$slug'
@@ -235,9 +272,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  AdminRoute: AdminRouteWithChildren,
   ContactRoute: ContactRoute,
   EventsRoute: EventsRoute,
   MembersRoute: MembersRoute,
