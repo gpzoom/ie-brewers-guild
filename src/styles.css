@@ -9,6 +9,9 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-inset: 0.75rem;
+  --radius-card: 1.125rem;
+  --radius-pill: 999px;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -30,44 +33,78 @@
   --color-ring: var(--ring);
   --color-surface: var(--surface);
   --color-surface-foreground: var(--surface-foreground);
-  --font-display: "Oswald", "Impact", system-ui, sans-serif;
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --shadow-glow: 0 10px 40px -10px color-mix(in oklab, var(--primary) 45%, transparent);
+  /* Brand system tokens, exposed directly under their spec names (e.g.
+     "never white on --brand-bright") for new member-profile components,
+     alongside the shadcn aliases above that the existing site already
+     uses. */
+  --color-bg: var(--bg);
+  --color-surface-2: var(--surface-2);
+  --color-border-dark: var(--border-dark);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-canvas: var(--canvas);
+  --color-canvas-2: var(--canvas-2);
+  --color-canvas-border: var(--canvas-border);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-brand: var(--brand);
+  --color-brand-bright: var(--brand-bright);
+  --color-open: var(--open);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-sans: "Chivo", system-ui, -apple-system, sans-serif;
+  --shadow-glow: 0 10px 40px -10px color-mix(in oklab, var(--brand-bright) 45%, transparent);
 }
 
 :root {
   --radius: 0.5rem;
-  /* Deep charcoal background, cream text, copper/amber primary */
-  --background: oklch(0.18 0.012 60);
-  --foreground: oklch(0.96 0.015 80);
 
-  --card: oklch(0.22 0.014 60);
-  --card-foreground: oklch(0.96 0.015 80);
+  /* Brand system tokens (spec, "Colour tokens"). Two grounds: dark site
+     chrome, light profile card. */
+  --bg: oklch(0.17 0.012 60);
+  --surface: oklch(0.21 0.014 60);
+  --surface-2: oklch(0.25 0.014 60);
+  --border-dark: oklch(0.31 0.015 60);
+  --text: oklch(0.96 0.012 80);
+  --text-muted: oklch(0.74 0.018 70);
+  --canvas: oklch(0.97 0.008 80);
+  --canvas-2: oklch(0.94 0.01 80);
+  --canvas-border: oklch(0.88 0.012 80);
+  --ink: oklch(0.22 0.012 60);
+  --ink-muted: oklch(0.46 0.012 70);
+  --brand: oklch(0.58 0.15 50);
+  --brand-bright: oklch(0.72 0.165 55);
+  --open: oklch(0.62 0.15 145);
+  --warn: oklch(0.68 0.13 75);
+  --danger: oklch(0.55 0.17 27);
 
-  --popover: oklch(0.22 0.014 60);
-  --popover-foreground: oklch(0.96 0.015 80);
+  /* shadcn-style aliases, redefined in terms of the brand tokens above so
+     every existing component keeps working with no per-component edits.
+     --primary/--primary-foreground keep the "bright fill, dark text"
+     pairing -- that's exactly the contrast rule --brand-bright exists to
+     satisfy, never the reverse. */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface-2);
+  --popover-foreground: var(--text);
+  --primary: var(--brand-bright);
+  --primary-foreground: var(--ink);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--brand);
+  --accent-foreground: var(--text);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--text);
+  --border: var(--border-dark);
+  --input: var(--border-dark);
+  --ring: var(--brand-bright);
 
-  --primary: oklch(0.72 0.165 55); /* warm copper/amber */
-  --primary-foreground: oklch(0.18 0.012 60);
-
-  --secondary: oklch(0.28 0.018 60);
-  --secondary-foreground: oklch(0.96 0.015 80);
-
-  --muted: oklch(0.26 0.014 60);
-  --muted-foreground: oklch(0.72 0.018 70);
-
-  --accent: oklch(0.65 0.18 35); /* deeper amber for accents */
-  --accent-foreground: oklch(0.98 0.01 80);
-
-  --destructive: oklch(0.6 0.22 25);
-  --destructive-foreground: oklch(0.98 0.01 80);
-
-  --border: oklch(0.32 0.015 60);
-  --input: oklch(0.3 0.014 60);
-  --ring: oklch(0.72 0.165 55);
-
-  --surface: oklch(0.24 0.014 60);
-  --surface-foreground: oklch(0.96 0.015 80);
+  --surface-foreground: var(--text);
 
   --sidebar: var(--card);
   --sidebar-foreground: var(--card-foreground);
@@ -80,26 +117,26 @@
 }
 
 .dark {
-  /* same palette — site is dark by default */
-  --background: oklch(0.18 0.012 60);
-  --foreground: oklch(0.96 0.015 80);
-  --card: oklch(0.22 0.014 60);
-  --card-foreground: oklch(0.96 0.015 80);
-  --popover: oklch(0.22 0.014 60);
-  --popover-foreground: oklch(0.96 0.015 80);
-  --primary: oklch(0.72 0.165 55);
-  --primary-foreground: oklch(0.18 0.012 60);
-  --secondary: oklch(0.28 0.018 60);
-  --secondary-foreground: oklch(0.96 0.015 80);
-  --muted: oklch(0.26 0.014 60);
-  --muted-foreground: oklch(0.72 0.018 70);
-  --accent: oklch(0.65 0.18 35);
-  --accent-foreground: oklch(0.98 0.01 80);
-  --destructive: oklch(0.6 0.22 25);
-  --destructive-foreground: oklch(0.98 0.01 80);
-  --border: oklch(0.32 0.015 60);
-  --input: oklch(0.3 0.014 60);
-  --ring: oklch(0.72 0.165 55);
+  /* Same palette -- site is dark by default, unchanged from before. */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface-2);
+  --popover-foreground: var(--text);
+  --primary: var(--brand-bright);
+  --primary-foreground: var(--ink);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--brand);
+  --accent-foreground: var(--text);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--text);
+  --border: var(--border-dark);
+  --input: var(--border-dark);
+  --ring: var(--brand-bright);
 }
 
 @layer base {
