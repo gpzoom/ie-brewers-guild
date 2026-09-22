@@ -314,6 +314,116 @@ describe("validateUploadedImage", () => {
       expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
     });
   });
+
+  // --- Fix round: reviewer-confirmed bypasses of the SVG denylist above, plus
+  // two false-positive/dead-code fixes. Each test below fails against the
+  // pre-fix denylist (namespace-agnostic element matching, entity decoding,
+  // SMIL attributeName targeting, and href scheme allowlisting were all
+  // absent) and passes against the fix.
+
+  describe("SVG denylist bypasses (fix round)", () => {
+    it("rejects a <script> element hidden behind a non-default namespace prefix bound to the SVG namespace", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:s="http://www.w3.org/2000/svg"><s:script>alert(1)</s:script></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects a <foreignObject> element hidden behind a non-default namespace prefix", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:x="http://www.w3.org/2000/svg"><x:foreignObject><body xmlns="http://www.w3.org/1999/xhtml">hi</body></x:foreignObject></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects a javascript: URI hidden behind numeric character-reference encoding in xlink:href", async () => {
+      // &#106; is 'j' -- decodes to "javascript:alert(1)" before the pattern runs.
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><a xlink:href="&#106;avascript:alert(1)"><text>click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects a javascript: URI hidden behind an encoded colon in href", async () => {
+      // &#58; is ':' -- decodes to "javascript:alert(1)" before the pattern runs.
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a href="javascript&#58;alert(1)"><text>click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects a SMIL <set> that targets an event-handler attribute via attributeName, not literal on*= text", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect><set attributeName="onload" to="alert(1)"/></rect></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+  });
+
+  describe("SVG false-positive fixes (fix round)", () => {
+    it("accepts a real Illustrator/Inkscape-shaped export with a generator comment between the XML prologue and the root element", async () => {
+      const svg = new TextEncoder().encode(
+        '<?xml version="1.0" encoding="UTF-8"?>\n' +
+          "<!-- Generator: Adobe Illustrator 24.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n" +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+
+    it("accepts an SVG whose <title> merely contains the word 'javascript:' as ordinary prose (not an href value)", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><title>Careful with javascript: in URLs</title><rect width="1" height="1"/></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+
+    it("accepts a DOCTYPE with an internal subset that declares no ENTITY (proves the sniffer tolerates the syntax, not just rejects it wholesale)", async () => {
+      const svg = new TextEncoder().encode(
+        '<?xml version="1.0"?><!DOCTYPE svg [<!ELEMENT svg ANY>]><svg xmlns="http://www.w3.org/2000/svg"></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+  });
 });
 
 describe("readPngHeight", () => {
