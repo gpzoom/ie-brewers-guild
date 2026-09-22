@@ -121,14 +121,22 @@ export function stripJpegExif(bytes: Uint8Array): Uint8Array {
       // 0xFF bytes (stuffed as FF 00) and restart markers (FFD0-FFD7).
       // None of that can carry APPn/COM metadata -- real-world encoders
       // only ever place metadata in the header, before the first SOS --
-      // so once SOS is reached it's both safe and necessary (scan data
-      // can't be reliably re-parsed marker-by-marker) to copy everything
-      // from here through EOI verbatim.
-      chunks.push(bytes.subarray(markerOffset));
-      const tail = bytes.subarray(bytes.length - 2);
-      if (tail[0] !== 0xff || tail[1] !== JPEG_EOI) {
-        throw new Error("stripJpegExif: scan data does not end in EOI (truncated or corrupt JPEG)");
+      // so it's safe to copy scan data through verbatim rather than
+      // re-parsing it marker-by-marker. But NOT everything after SOS is
+      // scan data forever: some phones (Samsung Motion Photo, Apple Live
+      // Photo, MPF-tagged JPEGs) append a complete second JPEG -- with its
+      // own untouched EXIF/GPS -- after the primary image's EOI. Checking
+      // only that the file's last 2 bytes are FF D9 doesn't catch this,
+      // since the trailing image ends in its own EOI too. So: locate the
+      // primary image's terminating EOI explicitly, and reject rather
+      // than silently keep anything found after it.
+      const eoiOffset = findTerminatingEoi(bytes, markerOffset);
+      if (eoiOffset + 2 !== bytes.length) {
+        throw new Error(
+          `stripJpegExif: data found after the terminating EOI marker (offset ${eoiOffset + 2} of ${bytes.length}) -- refusing to pass through a possible second embedded image (e.g. Live Photo/Motion Photo) with its own EXIF/GPS untouched`,
+        );
       }
+      chunks.push(bytes.subarray(markerOffset));
       return concatUint8Arrays(chunks);
     }
 
@@ -161,6 +169,71 @@ export function stripJpegExif(bytes: Uint8Array): Uint8Array {
 
     offset = segmentEnd;
   }
+}
+
+/**
+ * Scans forward from an SOS marker (at `scanStart`) for the byte stream's
+ * terminating EOI, honoring byte-stuffing (FF 00) and restart markers
+ * (FFD0-FFD7) inside entropy-coded data, and skipping over any other
+ * length-prefixed marker segment encountered along the way (e.g. a
+ * progressive JPEG's next DHT/SOS between scans) rather than misreading
+ * it as raw data. Returns the offset of the terminating EOI's leading
+ * 0xFF byte, or throws if the stream runs out before finding one.
+ *
+ * This does not itself re-validate every marker's internal structure --
+ * SOS's own component-selector header, for instance, is scanned as plain
+ * bytes rather than parsed -- so it doesn't guarantee a fully spec-valid
+ * bitstream. What it does guarantee is what's needed here: it will not
+ * walk past a real terminating EOI without noticing, which is what lets
+ * the caller reject any data appended after it.
+ */
+function findTerminatingEoi(bytes: Uint8Array, scanStart: number): number {
+  let i = scanStart + 2; // past the initiating SOS marker's own FF DA bytes
+
+  while (i < bytes.length) {
+    if (bytes[i] !== 0xff) {
+      i += 1; // raw entropy-coded byte
+      continue;
+    }
+
+    const next = bytes[i + 1];
+    if (next === undefined) {
+      throw new Error("stripJpegExif: truncated scan data (ran off the end before EOI)");
+    }
+    if (next === 0x00 || (next >= 0xd0 && next <= 0xd7)) {
+      i += 2; // byte-stuffed 0xFF, or a restart marker -- both opaque, no length field
+      continue;
+    }
+    if (next === 0xff) {
+      i += 1; // fill byte -- re-examine the next pair
+      continue;
+    }
+    if (next === JPEG_EOI) {
+      return i;
+    }
+
+    // Any other marker mid-scan (e.g. a progressive JPEG's subsequent
+    // DHT/DQT/SOS between scans): a standard length-prefixed segment --
+    // skip over it and keep scanning for the terminating EOI.
+    if (i + 3 >= bytes.length) {
+      throw new Error(`stripJpegExif: truncated segment header inside scan data at offset ${i}`);
+    }
+    const length = (bytes[i + 2] << 8) | bytes[i + 3];
+    if (length < 2) {
+      throw new Error(
+        `stripJpegExif: invalid segment length ${length} inside scan data at offset ${i}`,
+      );
+    }
+    const segmentEnd = i + 2 + length;
+    if (segmentEnd > bytes.length) {
+      throw new Error(
+        `stripJpegExif: segment inside scan data at offset ${i} overruns the end of the file`,
+      );
+    }
+    i = segmentEnd;
+  }
+
+  throw new Error("stripJpegExif: scan data does not end in EOI (truncated or corrupt JPEG)");
 }
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];

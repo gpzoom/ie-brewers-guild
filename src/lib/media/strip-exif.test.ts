@@ -131,6 +131,40 @@ describe("stripJpegExif", () => {
       0xff, 0xd9,
     ]);
   });
+
+  it("throws when a complete second JPEG (its own SOI...EOI, with EXIF/GPS) is appended after the primary image's EOI -- e.g. Samsung Motion Photo / Apple Live Photo / MPF", () => {
+    const primaryImage = [
+      ...SOI,
+      ...jpegSegment(0xe0, [0x4a, 0x46, 0x49, 0x46, 0x00]), // APP0/JFIF
+      ...sos(FAKE_SCAN),
+      ...EOI,
+    ];
+    // A complete secondary JPEG, with its own untouched EXIF/GPS, riding
+    // along after the primary image's EOI -- exactly what Motion Photo /
+    // Live Photo / MPF-tagged files do.
+    const secondaryImageWithGps = [
+      ...SOI,
+      ...jpegSegment(0xe1, EXIF_PAYLOAD),
+      ...sos(FAKE_SCAN),
+      ...EOI,
+    ];
+    const bytes = new Uint8Array([...primaryImage, ...secondaryImageWithGps]);
+
+    expect(() => stripJpegExif(bytes)).toThrow();
+  });
+
+  it("still passes through a normal single-image JPEG with no trailing data (doesn't over-reject the common case)", () => {
+    const bytes = new Uint8Array([
+      ...SOI,
+      ...jpegSegment(0xe0, [0x4a, 0x46, 0x49, 0x46, 0x00]), // APP0/JFIF
+      ...sos(FAKE_SCAN),
+      ...EOI,
+    ]);
+
+    const result = stripJpegExif(bytes);
+
+    expect(Array.from(result)).toEqual(Array.from(bytes));
+  });
 });
 
 function pngChunk(type: string, data: number[]): number[] {
