@@ -12,6 +12,17 @@
  * 12-migration plan. See task-8-report.md for the one discrepancy found
  * between the original plan doc and the live schema (events.title /
  * events.description, added by the fix-wave migration).
+ *
+ * Extended by docs/superpowers/plans/2026-09-21-member-admin.md's Task 1
+ * with the additional admin-only row types and columns the admin panel
+ * (/admin, /signin, /send/[token]) needs beyond the public profile's
+ * scoped-down subset -- see the block below CategoryRow. Same
+ * column-for-column-against-the-live-migrations approach; see
+ * task-1-report.md for the discrepancies found between that plan's brief
+ * and the live schema (events.title/.description would have been dropped
+ * by a literal reading of the brief's EventRow replacement, and
+ * upload_tokens.created_by_user_id is nullable at the DB level though the
+ * brief typed it non-null).
  */
 
 export type MemberType = "producer" | "mobile" | "allied";
@@ -47,6 +58,18 @@ export type MemberRow = {
   discount_redeem_text: string | null;
   status: MemberStatus;
   hours_confirmed_at: string | null;
+  // Added by the Member Admin plan's Task 28 migration -- not present in
+  // the original schema plan's members table, and not yet backed by a
+  // live migration in this checkout (Task 28 creates the column later in
+  // this same plan; declared here first since Task 1 runs before Task
+  // 28). Typed optional rather than required: the brief's own instruction
+  // ("add as a new field on MemberRow") would otherwise break the
+  // existing `member as MemberRow` cast in
+  // src/lib/members/member-profile.server.ts, whose explicit anon-safe
+  // column list (predates Task 28) can't select a column that doesn't
+  // exist yet. Safe to tighten to required once Task 28's migration
+  // lands and that select list is updated to include it.
+  hours_stale_notice_sent_at?: string | null;
   published_at: string | null;
 };
 
@@ -56,9 +79,18 @@ export type MediaAssetRow = {
   storage_path: string;
   kind: "image" | "video";
   mime_type: string;
+  byte_size: number;
   width: number | null;
   height: number | null;
+  original_filename: string | null;
+  source: "member_upload" | "creator_upload";
+  uploaded_by_user_id: string | null;
+  upload_token_id: string | null;
+  creator_name: string | null;
+  creator_credit: boolean;
+  permission_accepted_at: string | null;
   review_status: "pending" | "approved" | "rejected";
+  created_at: string;
 };
 
 export type CarouselSlideRow = {
@@ -116,6 +148,9 @@ export type EventOverlayStatus = "postponed" | "rescheduled" | "canceled";
 export type EventRow = {
   id: string;
   member_id: string;
+  calendar_connection_id: string | null;
+  source: "google" | "ics" | "manual";
+  external_event_id: string | null;
   // Added by the final-review-fixes migration
   // (20260922153458_final_review_fixes.sql, finding #1) -- not present in
   // the original schema plan's events table, but required for display:
@@ -132,6 +167,7 @@ export type EventRow = {
   overlay_status: EventOverlayStatus | null;
   overlay_starts_at: string | null;
   overlay_note: string | null;
+  overlay_set_at: string | null;
   is_hidden: boolean;
 };
 
@@ -140,4 +176,65 @@ export type CategoryRow = {
   name: string;
   slug: string;
   sort_order: number;
+};
+
+// --- Added by the Member Admin plan's Task 1 (admin panel: /admin,
+// /signin, /send/[token]) -- these types cover admin-only tables and
+// admin-only columns the public profile page never reads. Same
+// column-for-column-against-the-live-migrations approach as the rest of
+// this file; verified against supabase/migrations/ as of the
+// final-review-fixes migration (20260922153458_final_review_fixes.sql).
+// Deliberately excludes columns no admin task reads or writes (e.g.
+// members.dues_received_at/.approved_at/.approved_by_user_id/
+// .application_note/.trail_eligible, media_assets.duration_ms,
+// calendar_connections.google_refresh_token -- Google OAuth/Vault wiring
+// is out of scope for this phase) -- same "columns actually used"
+// philosophy as the rest of this file, not an oversight.
+
+export type ProfileRow = {
+  id: string;
+  is_guild_admin: boolean;
+};
+
+export type MemberUserRow = {
+  id: string;
+  member_id: string;
+  user_id: string;
+  role: "owner" | "editor";
+  created_at: string;
+};
+
+export type CalendarConnectionRow = {
+  id: string;
+  member_id: string;
+  provider: "google" | "ics";
+  google_calendar_id: string | null;
+  ics_url: string | null;
+  sync_tag: string | null;
+  last_synced_at: string | null;
+  last_sync_error: string | null;
+  sync_status: "ok" | "failing" | "disconnected";
+};
+
+export type UploadTokenRow = {
+  id: string;
+  member_id: string;
+  token_hash: string;
+  // The brief typed this as non-nullable `string`, but the
+  // final-review-fixes migration (finding #5) dropped its NOT NULL
+  // constraint and switched its FK to `on delete set null`, so a token
+  // whose creator's auth.users row is later deleted has this column go
+  // null at runtime.
+  created_by_user_id: string | null;
+  expires_at: string;
+  max_files: number;
+  used_count: number;
+  revoked_at: string | null;
+  created_at: string;
+};
+
+export type MemberCategoryRow = {
+  id: string;
+  member_id: string;
+  category_id: string;
 };
