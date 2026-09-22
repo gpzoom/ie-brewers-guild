@@ -37,7 +37,17 @@ export default defineConfig(async ({ command, mode }) => {
           // per TanStack Start's own createServerFn convention -- that is
           // not a violation to catch, so it's excluded here rather than
           // renamed off the *.server.* convention project-wide.
-          excludeFiles: ["src/lib/members/member-profile.server.ts"],
+          //
+          // "**/node_modules/**" MUST stay listed here too -- a custom
+          // `excludeFiles` array replaces the framework's own default
+          // (["**/node_modules/**"]) rather than merging with it, exactly
+          // the same replace-not-merge behavior that caused the original
+          // `files` bug this config is fixing. Nothing in today's
+          // dependency graph trips this, but the first future dependency
+          // that ships its own `.server.`/`server/`-named file would
+          // otherwise hard-fail the client build with a confusing "Import
+          // denied" error from inside node_modules.
+          excludeFiles: ["**/node_modules/**", "src/lib/members/member-profile.server.ts"],
           specifiers: ["server-only"],
         },
       },

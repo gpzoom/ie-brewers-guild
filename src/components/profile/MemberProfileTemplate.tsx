@@ -104,14 +104,29 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
 
   // Candidates for "next"/"tonight": excludes postponed and canceled (a
   // postponed event has no new date to show, and a canceled one is never
-  // "next"), AND excludes is_hidden (a member-hidden event, per
-  // EventsModule's own filter -- this must match it exactly. RLS on
-  // `events` has no is_hidden predicate at all, so this application-code
-  // filter is the only thing standing between a hidden event and it
-  // showing up as "Tonight:"/"Next appearance"). Sorted by the EFFECTIVE
-  // start (overlay-aware), not the raw starts_at the query was ordered
-  // by server-side -- a rescheduled event can sort out of starts_at order
+  // "next"), AND excludes is_hidden (a member-hidden event, matching
+  // EventsModule's own filter). The public RLS policy on `events`
+  // (migration 20260922153458_final_review_fixes.sql, section 2) already
+  // adds `and not events.is_hidden`, so a hidden event never reaches this
+  // component's data in the first place -- this filter is defense-in-depth
+  // alongside that RLS predicate, not the only thing standing between a
+  // hidden event and it rendering here. Sorted by the EFFECTIVE start
+  // (overlay-aware), not the raw starts_at the query was ordered by
+  // server-side -- a rescheduled event can sort out of starts_at order
   // (e.g. moved earlier than another event that was already ahead of it).
+  //
+  // No additional "hasn't started yet" check runs here on top of the
+  // sort: `events` (from getMemberProfileData) is already filtered
+  // server-side to events whose EFFECTIVE END hasn't passed (or that are
+  // canceled). Every candidate remaining after excluding postponed/
+  // canceled above is therefore guaranteed to still be current -- either
+  // upcoming or actively in progress right now -- so the earliest one by
+  // effective start IS "next"/"tonight", including a mobile member's only
+  // event happening at this exact moment (started in the past, not yet
+  // ended). Re-filtering by effective start here (as a previous version
+  // of this code did) would incorrectly drop an in-progress event back
+  // out, showing "No dates announced yet" while the member is literally
+  // mid-event.
   const effectiveStart = (event: (typeof events)[number]) =>
     new Date(event.overlay_starts_at ?? event.starts_at).getTime();
   const nextEventCandidates = events
@@ -120,7 +135,7 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
         !event.is_hidden && event.overlay_status !== "postponed" && event.overlay_status !== "canceled",
     )
     .sort((a, b) => effectiveStart(a) - effectiveStart(b));
-  const nextEvent = nextEventCandidates.find((event) => effectiveStart(event) >= now.getTime()) ?? null;
+  const nextEvent = nextEventCandidates[0] ?? null;
 
   // StatusBlock's "Tonight: {venue}" line (producer/Allied Member) is only
   // ever correct for an event actually happening today, in the member's

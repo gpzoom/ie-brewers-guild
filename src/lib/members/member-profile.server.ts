@@ -116,26 +116,44 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
       : { data: [] as MediaAssetRow[] };
     const assetsById = new Map((assets ?? []).map((asset) => [(asset as MediaAssetRow).id, asset as MediaAssetRow]));
 
-    // "Coming up"/"Where we'll be" only ever shows the future (spec's
-    // events table has no notion of a past-events view on the public
-    // profile) -- filter to events whose EFFECTIVE start (the overlay date
-    // when rescheduled, falling back to the original starts_at) is still
-    // ahead of `now`. A canceled event is exempt from this date filter and
-    // always stays visible even once its original date has passed (spec,
-    // "Events": "a canceled event stays visible rather than disappearing")
-    // -- a rescheduled-then-canceled event, or one canceled after the fact,
-    // would otherwise have no future date at all and get swept up here.
-    // is_hidden filtering is intentionally NOT done here -- it happens in
-    // application code (EventsModule's own filter, and
-    // MemberProfileTemplate's nextEvent/tonightEvent computation), not at
-    // this layer or via RLS (RLS on `events` has no is_hidden predicate at
-    // all -- public select is gated only on the parent member being
-    // published).
+    // "Coming up"/"Where we'll be" only ever shows the future or the
+    // happening-right-now (spec's events table has no notion of a
+    // past-events view on the public profile) -- filter to events whose
+    // EFFECTIVE END is still ahead of `now`, not just their start. A mobile
+    // member's only event, at a venue right now (starts_at in the past,
+    // ends_at in the future), must not vanish into "No dates announced
+    // yet" the instant its start time passes while it's still actively
+    // happening. A canceled event is exempt from this date filter entirely
+    // and always stays visible even once its original date has passed
+    // (spec, "Events": "a canceled event stays visible rather than
+    // disappearing") -- a rescheduled-then-canceled event, or one canceled
+    // after the fact, would otherwise have no future date at all and get
+    // swept up here.
+    //
+    // When an event has been rescheduled (overlay_starts_at set), there is
+    // no overlay_ends_at column to derive a new end time from, so the
+    // effective end falls back to the rescheduled start itself rather than
+    // reusing the ORIGINAL event's ends_at -- the original ends_at could be
+    // an unrelated, already-passed time from before the reschedule, which
+    // would incorrectly filter the event out even though it's still
+    // upcoming at its new time.
+    //
+    // is_hidden filtering is NOT done here -- it happens twice, on
+    // purpose, in defense of depth: the public RLS policy on `events`
+    // (migration 20260922153458_final_review_fixes.sql, section 2) already
+    // adds `and not events.is_hidden`, so a hidden event never reaches
+    // this anon-key query result in the first place; application code
+    // (EventsModule's own filter, and MemberProfileTemplate's
+    // nextEvent/tonightEvent computation) re-filters it too, so the public
+    // profile is still correct even if that RLS predicate were ever
+    // dropped from a future migration.
     const upcomingOrCanceledEvents = (events ?? []).filter((row) => {
       const event = row as EventRow;
       if (event.overlay_status === "canceled") return true;
-      const effectiveStart = new Date(event.overlay_starts_at ?? event.starts_at).getTime();
-      return effectiveStart >= now.getTime();
+      const effectiveEnd = event.overlay_starts_at
+        ? new Date(event.overlay_starts_at).getTime()
+        : new Date(event.ends_at ?? event.starts_at).getTime();
+      return effectiveEnd >= now.getTime();
     });
 
     const categoryIds = (memberCategories ?? []).map((row) => row.category_id as string);
