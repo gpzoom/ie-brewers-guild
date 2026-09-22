@@ -17,6 +17,7 @@ import { Route as EventsRouteImport } from './routes/events'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MembersSlugRouteImport } from './routes/members.$slug'
 import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
 
 const SurveyResultsRoute = SurveyResultsRouteImport.update({
@@ -59,6 +60,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MembersSlugRoute = MembersSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => MembersRoute,
+} as any)
 const ApiMemberMediaAssetIdRoute = ApiMemberMediaAssetIdRouteImport.update({
   id: '/api/member-media/$assetId',
   path: '/api/member-media/$assetId',
@@ -70,10 +76,11 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
-  '/members': typeof MembersRoute
+  '/members': typeof MembersRouteWithChildren
   '/news': typeof NewsRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/members/$slug': typeof MembersSlugRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRoutesByTo {
@@ -81,10 +88,11 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
-  '/members': typeof MembersRoute
+  '/members': typeof MembersRouteWithChildren
   '/news': typeof NewsRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/members/$slug': typeof MembersSlugRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRoutesById {
@@ -93,10 +101,11 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
-  '/members': typeof MembersRoute
+  '/members': typeof MembersRouteWithChildren
   '/news': typeof NewsRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/members/$slug': typeof MembersSlugRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRouteTypes {
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/survey'
     | '/survey-results'
+    | '/members/$slug'
     | '/api/member-media/$assetId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/survey'
     | '/survey-results'
+    | '/members/$slug'
     | '/api/member-media/$assetId'
   id:
     | '__root__'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/survey'
     | '/survey-results'
+    | '/members/$slug'
     | '/api/member-media/$assetId'
   fileRoutesById: FileRoutesById
 }
@@ -140,7 +152,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   ContactRoute: typeof ContactRoute
   EventsRoute: typeof EventsRoute
-  MembersRoute: typeof MembersRoute
+  MembersRoute: typeof MembersRouteWithChildren
   NewsRoute: typeof NewsRoute
   SurveyRoute: typeof SurveyRoute
   SurveyResultsRoute: typeof SurveyResultsRoute
@@ -205,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/members/$slug': {
+      id: '/members/$slug'
+      path: '/$slug'
+      fullPath: '/members/$slug'
+      preLoaderRoute: typeof MembersSlugRouteImport
+      parentRoute: typeof MembersRoute
+    }
     '/api/member-media/$assetId': {
       id: '/api/member-media/$assetId'
       path: '/api/member-media/$assetId'
@@ -215,12 +234,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface MembersRouteChildren {
+  MembersSlugRoute: typeof MembersSlugRoute
+}
+
+const MembersRouteChildren: MembersRouteChildren = {
+  MembersSlugRoute: MembersSlugRoute,
+}
+
+const MembersRouteWithChildren =
+  MembersRoute._addFileChildren(MembersRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   ContactRoute: ContactRoute,
   EventsRoute: EventsRoute,
-  MembersRoute: MembersRoute,
+  MembersRoute: MembersRouteWithChildren,
   NewsRoute: NewsRoute,
   SurveyRoute: SurveyRoute,
   SurveyResultsRoute: SurveyResultsRoute,
