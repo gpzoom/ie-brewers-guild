@@ -16,25 +16,32 @@ export function ContactBlock({ member }: ContactBlockProps) {
   const locationText =
     member.member_type === "mobile" ? member.service_area : member.street_address;
   const mapsQuery = member.street_address ? `${member.street_address}, ${member.city}, ${member.state}` : null;
+  const hasEmail = member.member_type === "allied" && !!member.contact_email;
+
+  if (!locationText && !member.phone && !hasEmail) return null;
 
   return (
     <div className="flex flex-col gap-2 text-sm text-ink">
-      {locationText && (
+      {locationText && (mapsQuery ? (
         <a
-          href={mapsQuery ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapsQuery)}` : undefined}
-          target={mapsQuery ? "_blank" : undefined}
-          rel={mapsQuery ? "noreferrer" : undefined}
+          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapsQuery)}`}
+          target="_blank"
+          rel="noreferrer"
           className="inline-flex min-h-11 items-center gap-2"
         >
           <MapPin className="h-4 w-4 shrink-0 text-brand-bright" /> {locationText}
         </a>
-      )}
+      ) : (
+        <span className="inline-flex min-h-11 items-center gap-2">
+          <MapPin className="h-4 w-4 shrink-0 text-brand-bright" /> {locationText}
+        </span>
+      ))}
       {member.phone && (
         <a href={`tel:${member.phone}`} className="inline-flex min-h-11 items-center gap-2">
           <Phone className="h-4 w-4 shrink-0 text-brand-bright" /> {member.phone}
         </a>
       )}
-      {member.member_type === "allied" && member.contact_email && (
+      {hasEmail && (
         <a href={`mailto:${member.contact_email}`} className="inline-flex min-h-11 items-center gap-2">
           <Mail className="h-4 w-4 shrink-0 text-brand-bright" /> {member.contact_email}
         </a>
