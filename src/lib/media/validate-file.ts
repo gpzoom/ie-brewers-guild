@@ -43,14 +43,34 @@ import { fileTypeFromBuffer } from "file-type";
  * whatever this denylist already fails to catch.
  *
  * **REQUIREMENT for whoever builds Task 17 (not optional, not a
- * nice-to-have):** the uploader MUST pass `contentType` explicitly on the
- * `.upload()` call, pinned to THIS module's own returned
- * `detectedMimeType` from `validateUploadedImage` -- never to
- * `file.type`/the client's claimed MIME type, and never left to
- * supabase-js's default. Only with that pin does "served with its real,
- * validated content type" become true, which is the precondition every
- * "strict XML parser, not lenient HTML5 parser" reasoning in this module
- * depends on.
+ * nice-to-have):** the stored object's `Content-Type` MUST be pinned to
+ * THIS module's own returned `detectedMimeType` from
+ * `validateUploadedImage` -- never to `file.type`/the client's claimed MIME
+ * type, and never left to supabase-js's default. Only with that pin does
+ * "served with its real, validated content type" become true, which is the
+ * precondition every "strict XML parser, not lenient HTML5 parser"
+ * reasoning in this module depends on.
+ *
+ * **Setting the `contentType` upload OPTION is NOT by itself enough** --
+ * whether supabase-js honours it depends on what you pass as the upload
+ * BODY. Confirmed in `@supabase/storage-js@2.117.0`'s own source
+ * (`src/packages/StorageFileApi.ts`, `uploadOrUpdate`): the body is
+ * branched on first, and only the final `else` branch -- raw bytes, i.e. a
+ * `Uint8Array`/`ArrayBuffer`/string/stream -- ever does
+ * `headers['content-type'] = options.contentType`. If the body
+ * `instanceof Blob` (and a `File` IS a `Blob`), the library takes the
+ * FormData branch instead and the `contentType` option is silently
+ * dropped, never read at all; the part's type -- and therefore the stored
+ * object's `Content-Type` -- comes from the `Blob`/`File`'s own `.type`
+ * property, which for a browser-supplied `File` is attacker-controlled.
+ * So satisfy the requirement in ONE of these two ways:
+ *   (a) upload RAW BYTES (`Uint8Array`/`ArrayBuffer`) with
+ *       `{ contentType: validation.detectedMimeType }`, or
+ *   (b) if you must upload a `Blob`/`File`, CONSTRUCT IT YOURSELF with the
+ *       validated type -- `new Blob([bytes], { type: validation.detectedMimeType })`
+ *       -- rather than forwarding the client's original `File` object.
+ * Passing the original `File` plus a `contentType` option looks correct
+ * and is not.
  *
  * Even with that pin correctly in place, direct navigation still executes
  * any script this module's denylist fails to catch, same as it would under
@@ -319,14 +339,53 @@ function decodeXmlEntities(text: string): string {
  *   the live href genuinely becomes dangerous partway through the
  *   animation cycle) -- hasUnsafeKeyframeList below splits on `;` and
  *   checks every keyframe, not just the captured string as a whole.
+ *
+ * **PARSE ORDER MATTERS for the SMIL check specifically -- tokenize FIRST,
+ * decode SECOND.** The whole-document regex checks above (dangerous
+ * elements, `on*=` handlers, `attributeName="on..."`, `<!ENTITY`, literal
+ * `href=` values) deliberately scan the fully-decoded text: they don't need
+ * real tag boundaries, and decoding first only makes them MORE eager to
+ * reject, which is the safe direction. The SMIL check is the one place that
+ * genuinely depends on knowing where an element's start tag ends, and for
+ * it, decoding first was a confirmed Critical bypass: an entity-encoded
+ * `&quot;&gt;` sitting in an unrelated "carrier" attribute
+ * (`<animate attributeName="href" x="&quot;&gt;" values="javascript:alert(1)"/>`,
+ * also spellable `&#34;&#62;` / `&#x22;&#x3e;`) decodes into a literal `">`
+ * that the quote-aware tag scanner then -- correctly, for the string it was
+ * handed -- reads as ending the tag early, so `values=` fell outside the
+ * extracted tag text and was never inspected. That `">` never exists in the
+ * real markup; it only exists after decoding. A real XML parser does the
+ * opposite and never has this problem: it tokenizes tags and attributes
+ * from the RAW markup (where only an unescaped `"` closes an attribute and
+ * only an unquoted `>` closes a tag -- delivering those characters via a
+ * character reference is perfectly legal and does NOT affect tokenization),
+ * and decodes character references only WITHIN an already-delimited
+ * attribute value. So hasUnsafeSmilHrefTargeting below runs
+ * extractStartTags/extractAttributes over the RAW text and calls
+ * decodeXmlEntities on each individual attribute VALUE, after its
+ * boundaries are already known.
  */
 const DANGEROUS_ELEMENT_PATTERN = /<\s*(?:[a-z0-9_.-]+:)?(?:script|foreignobject|iframe)\b/i;
 const EVENT_HANDLER_ATTR_PATTERN = /\son\w+\s*=/i;
 const SMIL_ATTRIBUTE_NAME_PATTERN = /attributename\s*=\s*["']?\s*on/i;
 const ENTITY_DECLARATION_PATTERN = /<!entity/i;
 const HREF_ATTR_PATTERN = /(?:xlink:)?href\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
-const ATTRIBUTE_NAME_TARGETS_HREF_PATTERN = /attributename\s*=\s*["']?\s*(?:[a-z0-9_.-]+:)?href\b/i;
-const SMIL_VALUE_ATTR_PATTERN = /\b(?:to|values|from|by)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+
+/**
+ * Applied to an attribute NAME already extracted from raw markup (not to a
+ * whole tag), so both are anchored at the end of the name. The leading
+ * `(?:^|[^a-z0-9])` keeps the same breadth the previous whole-tag substring
+ * patterns had -- a namespace-prefixed or hyphenated spelling
+ * (`smil:values`, `data-to`) still matches -- without matching an unrelated
+ * name that merely ends in those letters (`tooltip` doesn't end in `to`;
+ * `dto` is excluded by the boundary). Both run against a short attribute
+ * name with no nested quantifiers, so neither can backtrack pathologically.
+ */
+const ATTRIBUTE_NAME_ATTR_NAME_PATTERN = /(?:^|[^a-z0-9])attributename$/i;
+const SMIL_VALUE_ATTR_NAME_PATTERN = /(?:^|[^a-z0-9])(?:to|values|from|by)$/i;
+const HREF_ATTR_NAME_PATTERN = /(?:^|[^a-z0-9])href$/i;
+/** Applied to an attributeName attribute's DECODED value. */
+const TARGETS_HREF_VALUE_PATTERN = /^\s*(?:[a-z0-9_.-]+:)?href\b/i;
 
 function isUnsafeReference(value: string): boolean {
   const trimmed = value.trim();
@@ -360,13 +419,17 @@ function hasUnsafeHrefValue(decodedText: string): boolean {
 }
 
 /**
- * Splits decoded SVG text into each element's own start-tag substring
- * (`<tag attr="..." .../>` or `<tag attr="...">`), respecting quoted
- * attribute values so a literal `>` inside a quoted value (legal,
+ * Splits RAW (undecoded) SVG text into each element's own start-tag
+ * substring (`<tag attr="..." .../>` or `<tag attr="...">`), respecting
+ * quoted attribute values so a literal `>` inside a quoted value (legal,
  * unescaped, in XML attribute content) doesn't prematurely end a tag. A
  * single linear pass with no regex involved in finding tag boundaries --
  * no backtracking is possible. Comments, DOCTYPE, and processing
  * instructions are skipped rather than returned as tags.
+ *
+ * MUST be given raw markup, never entity-decoded text -- see the
+ * "PARSE ORDER MATTERS" note above. Its only caller
+ * (hasUnsafeSmilHrefTargeting) passes raw.
  */
 function extractStartTags(text: string): string[] {
   const tags: string[] = [];
@@ -405,11 +468,111 @@ function extractStartTags(text: string): string[] {
   return tags;
 }
 
-function hasUnsafeSmilHrefTargeting(decodedText: string): boolean {
-  for (const tag of extractStartTags(decodedText)) {
-    if (!ATTRIBUTE_NAME_TARGETS_HREF_PATTERN.test(tag)) continue;
-    for (const match of tag.matchAll(SMIL_VALUE_ATTR_PATTERN)) {
-      if (hasUnsafeKeyframeList(match[1] ?? match[2] ?? "")) return true;
+/**
+ * Splits one RAW start tag (as produced by extractStartTags) into its
+ * attribute name/value pairs, with values still raw/undecoded -- the caller
+ * decodes each value individually, which is the whole point of this helper
+ * (see "PARSE ORDER MATTERS" above).
+ *
+ * Attribute NAMES are taken literally: XML does not expand character
+ * references in names (only in attribute values and character data), so
+ * `&#104;ref` is a name spelled with an ampersand, not `href`. Values are
+ * delimited exactly the way an XML tokenizer delimits them -- a value opened
+ * with `"` ends at the next literal `"`, and an entity-encoded quote inside
+ * it is just more value text.
+ *
+ * Unquoted values are not well-formed XML at all, but are read here
+ * (terminating at whitespace or `>`) rather than skipped, so a malformed tag
+ * still gets inspected instead of silently sliding past the check.
+ *
+ * Every step is a single-character class test or a fixed advance of the
+ * index -- strictly linear in the tag length, no regex over the tag body, so
+ * no backtracking is possible.
+ */
+function extractAttributes(tag: string): Array<{ name: string; value: string }> {
+  const attributes: Array<{ name: string; value: string }> = [];
+  let i = 1; // skip the leading '<'
+  while (i < tag.length && !/[\s/>]/.test(tag[i])) i += 1; // skip the element name
+  while (i < tag.length) {
+    const ch = tag[i];
+    if (ch === ">") break;
+    if (ch === "/" || /\s/.test(ch)) {
+      i += 1;
+      continue;
+    }
+    const nameStart = i;
+    while (i < tag.length && !/[\s=/>]/.test(tag[i])) i += 1;
+    const name = tag.slice(nameStart, i);
+    while (i < tag.length && /\s/.test(tag[i])) i += 1;
+    if (tag[i] !== "=") {
+      // Valueless attribute (or a stray '='-less token); nothing to inspect.
+      // `name` can be "" only when the character here was '=', which the
+      // branch below consumes -- so the loop always advances.
+      if (name !== "") attributes.push({ name, value: "" });
+      continue;
+    }
+    i += 1; // consume '='
+    while (i < tag.length && /\s/.test(tag[i])) i += 1;
+    const quote = tag[i];
+    if (quote === '"' || quote === "'") {
+      i += 1;
+      const valueStart = i;
+      while (i < tag.length && tag[i] !== quote) i += 1;
+      attributes.push({ name, value: tag.slice(valueStart, i) });
+      i += 1; // consume the closing quote
+    } else {
+      const valueStart = i;
+      while (i < tag.length && !/[\s>]/.test(tag[i])) i += 1;
+      attributes.push({ name, value: tag.slice(valueStart, i) });
+    }
+  }
+  return attributes;
+}
+
+/**
+ * The two attribute-boundary-dependent checks, over RAW markup, in one pass:
+ *
+ * 1. SMIL indirect href targeting (`attributeName="href"` + `to=`/`values=`/
+ *    `from=`/`by=` on the SAME element) -- see the big comment above.
+ * 2. A real `href`/`xlink:href` attribute whose value fails the scheme
+ *    allowlist. hasUnsafeHrefValue above ALSO covers this, scanning the whole
+ *    decoded document with a regex, and is deliberately left in place as a
+ *    fail-closed over-approximation (it still catches an `href="javascript:"`
+ *    hiding somewhere this tokenizer skips, e.g. inside a processing
+ *    instruction). But that regex is not purely a substring scan: its
+ *    `"([^"]*)"|'([^']*)'` capture makes it implicitly dependent on attribute
+ *    -value boundaries, which decode-first desynchronizes exactly the way it
+ *    desynchronized tag boundaries. Confirmed live before this pass was added:
+ *      <a x='href=&quot;#a' href='javascript:alert(1)' y='b"'>
+ *    decodes to `... x='href="#a' href='javascript:alert(1)' y='b"' ...`, so
+ *    the regex's first match is `href="` + everything up to the next literal
+ *    `"`, whose value begins with `#` and is therefore accepted as a
+ *    same-document fragment -- swallowing the real, single-quoted
+ *    `javascript:` href inside it and advancing lastIndex past it, so it is
+ *    never examined. Identical payload without the carrier attribute is
+ *    rejected. Checking real attributes tokenized from raw markup closes it;
+ *    the two checks are OR'd, so coverage is the union of both, never less
+ *    than before.
+ */
+function hasUnsafeRawTagReferences(rawText: string): boolean {
+  for (const tag of extractStartTags(rawText)) {
+    const attributes = extractAttributes(tag);
+    let targetsHref = false;
+    for (const attribute of attributes) {
+      if (HREF_ATTR_NAME_PATTERN.test(attribute.name)) {
+        if (isUnsafeReference(decodeXmlEntities(attribute.value))) return true;
+      }
+      if (
+        ATTRIBUTE_NAME_ATTR_NAME_PATTERN.test(attribute.name) &&
+        TARGETS_HREF_VALUE_PATTERN.test(decodeXmlEntities(attribute.value))
+      ) {
+        targetsHref = true;
+      }
+    }
+    if (!targetsHref) continue;
+    for (const attribute of attributes) {
+      if (!SMIL_VALUE_ATTR_NAME_PATTERN.test(attribute.name)) continue;
+      if (hasUnsafeKeyframeList(decodeXmlEntities(attribute.value))) return true;
     }
   }
   return false;
@@ -424,7 +587,10 @@ function containsDangerousSvgContent(bytes: Uint8Array): boolean {
     SMIL_ATTRIBUTE_NAME_PATTERN.test(decoded) ||
     ENTITY_DECLARATION_PATTERN.test(decoded) ||
     hasUnsafeHrefValue(decoded) ||
-    hasUnsafeSmilHrefTargeting(decoded)
+    // RAW, deliberately: these are the checks that need real tag/attribute
+    // boundaries, so they tokenize first and decode each attribute value
+    // afterwards. See "PARSE ORDER MATTERS" above.
+    hasUnsafeRawTagReferences(raw)
   );
 }
 
