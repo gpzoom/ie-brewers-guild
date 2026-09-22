@@ -51,9 +51,15 @@ export function AdminShell({
         ))}
       </nav>
 
-      <main className="flex-1 px-4 py-6" data-member-id={memberId}>
+      {/*
+        Not a <main> -- the root layout (src/routes/__root.tsx) already
+        renders one <main> around the whole route Outlet, /admin included.
+        A second <main> here would be a duplicate landmark (invalid HTML,
+        and two competing "main" regions for screen reader users).
+      */}
+      <div className="flex-1 px-4 py-6" data-member-id={memberId}>
         {children}
-      </main>
+      </div>
 
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-card p-3">
         {publishSlot}

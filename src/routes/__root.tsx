@@ -114,13 +114,30 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Routes that render standalone, without the site header/footer.
+// Routes that render standalone, without the site header/footer. Exact-match
+// only -- fine for single pages with no children.
 const BARE_ROUTES = ["/survey-results"];
+
+// Route subtrees that render standalone, without the site header/footer,
+// including every child route underneath them. /admin is here (not in
+// BARE_ROUTES above) because it isn't a single page -- AdminShell (its own
+// mobile tab strip + pinned Publish bar) is the chrome for every
+// /admin/<section> route, and the marketing header/footer would otherwise
+// wrap it on every one of those child paths too, not just /admin itself.
+const BARE_ROUTE_PREFIXES = ["/admin"];
+
+function isBarePathname(pathname: string) {
+  const normalized = pathname.replace(/\/+$/, "") || "/";
+  if (BARE_ROUTES.includes(normalized)) return true;
+  return BARE_ROUTE_PREFIXES.some(
+    (prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`),
+  );
+}
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isBare = BARE_ROUTES.includes(pathname.replace(/\/+$/, "") || "/");
+  const isBare = isBarePathname(pathname);
 
   if (UNDER_CONSTRUCTION) {
     return <UnderConstruction />;
