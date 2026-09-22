@@ -18,6 +18,8 @@ import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
  * CSS by the caller (src/lib/media/crop.ts), not resized server-side.
  */
 async function findEligibleAsset(assetId: string) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assetId)) return null;
+
   const supabase = await getSupabaseServiceRoleClient();
 
   const { data: asset } = await supabase
@@ -34,6 +36,7 @@ async function findEligibleAsset(assetId: string) {
     .select("id")
     .or(`logo_asset_id.eq.${assetId},cover_asset_id.eq.${assetId}`)
     .eq("status", "published")
+    .limit(1)
     .maybeSingle();
   if (asLogoOrCover) {
     return asset;
@@ -50,6 +53,7 @@ async function findEligibleAsset(assetId: string) {
     .select("id")
     .in("id", memberIds)
     .eq("status", "published")
+    .limit(1)
     .maybeSingle();
 
   return publishedMember ? asset : null;
@@ -79,6 +83,12 @@ export const Route = createFileRoute("/api/member-media/$assetId")({
             // skill's Cache-Control warning -- it doesn't apply to this
             // response).
             "Cache-Control": "public, max-age=3600",
+            // asset.mime_type is app-written (set at upload time), not
+            // browser-sniffed -- still, this is user-supplied content, so
+            // block MIME sniffing to stop a mislabeled/crafted file from
+            // being interpreted as something more dangerous than its
+            // declared type (e.g. HTML/script) by the browser.
+            "X-Content-Type-Options": "nosniff",
           },
         });
       },
