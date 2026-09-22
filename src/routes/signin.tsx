@@ -11,10 +11,22 @@ const NOTICE_MESSAGES: Record<string, string> = {
   "missing-code": "That sign-in link is missing its code. Request a new one below.",
 };
 
+type SignInSearch = {
+  notice?: string;
+};
+
+function validateSignInSearch(search: Record<string, unknown>): SignInSearch {
+  const result: SignInSearch = {};
+
+  if (typeof search.notice === "string") {
+    result.notice = search.notice;
+  }
+
+  return result;
+}
+
 export const Route = createFileRoute("/signin")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    notice: typeof search.notice === "string" ? search.notice : undefined,
-  }),
+  validateSearch: validateSignInSearch,
   head: () => ({ meta: [{ title: "Member sign in — IE Brewers Guild" }] }),
   component: SignInPage,
 });
