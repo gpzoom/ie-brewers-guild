@@ -41,6 +41,16 @@ export function CropEditor({
     setDragStart(null);
   }
 
+  // pointerup isn't the only way a drag ends -- an incoming call, an OS
+  // gesture, or the browser otherwise interrupting an active touch/pen
+  // interaction fires pointercancel instead, with no pointerup at all. Left
+  // unhandled, dragStart stays set and a later, unrelated pointermove
+  // (from a completely different subsequent gesture) keeps panning the
+  // crop with no button/finger actually held.
+  function onPointerCancel() {
+    setDragStart(null);
+  }
+
   return (
     <div className="space-y-2">
       <div
@@ -49,6 +59,7 @@ export function CropEditor({
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
         role="application"
         aria-label="Drag to reposition the crop"
       >

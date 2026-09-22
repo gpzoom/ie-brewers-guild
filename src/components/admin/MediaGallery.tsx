@@ -15,6 +15,22 @@ import { Button } from "@/components/ui/button";
 type UploadState = { status: "idle" | "uploading" | "error"; message?: string };
 const IDLE_UPLOAD: UploadState = { status: "idle" };
 
+/**
+ * Re-inserts a single asset back into whatever the CURRENT list is (sorted
+ * back into its created_at-descending position), rather than restoring a
+ * whole snapshot taken before the delete started. A snapshot would
+ * resurrect any OTHER asset that was deleted (and succeeded) while this
+ * one's request was still in flight -- e.g. delete photo A, then photo B
+ * before A's request returns; B succeeds, A then fails -- restoring a
+ * stale "previousAssets" array would incorrectly bring B back too.
+ */
+function reinsertAsset(prev: MediaAssetRow[], asset: MediaAssetRow): MediaAssetRow[] {
+  if (prev.some((a) => a.id === asset.id)) return prev;
+  return [...prev, asset].sort((a, b) =>
+    a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0,
+  );
+}
+
 export function MediaGallery({
   memberId,
   initialAssets,
@@ -56,16 +72,24 @@ export function MediaGallery({
   }
 
   async function onDelete(asset: MediaAssetRow) {
-    const previousAssets = assets;
     setAssets((prev) => prev.filter((a) => a.id !== asset.id));
     setDeleteError(null);
 
     try {
-      await deleteMemberMedia({ data: { id: asset.id, storagePath: asset.storage_path } });
+      const result = await deleteMemberMedia({ data: { id: asset.id } });
+      // The DB row is genuinely gone at this point regardless of
+      // `fileRemoved` -- do NOT restore the tile for a partial-cleanup
+      // failure, only acknowledge it with a non-blocking notice.
+      if (!result.fileRemoved) {
+        setDeleteError(
+          "The photo was removed, but we couldn't fully clean up the file — no action needed.",
+        );
+      }
     } catch (error) {
-      // Roll the optimistic removal back rather than leaving the asset
-      // permanently (and wrongly) hidden while it still exists server-side.
-      setAssets(previousAssets);
+      // A real failure (the delete itself didn't go through) -- re-insert
+      // just this asset into the current list rather than restoring a
+      // stale snapshot (see reinsertAsset's doc comment).
+      setAssets((prev) => reinsertAsset(prev, asset));
       setDeleteError(
         error instanceof Error ? error.message : "Couldn't delete this photo — try again.",
       );
