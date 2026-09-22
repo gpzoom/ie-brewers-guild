@@ -29,27 +29,34 @@ export default defineConfig(async ({ command, mode }) => {
           // src/lib/members/member-profile.server.ts,
           // src/lib/auth/require-member-session.server.ts,
           // src/lib/members/member-basics.server.ts,
-          // src/lib/hours/hours-editor.server.ts, and
-          // src/lib/media/media-gallery.server.ts are the files in this
+          // src/lib/hours/hours-editor.server.ts,
+          // src/lib/media/media-gallery.server.ts, and
+          // src/lib/media/carousel.server.ts are the files in this
           // repo the restored "**/*.server.*" default pattern would now
-          // also catch, and all five are deliberate exceptions, not a
+          // also catch, and all six are deliberate exceptions, not a
           // gap: every export of each file (`getMemberProfileData`;
           // `requireMemberSession`; `getMemberBasics`/`updateMemberBasics`;
           // `listHours`/`upsertHoursRow`/`deleteHoursRow`/
           // `upsertSpecialHoursRow`/`deleteSpecialHoursRow`;
-          // `listMemberMedia`/`uploadMemberMedia`/`deleteMemberMedia`) is a
-          // createServerFn().handler(...) call -- already the exact safe
-          // client/server RPC boundary this deny rule exists to push
-          // people toward (see the plugin's own "Import denied" message).
+          // `listMemberMedia`/`uploadMemberMedia`/`deleteMemberMedia`;
+          // `listCarouselSlides`/`assignCarouselSlide`/
+          // `unassignCarouselSlide`/`updateCarouselSlideCrop`/
+          // `updateCarouselSlideLink`) is a createServerFn().handler(...)
+          // call -- already the exact safe client/server RPC boundary this
+          // deny rule exists to push people toward (see the plugin's own
+          // "Import denied" message).
           // src/routes/members_.$slug.tsx, src/routes/admin.tsx,
           // src/routes/admin.basics.tsx (plus BasicsForm.tsx, which calls
           // updateMemberBasics from an onBlur/onValueChange handler),
           // src/routes/admin.hours.tsx (plus HoursEditor.tsx, same
           // pattern), and src/routes/admin.media.tsx (plus
           // MediaGallery.tsx, which calls uploadMemberMedia/
-          // deleteMemberMedia from its own handlers) import them directly
+          // deleteMemberMedia from its own handlers, and
+          // CarouselEditor.tsx, which calls assignCarouselSlide/
+          // unassignCarouselSlide/updateCarouselSlideCrop/
+          // updateCarouselSlideLink the same way) import them directly
           // by design, per TanStack Start's own createServerFn convention
-          // -- that is not a violation to catch, so all five are excluded
+          // -- that is not a violation to catch, so all six are excluded
           // here rather than renamed off the *.server.* convention
           // project-wide. The next file added to this list should get the
           // same treatment: update this comment to describe it too, so
@@ -72,6 +79,7 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/members/member-basics.server.ts",
             "src/lib/hours/hours-editor.server.ts",
             "src/lib/media/media-gallery.server.ts",
+            "src/lib/media/carousel.server.ts",
           ],
           specifiers: ["server-only"],
         },
