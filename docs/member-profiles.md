@@ -599,6 +599,22 @@ Nothing in the current build writes visitor data of any kind.
 
 `member-media` private, served through a Worker that applies the crop and resize. `member-logos` may be public since logos are published anyway. Strip EXIF on ingest for both.
 
+### inquiries
+
+Public contact form submissions, captured by the Worker so the row lands even if the confirmation email fails.
+
+- `id`, `created_at` -- the standard convention
+- `name text not null`, `email text not null`, `phone text`, `message text`
+- `wants_membership_info boolean not null default false` -- the "I want to learn more about becoming a member" checkbox
+- `status text not null default 'open'`, check in `(open, handled)` -- two states only; artboard N's filter is Open / Handled / All, no "read" state in the UI
+- `confirmation_sent_at timestamptz` -- load-bearing: artboard N displays "Confirmation email sent automatically at 4:12 pm," and without this column there's no way to tell a delivered auto-reply from one Resend silently failed to send
+- `handled_by_user_id uuid`, fk `auth.users`, and `handled_at timestamptz` -- more than one person may triage
+- `converted_member_id uuid`, fk `members` -- set when an admin uses "Set them up as a member," closing the loop from inquiry to the member record it produced
+
+No IP or honeypot columns; rejection happens before a row is written.
+
+RLS: no public select at all. Inserts go through the Worker with the service key, never a client-side Supabase call. Select and update are restricted to `is_guild_admin`.
+
 ## Computing "open now"
 
 This looks trivial and is a classic source of wrong answers. The rules:
