@@ -116,11 +116,9 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
 
   return (
     <article className="mx-auto max-w-[1120px]">
-      {(headerPrev || headerNext) && (
-        <div className="px-4 pt-4 md:px-6">
-          <HeaderNav prev={headerPrev} next={headerNext} search={search} />
-        </div>
-      )}
+      <div className="px-4 pt-4 md:px-6">
+        <HeaderNav prev={headerPrev} next={headerNext} search={search} />
+      </div>
 
       <ProfileHero member={member} coverUrl={coverUrl} logoUrl={logoPublicUrl} />
 
