@@ -26,17 +26,23 @@ export default defineConfig(async ({ command, mode }) => {
           // still-working guarantee against secret leaks -- but it costs
           // nothing to keep both patterns active.
           files: ["**/*.server.*", "**/server/**"],
-          // src/lib/members/member-profile.server.ts is the one file in
-          // this repo the restored "**/*.server.*" default pattern would
-          // now also catch, and it's a deliberate exception, not a gap:
-          // its ONLY export is `getMemberProfileData`, a
+          // src/lib/members/member-profile.server.ts and
+          // src/lib/auth/require-member-session.server.ts are the two files
+          // in this repo the restored "**/*.server.*" default pattern would
+          // now also catch, and both are deliberate exceptions, not a gap:
+          // each file's ONLY export (`getMemberProfileData` and
+          // `requireMemberSession` respectively) is a
           // createServerFn().handler(...) call -- already the exact safe
           // client/server RPC boundary this deny rule exists to push
           // people toward (see the plugin's own "Import denied" message).
-          // src/routes/members_.$slug.tsx imports it directly by design,
-          // per TanStack Start's own createServerFn convention -- that is
-          // not a violation to catch, so it's excluded here rather than
-          // renamed off the *.server.* convention project-wide.
+          // src/routes/members_.$slug.tsx and src/routes/admin.tsx import
+          // them directly by design, per TanStack Start's own
+          // createServerFn convention -- that is not a violation to catch,
+          // so both are excluded here rather than renamed off the
+          // *.server.* convention project-wide. The next file added to
+          // this list should get the same treatment: update this comment
+          // to describe it too, so the gap that broke the build for
+          // require-member-session.server.ts doesn't repeat.
           //
           // "**/node_modules/**" MUST stay listed here too -- a custom
           // `excludeFiles` array replaces the framework's own default
@@ -47,7 +53,11 @@ export default defineConfig(async ({ command, mode }) => {
           // that ships its own `.server.`/`server/`-named file would
           // otherwise hard-fail the client build with a confusing "Import
           // denied" error from inside node_modules.
-          excludeFiles: ["**/node_modules/**", "src/lib/members/member-profile.server.ts"],
+          excludeFiles: [
+            "**/node_modules/**",
+            "src/lib/members/member-profile.server.ts",
+            "src/lib/auth/require-member-session.server.ts",
+          ],
           specifiers: ["server-only"],
         },
       },
