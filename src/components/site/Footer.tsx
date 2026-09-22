@@ -62,8 +62,11 @@ export function Footer() {
           </form>
         </div>
       </div>
-      <div className="border-t border-border/60 py-5 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} IE Brewers Guild. All rights reserved.
+      <div className="flex flex-col items-center justify-between gap-2 border-t border-border/60 py-5 text-center text-xs text-muted-foreground sm:flex-row sm:px-6">
+        <span>© {new Date().getFullYear()} IE Brewers Guild. All rights reserved.</span>
+        <Link to="/signin" className="min-h-11 py-2 hover:text-primary">
+          Member sign in
+        </Link>
       </div>
     </footer>
   );

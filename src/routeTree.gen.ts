@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SurveyResultsRouteImport } from './routes/survey-results'
 import { Route as SurveyRouteImport } from './routes/survey'
+import { Route as SigninRouteImport } from './routes/signin'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as MembersRouteImport } from './routes/members'
 import { Route as EventsRouteImport } from './routes/events'
@@ -31,6 +32,11 @@ const SurveyResultsRoute = SurveyResultsRouteImport.update({
 const SurveyRoute = SurveyRouteImport.update({
   id: '/survey',
   path: '/survey',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SigninRoute = SigninRouteImport.update({
+  id: '/signin',
+  path: '/signin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewsRoute = NewsRouteImport.update({
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/events': typeof EventsRoute
   '/members': typeof MembersRoute
   '/news': typeof NewsRoute
+  '/signin': typeof SigninRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -111,6 +118,7 @@ export interface FileRoutesByTo {
   '/events': typeof EventsRoute
   '/members': typeof MembersRoute
   '/news': typeof NewsRoute
+  '/signin': typeof SigninRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/events': typeof EventsRoute
   '/members': typeof MembersRoute
   '/news': typeof NewsRoute
+  '/signin': typeof SigninRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/members'
     | '/news'
+    | '/signin'
     | '/survey'
     | '/survey-results'
     | '/auth/callback'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/members'
     | '/news'
+    | '/signin'
     | '/survey'
     | '/survey-results'
     | '/auth/callback'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/members'
     | '/news'
+    | '/signin'
     | '/survey'
     | '/survey-results'
     | '/auth/callback'
@@ -189,6 +201,7 @@ export interface RootRouteChildren {
   EventsRoute: typeof EventsRoute
   MembersRoute: typeof MembersRoute
   NewsRoute: typeof NewsRoute
+  SigninRoute: typeof SigninRoute
   SurveyRoute: typeof SurveyRoute
   SurveyResultsRoute: typeof SurveyResultsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -210,6 +223,13 @@ declare module '@tanstack/react-router' {
       path: '/survey'
       fullPath: '/survey'
       preLoaderRoute: typeof SurveyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signin': {
+      id: '/signin'
+      path: '/signin'
+      fullPath: '/signin'
+      preLoaderRoute: typeof SigninRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/news': {
@@ -310,6 +330,7 @@ const rootRouteChildren: RootRouteChildren = {
   EventsRoute: EventsRoute,
   MembersRoute: MembersRoute,
   NewsRoute: NewsRoute,
+  SigninRoute: SigninRoute,
   SurveyRoute: SurveyRoute,
   SurveyResultsRoute: SurveyResultsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
