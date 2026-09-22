@@ -3,7 +3,7 @@ import { getMemberProfileData } from "@/lib/members/member-profile.server";
 import { validateDirectorySearch } from "@/lib/directory/search-params";
 import { MemberProfileTemplate } from "@/components/profile/MemberProfileTemplate";
 
-export const Route = createFileRoute("/members/$slug")({
+export const Route = createFileRoute("/members_/$slug")({
   validateSearch: validateDirectorySearch,
   loaderDeps: ({ search }) => ({ filter: search.filter, sort: search.sort }),
   loader: async ({ params, deps }) =>
@@ -11,8 +11,17 @@ export const Route = createFileRoute("/members/$slug")({
   head: ({ loaderData }) => {
     if (!loaderData) return {};
     const { member, ogImageUrl, siteOrigin } = loaderData;
-    const description =
-      member.tagline ?? `${member.business_name} — an independent ${member.member_type === "producer" ? "producer" : member.member_type === "mobile" ? "mobile" : "supply"} member of the IE Brewers Guild in ${member.city}.`;
+    // tagline is string | null, but a member who clears the field in
+    // admin realistically stores "" rather than null -- "" isn't
+    // nullish, so `?? fallback` alone would ship a blank description.
+    // `?.trim() || fallback` catches both null and whitespace-only.
+    const fallbackDescription =
+      member.member_type === "producer"
+        ? `${member.business_name} — an independent producer member of the IE Brewers Guild in ${member.city}.`
+        : member.member_type === "mobile"
+          ? `${member.business_name} — an independent mobile member of the IE Brewers Guild in ${member.city}.`
+          : `${member.business_name} — an Allied Member of the IE Brewers Guild in ${member.city}.`;
+    const description = member.tagline?.trim() || fallbackDescription;
     const canonicalUrl = `${siteOrigin}/members/${member.slug}`;
 
     return {
@@ -28,12 +37,15 @@ export const Route = createFileRoute("/members/$slug")({
         { name: "twitter:title", content: member.business_name },
         { name: "twitter:description", content: description },
         ...(ogImageUrl ? [{ name: "twitter:image", content: ogImageUrl }] : []),
-      ],
-      links: [{ rel: "canonical", href: canonicalUrl }],
-      scripts: [
+        // "script:ld+json" (not a hand-built `scripts` entry) is what
+        // routes this through the router's own escapeHtml() before it's
+        // serialized into the page -- business_name/tagline are
+        // admin-curated today but become member-editable in the Member
+        // Admin phase, and a raw JSON.stringify(...) into `scripts`
+        // doesn't escape "<" or "/", so a value containing
+        // "</script><script>..." would break out and execute.
         {
-          type: "application/ld+json",
-          children: JSON.stringify({
+          "script:ld+json": {
             "@context": "https://schema.org",
             "@type": "LocalBusiness",
             name: member.business_name,
@@ -41,18 +53,22 @@ export const Route = createFileRoute("/members/$slug")({
             url: canonicalUrl,
             image: ogImageUrl ?? undefined,
             telephone: member.phone ?? undefined,
-            address: member.street_address
-              ? {
-                  "@type": "PostalAddress",
-                  streetAddress: member.street_address,
-                  addressLocality: member.city,
-                  addressRegion: member.state,
-                  postalCode: member.postal_code ?? undefined,
-                }
-              : undefined,
-          }),
+            // city/state are always present (mobile members have no
+            // street_address by design), so PostalAddress is emitted
+            // unconditionally with streetAddress/postalCode added only
+            // when available, rather than omitting address entirely for
+            // every mobile member.
+            address: {
+              "@type": "PostalAddress",
+              ...(member.street_address ? { streetAddress: member.street_address } : {}),
+              addressLocality: member.city,
+              addressRegion: member.state,
+              ...(member.postal_code ? { postalCode: member.postal_code } : {}),
+            },
+          },
         },
       ],
+      links: [{ rel: "canonical", href: canonicalUrl }],
     };
   },
   component: MemberProfilePage,

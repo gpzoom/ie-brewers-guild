@@ -17,7 +17,7 @@ import { Route as EventsRouteImport } from './routes/events'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as MembersSlugRouteImport } from './routes/members.$slug'
+import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
 import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
 
 const SurveyResultsRoute = SurveyResultsRouteImport.update({
@@ -61,9 +61,9 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const MembersSlugRoute = MembersSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => MembersRoute,
+  id: '/members_/$slug',
+  path: '/members/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMemberMediaAssetIdRoute = ApiMemberMediaAssetIdRouteImport.update({
   id: '/api/member-media/$assetId',
@@ -76,7 +76,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
-  '/members': typeof MembersRouteWithChildren
+  '/members': typeof MembersRoute
   '/news': typeof NewsRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
@@ -88,7 +88,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
-  '/members': typeof MembersRouteWithChildren
+  '/members': typeof MembersRoute
   '/news': typeof NewsRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
@@ -101,11 +101,11 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
-  '/members': typeof MembersRouteWithChildren
+  '/members': typeof MembersRoute
   '/news': typeof NewsRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
-  '/members/$slug': typeof MembersSlugRoute
+  '/members_/$slug': typeof MembersSlugRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRouteTypes {
@@ -143,7 +143,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/survey'
     | '/survey-results'
-    | '/members/$slug'
+    | '/members_/$slug'
     | '/api/member-media/$assetId'
   fileRoutesById: FileRoutesById
 }
@@ -152,10 +152,11 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   ContactRoute: typeof ContactRoute
   EventsRoute: typeof EventsRoute
-  MembersRoute: typeof MembersRouteWithChildren
+  MembersRoute: typeof MembersRoute
   NewsRoute: typeof NewsRoute
   SurveyRoute: typeof SurveyRoute
   SurveyResultsRoute: typeof SurveyResultsRoute
+  MembersSlugRoute: typeof MembersSlugRoute
   ApiMemberMediaAssetIdRoute: typeof ApiMemberMediaAssetIdRoute
 }
 
@@ -217,12 +218,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/members/$slug': {
-      id: '/members/$slug'
-      path: '/$slug'
+    '/members_/$slug': {
+      id: '/members_/$slug'
+      path: '/members/$slug'
       fullPath: '/members/$slug'
       preLoaderRoute: typeof MembersSlugRouteImport
-      parentRoute: typeof MembersRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/member-media/$assetId': {
       id: '/api/member-media/$assetId'
@@ -234,26 +235,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface MembersRouteChildren {
-  MembersSlugRoute: typeof MembersSlugRoute
-}
-
-const MembersRouteChildren: MembersRouteChildren = {
-  MembersSlugRoute: MembersSlugRoute,
-}
-
-const MembersRouteWithChildren =
-  MembersRoute._addFileChildren(MembersRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   ContactRoute: ContactRoute,
   EventsRoute: EventsRoute,
-  MembersRoute: MembersRouteWithChildren,
+  MembersRoute: MembersRoute,
   NewsRoute: NewsRoute,
   SurveyRoute: SurveyRoute,
   SurveyResultsRoute: SurveyResultsRoute,
+  MembersSlugRoute: MembersSlugRoute,
   ApiMemberMediaAssetIdRoute: ApiMemberMediaAssetIdRoute,
 }
 export const routeTree = rootRouteImport
