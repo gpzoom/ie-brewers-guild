@@ -44,19 +44,21 @@ export function StatusBlock({ member, hours, specialHours, tonightEvent }: Statu
         ) : (
           <p className="font-display text-lg text-ink">No dates announced yet</p>
         )}
-        <a
-          href={member.phone ? `tel:${member.phone}` : undefined}
-          className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
-        >
-          <Phone className="h-4 w-4" /> Book us
-        </a>
+        {member.phone && (
+          <a
+            href={`tel:${member.phone}`}
+            className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+          >
+            <Phone className="h-4 w-4" /> Book us
+          </a>
+        )}
       </div>
     );
   }
 
   return (
     <div className="rounded-inset bg-canvas-2 p-4">
-      {!hasHours || openNow.status === "unknown" ? (
+      {openNow.status === "unknown" ? (
         <>
           <p className="font-display text-lg text-ink">Hours not listed</p>
           {member.phone && (
@@ -77,8 +79,21 @@ export function StatusBlock({ member, hours, specialHours, tonightEvent }: Statu
               <>Closed{openNow.nextOpenLabel ? ` — ${openNow.nextOpenLabel}` : ""}</>
             )}
           </p>
-          {tonightEvent && member.member_type !== "allied" && (
-            <p className="text-sm text-ink-muted">Tonight: {tonightEvent.venue_name ?? "on tap"}</p>
+          {/* Second line, per the spec's "Member types" comparison table:
+              producers get tonight's event/pour; Allied Members get
+              service area and typical lead time instead. */}
+          {member.member_type === "allied" ? (
+            (member.service_area || member.lead_time) && (
+              <p className="text-sm text-ink-muted">
+                {member.service_area}
+                {member.service_area && member.lead_time ? " · " : ""}
+                {member.lead_time && `Typical lead time: ${member.lead_time}`}
+              </p>
+            )
+          ) : (
+            tonightEvent && (
+              <p className="text-sm text-ink-muted">Tonight: {tonightEvent.venue_name ?? "on tap"}</p>
+            )
           )}
           {staleLabel && <p className="mt-1 text-xs text-warn">{staleLabel}</p>}
         </>
