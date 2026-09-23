@@ -294,6 +294,18 @@ export default defineConfig(async ({ command, mode }) => {
             // by the "**/*.server.*" glob above and excluded here for the
             // same reason as the rest.
             "src/lib/auth/require-guild-admin-session.server.ts",
+            // src/lib/guild/inquiries.server.ts (Task 24, Guild Admin
+            // phase) -- same reasoning as the files above: its
+            // createServerFn export getInquiries is imported straight into
+            // src/routes/guild.inquiries.tsx's own loader, and its other
+            // two createServerFn exports, markInquiryHandled and
+            // setUpInquiryAsMember, are called directly from
+            // InquiriesTable.tsx's own handleMarkHandled/
+            // handleSetUpAsMember handlers -- the same safe client/server
+            // RPC boundary this deny rule exists to push people toward,
+            // already covered by the "**/*.server.*" glob above and
+            // excluded here for the same reason as the rest.
+            "src/lib/guild/inquiries.server.ts",
           ],
           specifiers: ["server-only"],
         },
