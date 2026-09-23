@@ -35,10 +35,11 @@ export default defineConfig(async ({ command, mode }) => {
           // src/lib/media/cover.server.ts,
           // src/lib/media/logo.server.ts,
           // src/lib/media/upload-tokens.server.ts,
-          // src/lib/media/creator-upload.server.ts, and
-          // src/lib/media/review-tray.server.ts are the files in this
+          // src/lib/media/creator-upload.server.ts,
+          // src/lib/media/review-tray.server.ts, and
+          // src/lib/hours/publish-gate.server.ts are the files in this
           // repo the restored "**/*.server.*" default pattern would now
-          // also catch, and all eleven are deliberate exceptions, not a
+          // also catch, and all twelve are deliberate exceptions, not a
           // gap: every export of each file (`getMemberProfileData`;
           // `requireMemberSession`; `getMemberBasics`/`updateMemberBasics`;
           // `listHours`/`upsertHoursRow`/`deleteHoursRow`/
@@ -51,12 +52,18 @@ export default defineConfig(async ({ command, mode }) => {
           // `uploadMemberLogo`/`getMemberLogo`;
           // `listUploadTokens`/`createUploadToken`/`revokeUploadToken`;
           // `submitCreatorUpload`;
-          // `listPendingMedia`/`approvePendingMedia`/`rejectPendingMedia`)
+          // `listPendingMedia`/`approvePendingMedia`/`rejectPendingMedia`;
+          // `publishMemberProfile`/`unpublishMemberProfile`/
+          // `getPublishGateData`)
           // is a createServerFn().handler(...) call
           // -- already the exact safe client/server RPC boundary this deny
           // rule exists to push people toward (see the plugin's own
           // "Import denied" message).
-          // src/routes/members_.$slug.tsx, src/routes/admin.tsx,
+          // src/routes/members_.$slug.tsx, src/routes/admin.tsx (which
+          // calls getPublishGateData straight from its own loader, and
+          // renders PublishGateDialog.tsx, which calls
+          // publishMemberProfile/unpublishMemberProfile from its own
+          // onPublish/onUnpublish handlers the same way),
           // src/routes/admin.basics.tsx (plus BasicsForm.tsx, which calls
           // updateMemberBasics from an onBlur/onValueChange handler),
           // src/routes/admin.hours.tsx (plus HoursEditor.tsx, same
@@ -90,7 +97,7 @@ export default defineConfig(async ({ command, mode }) => {
           // emitted its RPC provider module. See creator-upload.server.ts's
           // own doc comment) import them directly by design, per TanStack
           // Start's own createServerFn convention -- that is not a
-          // violation to catch, so all eleven are excluded here rather than
+          // violation to catch, so all twelve are excluded here rather than
           // renamed off the *.server.* convention project-wide. The next
           // file added to this list should get the same treatment: update
           // this comment to describe it too, so the gap that broke the
@@ -118,6 +125,7 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/media/upload-tokens.server.ts",
             "src/lib/media/creator-upload.server.ts",
             "src/lib/media/review-tray.server.ts",
+            "src/lib/hours/publish-gate.server.ts",
           ],
           specifiers: ["server-only"],
         },

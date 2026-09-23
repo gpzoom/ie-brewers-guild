@@ -1,30 +1,46 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import type { HoursRow, SpecialHoursRow } from "@/lib/supabase/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+/**
+ * The two `hours`/`special_hours` queries `listHours` needs, extracted into
+ * a plain helper so `publish-gate.server.ts`'s getPublishGateData can reuse
+ * them without calling `listHours` itself as a createServerFn from inside
+ * another handler's body (not the right pattern in this framework -- see
+ * that file's own doc comment). Takes an already-created Supabase client so
+ * it's reusable regardless of caller.
+ */
+export async function fetchMemberHoursAndSpecialHours(
+  supabase: SupabaseClient,
+  memberId: string,
+): Promise<{ hours: HoursRow[]; specialHours: SpecialHoursRow[] }> {
+  const [{ data: hours, error: hoursError }, { data: specialHours, error: specialHoursError }] =
+    await Promise.all([
+      supabase
+        .from("hours")
+        .select("id, member_id, weekday, opens_at, closes_at, closes_next_day, is_closed")
+        .eq("member_id", memberId)
+        .order("weekday"),
+      supabase
+        .from("special_hours")
+        .select("id, member_id, date, is_closed, opens_at, closes_at, closes_next_day, note")
+        .eq("member_id", memberId)
+        .order("date"),
+    ]);
+  if (hoursError) throw new Error(hoursError.message);
+  if (specialHoursError) throw new Error(specialHoursError.message);
+  return {
+    hours: (hours ?? []) as HoursRow[],
+    specialHours: (specialHours ?? []) as SpecialHoursRow[],
+  };
+}
 
 export const listHours = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => data)
   .handler(async ({ data }) => {
     const supabase = await getSupabaseServerClientForRequest();
-    const [{ data: hours, error: hoursError }, { data: specialHours, error: specialHoursError }] =
-      await Promise.all([
-        supabase
-          .from("hours")
-          .select("id, member_id, weekday, opens_at, closes_at, closes_next_day, is_closed")
-          .eq("member_id", data.memberId)
-          .order("weekday"),
-        supabase
-          .from("special_hours")
-          .select("id, member_id, date, is_closed, opens_at, closes_at, closes_next_day, note")
-          .eq("member_id", data.memberId)
-          .order("date"),
-      ]);
-    if (hoursError) throw new Error(hoursError.message);
-    if (specialHoursError) throw new Error(specialHoursError.message);
-    return {
-      hours: (hours ?? []) as HoursRow[],
-      specialHours: (specialHours ?? []) as SpecialHoursRow[],
-    };
+    return fetchMemberHoursAndSpecialHours(supabase, data.memberId);
   });
 
 // --- validation helpers -----------------------------------------------
