@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { Member } from "@/data/site";
 import type { DirectorySearch } from "@/lib/directory/search-params";
-import { slugify } from "@/lib/slug";
+import { locationSlug } from "@/lib/slug";
 import { Compass, ExternalLink, Navigation } from "lucide-react";
 
 type Pin = {
@@ -18,18 +18,22 @@ type Pin = {
 };
 
 function membersToPins(members: Member[]): Pin[] {
-  return members.flatMap((m) =>
-    m.locations.map((l) => ({
+  return members.flatMap((m) => {
+    const multiLocation = m.locations.length > 1;
+    return m.locations.map((l) => ({
       brewery: m.name,
-      slug: slugify(m.name),
+      // Each pin links to ITS OWN location's profile, not always the
+      // first -- clicking the Ontario pin should land on the Ontario
+      // profile, not Chino's, for a business with locations in both.
+      slug: locationSlug(m.name, l.city, multiLocation),
       city: l.city,
       address: l.address,
       lat: l.lat,
       lng: l.lng,
       website: m.website,
       tourUrl: m.tourUrl,
-    })),
-  );
+    }));
+  });
 }
 
 // Once the map is mounted, frame all pins.

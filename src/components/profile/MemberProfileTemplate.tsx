@@ -69,7 +69,7 @@ function toSpecialHoursDay(rows: SpecialHoursRow[]): SpecialHoursDay[] {
  * column 2 ~532px, comfortably wider than the phone case.
  */
 export function MemberProfileTemplate({ data, search }: MemberProfileTemplateProps) {
-  const { member, hours, specialHours, events, carouselSlides, links, categories, crossLink, headerPrev, headerNext, logoPublicUrl, coverAsset } = data;
+  const { member, hours, specialHours, events, carouselSlides, links, categories, crossLink, headerPrev, headerNext, nextLocation, logoPublicUrl, coverAsset } = data;
   // Reconstructed from the server's one serialized instant (MemberProfileData.now),
   // never read fresh here -- see that field's own doc comment for why.
   const now = new Date(data.now);
@@ -176,7 +176,7 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
           inset) geometry; overflow-hidden only at md+ so nothing on
           mobile risks an unintended clip. */}
       <div className="bg-canvas md:overflow-hidden md:rounded-card">
-        <ProfileHero member={member} coverUrl={coverUrl} logoUrl={logoPublicUrl} />
+        <ProfileHero member={member} coverUrl={coverUrl} logoUrl={logoPublicUrl} nextLocation={nextLocation} search={search} />
 
         <div
           className={

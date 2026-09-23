@@ -4,7 +4,7 @@ import { PageHero } from "@/components/site/PageHero";
 import { SectionHeader } from "@/components/site/SectionHeader";
 import { MembersMap } from "@/components/site/MembersMap";
 import { members, type Location } from "@/data/site";
-import { slugify } from "@/lib/slug";
+import { locationSlug } from "@/lib/slug";
 import { validateDirectorySearch } from "@/lib/directory/search-params";
 import { Beer, ExternalLink, Facebook, Instagram, MapPin, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -82,6 +82,13 @@ function MembersPage() {
               navigate({
                 search: (prev) => ({ ...prev, mapLat: view.lat, mapLng: view.lng, mapZoom: view.zoom }),
                 replace: true,
+                // This navigate call is pure URL bookkeeping (persisting the
+                // map's pan/zoom so it survives a reload or a shared link) --
+                // not a real page transition. Without resetScroll: false, the
+                // router's global scrollRestoration: true (router.tsx) treats
+                // every debounced camera-change as a new location and jumps
+                // the page back to the top mid-drag.
+                resetScroll: false,
               })
             }
           />
@@ -169,7 +176,12 @@ function MembersPage() {
 
               <Link
                 to="/members/$slug"
-                params={{ slug: slugify(m.name) }}
+                // The card's one "View profile" link always lands on the
+                // FIRST location's real profile for a multi-location
+                // business (per product decision) -- the profile page's
+                // own "Next location" link is how a visitor reaches the
+                // others from there.
+                params={{ slug: locationSlug(m.name, m.locations[0].city, m.locations.length > 1) }}
                 search={search}
                 className="mt-2 inline-flex min-h-11 items-center gap-1 text-sm font-semibold uppercase tracking-wider text-primary hover:underline"
               >
