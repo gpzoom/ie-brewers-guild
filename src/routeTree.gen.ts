@@ -14,11 +14,13 @@ import { Route as SurveyRouteImport } from './routes/survey'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as MembersRouteImport } from './routes/members'
+import { Route as GuildRouteImport } from './routes/guild'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GuildIndexRouteImport } from './routes/guild.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SendTokenRouteImport } from './routes/send.$token'
 import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
@@ -59,6 +61,11 @@ const MembersRoute = MembersRouteImport.update({
   path: '/members',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuildRoute = GuildRouteImport.update({
+  id: '/guild',
+  path: '/guild',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EventsRoute = EventsRouteImport.update({
   id: '/events',
   path: '/events',
@@ -83,6 +90,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const GuildIndexRoute = GuildIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => GuildRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -161,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
+  '/guild': typeof GuildRouteWithChildren
   '/members': typeof MembersRoute
   '/news': typeof NewsRoute
   '/signin': typeof SigninRoute
@@ -177,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/members/$slug': typeof MembersSlugRoute
   '/send/$token': typeof SendTokenRoute
   '/admin/': typeof AdminIndexRoute
+  '/guild/': typeof GuildIndexRoute
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
@@ -202,6 +216,7 @@ export interface FileRoutesByTo {
   '/members/$slug': typeof MembersSlugRoute
   '/send/$token': typeof SendTokenRoute
   '/admin': typeof AdminIndexRoute
+  '/guild': typeof GuildIndexRoute
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
@@ -213,6 +228,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
+  '/guild': typeof GuildRouteWithChildren
   '/members': typeof MembersRoute
   '/news': typeof NewsRoute
   '/signin': typeof SigninRoute
@@ -229,6 +245,7 @@ export interface FileRoutesById {
   '/members_/$slug': typeof MembersSlugRoute
   '/send/$token': typeof SendTokenRoute
   '/admin/': typeof AdminIndexRoute
+  '/guild/': typeof GuildIndexRoute
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
@@ -241,6 +258,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contact'
     | '/events'
+    | '/guild'
     | '/members'
     | '/news'
     | '/signin'
@@ -257,6 +275,7 @@ export interface FileRouteTypes {
     | '/members/$slug'
     | '/send/$token'
     | '/admin/'
+    | '/guild/'
     | '/api/admin-media/$assetId'
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
@@ -282,6 +301,7 @@ export interface FileRouteTypes {
     | '/members/$slug'
     | '/send/$token'
     | '/admin'
+    | '/guild'
     | '/api/admin-media/$assetId'
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
@@ -292,6 +312,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contact'
     | '/events'
+    | '/guild'
     | '/members'
     | '/news'
     | '/signin'
@@ -308,6 +329,7 @@ export interface FileRouteTypes {
     | '/members_/$slug'
     | '/send/$token'
     | '/admin/'
+    | '/guild/'
     | '/api/admin-media/$assetId'
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
@@ -319,6 +341,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   ContactRoute: typeof ContactRoute
   EventsRoute: typeof EventsRoute
+  GuildRoute: typeof GuildRouteWithChildren
   MembersRoute: typeof MembersRoute
   NewsRoute: typeof NewsRoute
   SigninRoute: typeof SigninRoute
@@ -369,6 +392,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MembersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guild': {
+      id: '/guild'
+      path: '/guild'
+      fullPath: '/guild'
+      preLoaderRoute: typeof GuildRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/events': {
       id: '/events'
       path: '/events'
@@ -403,6 +433,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/guild/': {
+      id: '/guild/'
+      path: '/'
+      fullPath: '/guild/'
+      preLoaderRoute: typeof GuildIndexRouteImport
+      parentRoute: typeof GuildRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -529,12 +566,23 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface GuildRouteChildren {
+  GuildIndexRoute: typeof GuildIndexRoute
+}
+
+const GuildRouteChildren: GuildRouteChildren = {
+  GuildIndexRoute: GuildIndexRoute,
+}
+
+const GuildRouteWithChildren = GuildRoute._addFileChildren(GuildRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   ContactRoute: ContactRoute,
   EventsRoute: EventsRoute,
+  GuildRoute: GuildRouteWithChildren,
   MembersRoute: MembersRoute,
   NewsRoute: NewsRoute,
   SigninRoute: SigninRoute,
