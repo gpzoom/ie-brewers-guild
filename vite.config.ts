@@ -33,10 +33,11 @@ export default defineConfig(async ({ command, mode }) => {
           // src/lib/media/media-gallery.server.ts,
           // src/lib/media/carousel.server.ts,
           // src/lib/media/cover.server.ts,
-          // src/lib/media/logo.server.ts, and
-          // src/lib/media/upload-tokens.server.ts are the files in this
+          // src/lib/media/logo.server.ts,
+          // src/lib/media/upload-tokens.server.ts, and
+          // src/lib/media/creator-upload.server.ts are the files in this
           // repo the restored "**/*.server.*" default pattern would now
-          // also catch, and all nine are deliberate exceptions, not a
+          // also catch, and all ten are deliberate exceptions, not a
           // gap: every export of each file (`getMemberProfileData`;
           // `requireMemberSession`; `getMemberBasics`/`updateMemberBasics`;
           // `listHours`/`upsertHoursRow`/`deleteHoursRow`/
@@ -47,15 +48,16 @@ export default defineConfig(async ({ command, mode }) => {
           // `updateCarouselSlideLink`;
           // `getMemberCover`/`updateCoverAsset`/`updateCoverCrop`;
           // `uploadMemberLogo`/`getMemberLogo`;
-          // `listUploadTokens`/`createUploadToken`/`revokeUploadToken`) is a
-          // createServerFn().handler(...) call -- already the exact safe
-          // client/server RPC boundary this deny rule exists to push
-          // people toward (see the plugin's own "Import denied" message).
+          // `listUploadTokens`/`createUploadToken`/`revokeUploadToken`;
+          // `submitCreatorUpload`) is a createServerFn().handler(...) call
+          // -- already the exact safe client/server RPC boundary this deny
+          // rule exists to push people toward (see the plugin's own
+          // "Import denied" message).
           // src/routes/members_.$slug.tsx, src/routes/admin.tsx,
           // src/routes/admin.basics.tsx (plus BasicsForm.tsx, which calls
           // updateMemberBasics from an onBlur/onValueChange handler),
           // src/routes/admin.hours.tsx (plus HoursEditor.tsx, same
-          // pattern), and src/routes/admin.media.tsx (plus
+          // pattern), src/routes/admin.media.tsx (plus
           // MediaGallery.tsx, which calls uploadMemberMedia/
           // deleteMemberMedia from its own handlers, CarouselEditor.tsx,
           // which calls assignCarouselSlide/unassignCarouselSlide/
@@ -68,14 +70,24 @@ export default defineConfig(async ({ command, mode }) => {
           // the route's own loader instead -- and CreatorLinkPanel.tsx, which
           // calls createUploadToken/revokeUploadToken from its own onCreate/
           // onRevoke handlers the same way -- listUploadTokens is likewise
-          // imported straight into the route's own loader instead) import
-          // them directly by design, per TanStack Start's own createServerFn
-          // convention -- that is not a violation to catch, so all nine are
-          // excluded here rather than renamed off the *.server.* convention
-          // project-wide. The next file added to this list should get the
-          // same treatment: update this comment to describe it too, so the
-          // gap that broke the build for require-member-session.server.ts
-          // doesn't repeat.
+          // imported straight into the route's own loader instead), and
+          // src/routes/send.$token.tsx (its own SendPage component calls
+          // submitCreatorUpload directly from its onSubmit handler -- this
+          // is the one route in this list with no server-side loader/action
+          // of its own calling anything from the same file; the whole
+          // point of this exclusion is that submitCreatorUpload's ONLY
+          // caller is this direct client-side RPC call, since routing it
+          // through a route-level server.handlers.POST instead is exactly
+          // what broke this in production the first time: nothing in the
+          // client bundle referenced the function, so the compiler never
+          // emitted its RPC provider module. See creator-upload.server.ts's
+          // own doc comment) import them directly by design, per TanStack
+          // Start's own createServerFn convention -- that is not a
+          // violation to catch, so all ten are excluded here rather than
+          // renamed off the *.server.* convention project-wide. The next
+          // file added to this list should get the same treatment: update
+          // this comment to describe it too, so the gap that broke the
+          // build for require-member-session.server.ts doesn't repeat.
           //
           // "**/node_modules/**" MUST stay listed here too -- a custom
           // `excludeFiles` array replaces the framework's own default
@@ -97,6 +109,7 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/media/cover.server.ts",
             "src/lib/media/logo.server.ts",
             "src/lib/media/upload-tokens.server.ts",
+            "src/lib/media/creator-upload.server.ts",
           ],
           specifiers: ["server-only"],
         },

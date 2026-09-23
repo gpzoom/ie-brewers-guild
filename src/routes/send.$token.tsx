@@ -7,48 +7,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 /**
- * No auth. This is an early-exit convenience, NOT the actual rate-limit
- * enforcement -- every createServerFn (including submitCreatorUpload) gets
- * its own independently-reachable RPC endpoint that TanStack Start
- * dispatches to directly, before this route's own server.handlers.POST is
- * ever matched, so a check that lived ONLY here could be bypassed entirely
- * by calling that RPC endpoint directly. The real enforcement lives inside
- * submitCreatorUpload itself (see that file's doc comment), keyed on the
- * hashed token so it holds no matter how the function is invoked. Checking
- * env.CREATOR_UPLOAD_RATE_LIMITER here too is still worthwhile: it's a
- * cheap way to short-circuit an obviously-throttled request (by the raw
- * token embedded in the URL) before paying for a request body parse and
- * the DB/crypto work submitCreatorUpload's own check duplicates.
+ * No auth. No custom server.handlers.POST here -- an earlier version of
+ * this route had one, wrapping a raw `fetch(...)` call from the client;
+ * that shape is what broke uploads in production. A createServerFn's RPC
+ * endpoint is only made reachable by the build tracing a real client-side
+ * call to it -- routing the client through a route-level POST handler that
+ * calls submitCreatorUpload SERVER-SIDE means nothing in the CLIENT bundle
+ * ever references it, so the compiler never emits its
+ * `?tss-serverfn-split` provider module and the RPC id never resolves at
+ * runtime (confirmed against a real built Worker: every request 400'd with
+ * "Server function info not found"). Calling submitCreatorUpload directly
+ * from SendPage below -- the same pattern every other admin server-fn call
+ * site in this codebase already uses (e.g. CreatorLinkPanel.tsx) -- is what
+ * makes it reachable at all, and it's also what makes
+ * submitCreatorUpload's own in-handler rate-limit check (see that file's
+ * doc comment) the sole enforcement point: there is no route-level
+ * handler left to duplicate it in, and there doesn't need to be one,
+ * since the same handler body runs regardless of how the function is
+ * invoked.
  */
 export const Route = createFileRoute("/send/$token")({
-  server: {
-    handlers: {
-      POST: async ({ request, params }) => {
-        const { env } = await import("cloudflare:workers");
-        const rateLimiter = (
-          env as {
-            CREATOR_UPLOAD_RATE_LIMITER?: {
-              limit: (opts: { key: string }) => Promise<{ success: boolean }>;
-            };
-          }
-        ).CREATOR_UPLOAD_RATE_LIMITER;
-        const { success } = (await rateLimiter?.limit({ key: params.token })) ?? { success: true };
-        if (!success) {
-          return new Response("Too many upload attempts. Try again in a minute.", { status: 429 });
-        }
-        const formData = await request.formData();
-        formData.set("token", params.token);
-        try {
-          await submitCreatorUpload({ data: formData });
-          return new Response(null, { status: 204 });
-        } catch (err) {
-          return new Response(err instanceof Error ? err.message : "Upload failed.", {
-            status: 400,
-          });
-        }
-      },
-    },
-  },
   head: () => ({ meta: [{ title: "Share a photo — IE Brewers Guild" }] }),
   component: SendPage,
 });
@@ -69,18 +47,22 @@ function SendPage() {
     setErrorMessage(null);
 
     const formData = new FormData();
+    // The route no longer has a server.handlers.POST to inject this
+    // server-side (params.token) -- submitCreatorUpload is now called
+    // directly, so the token has to be set on the client instead.
+    formData.set("token", token);
     formData.set("creatorName", creatorName);
     formData.set("creditRequested", String(creditRequested));
     formData.set("permissionAccepted", String(permissionAccepted));
     formData.set("file", file);
 
-    const response = await fetch(`/send/${token}`, { method: "POST", body: formData });
-    if (!response.ok) {
+    try {
+      await submitCreatorUpload({ data: formData });
+      setStatus("sent");
+    } catch (err) {
       setStatus("error");
-      setErrorMessage(await response.text());
-      return;
+      setErrorMessage(err instanceof Error ? err.message : "Upload failed, please try again.");
     }
-    setStatus("sent");
   };
 
   if (status === "sent") {
