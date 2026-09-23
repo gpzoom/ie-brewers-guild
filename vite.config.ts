@@ -306,6 +306,16 @@ export default defineConfig(async ({ command, mode }) => {
             // already covered by the "**/*.server.*" glob above and
             // excluded here for the same reason as the rest.
             "src/lib/guild/inquiries.server.ts",
+            // src/lib/brand/brand-settings.server.ts (Task 26, Guild Admin
+            // phase) -- same reasoning as the files above: its
+            // createServerFn export getBrandSettings is imported straight
+            // into src/routes/guild.brand.tsx's own loader, and its other
+            // createServerFn export, saveBrandSettings, is called directly
+            // from BrandEditor.tsx's own onSubmit handler -- the same safe
+            // client/server RPC boundary this deny rule exists to push
+            // people toward, already covered by the "**/*.server.*" glob
+            // above and excluded here for the same reason as the rest.
+            "src/lib/brand/brand-settings.server.ts",
           ],
           specifiers: ["server-only"],
         },

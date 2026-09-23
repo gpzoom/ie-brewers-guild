@@ -26,6 +26,7 @@ import { Route as SendTokenRouteImport } from './routes/send.$token'
 import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
 import { Route as GuildRosterRouteImport } from './routes/guild.roster'
 import { Route as GuildInquiriesRouteImport } from './routes/guild.inquiries'
+import { Route as GuildBrandRouteImport } from './routes/guild.brand'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminThemeRouteImport } from './routes/admin.theme'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
@@ -123,6 +124,11 @@ const GuildInquiriesRoute = GuildInquiriesRouteImport.update({
   path: '/inquiries',
   getParentRoute: () => GuildRoute,
 } as any)
+const GuildBrandRoute = GuildBrandRouteImport.update({
+  id: '/brand',
+  path: '/brand',
+  getParentRoute: () => GuildRoute,
+} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
@@ -199,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/admin/media': typeof AdminMediaRoute
   '/admin/theme': typeof AdminThemeRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/guild/brand': typeof GuildBrandRoute
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
   '/members/$slug': typeof MembersSlugRoute
@@ -227,6 +234,7 @@ export interface FileRoutesByTo {
   '/admin/media': typeof AdminMediaRoute
   '/admin/theme': typeof AdminThemeRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/guild/brand': typeof GuildBrandRoute
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
   '/members/$slug': typeof MembersSlugRoute
@@ -258,6 +266,7 @@ export interface FileRoutesById {
   '/admin/media': typeof AdminMediaRoute
   '/admin/theme': typeof AdminThemeRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/guild/brand': typeof GuildBrandRoute
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
   '/members_/$slug': typeof MembersSlugRoute
@@ -290,6 +299,7 @@ export interface FileRouteTypes {
     | '/admin/media'
     | '/admin/theme'
     | '/auth/callback'
+    | '/guild/brand'
     | '/guild/inquiries'
     | '/guild/roster'
     | '/members/$slug'
@@ -318,6 +328,7 @@ export interface FileRouteTypes {
     | '/admin/media'
     | '/admin/theme'
     | '/auth/callback'
+    | '/guild/brand'
     | '/guild/inquiries'
     | '/guild/roster'
     | '/members/$slug'
@@ -348,6 +359,7 @@ export interface FileRouteTypes {
     | '/admin/media'
     | '/admin/theme'
     | '/auth/callback'
+    | '/guild/brand'
     | '/guild/inquiries'
     | '/guild/roster'
     | '/members_/$slug'
@@ -500,6 +512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuildInquiriesRouteImport
       parentRoute: typeof GuildRoute
     }
+    '/guild/brand': {
+      id: '/guild/brand'
+      path: '/brand'
+      fullPath: '/guild/brand'
+      preLoaderRoute: typeof GuildBrandRouteImport
+      parentRoute: typeof GuildRoute
+    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
@@ -605,12 +624,14 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface GuildRouteChildren {
+  GuildBrandRoute: typeof GuildBrandRoute
   GuildInquiriesRoute: typeof GuildInquiriesRoute
   GuildRosterRoute: typeof GuildRosterRoute
   GuildIndexRoute: typeof GuildIndexRoute
 }
 
 const GuildRouteChildren: GuildRouteChildren = {
+  GuildBrandRoute: GuildBrandRoute,
   GuildInquiriesRoute: GuildInquiriesRoute,
   GuildRosterRoute: GuildRosterRoute,
   GuildIndexRoute: GuildIndexRoute,
