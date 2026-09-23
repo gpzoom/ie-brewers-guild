@@ -55,7 +55,16 @@ export function ThemePicker({
     setSelected(theme);
     try {
       await updateMemberTheme({ data: { memberId, theme } });
-      savedThemeRef.current = theme;
+      // Same staleness guard as the catch block below -- without it, an
+      // OLDER click's late-arriving SUCCESS (not just a failure) can
+      // still clobber savedThemeRef back to a stale value after a newer
+      // click already succeeded and correctly set it: click A, click B,
+      // B resolves first (savedThemeRef = B, correct), then A also
+      // resolves and unconditionally overwrites savedThemeRef back to A.
+      // `selected` stays visibly correct (still B, untouched here), but
+      // savedThemeRef is now quietly wrong -- so a LATER click's failure
+      // would roll back to stale A instead of the actually-current B.
+      if (clickId === latestClickRef.current) savedThemeRef.current = theme;
     } catch (err) {
       // A newer click already superseded this one -- if it succeeded,
       // savedThemeRef/`selected` already correctly reflect it and this
