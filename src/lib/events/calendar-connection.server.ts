@@ -8,13 +8,19 @@ import type { CalendarConnectionRow } from "@/lib/supabase/types";
  * This is the first place in this repo where the server fetches an
  * arbitrary, member-supplied URL rather than only ever talking to Supabase
  * or a fixed set of known services (`connection.ics_url`, below) -- so it
- * carries real caps a normal internal fetch doesn't need. Same 5MB-class
- * cap precedent as `src/lib/media/validate-file.ts`'s `MAX_UPLOAD_BYTES`
- * for uploaded files (25MB there, since a real photo/logo legitimately
- * needs that much; an ICS calendar feed -- plain text -- has no legitimate
- * reason to be anywhere near even this smaller limit).
+ * carries real caps a normal internal fetch doesn't need. Same cap
+ * precedent as `src/lib/media/validate-file.ts`'s `MAX_UPLOAD_BYTES` for
+ * uploaded files (25MB there, since a real photo/logo legitimately needs
+ * that much), but set much smaller here -- 1MB, not the 5MB first shipped
+ * with this feature -- because a plain-text ICS calendar feed has no
+ * legitimate reason to approach even that, AND because the ICS-parsing
+ * step that runs after the fetch/read completes (parseIcsFeedForTag,
+ * below) is itself unbounded CPU work with no timeout of its own covering
+ * it (ICS_FETCH_TIMEOUT_MS only bounds the network fetch/read) -- a
+ * smaller cap on the input text directly shrinks that uncovered exposure
+ * too.
  */
-const MAX_ICS_BYTES = 5 * 1024 * 1024;
+const MAX_ICS_BYTES = 1 * 1024 * 1024;
 
 /** An unresponsive or deliberately slow-looping feed URL must fail with a
  * clear, diagnosable error rather than hang until Cloudflare Workers' own
@@ -96,6 +102,27 @@ export async function readBoundedText(response: Response, maxBytes: number): Pro
   return new TextDecoder("utf-8").decode(combined);
 }
 
+/**
+ * Converts a fetch/stream-read abort into the clear, diagnosable message
+ * syncOneIcsConnection wants to record, instead of the platform's raw
+ * "The operation was aborted due to timeout" text. `AbortSignal.timeout`'s
+ * abort reason is a DOMException named "TimeoutError" (a plain
+ * "AbortError" for any other abort path) -- and since the SAME signal
+ * passed to `fetch()` also governs the response body stream (aborting it
+ * errors any in-flight `reader.read()` the same way), this must be applied
+ * around BOTH the initial `fetch()` call and the later `readBoundedText`
+ * read loop, not just the former -- a timeout that fires mid-stream (after
+ * headers arrive but before the body finishes) would otherwise surface
+ * this same raw platform text instead of the friendly one. Any other
+ * error is passed through unchanged.
+ */
+function toFriendlyFetchError(err: unknown): Error {
+  if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
+    return new Error("The calendar feed took too long to respond.");
+  }
+  return err instanceof Error ? err : new Error(String(err));
+}
+
 export const getCalendarConnection = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => data)
   .handler(async ({ data }) => {
@@ -174,41 +201,72 @@ export const saveIcsConnection = createServerFn({ method: "POST" })
  * `fetch()` sandboxing already substantially mitigates the "reach internal
  * cloud metadata/internal network" pattern a traditional VM-hosted server
  * would need this for -- deferred as a lower-priority follow-up, not
- * forgotten.
+ * forgotten. If that hardening is ever built: `fetch()` follows
+ * cross-origin redirects by default (confirmed live in review), so
+ * validating only the initial URL would NOT be sufficient once IP-range
+ * blocking exists -- it would need `redirect: "manual"` with per-hop
+ * revalidation of each redirect target, not a one-time check of the
+ * stored URL. No real exposure today: every redirect target is still
+ * subject to the same http(s)-only restriction below, so this doesn't
+ * widen the scheme attack surface, only (in the future) the IP-range one.
+ *
+ * The http(s)-scheme check below (validateIcsUrl) is deliberately run
+ * HERE, inside this function's own try block -- not only in
+ * saveIcsConnection's handler (which also runs it, as a faster-feedback
+ * UX guard on the happy path; this call is the one that's actually load-
+ * bearing). A signed-in member has direct Supabase REST access to their
+ * own calendar_connections row (RLS's `is_member_editor` already permits
+ * it), so a `file://`/`data:` URL can reach `ics_url` by a PATCH that
+ * never goes through saveIcsConnection at all -- and the not-yet-built
+ * Task 29 cron calls this exact function with the service-role client
+ * against whatever is actually stored, with no createServerFn handler in
+ * front of it to re-validate first. Checking it here, inside the same
+ * try/catch that already records every other failure mode to
+ * sync_status/last_sync_error, means a bad stored URL fails the same
+ * graceful way regardless of how it got into the row.
  */
 export async function syncOneIcsConnection(supabase: SupabaseClient, connection: CalendarConnectionRow): Promise<void> {
   if (!connection.ics_url || !connection.sync_tag) return;
 
   try {
+    const urlCheck = validateIcsUrl(connection.ics_url);
+    if (!urlCheck.valid) throw new Error(urlCheck.reason);
+
     let response: Response;
     try {
       response = await fetch(connection.ics_url, { signal: AbortSignal.timeout(ICS_FETCH_TIMEOUT_MS) });
     } catch (err) {
-      // AbortSignal.timeout's abort reason is a DOMException named
-      // "TimeoutError" (a plain "AbortError" for any other abort path) --
-      // both are re-thrown as a clear, diagnosable message rather than
-      // whatever raw "The operation was aborted" text the platform gives,
-      // and caught below the same as any other sync failure (recorded on
-      // sync_status/last_sync_error, not left as an unhandled rejection).
-      if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
-        throw new Error("The calendar feed took too long to respond.");
-      }
-      throw err;
+      throw toFriendlyFetchError(err);
     }
     if (!response.ok) throw new Error(`ICS feed responded with ${response.status}`);
 
     // Fast-path early exit when the server is honest about size -- the
     // real bound is readBoundedText below, since Content-Length isn't
     // always sent and can't be fully trusted (see readBoundedText's doc
-    // comment).
+    // comment). Cancels the body rather than just discarding the
+    // response, so the connection is actually torn down instead of left
+    // to keep receiving bytes in the background after this has already
+    // decided to fail.
     const contentLength = response.headers.get("content-length");
     if (contentLength && Number(contentLength) > MAX_ICS_BYTES) {
+      await response.body?.cancel().catch(() => {});
       throw new Error(
         `The calendar feed is larger than the ${Math.round(MAX_ICS_BYTES / (1024 * 1024))}MB limit.`,
       );
     }
 
-    const icsText = await readBoundedText(response, MAX_ICS_BYTES);
+    let icsText: string;
+    try {
+      // The same AbortSignal governs the response body stream, not just
+      // the initial connection -- a timeout that fires mid-stream throws
+      // out of readBoundedText's reader.read() loop the same way it does
+      // out of fetch() itself, so this needs the same friendly-message
+      // conversion. See toFriendlyFetchError's doc comment.
+      icsText = await readBoundedText(response, MAX_ICS_BYTES);
+    } catch (err) {
+      throw toFriendlyFetchError(err);
+    }
+
     const parsedEvents = parseIcsFeedForTag(icsText, connection.sync_tag);
     const rows = buildEventUpsertRows(connection.member_id, connection.id, parsedEvents);
 
@@ -219,7 +277,13 @@ export async function syncOneIcsConnection(supabase: SupabaseClient, connection:
 
     await supabase.from("calendar_connections").update({ last_synced_at: new Date().toISOString(), last_sync_error: null, sync_status: "ok" }).eq("id", connection.id);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    // Capped -- the ICS parser's own thrown messages (and some raw fetch
+    // errors) can echo back attacker/misconfiguration-controlled feed
+    // content verbatim. Low severity on its own (a member can only ever
+    // point this at their own feed, and this is stored text rendered
+    // through React's normal escaping, not markup), but there's no reason
+    // to let an unbounded string land in this column regardless.
+    const message = (err instanceof Error ? err.message : String(err)).slice(0, 500);
     await supabase.from("calendar_connections").update({ last_sync_error: message, sync_status: "failing" }).eq("id", connection.id);
   }
 }
@@ -231,5 +295,22 @@ export const refreshIcsConnectionNow = createServerFn({ method: "POST" })
     const { data: connection, error } = await supabase.from("calendar_connections").select("*").eq("id", data.connectionId).single();
     if (error || !connection) throw new Error("Calendar connection not found.");
     await syncOneIcsConnection(supabase, connection as CalendarConnectionRow);
-    return { ok: true as const };
+
+    // syncOneIcsConnection swallows every failure into the row itself
+    // (sync_status/last_sync_error) rather than throwing -- deliberately,
+    // so one bad feed can't interrupt the Task 29 cron's batch run. That
+    // means this always resolves regardless of whether the sync actually
+    // succeeded, so returning a bare {ok: true} here would make a failed
+    // "Refresh now" look identical to a successful one to the caller.
+    // Re-select and return the row so CalendarConnectionPanel's
+    // onRefreshNow can show the real, current sync_status/last_sync_error
+    // immediately, instead of the member only discovering a failure on a
+    // later page reload.
+    const { data: refreshed, error: refetchError } = await supabase
+      .from("calendar_connections")
+      .select("*")
+      .eq("id", data.connectionId)
+      .single();
+    if (refetchError || !refreshed) throw new Error("Calendar connection not found.");
+    return refreshed as CalendarConnectionRow;
   });

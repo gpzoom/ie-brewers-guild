@@ -21,8 +21,16 @@ export function CalendarConnectionPanel({ memberId, initialConnection }: { membe
    * there with no feedback at all. Same try/catch + visible role="alert"
    * message shape as CoverEditor.tsx's onChooseAsset / PublishGateDialog's
    * onPublish/onUnpublish.
+   *
+   * Both inputs share this same onBlur handler, and a member simply
+   * clicking into then back out of either field -- with nothing typed in
+   * either -- fires onBlur with both still empty. Without the early return
+   * below, that would call saveIcsConnection with an empty icsUrl and show
+   * "That doesn't look like a valid URL" to someone who hasn't done
+   * anything wrong yet.
    */
   async function onSave() {
+    if (icsUrl.trim() === "" && syncTag.trim() === "") return;
     setError(null);
     try {
       const { id } = await saveIcsConnection({ data: { memberId, icsUrl, syncTag } });
@@ -50,13 +58,25 @@ export function CalendarConnectionPanel({ memberId, initialConnection }: { membe
    * setRefreshing(false) run unconditionally regardless of success or
    * failure, and the catch surfaces a real, visible error instead of an
    * unhandled rejection.
+   *
+   * `refreshIcsConnectionNow` always resolves (never throws) once it's
+   * successfully found the connection row, because syncOneIcsConnection
+   * swallows every sync failure into sync_status/last_sync_error rather
+   * than throwing -- so a plain `{ok: true}` return would make a broken
+   * feed (typo'd URL, a 404/503, ...) look identical to a successful
+   * refresh: no error shown here, and the stale "Not yet synced"/old
+   * last-synced text left on screen until a later page reload. Reading
+   * the row `refreshIcsConnectionNow` now returns and applying it to
+   * `connection` state makes a failed sync show up immediately via the
+   * existing `sync_status === "failing"` branch below.
    */
   async function onRefreshNow() {
     if (!connection) return;
     setError(null);
     setRefreshing(true);
     try {
-      await refreshIcsConnectionNow({ data: { connectionId: connection.id } });
+      const refreshed = await refreshIcsConnectionNow({ data: { connectionId: connection.id } });
+      setConnection(refreshed);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Refresh failed — try again.");
     } finally {

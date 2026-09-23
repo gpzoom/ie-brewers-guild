@@ -73,9 +73,9 @@ describe("readBoundedText", () => {
   });
 
   it("throws on a single chunk that alone exceeds the cap", async () => {
-    const oversized = new Uint8Array(6 * 1024 * 1024); // 6MB, over the 5MB production cap
+    const oversized = new Uint8Array(2 * 1024 * 1024); // 2MB, over the 1MB production cap
     const response = streamedResponse([oversized]);
-    await expect(readBoundedText(response, 5 * 1024 * 1024)).rejects.toThrow(/larger than/i);
+    await expect(readBoundedText(response, 1024 * 1024)).rejects.toThrow(/larger than/i);
   });
 
   it("never resolves with more than maxBytes worth of decoded content, even across many small chunks", async () => {
@@ -121,6 +121,46 @@ function fakeSupabase(): { supabase: SupabaseClient; lastUpdate: () => Record<st
     }),
   };
   return { supabase: supabase as unknown as SupabaseClient, lastUpdate: () => lastUpdate };
+}
+
+/**
+ * A fuller in-memory fake that actually persists `update()` patches onto a
+ * row and serves them back via `select().eq().single()` -- used to
+ * reproduce, end to end, exactly what refreshIcsConnectionNow's handler
+ * does: call syncOneIcsConnection (which writes sync_status/last_sync_error
+ * via update()), then re-select the same row. `refreshIcsConnectionNow`
+ * itself is a createServerFn wrapping getSupabaseServerClientForRequest()
+ * (a real per-request Cloudflare/Supabase client this repo has no existing
+ * pattern for unit-testing directly -- see src/lib/supabase/server.ts), so
+ * this reproduces its two-step logic against a fake table instead of
+ * calling the wrapped handler itself.
+ */
+function fakeSupabaseWithRow(initial: CalendarConnectionRow): {
+  supabase: SupabaseClient;
+  getRow: () => CalendarConnectionRow;
+} {
+  let row: CalendarConnectionRow = { ...initial };
+  const supabase = {
+    from: (table: string) => {
+      if (table !== "calendar_connections") {
+        return { upsert: async () => ({ error: null }) };
+      }
+      return {
+        update: (patch: Record<string, unknown>) => ({
+          eq: async () => {
+            row = { ...row, ...patch } as CalendarConnectionRow;
+            return { data: [{ id: row.id }], error: null };
+          },
+        }),
+        select: () => ({
+          eq: () => ({
+            single: async () => ({ data: row, error: null }),
+          }),
+        }),
+      };
+    },
+  };
+  return { supabase: supabase as unknown as SupabaseClient, getRow: () => row };
 }
 
 describe("syncOneIcsConnection", () => {
@@ -179,7 +219,7 @@ describe("syncOneIcsConnection", () => {
 
   /** Concrete evidence for the size-cap fix's real backstop: a feed that UNDER-reports (or omits) Content-Length but streams an oversized body is still caught, by readBoundedText's own running-total check. */
   it("records a clear size-limit error when the streamed body exceeds the cap despite no (or a lying) Content-Length header", async () => {
-    const oversized = new Uint8Array(6 * 1024 * 1024).fill(65);
+    const oversized = new Uint8Array(2 * 1024 * 1024).fill(65); // 2MB, over the 1MB production cap
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
         controller.enqueue(oversized);
@@ -194,5 +234,157 @@ describe("syncOneIcsConnection", () => {
     const update = lastUpdate();
     expect(update?.sync_status).toBe("failing");
     expect(update?.last_sync_error).toMatch(/larger than/i);
+  });
+
+  /**
+   * Concrete evidence for the fast-path fix that pairs with the size-cap
+   * fix above: the Content-Length-too-large rejection must actually cancel
+   * the underlying stream, not just stop reading from it locally. The
+   * stream below deliberately never closes on its own (no controller.close()
+   * call) -- the ONLY way this response's body is ever torn down is a
+   * genuine reader.cancel()/body.cancel() call, so a spy on `cancel` firing
+   * proves the connection was actually released, not just abandoned.
+   */
+  it("cancels the response body's stream when Content-Length alone is enough to reject it", async () => {
+    const stream = new ReadableStream<Uint8Array>({
+      start() {
+        // Deliberately empty -- never enqueues or closes. Proves the only
+        // thing that can end this stream is an explicit cancel() call.
+      },
+    });
+    const response = new Response(stream, {
+      status: 200,
+      headers: { "content-length": String(2 * 1024 * 1024) },
+    });
+    const cancelSpy = vi.spyOn(response.body as ReadableStream<Uint8Array>, "cancel");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
+
+    const { supabase, lastUpdate } = fakeSupabase();
+    await syncOneIcsConnection(supabase, CONNECTION);
+
+    expect(cancelSpy).toHaveBeenCalled();
+    const update = lastUpdate();
+    expect(update?.sync_status).toBe("failing");
+    expect(update?.last_sync_error).toMatch(/larger than/i);
+  });
+
+  /**
+   * Concrete evidence for fix #3 (timeout detection extended to cover
+   * body-streaming, not just connection establishment): fetch() itself
+   * resolves immediately with headers/a 200 status, but the body stream
+   * then stalls indefinitely -- only the governing AbortSignal firing (the
+   * real, unmodified 10s ICS_FETCH_TIMEOUT_MS) ever ends it, exactly
+   * modeling a feed that starts responding, then hangs mid-transfer.
+   * Before this fix, this scenario surfaced the raw platform abort text
+   * (caught only around the initial fetch() call); after it, readBoundedText's
+   * own reader.read() rejection is now also converted to the same friendly
+   * message via toFriendlyFetchError.
+   */
+  it(
+    "records the same clear 'took too long' error when the timeout fires mid-stream, after fetch() has already resolved",
+    async () => {
+      vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => {
+        const signal = (init as { signal?: AbortSignal } | undefined)?.signal;
+        const stream = new ReadableStream<Uint8Array>({
+          start(controller) {
+            signal?.addEventListener("abort", () => {
+              controller.error(signal.reason);
+            });
+          },
+        });
+        return Promise.resolve(new Response(stream, { status: 200 }));
+      });
+
+      const { supabase, lastUpdate } = fakeSupabase();
+      await syncOneIcsConnection(supabase, CONNECTION);
+
+      const update = lastUpdate();
+      expect(update?.sync_status).toBe("failing");
+      expect(update?.last_sync_error).toMatch(/took too long to respond/i);
+    },
+    15_000,
+  );
+
+  /**
+   * Concrete evidence for fix #1 (URL validation is now enforced INSIDE
+   * syncOneIcsConnection itself, not only in saveIcsConnection's handler):
+   * simulates a `data:` URL that reached the stored row by some path other
+   * than saveIcsConnection (a direct Supabase REST PATCH, or -- before this
+   * fix -- the Task 29 cron calling this exact function against whatever's
+   * actually in the database). fetch must never even be attempted, and the
+   * failure must be recorded the same graceful way as any other sync
+   * failure.
+   */
+  it("rejects a data: URL stored directly on the row, gracefully, without ever calling fetch", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const { supabase, lastUpdate } = fakeSupabase();
+    const maliciousConnection: CalendarConnectionRow = {
+      ...CONNECTION,
+      ics_url: "data:text/calendar,BEGIN:VCALENDAR%0AEND:VCALENDAR",
+    };
+
+    await syncOneIcsConnection(supabase, maliciousConnection);
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    const update = lastUpdate();
+    expect(update?.sync_status).toBe("failing");
+    expect(update?.last_sync_error).toMatch(/http/i);
+  });
+
+  /** Same as above, for a `file://` URL -- the other scheme the brief specifically called out. */
+  it("rejects a file:// URL stored directly on the row, gracefully, without ever calling fetch", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const { supabase, lastUpdate } = fakeSupabase();
+    const maliciousConnection: CalendarConnectionRow = { ...CONNECTION, ics_url: "file:///etc/passwd" };
+
+    await syncOneIcsConnection(supabase, maliciousConnection);
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    const update = lastUpdate();
+    expect(update?.sync_status).toBe("failing");
+    expect(update?.last_sync_error).toMatch(/http/i);
+  });
+
+  /** Concrete evidence for fix #5: a pathologically long thrown message is capped before being persisted. */
+  it("caps last_sync_error length rather than storing an unbounded message", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("x".repeat(10_000)));
+
+    const { supabase, lastUpdate } = fakeSupabase();
+    await syncOneIcsConnection(supabase, CONNECTION);
+
+    const update = lastUpdate();
+    expect(typeof update?.last_sync_error).toBe("string");
+    expect((update?.last_sync_error as string).length).toBeLessThanOrEqual(500);
+  });
+});
+
+describe("refreshIcsConnectionNow's re-select-after-sync data flow", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  /**
+   * Concrete evidence for fix #2: reproduces refreshIcsConnectionNow's own
+   * two-step logic (call syncOneIcsConnection, then re-select the row) end
+   * to end against a persistent fake table, using a feed URL that returns a
+   * real 503. Proves the row CalendarConnectionPanel's onRefreshNow now
+   * receives back and feeds into setConnection has sync_status "failing"
+   * and a real last_sync_error -- exactly what its existing
+   * `connection.sync_status === "failing"` render branch checks -- rather
+   * than the previous always-{ok:true} shape that left a failed refresh
+   * invisible until a later reload.
+   */
+  it("returns a row with sync_status 'failing' and a real last_sync_error after a broken feed (503) sync", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("Service Unavailable", { status: 503 }));
+
+    const { supabase, getRow } = fakeSupabaseWithRow(CONNECTION);
+
+    // Mirrors refreshIcsConnectionNow's handler body exactly: sync, then
+    // re-select the same row by id.
+    await syncOneIcsConnection(supabase, getRow());
+    const refreshed = getRow();
+
+    expect(refreshed.sync_status).toBe("failing");
+    expect(refreshed.last_sync_error).toMatch(/responded with 503/i);
   });
 });
