@@ -1,0 +1,213 @@
+import { useEffect, useRef, useState } from "react";
+import { updateCoverAsset, updateCoverCrop } from "@/lib/media/cover.server";
+import { CropEditor } from "@/components/admin/CropEditor";
+import type { CropRect } from "@/lib/media/crop";
+import type { MediaAssetRow } from "@/lib/supabase/types";
+
+// Same ~400ms debounce as CarouselEditor's own crop autosave (see that
+// file's CROP_SAVE_DEBOUNCE_MS doc comment for the full rationale --
+// CropEditor's onPointerMove fires onChange on every pointer-move
+// sample, so a single drag gesture would otherwise turn into dozens of
+// immediate, unawaited POSTs, and under out-of-order network delivery an
+// older crop landing after a newer one would visibly "undo" part of the
+// member's own edit). The local/visual crop below still updates
+// instantly on every onChange; only the network write is debounced, and
+// it's flushed immediately on pointer-up/pointer-cancel so the final
+// dragged position is always what gets persisted.
+const CROP_SAVE_DEBOUNCE_MS = 400;
+
+/** "Theme colour fills the band" is the empty state everywhere a member has no cover photo set (spec, "Profile hero and theme"). */
+export function CoverEditor({
+  memberId,
+  coverAssetId,
+  coverCrop,
+  galleryAssets,
+}: {
+  memberId: string;
+  coverAssetId: string | null;
+  coverCrop: CropRect | null;
+  galleryAssets: MediaAssetRow[];
+}) {
+  const [assetId, setAssetId] = useState(coverAssetId);
+  const [crop, setCrop] = useState<CropRect>(coverCrop ?? { x: 0, y: 0, w: 1, h: 1 });
+  const [error, setError] = useState<string | undefined>(undefined);
+
+  // Last known PERSISTED crop. A failed debounced crop save rolls the
+  // visual crop back to this rather than leaving it showing a position
+  // the server never actually saved -- same reasoning as
+  // CarouselEditor.tsx's savedCropRef / MediaGallery.tsx's reinsertAsset.
+  const savedCropRef = useRef<CropRect>(coverCrop ?? { x: 0, y: 0, w: 1, h: 1 });
+  // The crop a debounced/flushed save should actually send. Deliberately
+  // NOT read off `crop` state or captured in a closure at
+  // setTimeout-schedule time -- see CarouselEditor.tsx's latestCropRef
+  // doc comment for the full stale-closure race this avoids (a member
+  // panning/zooming, then holding the pointer down motionless for the
+  // full debounce window without releasing, could otherwise cause the
+  // timer to send a crop from one render-tick before the hold, not the
+  // position actually being held). Written SYNCHRONOUSLY inside
+  // onCropChange, on every call, before the timer is (re)armed -- so
+  // whatever the timer callback or the pointerup/pointercancel flush
+  // reads at FIRE time is always the latest actual crop, with no render
+  // lag and no closure to go stale. Only one cover crop exists (no
+  // per-slide keying needed, unlike CarouselEditor's Record<string, ...>).
+  const latestCropRef = useRef<CropRect>(coverCrop ?? { x: 0, y: 0, w: 1, h: 1 });
+  const cropDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Lets a failed choose reset the <select>'s own DOM value back to ""
+  // -- see onChooseAsset's catch block for why: it's an uncontrolled
+  // element, so resetting React state alone wouldn't touch what the
+  // browser is actually showing, and a browser <select> never fires
+  // `change` for re-picking the option that's already selected. Same
+  // shape as CarouselEditor.tsx's selectRefs.
+  const selectRef = useRef<HTMLSelectElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (cropDebounceTimer.current) clearTimeout(cropDebounceTimer.current);
+    };
+  }, []);
+
+  function friendlyMessage(err: unknown, fallback: string) {
+    return err instanceof Error ? err.message : fallback;
+  }
+
+  /**
+   * Awaits the mutation and shows a real error on failure instead of the
+   * brief's given fire-and-forget shape -- if updateCoverAsset throws
+   * (ownership-check failure, an RLS denial, ...) that would otherwise be
+   * an unhandled promise rejection with the <select> left showing the
+   * just-picked photo while nothing was actually saved and no error ever
+   * shown. There's no optimistic asset/crop to roll back here (state is
+   * only set AFTER a successful response), so this just needs the
+   * try/catch to surface a message and reset the uncontrolled <select>.
+   * Same shape as CarouselEditor.tsx's onAssign.
+   */
+  async function onChooseAsset(asset: MediaAssetRow) {
+    setError(undefined);
+    try {
+      const result = await updateCoverAsset({
+        data: { memberId, assetId: asset.id, assetWidth: asset.width, assetHeight: asset.height },
+      });
+      savedCropRef.current = result.crop;
+      latestCropRef.current = result.crop;
+      setAssetId(asset.id);
+      setCrop(result.crop);
+    } catch (err) {
+      if (selectRef.current) selectRef.current.value = "";
+      setError(friendlyMessage(err, "Couldn't set this cover photo — try again."));
+    }
+  }
+
+  /**
+   * Sends whatever crop is CURRENTLY in `latestCropRef` -- read at CALL
+   * time, not captured in a closure at schedule time. See latestCropRef's
+   * own doc comment above for why that distinction matters.
+   */
+  function saveCropNow() {
+    const cropToSave = latestCropRef.current;
+    updateCoverCrop({ data: { memberId, crop: cropToSave } })
+      .then(() => {
+        savedCropRef.current = cropToSave;
+        setError(undefined);
+      })
+      .catch((err: unknown) => {
+        const rollback = savedCropRef.current;
+        // Keep the ref in sync with what's now actually displayed --
+        // otherwise a later flush (e.g. a stray pointerup) would read
+        // this ref and re-send the crop that just failed instead of the
+        // rolled-back one the member is now looking at.
+        latestCropRef.current = rollback;
+        setCrop(rollback);
+        setError(friendlyMessage(err, "Couldn't save this crop — try again."));
+      });
+  }
+
+  /** Cancels any pending debounced crop save and sends the current crop immediately. */
+  function flushCropSave() {
+    if (cropDebounceTimer.current) {
+      clearTimeout(cropDebounceTimer.current);
+      cropDebounceTimer.current = null;
+    }
+    saveCropNow();
+  }
+
+  function onCropChange(next: CropRect) {
+    // Written SYNCHRONOUSLY, before anything else below -- this is what
+    // makes latestCropRef always current regardless of React's render
+    // timing. See its doc comment above.
+    latestCropRef.current = next;
+
+    // Local/visual update is instant on every call -- dragging must stay
+    // responsive regardless of the network debounce below.
+    setCrop(next);
+
+    if (cropDebounceTimer.current) clearTimeout(cropDebounceTimer.current);
+    cropDebounceTimer.current = setTimeout(() => {
+      cropDebounceTimer.current = null;
+      saveCropNow();
+    }, CROP_SAVE_DEBOUNCE_MS);
+  }
+
+  const asset = galleryAssets.find((a) => a.id === assetId);
+
+  return (
+    <section>
+      <h2 className="text-lg font-medium text-foreground">Cover photo</h2>
+      <p className="text-xs text-muted-foreground">No cover photo? Your theme colour fills the band instead.</p>
+      <div className="mt-3 max-w-md">
+        {asset ? (
+          // Served through /api/admin-media, NOT /api/member-media -- that
+          // other route only serves an asset once it's already referenced
+          // by a PUBLISHED member's own logo/cover/carousel slide, which
+          // this member's own admin panel can't rely on while they're
+          // still choosing/editing their cover (and possibly still
+          // draft/pending themselves). /api/admin-media instead checks
+          // OWNERSHIP via requireMemberSession(), which is the right rule
+          // here. See src/routes/api.admin-media.$assetId.ts and
+          // CarouselEditor.tsx's identical choice.
+          //
+          // onPointerUp/onPointerCancel here catch the same pointer events
+          // CropEditor's own internal handlers respond to (it doesn't stop
+          // their propagation) -- this is how the debounced crop save gets
+          // flushed the moment a drag ends, without CropEditor itself
+          // needing to know anything about debouncing.
+          <div onPointerUp={flushCropSave} onPointerCancel={flushCropSave}>
+            <CropEditor
+              imageUrl={`/api/admin-media/${asset.id}`}
+              crop={crop}
+              aspectClassName="aspect-[5/2]"
+              onChange={onCropChange}
+            />
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No cover photo set.</p>
+        )}
+        <select
+          ref={selectRef}
+          className="mt-2 h-11 w-full rounded-md border border-border bg-background text-sm"
+          aria-label="Choose a cover photo"
+          defaultValue=""
+          onChange={(e) => {
+            const chosen = galleryAssets.find((a) => a.id === e.target.value);
+            if (chosen) void onChooseAsset(chosen);
+          }}
+        >
+          <option value="" disabled>
+            Choose from gallery…
+          </option>
+          {galleryAssets
+            .filter((a) => a.review_status === "approved")
+            .map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.original_filename ?? a.id}
+              </option>
+            ))}
+        </select>
+        {error && (
+          <p role="alert" className="mt-2 text-xs text-danger">
+            {error}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}

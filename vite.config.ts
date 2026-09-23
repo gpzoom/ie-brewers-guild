@@ -30,10 +30,11 @@ export default defineConfig(async ({ command, mode }) => {
           // src/lib/auth/require-member-session.server.ts,
           // src/lib/members/member-basics.server.ts,
           // src/lib/hours/hours-editor.server.ts,
-          // src/lib/media/media-gallery.server.ts, and
-          // src/lib/media/carousel.server.ts are the files in this
+          // src/lib/media/media-gallery.server.ts,
+          // src/lib/media/carousel.server.ts, and
+          // src/lib/media/cover.server.ts are the files in this
           // repo the restored "**/*.server.*" default pattern would now
-          // also catch, and all six are deliberate exceptions, not a
+          // also catch, and all seven are deliberate exceptions, not a
           // gap: every export of each file (`getMemberProfileData`;
           // `requireMemberSession`; `getMemberBasics`/`updateMemberBasics`;
           // `listHours`/`upsertHoursRow`/`deleteHoursRow`/
@@ -41,27 +42,30 @@ export default defineConfig(async ({ command, mode }) => {
           // `listMemberMedia`/`uploadMemberMedia`/`deleteMemberMedia`;
           // `listCarouselSlides`/`assignCarouselSlide`/
           // `unassignCarouselSlide`/`updateCarouselSlideCrop`/
-          // `updateCarouselSlideLink`) is a createServerFn().handler(...)
-          // call -- already the exact safe client/server RPC boundary this
-          // deny rule exists to push people toward (see the plugin's own
-          // "Import denied" message).
+          // `updateCarouselSlideLink`;
+          // `getMemberCover`/`updateCoverAsset`/`updateCoverCrop`) is a
+          // createServerFn().handler(...) call -- already the exact safe
+          // client/server RPC boundary this deny rule exists to push
+          // people toward (see the plugin's own "Import denied" message).
           // src/routes/members_.$slug.tsx, src/routes/admin.tsx,
           // src/routes/admin.basics.tsx (plus BasicsForm.tsx, which calls
           // updateMemberBasics from an onBlur/onValueChange handler),
           // src/routes/admin.hours.tsx (plus HoursEditor.tsx, same
           // pattern), and src/routes/admin.media.tsx (plus
           // MediaGallery.tsx, which calls uploadMemberMedia/
-          // deleteMemberMedia from its own handlers, and
-          // CarouselEditor.tsx, which calls assignCarouselSlide/
-          // unassignCarouselSlide/updateCarouselSlideCrop/
-          // updateCarouselSlideLink the same way) import them directly
-          // by design, per TanStack Start's own createServerFn convention
-          // -- that is not a violation to catch, so all six are excluded
-          // here rather than renamed off the *.server.* convention
-          // project-wide. The next file added to this list should get the
-          // same treatment: update this comment to describe it too, so
-          // the gap that broke the build for require-member-session.server.ts
-          // doesn't repeat.
+          // deleteMemberMedia from its own handlers, CarouselEditor.tsx,
+          // which calls assignCarouselSlide/unassignCarouselSlide/
+          // updateCarouselSlideCrop/updateCarouselSlideLink the same way,
+          // and CoverEditor.tsx, which calls updateCoverAsset/
+          // updateCoverCrop the same way -- getMemberCover is imported
+          // straight into the route's own loader instead) import them
+          // directly by design, per TanStack Start's own
+          // createServerFn convention -- that is not a violation to catch,
+          // so all seven are excluded here rather than renamed off the
+          // *.server.* convention project-wide. The next file added to
+          // this list should get the same treatment: update this comment
+          // to describe it too, so the gap that broke the build for
+          // require-member-session.server.ts doesn't repeat.
           //
           // "**/node_modules/**" MUST stay listed here too -- a custom
           // `excludeFiles` array replaces the framework's own default
@@ -80,6 +84,7 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/hours/hours-editor.server.ts",
             "src/lib/media/media-gallery.server.ts",
             "src/lib/media/carousel.server.ts",
+            "src/lib/media/cover.server.ts",
           ],
           specifiers: ["server-only"],
         },

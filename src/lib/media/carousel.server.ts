@@ -42,7 +42,7 @@ export const listCarouselSlides = createServerFn({ method: "GET" })
  * explicit in code, on the write path, rather than relying on that side
  * effect.
  */
-async function assertAssetOwnedByMember(
+export async function assertAssetOwnedByMember(
   supabase: Awaited<ReturnType<typeof getSupabaseServerClientForRequest>>,
   assetId: string,
   memberId: string,
