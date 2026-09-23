@@ -235,3 +235,37 @@ export type MemberCategoryRow = {
   member_id: string;
   category_id: string;
 };
+
+export type InquiryRow = {
+  id: string;
+  created_at: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  message: string | null;
+  wants_membership_info: boolean;
+  status: "open" | "handled";
+  confirmation_sent_at: string | null;
+  handled_by_user_id: string | null;
+  handled_at: string | null;
+  converted_member_id: string | null;
+};
+
+export type AuditLogRow = {
+  id: string;
+  created_at: string;
+  actor_user_id: string;
+  member_id: string | null;
+  table_name: string;
+  row_id: string | null;
+  action: "insert" | "update" | "delete";
+};
+
+export type BrandSettingsRow = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  font_pairing: string;
+  tokens: Record<string, string>;
+  updated_by_user_id: string | null;
+};
