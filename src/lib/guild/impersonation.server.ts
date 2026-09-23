@@ -97,7 +97,7 @@ export const stopImpersonation = createServerFn({ method: "POST" }).handler(asyn
  * reading the raw cookie itself, so the verification and expiry rules only
  * live in one place.
  */
-export async function readImpersonationState(): Promise<ImpersonationState | null> {
+export const readImpersonationState = createServerOnlyFn(async (): Promise<ImpersonationState | null> => {
   const raw = getCookie(IMPERSONATION_COOKIE_NAME);
   if (!raw) return null;
   const secret = await getCookieSecret();
@@ -105,7 +105,7 @@ export async function readImpersonationState(): Promise<ImpersonationState | nul
   if (!state) return null;
   if (isImpersonationExpired(state, Date.now())) return null;
   return state;
-}
+});
 
 /**
  * Refreshes lastActivityAt and re-sets the cookie. Called from both the
@@ -113,9 +113,9 @@ export async function readImpersonationState(): Promise<ImpersonationState | nul
  * wrapper on every mutation (below) -- either kind of activity re-arms the
  * 30-minute idle timeout (this plan's Decision 4).
  */
-export async function touchImpersonationActivity(state: ImpersonationState): Promise<void> {
+export const touchImpersonationActivity = createServerOnlyFn(async (state: ImpersonationState): Promise<void> => {
   await setImpersonationCookie({ ...state, lastActivityAt: Date.now() });
-}
+});
 
 /** Used by AdminShell's impersonation banner (Task 20) to name who's being edited. */
 export const getMemberDisplayName = createServerFn({ method: "GET" })
