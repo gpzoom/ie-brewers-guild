@@ -19,6 +19,7 @@ type MediaCarouselProps = {
   slides: (CarouselSlideRow & { asset: MediaAssetRow })[];
   memberName: string;
   theme: MemberThemeName;
+  isPreview: boolean;
 };
 
 /**
@@ -32,7 +33,7 @@ type MediaCarouselProps = {
  * component should never render a fifth slide even if a future admin
  * tool or a manual DB fix lets one through upstream.
  */
-export function MediaCarousel({ slides, memberName, theme }: MediaCarouselProps) {
+export function MediaCarousel({ slides, memberName, theme, isPreview }: MediaCarouselProps) {
   const capped = slides.slice(0, MAX_SLIDES);
   const [api, setApi] = useState<CarouselApi>();
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -69,7 +70,7 @@ export function MediaCarousel({ slides, memberName, theme }: MediaCarouselProps)
         {capped.map((slide) => {
           const image = (
             <MemberImage
-              src={`/api/member-media/${slide.asset.id}`}
+              src={`${isPreview ? "/api/admin-media" : "/api/member-media"}/${slide.asset.id}`}
               crop={slide.crop}
               alt={`${memberName} photo`}
               theme={theme}

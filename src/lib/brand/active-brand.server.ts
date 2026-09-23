@@ -21,9 +21,22 @@ export type ActiveBrand = {
  * loader (Step 2) -- never per-component.
  */
 export const getActiveBrandTokens = createServerFn({ method: "GET" }).handler(async (): Promise<ActiveBrand> => {
-  const supabase = await getSupabaseServiceRoleClient();
-  const { data } = await supabase.from("brand_settings").select("*").maybeSingle();
-  const row = data as BrandSettingsRow | null;
+  let row: BrandSettingsRow | null = null;
+  try {
+    const supabase = await getSupabaseServiceRoleClient();
+    const { data } = await supabase.from("brand_settings").select("*").maybeSingle();
+    row = data as BrandSettingsRow | null;
+  } catch (err) {
+    // getSupabaseServiceRoleClient() throws synchronously when
+    // VITE_SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY are missing from the
+    // Worker environment. This function now runs on every page load via
+    // __root.tsx's loader, so a deployment misconfiguration here must
+    // degrade to the same default-tokens fallback used below for "no
+    // brand_settings row yet" -- not take down every public page. Still
+    // console.error'd so a genuine misconfiguration stays visible in
+    // Worker logs.
+    console.error("getActiveBrandTokens: failed to read brand_settings, falling back to defaults", err);
+  }
 
   const tokens: BrandTokens = row ? (row.tokens as BrandTokens) : DEFAULT_BRAND_TOKENS;
   const fontPairing = getFontPairingById(row?.font_pairing ?? DEFAULT_FONT_PAIRING_ID) ?? getFontPairingById(DEFAULT_FONT_PAIRING_ID)!;

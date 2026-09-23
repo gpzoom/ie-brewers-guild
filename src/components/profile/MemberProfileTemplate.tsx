@@ -149,7 +149,9 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
     : null;
   const tonightEvent = member.member_type === "mobile" ? nextEvent : nextEventLocalDate === todayLocalDate ? nextEvent : null;
 
-  const coverUrl = coverAsset ? `/api/member-media/${coverAsset.id}` : null;
+  const coverUrl = coverAsset
+    ? `${data.isPreview ? "/api/admin-media" : "/api/member-media"}/${coverAsset.id}`
+    : null;
 
   return (
     <article className="mx-auto max-w-[1120px]">
@@ -222,7 +224,12 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
               className="lg:order-first lg:col-start-1 lg:[grid-row-end:var(--carousel-row-span)]"
               style={{ "--carousel-row-span": `span ${contentRows}` } as CSSProperties}
             >
-              <MediaCarousel slides={carouselSlides} memberName={member.business_name} theme={member.theme} />
+              <MediaCarousel
+                slides={carouselSlides}
+                memberName={member.business_name}
+                theme={member.theme}
+                isPreview={data.isPreview}
+              />
             </div>
           )}
 

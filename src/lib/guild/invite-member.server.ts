@@ -13,11 +13,32 @@ import { sendTransactionalEmail } from "@/lib/email/send";
  * Resend phase) never blocks the invite/DB-write from succeeding -- same
  * pattern as every other sendTransactionalEmail call site in this
  * codebase.
+ *
+ * The is_guild_admin check below MUST run before the service-role client
+ * is ever touched: this createServerFn is a real, independently
+ * network-reachable HTTP endpoint (the RPC boundary this codebase relies
+ * on for every client-called server function) regardless of whether the
+ * roster UI is the only thing that calls it -- without this check, any
+ * caller could make this Supabase project send real invite emails to
+ * arbitrary addresses using the service-role client, which bypasses RLS
+ * entirely.
  */
 export const inviteMember = createServerFn({ method: "POST" })
   .inputValidator((data: { memberId: string; email: string }) => data)
   .handler(async ({ data }) => {
     const supabase = await getSupabaseServerClientForRequest();
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) throw new Error("Not signed in.");
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_guild_admin")
+      .eq("id", userData.user.id)
+      .maybeSingle();
+    if (!profile?.is_guild_admin) {
+      throw new Error("Only a Guild admin can send an invite.");
+    }
+
     const serviceClient = await getSupabaseServiceRoleClient();
 
     const { data: inviteData, error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(data.email);
@@ -31,18 +52,22 @@ export const inviteMember = createServerFn({ method: "POST" })
       role: "owner",
     });
     if (memberUserError) {
-      // Roll back the auth user so a partial failure never leaves an
-      // orphaned, unlinked auth.users row behind -- without this, the
-      // member would stay stuck "unclaimed" forever and a re-invite for
-      // the same email would hit unverified inviteUserByEmail behavior
-      // against an already-registered-but-unlinked user.
-      await serviceClient.auth.admin.deleteUser(inviteData.user.id).catch((cleanupErr) => {
-        console.error(
-          "inviteMember: failed to roll back orphaned auth user after member_users insert failure",
-          cleanupErr,
-        );
-      });
-      throw new Error(memberUserError.message);
+      // A 23505 unique-violation on (member_id, user_id) means this exact
+      // link already exists -- e.g. a double-click, or re-inviting an
+      // email that's already linked to this same member -- nothing to
+      // roll back, the user this call wanted linked already is. Any other
+      // error means the write genuinely failed, so roll back the
+      // just-created auth user rather than leaving an orphaned, unlinked
+      // one behind.
+      if (memberUserError.code !== "23505") {
+        await serviceClient.auth.admin.deleteUser(inviteData.user.id).catch((cleanupErr) => {
+          console.error(
+            "inviteMember: failed to roll back orphaned auth user after member_users insert failure",
+            cleanupErr,
+          );
+        });
+        throw new Error(memberUserError.message);
+      }
     }
 
     try {
