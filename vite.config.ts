@@ -219,6 +219,21 @@ export default defineConfig(async ({ command, mode }) => {
             // "**/*.server.*" glob above and excluded here for the same
             // reason as the rest.
             "src/lib/media/social-image.server.ts",
+            // src/lib/guild/impersonation.server.ts (Task 13, Guild Admin
+            // phase) -- same reasoning as the files above: its two
+            // createServerFn exports, startImpersonation and
+            // stopImpersonation, are called directly from client
+            // components in later tasks of this same plan (the roster's
+            // "Edit as them" button, Task 18, and AdminShell's "Stop"
+            // button, Task 20) -- the same safe client/server RPC boundary
+            // this deny rule exists to push people toward, already covered
+            // by the "**/*.server.*" glob above and excluded here for the
+            // same reason as the rest. getMemberDisplayName is also a
+            // createServerFn export of this file but is only ever called
+            // server-side per this plan; it rides along with the same
+            // exclusion since the file-level allowlist can't be split
+            // per-export.
+            "src/lib/guild/impersonation.server.ts",
           ],
           specifiers: ["server-only"],
         },
