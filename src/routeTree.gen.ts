@@ -29,6 +29,7 @@ import { Route as AdminHoursRouteImport } from './routes/admin.hours'
 import { Route as AdminEventsRouteImport } from './routes/admin.events'
 import { Route as AdminBasicsRouteImport } from './routes/admin.basics'
 import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
+import { Route as ApiConfirmHoursTokenRouteImport } from './routes/api.confirm-hours.$token'
 import { Route as ApiAdminMediaAssetIdRouteImport } from './routes/api.admin-media.$assetId'
 
 const SurveyResultsRoute = SurveyResultsRouteImport.update({
@@ -131,6 +132,11 @@ const ApiMemberMediaAssetIdRoute = ApiMemberMediaAssetIdRouteImport.update({
   path: '/api/member-media/$assetId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiConfirmHoursTokenRoute = ApiConfirmHoursTokenRouteImport.update({
+  id: '/api/confirm-hours/$token',
+  path: '/api/confirm-hours/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminMediaAssetIdRoute = ApiAdminMediaAssetIdRouteImport.update({
   id: '/api/admin-media/$assetId',
   path: '/api/admin-media/$assetId',
@@ -158,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/send/$token': typeof SendTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
+  '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRoutesByTo {
@@ -180,6 +187,7 @@ export interface FileRoutesByTo {
   '/send/$token': typeof SendTokenRoute
   '/admin': typeof AdminIndexRoute
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
+  '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRoutesById {
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/send/$token': typeof SendTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
+  '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
 }
 export interface FileRouteTypes {
@@ -229,6 +238,7 @@ export interface FileRouteTypes {
     | '/send/$token'
     | '/admin/'
     | '/api/admin-media/$assetId'
+    | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/send/$token'
     | '/admin'
     | '/api/admin-media/$assetId'
+    | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
   id:
     | '__root__'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/send/$token'
     | '/admin/'
     | '/api/admin-media/$assetId'
+    | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
   fileRoutesById: FileRoutesById
 }
@@ -292,6 +304,7 @@ export interface RootRouteChildren {
   MembersSlugRoute: typeof MembersSlugRoute
   SendTokenRoute: typeof SendTokenRoute
   ApiAdminMediaAssetIdRoute: typeof ApiAdminMediaAssetIdRoute
+  ApiConfirmHoursTokenRoute: typeof ApiConfirmHoursTokenRoute
   ApiMemberMediaAssetIdRoute: typeof ApiMemberMediaAssetIdRoute
 }
 
@@ -437,6 +450,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMemberMediaAssetIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/confirm-hours/$token': {
+      id: '/api/confirm-hours/$token'
+      path: '/api/confirm-hours/$token'
+      fullPath: '/api/confirm-hours/$token'
+      preLoaderRoute: typeof ApiConfirmHoursTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin-media/$assetId': {
       id: '/api/admin-media/$assetId'
       path: '/api/admin-media/$assetId'
@@ -482,6 +502,7 @@ const rootRouteChildren: RootRouteChildren = {
   MembersSlugRoute: MembersSlugRoute,
   SendTokenRoute: SendTokenRoute,
   ApiAdminMediaAssetIdRoute: ApiAdminMediaAssetIdRoute,
+  ApiConfirmHoursTokenRoute: ApiConfirmHoursTokenRoute,
   ApiMemberMediaAssetIdRoute: ApiMemberMediaAssetIdRoute,
 }
 export const routeTree = rootRouteImport

@@ -39,10 +39,11 @@ export default defineConfig(async ({ command, mode }) => {
           // src/lib/media/review-tray.server.ts,
           // src/lib/hours/publish-gate.server.ts,
           // src/lib/theme/member-theme.server.ts,
-          // src/lib/events/events.server.ts, and
-          // src/lib/events/calendar-connection.server.ts are the files in
+          // src/lib/events/events.server.ts,
+          // src/lib/events/calendar-connection.server.ts, and
+          // src/lib/hours/confirm-token.server.ts are the files in
           // this repo the restored "**/*.server.*" default pattern would
-          // now also catch, and all fifteen are deliberate exceptions, not
+          // now also catch, and all sixteen are deliberate exceptions, not
           // a gap: every export of each file (`getMemberProfileData`;
           // `requireMemberSession`; `getMemberBasics`/`updateMemberBasics`;
           // `listHours`/`upsertHoursRow`/`deleteHoursRow`/
@@ -66,7 +67,7 @@ export default defineConfig(async ({ command, mode }) => {
           // a createServerFn, but it's never imported client-side either;
           // it's only ever called from refreshIcsConnectionNow's own
           // handler here and from the Task 29 cron, both server-only
-          // contexts)
+          // contexts; `checkHoursConfirmToken`/`confirmHoursStale`)
           // is a createServerFn().handler(...) call
           // -- already the exact safe client/server RPC boundary this deny
           // rule exists to push people toward (see the plugin's own
@@ -120,9 +121,16 @@ export default defineConfig(async ({ command, mode }) => {
           // what broke this in production the first time: nothing in the
           // client bundle referenced the function, so the compiler never
           // emitted its RPC provider module. See creator-upload.server.ts's
-          // own doc comment) import them directly by design, per TanStack
+          // own doc comment), and
+          // src/routes/api.confirm-hours.$token.tsx (its loader calls
+          // checkHoursConfirmToken, and its own ConfirmHoursPage component
+          // calls confirmHoursStale directly from its onConfirm handler --
+          // same reasoning as send.$token.tsx just above: no route-level
+          // server.handlers.POST, so the client bundle's own direct call is
+          // confirmHoursStale's only path to being reachable at all)
+          // import them directly by design, per TanStack
           // Start's own createServerFn convention -- that is not a
-          // violation to catch, so all fourteen are excluded here rather
+          // violation to catch, so all sixteen are excluded here rather
           // than renamed off the *.server.* convention project-wide. The
           // next file added to this list should get the same treatment: update
           // this comment to describe it too, so the gap that broke the
@@ -154,6 +162,7 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/theme/member-theme.server.ts",
             "src/lib/events/events.server.ts",
             "src/lib/events/calendar-connection.server.ts",
+            "src/lib/hours/confirm-token.server.ts",
           ],
           specifiers: ["server-only"],
         },
