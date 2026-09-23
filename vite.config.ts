@@ -34,10 +34,11 @@ export default defineConfig(async ({ command, mode }) => {
           // src/lib/media/carousel.server.ts,
           // src/lib/media/cover.server.ts,
           // src/lib/media/logo.server.ts,
-          // src/lib/media/upload-tokens.server.ts, and
-          // src/lib/media/creator-upload.server.ts are the files in this
+          // src/lib/media/upload-tokens.server.ts,
+          // src/lib/media/creator-upload.server.ts, and
+          // src/lib/media/review-tray.server.ts are the files in this
           // repo the restored "**/*.server.*" default pattern would now
-          // also catch, and all ten are deliberate exceptions, not a
+          // also catch, and all eleven are deliberate exceptions, not a
           // gap: every export of each file (`getMemberProfileData`;
           // `requireMemberSession`; `getMemberBasics`/`updateMemberBasics`;
           // `listHours`/`upsertHoursRow`/`deleteHoursRow`/
@@ -49,7 +50,9 @@ export default defineConfig(async ({ command, mode }) => {
           // `getMemberCover`/`updateCoverAsset`/`updateCoverCrop`;
           // `uploadMemberLogo`/`getMemberLogo`;
           // `listUploadTokens`/`createUploadToken`/`revokeUploadToken`;
-          // `submitCreatorUpload`) is a createServerFn().handler(...) call
+          // `submitCreatorUpload`;
+          // `listPendingMedia`/`approvePendingMedia`/`rejectPendingMedia`)
+          // is a createServerFn().handler(...) call
           // -- already the exact safe client/server RPC boundary this deny
           // rule exists to push people toward (see the plugin's own
           // "Import denied" message).
@@ -70,7 +73,11 @@ export default defineConfig(async ({ command, mode }) => {
           // the route's own loader instead -- and CreatorLinkPanel.tsx, which
           // calls createUploadToken/revokeUploadToken from its own onCreate/
           // onRevoke handlers the same way -- listUploadTokens is likewise
-          // imported straight into the route's own loader instead), and
+          // imported straight into the route's own loader instead -- and
+          // ReviewTray.tsx, which calls approvePendingMedia/
+          // rejectPendingMedia from its own onApprove/onReject handlers the
+          // same way -- listPendingMedia is likewise imported straight into
+          // the route's own loader instead), and
           // src/routes/send.$token.tsx (its own SendPage component calls
           // submitCreatorUpload directly from its onSubmit handler -- this
           // is the one route in this list with no server-side loader/action
@@ -83,7 +90,7 @@ export default defineConfig(async ({ command, mode }) => {
           // emitted its RPC provider module. See creator-upload.server.ts's
           // own doc comment) import them directly by design, per TanStack
           // Start's own createServerFn convention -- that is not a
-          // violation to catch, so all ten are excluded here rather than
+          // violation to catch, so all eleven are excluded here rather than
           // renamed off the *.server.* convention project-wide. The next
           // file added to this list should get the same treatment: update
           // this comment to describe it too, so the gap that broke the
@@ -110,6 +117,7 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/media/logo.server.ts",
             "src/lib/media/upload-tokens.server.ts",
             "src/lib/media/creator-upload.server.ts",
+            "src/lib/media/review-tray.server.ts",
           ],
           specifiers: ["server-only"],
         },
