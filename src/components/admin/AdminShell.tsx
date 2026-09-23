@@ -1,6 +1,7 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { stopImpersonation } from "@/lib/guild/impersonation.server";
+import { signOutEverything } from "@/lib/auth/sign-out.server";
 
 const NAV_ITEMS = [
   { to: "/admin/basics", label: "Basics" },
@@ -57,6 +58,11 @@ export function AdminShell({
     await router.navigate({ to: "/guild/roster" });
   }
 
+  async function handleSignOut() {
+    await signOutEverything();
+    await router.navigate({ to: "/" });
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       {isImpersonating && (
@@ -93,6 +99,13 @@ export function AdminShell({
               {item.label}
             </Link>
           ))}
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="ml-auto min-h-11 shrink-0 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+          >
+            Sign out
+          </button>
         </nav>
 
         <div className="flex flex-1 flex-col">

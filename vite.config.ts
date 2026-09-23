@@ -271,6 +271,16 @@ export default defineConfig(async ({ command, mode }) => {
             // the "**/*.server.*" glob above and excluded here for the
             // same reason as the rest.
             "src/lib/guild/member-admin-actions.server.ts",
+            // src/lib/auth/sign-out.server.ts (Task 23, Guild Admin phase)
+            // -- same reasoning as the files above: its one createServerFn
+            // export, signOutEverything, is called directly from client
+            // components -- GuildShell.tsx's own handleSignOut handler
+            // (Task 11) and AdminShell.tsx's own handleSignOut handler
+            // (this task) -- the same safe client/server RPC boundary this
+            // deny rule exists to push people toward, already covered by
+            // the "**/*.server.*" glob above and excluded here for the
+            // same reason as the rest.
+            "src/lib/auth/sign-out.server.ts",
           ],
           specifiers: ["server-only"],
         },
