@@ -14,6 +14,7 @@ import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import { UnderConstruction } from "@/components/site/UnderConstruction";
+import { getActiveBrandTokens } from "@/lib/brand/active-brand.server";
 
 const UNDER_CONSTRUCTION = import.meta.env.VITE_UNDER_CONSTRUCTION === "true";
 
@@ -66,7 +67,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
+  loader: async () => getActiveBrandTokens(),
+  head: ({ loaderData }) => ({
     meta: UNDER_CONSTRUCTION
       ? [
           { charSet: "utf-8" },
@@ -93,8 +95,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Chivo:wght@400;500;600&display=swap" },
+      { rel: "stylesheet", href: loaderData?.googleFontsHref ?? "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Chivo:wght@400;500;600&display=swap" },
     ],
+    styles: loaderData ? [{ key: "brand-tokens", children: loaderData.css }] : [],
   }),
   shellComponent: RootShell,
   component: RootComponent,
