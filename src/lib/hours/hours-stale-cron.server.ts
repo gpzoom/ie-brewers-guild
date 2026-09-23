@@ -50,16 +50,25 @@ export async function sendHoursStaleNotices(): Promise<void> {
     const token = await signHoursConfirmToken(member.id, secret);
     const siteOrigin = "https://iebrewersguild.org"; // no in-flight request to read an origin from in a cron -- the production domain is hardcoded here rather than left as a TODO.
 
+    // "Notified" must only ever mean "actually emailed" -- hours_stale_notice_sent_at
+    // is the ONLY signal hasAlreadyBeenNotifiedForCurrentStalenessEpisode has for
+    // permanently suppressing further notices for this staleness episode, so writing
+    // it after a failed send would starve that member of any future notice until they
+    // independently reconfirm their hours (an action unrelated to ever having been
+    // prompted to). This matters concretely today: sendTransactionalEmail is still
+    // Task 19's unimplemented stub that always throws, so leaving this write outside
+    // the try/catch would have permanently (and silently) marked every currently-stale
+    // member "notified" on this cron's very first production run without a single real
+    // email going out -- a review finding, not a hypothetical.
     try {
       await sendTransactionalEmail({
         trigger: "hours_stale",
         memberId: member.id,
         confirmUrl: `${siteOrigin}/api/confirm-hours/${token}`,
       });
+      await supabase.from("members").update({ hours_stale_notice_sent_at: new Date().toISOString() }).eq("id", member.id);
     } catch (err) {
       console.error("sendTransactionalEmail(hours_stale) failed", err);
     }
-
-    await supabase.from("members").update({ hours_stale_notice_sent_at: new Date().toISOString() }).eq("id", member.id);
   }
 }
