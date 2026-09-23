@@ -14,7 +14,7 @@
  *
  * Run:
  *   node --env-file=.env scripts/import-existing-members.ts --dry-run   # inspect only, no DB/network calls
- *   node --env-file=.env scripts/import-existing-members.ts             # actually import (idempotent, safe to re-run)
+ *   node --env-file=.env scripts/import-existing-members.ts             # actually import (idempotent ONLY while every imported row is still unclaimed and un-admin-edited -- see the member_users guard below)
  */
 import { existsSync, readFileSync } from "node:fs";
 import { resolve, extname, basename } from "node:path";
@@ -402,11 +402,43 @@ async function syncMemberLinks(
   console.log(`    synced ${links.length} link(s)`);
 }
 
+/**
+ * Refuses to run if any imported member has been claimed since this script
+ * last ran. Once a members row has a member_users row, upsertMember's
+ * overwrite of member_type/business_name/city/address/status and
+ * syncMemberLinks' delete-then-replace of links are no longer safe -- they
+ * would clobber Guild-admin corrections or a member's own edits, and a row
+ * an admin moved to suspended/declined would trip the
+ * members_enforce_owner_write_limits trigger and abort the run partway
+ * through. This mirrors the exact signal the plan's own verification step
+ * checks for ("no member_users rows exist = imported members are
+ * unclaimed").
+ */
+async function guardAgainstClaimedMembers(supabase: SupabaseClient): Promise<void> {
+  const { count, error } = await supabase
+    .from("member_users")
+    .select("*", { count: "exact", head: true });
+  if (error) throw error;
+
+  if (count && count > 0) {
+    console.error(
+      `Refusing to re-run: ${count} member_users row(s) exist, meaning at least one imported ` +
+        "member has been claimed (or otherwise touched by a member/admin) since this script " +
+        "last ran. Re-running would silently overwrite member_type/business_name/city/address/" +
+        "status fields and replace member_links for every row, undoing any correction made " +
+        "after import. Reconcile any needed changes manually instead of re-running this script.",
+    );
+    process.exit(1);
+  }
+}
+
 async function main(): Promise<void> {
   const { url, key } = requireSupabaseCredentials();
   const supabase = createClient(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+
+  await guardAgainstClaimedMembers(supabase);
 
   const rows = buildImportRows();
   logImportRows(rows);
