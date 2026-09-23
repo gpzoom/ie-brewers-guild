@@ -281,6 +281,19 @@ export default defineConfig(async ({ command, mode }) => {
             // the "**/*.server.*" glob above and excluded here for the
             // same reason as the rest.
             "src/lib/auth/sign-out.server.ts",
+            // src/lib/auth/require-guild-admin-session.server.ts (Guild
+            // Admin phase, /guild auth guard) -- same reasoning as its
+            // sibling src/lib/auth/require-member-session.server.ts above:
+            // its one createServerFn export, requireGuildAdminSession, is
+            // called directly from src/routes/guild.tsx's own `beforeLoad`
+            // (the same "imported straight into the route's own loader"
+            // pattern as require-member-session.server.ts's own
+            // requireMemberSession call from src/routes/admin.tsx's
+            // `beforeLoad`) -- the same safe client/server RPC boundary
+            // this deny rule exists to push people toward, already covered
+            // by the "**/*.server.*" glob above and excluded here for the
+            // same reason as the rest.
+            "src/lib/auth/require-guild-admin-session.server.ts",
           ],
           specifiers: ["server-only"],
         },
