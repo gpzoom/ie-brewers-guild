@@ -32,10 +32,11 @@ export default defineConfig(async ({ command, mode }) => {
           // src/lib/hours/hours-editor.server.ts,
           // src/lib/media/media-gallery.server.ts,
           // src/lib/media/carousel.server.ts,
-          // src/lib/media/cover.server.ts, and
-          // src/lib/media/logo.server.ts are the files in this
+          // src/lib/media/cover.server.ts,
+          // src/lib/media/logo.server.ts, and
+          // src/lib/media/upload-tokens.server.ts are the files in this
           // repo the restored "**/*.server.*" default pattern would now
-          // also catch, and all eight are deliberate exceptions, not a
+          // also catch, and all nine are deliberate exceptions, not a
           // gap: every export of each file (`getMemberProfileData`;
           // `requireMemberSession`; `getMemberBasics`/`updateMemberBasics`;
           // `listHours`/`upsertHoursRow`/`deleteHoursRow`/
@@ -45,7 +46,8 @@ export default defineConfig(async ({ command, mode }) => {
           // `unassignCarouselSlide`/`updateCarouselSlideCrop`/
           // `updateCarouselSlideLink`;
           // `getMemberCover`/`updateCoverAsset`/`updateCoverCrop`;
-          // `uploadMemberLogo`/`getMemberLogo`) is a
+          // `uploadMemberLogo`/`getMemberLogo`;
+          // `listUploadTokens`/`createUploadToken`/`revokeUploadToken`) is a
           // createServerFn().handler(...) call -- already the exact safe
           // client/server RPC boundary this deny rule exists to push
           // people toward (see the plugin's own "Import denied" message).
@@ -60,17 +62,20 @@ export default defineConfig(async ({ command, mode }) => {
           // updateCarouselSlideCrop/updateCarouselSlideLink the same way,
           // CoverEditor.tsx, which calls updateCoverAsset/
           // updateCoverCrop the same way -- getMemberCover is imported
-          // straight into the route's own loader instead -- and
-          // LogoUploader.tsx, which calls uploadMemberLogo from its own
-          // onFileSelected handler the same way -- getMemberLogo is
-          // likewise imported straight into the route's own loader
-          // instead) import them directly by design, per TanStack Start's
-          // own createServerFn convention -- that is not a violation to
-          // catch, so all eight are excluded here rather than renamed off
-          // the *.server.* convention project-wide. The next file added to
-          // this list should get the same treatment: update this comment
-          // to describe it too, so the gap that broke the build for
-          // require-member-session.server.ts doesn't repeat.
+          // straight into the route's own loader instead -- LogoUploader.tsx,
+          // which calls uploadMemberLogo from its own onFileSelected handler
+          // the same way -- getMemberLogo is likewise imported straight into
+          // the route's own loader instead -- and CreatorLinkPanel.tsx, which
+          // calls createUploadToken/revokeUploadToken from its own onCreate/
+          // onRevoke handlers the same way -- listUploadTokens is likewise
+          // imported straight into the route's own loader instead) import
+          // them directly by design, per TanStack Start's own createServerFn
+          // convention -- that is not a violation to catch, so all nine are
+          // excluded here rather than renamed off the *.server.* convention
+          // project-wide. The next file added to this list should get the
+          // same treatment: update this comment to describe it too, so the
+          // gap that broke the build for require-member-session.server.ts
+          // doesn't repeat.
           //
           // "**/node_modules/**" MUST stay listed here too -- a custom
           // `excludeFiles` array replaces the framework's own default
@@ -91,6 +96,7 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/media/carousel.server.ts",
             "src/lib/media/cover.server.ts",
             "src/lib/media/logo.server.ts",
+            "src/lib/media/upload-tokens.server.ts",
           ],
           specifiers: ["server-only"],
         },
