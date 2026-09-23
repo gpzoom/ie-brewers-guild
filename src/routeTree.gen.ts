@@ -23,6 +23,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SendTokenRouteImport } from './routes/send.$token'
 import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AdminThemeRouteImport } from './routes/admin.theme'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminHoursRouteImport } from './routes/admin.hours'
 import { Route as AdminBasicsRouteImport } from './routes/admin.basics'
@@ -99,6 +100,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminThemeRoute = AdminThemeRouteImport.update({
+  id: '/theme',
+  path: '/theme',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMediaRoute = AdminMediaRouteImport.update({
   id: '/media',
   path: '/media',
@@ -139,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/hours': typeof AdminHoursRoute
   '/admin/media': typeof AdminMediaRoute
+  '/admin/theme': typeof AdminThemeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/members/$slug': typeof MembersSlugRoute
   '/send/$token': typeof SendTokenRoute
@@ -159,6 +166,7 @@ export interface FileRoutesByTo {
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/hours': typeof AdminHoursRoute
   '/admin/media': typeof AdminMediaRoute
+  '/admin/theme': typeof AdminThemeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/members/$slug': typeof MembersSlugRoute
   '/send/$token': typeof SendTokenRoute
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/hours': typeof AdminHoursRoute
   '/admin/media': typeof AdminMediaRoute
+  '/admin/theme': typeof AdminThemeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/members_/$slug': typeof MembersSlugRoute
   '/send/$token': typeof SendTokenRoute
@@ -204,6 +213,7 @@ export interface FileRouteTypes {
     | '/admin/basics'
     | '/admin/hours'
     | '/admin/media'
+    | '/admin/theme'
     | '/auth/callback'
     | '/members/$slug'
     | '/send/$token'
@@ -224,6 +234,7 @@ export interface FileRouteTypes {
     | '/admin/basics'
     | '/admin/hours'
     | '/admin/media'
+    | '/admin/theme'
     | '/auth/callback'
     | '/members/$slug'
     | '/send/$token'
@@ -245,6 +256,7 @@ export interface FileRouteTypes {
     | '/admin/basics'
     | '/admin/hours'
     | '/admin/media'
+    | '/admin/theme'
     | '/auth/callback'
     | '/members_/$slug'
     | '/send/$token'
@@ -371,6 +383,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/theme': {
+      id: '/admin/theme'
+      path: '/theme'
+      fullPath: '/admin/theme'
+      preLoaderRoute: typeof AdminThemeRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/media': {
       id: '/admin/media'
       path: '/media'
@@ -413,6 +432,7 @@ interface AdminRouteChildren {
   AdminBasicsRoute: typeof AdminBasicsRoute
   AdminHoursRoute: typeof AdminHoursRoute
   AdminMediaRoute: typeof AdminMediaRoute
+  AdminThemeRoute: typeof AdminThemeRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -420,6 +440,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBasicsRoute: AdminBasicsRoute,
   AdminHoursRoute: AdminHoursRoute,
   AdminMediaRoute: AdminMediaRoute,
+  AdminThemeRoute: AdminThemeRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

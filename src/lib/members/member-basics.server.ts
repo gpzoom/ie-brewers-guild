@@ -143,7 +143,14 @@ export const updateMemberBasics = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-/** The subset of MemberRow the Basics editor actually reads and writes. */
+/**
+ * The subset of MemberRow the Basics editor actually reads and writes.
+ * `theme` is read-only here (never part of BASICS_KEYS/BasicsPatch above --
+ * updateMemberTheme in member-theme.server.ts is its own, separate
+ * write path) -- it's included purely so Task 24's /admin/theme route can
+ * reuse this same loader per that plan's own stated choice, rather than
+ * this file's editor writing it.
+ */
 export type BasicsMember = Pick<
   MemberRow,
   | "id"
@@ -157,6 +164,7 @@ export type BasicsMember = Pick<
   | "member_since_year"
   | "timezone"
   | "member_type"
+  | "theme"
 >;
 
 export const getMemberBasics = createServerFn({ method: "GET" })
@@ -172,7 +180,7 @@ export const getMemberBasics = createServerFn({ method: "GET" })
       // scopes to the caller's own member row) but there's no reason for
       // this editor's response payload to carry columns it never renders.
       .select(
-        "id, business_name, tagline, city, state, street_address, service_area, lead_time, member_since_year, timezone, member_type",
+        "id, business_name, tagline, city, state, street_address, service_area, lead_time, member_since_year, timezone, member_type, theme",
       )
       .eq("id", data.memberId)
       .single();
