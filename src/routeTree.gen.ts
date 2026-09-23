@@ -20,6 +20,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as SendTokenRouteImport } from './routes/send.$token'
 import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
@@ -83,6 +84,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const SendTokenRoute = SendTokenRouteImport.update({
+  id: '/send/$token',
+  path: '/send/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MembersSlugRoute = MembersSlugRouteImport.update({
   id: '/members_/$slug',
   path: '/members/$slug',
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/admin/media': typeof AdminMediaRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/members/$slug': typeof MembersSlugRoute
+  '/send/$token': typeof SendTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
@@ -154,6 +161,7 @@ export interface FileRoutesByTo {
   '/admin/media': typeof AdminMediaRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/members/$slug': typeof MembersSlugRoute
+  '/send/$token': typeof SendTokenRoute
   '/admin': typeof AdminIndexRoute
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
@@ -175,6 +183,7 @@ export interface FileRoutesById {
   '/admin/media': typeof AdminMediaRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/members_/$slug': typeof MembersSlugRoute
+  '/send/$token': typeof SendTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
@@ -197,6 +206,7 @@ export interface FileRouteTypes {
     | '/admin/media'
     | '/auth/callback'
     | '/members/$slug'
+    | '/send/$token'
     | '/admin/'
     | '/api/admin-media/$assetId'
     | '/api/member-media/$assetId'
@@ -216,6 +226,7 @@ export interface FileRouteTypes {
     | '/admin/media'
     | '/auth/callback'
     | '/members/$slug'
+    | '/send/$token'
     | '/admin'
     | '/api/admin-media/$assetId'
     | '/api/member-media/$assetId'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/admin/media'
     | '/auth/callback'
     | '/members_/$slug'
+    | '/send/$token'
     | '/admin/'
     | '/api/admin-media/$assetId'
     | '/api/member-media/$assetId'
@@ -254,6 +266,7 @@ export interface RootRouteChildren {
   SurveyResultsRoute: typeof SurveyResultsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   MembersSlugRoute: typeof MembersSlugRoute
+  SendTokenRoute: typeof SendTokenRoute
   ApiAdminMediaAssetIdRoute: typeof ApiAdminMediaAssetIdRoute
   ApiMemberMediaAssetIdRoute: typeof ApiMemberMediaAssetIdRoute
 }
@@ -337,6 +350,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/send/$token': {
+      id: '/send/$token'
+      path: '/send/$token'
+      fullPath: '/send/$token'
+      preLoaderRoute: typeof SendTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/members_/$slug': {
       id: '/members_/$slug'
       path: '/members/$slug'
@@ -418,6 +438,7 @@ const rootRouteChildren: RootRouteChildren = {
   SurveyResultsRoute: SurveyResultsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   MembersSlugRoute: MembersSlugRoute,
+  SendTokenRoute: SendTokenRoute,
   ApiAdminMediaAssetIdRoute: ApiAdminMediaAssetIdRoute,
   ApiMemberMediaAssetIdRoute: ApiMemberMediaAssetIdRoute,
 }
