@@ -42,18 +42,23 @@ function SignInPage() {
     setStatus("sending");
     setErrorMessage(null);
 
-    const supabase = getSupabaseBrowserClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-    });
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      });
 
-    if (error) {
+      if (error) {
+        setStatus("error");
+        setErrorMessage(error.message);
+        return;
+      }
+      setStatus("sent");
+    } catch (err) {
       setStatus("error");
-      setErrorMessage(error.message);
-      return;
+      setErrorMessage(err instanceof Error ? err.message : "Couldn't send the sign-in link.");
     }
-    setStatus("sent");
   };
 
   return (
