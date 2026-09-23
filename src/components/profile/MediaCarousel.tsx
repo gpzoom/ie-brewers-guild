@@ -8,6 +8,7 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import { MemberImage } from "@/components/profile/MemberImage";
+import { isHttpUrl } from "@/lib/links/url-safety";
 import type { CarouselSlideRow, MediaAssetRow } from "@/lib/supabase/types";
 import type { MemberThemeName } from "@/lib/theme/member-themes";
 import { cn } from "@/lib/utils";
@@ -75,10 +76,29 @@ export function MediaCarousel({ slides, memberName, theme }: MediaCarouselProps)
               aspectClassName="aspect-[4/5]"
             />
           );
+          const outboundUrl = slide.outbound_url;
           return (
             <CarouselItem key={slide.id}>
-              {slide.outbound_url ? (
-                <a href={slide.outbound_url} target="_blank" rel="noreferrer" className="block">
+              {/* Render-boundary guard -- same shape as LinkPills.tsx's own
+                  isHttpUrl filter, and for the same reason: this is what
+                  actually protects every visitor, regardless of how a
+                  non-http(s) `outbound_url` (e.g. `javascript:...`) got
+                  into the row -- existing data, a bypass of
+                  updateCarouselSlideLink's own write-boundary check (a
+                  member has direct RLS-scoped REST access to their own
+                  carousel_slides rows), or a future write path. See
+                  url-safety.ts's isHttpUrl doc comment. A slide whose
+                  stored outbound_url isn't a genuine http(s) URL renders
+                  as a plain, non-clickable photo instead of a live
+                  <a href> -- never dropped from the carousel entirely
+                  (unlike LinkPills, this is still a real, intentional
+                  photo the member uploaded). Checking `isHttpUrl` inside
+                  the same `&&`/ternary condition (rather than a separate
+                  boolean captured beforehand) is what lets TypeScript
+                  narrow `outboundUrl` to `string` for the <a> branch
+                  below without a non-null assertion. */}
+              {outboundUrl && isHttpUrl(outboundUrl) ? (
+                <a href={outboundUrl} target="_blank" rel="noreferrer" className="block">
                   {image}
                 </a>
               ) : (
@@ -92,7 +112,11 @@ export function MediaCarousel({ slides, memberName, theme }: MediaCarouselProps)
         <>
           <CarouselPrevious className="left-2" />
           <CarouselNext className="right-2" />
-          <div className="mt-3 flex items-center justify-center gap-1" role="tablist" aria-label="Slides">
+          <div
+            className="mt-3 flex items-center justify-center gap-1"
+            role="tablist"
+            aria-label="Slides"
+          >
             {capped.map((slide, index) => (
               <button
                 key={slide.id}

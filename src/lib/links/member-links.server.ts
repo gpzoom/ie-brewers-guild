@@ -42,11 +42,61 @@ export const getMemberContactInfo = createServerFn({ method: "GET" })
     return member as MemberContactInfo;
   });
 
-type LinkPatch = Partial<Pick<MemberLinkRow, "kind" | "label" | "url" | "sort_order">>;
+/**
+ * Runtime column allowlist for upsertMemberLink's patch -- same shape as
+ * member-basics.server.ts's BASICS_KEYS, whose own doc comment says every
+ * later section-mutation task should copy this exact pattern: the array is
+ * the source of truth, and LinkPatch is DERIVED from it (`Pick<Row,
+ * (typeof KEYS)[number]>`), never defined independently. That direction
+ * matters -- a separately-defined LinkPatch merely asserted against this
+ * array would only catch a STALE entry left behind after a field is
+ * removed, not a field added to LinkPatch and never added here (Task 9's
+ * own hard-won correction to this exact mistake). Without filtering
+ * `data.patch` down to this list before it ever reaches `.update()`/
+ * `.insert()`, any caller of this createServerFn (not just
+ * LinksContactEditor's own typed object literals) could smuggle an
+ * arbitrary member_links column through -- not currently exploitable for
+ * real privilege escalation (this table has no dangerous columns like
+ * `theme`/`member_type`), but this is the runtime enforcement boundary,
+ * not a convention callers have to remember, and member_links could grow
+ * a sensitive column later without this file being touched.
+ */
+const LINK_PATCH_KEYS = [
+  "kind",
+  "label",
+  "url",
+  "sort_order",
+] as const satisfies readonly (keyof MemberLinkRow)[];
+
+type LinkPatch = Partial<Pick<MemberLinkRow, (typeof LINK_PATCH_KEYS)[number]>>;
 
 export const upsertMemberLink = createServerFn({ method: "POST" })
   .inputValidator((data: { memberId: string; id?: string; patch: LinkPatch }) => data)
   .handler(async ({ data }) => {
+    // inputValidator above is an identity function, so `data.patch`'s type
+    // is only ever a compile-time promise -- a raw request (not built
+    // through LinksContactEditor's typed object literals) could send
+    // `null`, a string, an array, etc. Object.entries() on those throws a
+    // raw TypeError otherwise. Same guard as member-basics.server.ts's
+    // updateMemberBasics.
+    if (typeof data.patch !== "object" || data.patch === null) {
+      throw new Error("Invalid update.");
+    }
+
+    // Column allowlist -- see LINK_PATCH_KEYS's doc comment. Must run
+    // before any validation below, so a disallowed key can't smuggle
+    // itself through by piggybacking on a request that also happens to
+    // patch a legitimate field.
+    const patch: LinkPatch = Object.fromEntries(
+      Object.entries(data.patch).filter(([key]) =>
+        (LINK_PATCH_KEYS as readonly string[]).includes(key),
+      ),
+    ) as LinkPatch;
+
+    if (Object.keys(patch).length === 0) {
+      throw new Error("No link fields to update.");
+    }
+
     // Write-boundary validation -- must run before anything is inserted or
     // updated. member_links.url has NO scheme/format constraint at the
     // database level, and LinksContactEditor's Input has no validation of
@@ -66,8 +116,8 @@ export const upsertMemberLink = createServerFn({ method: "POST" })
     // task's given "sort-order-on-add" behavior. An empty url is already
     // harmless -- isHttpUrl("") is false, so LinkPills' render-boundary
     // guard never turns it into a live href either.
-    if (typeof data.patch.url === "string" && data.patch.url.trim() !== "") {
-      const urlCheck = validateLinkUrl(data.patch.url);
+    if (typeof patch.url === "string" && patch.url.trim() !== "") {
+      const urlCheck = validateLinkUrl(patch.url);
       if (!urlCheck.valid) throw new Error(urlCheck.reason);
     }
 
@@ -82,7 +132,7 @@ export const upsertMemberLink = createServerFn({ method: "POST" })
       // success back to LinksContactEditor's optimistic UI.
       const { data: updated, error } = await supabase
         .from("member_links")
-        .update(data.patch)
+        .update(patch)
         .eq("id", data.id)
         .select("id");
       if (error) throw new Error(error.message);
@@ -99,10 +149,10 @@ export const upsertMemberLink = createServerFn({ method: "POST" })
       .from("member_links")
       .insert({
         member_id: data.memberId,
-        kind: data.patch.kind ?? "other",
-        url: data.patch.url ?? "",
-        label: data.patch.label ?? null,
-        sort_order: data.patch.sort_order ?? 0,
+        kind: patch.kind ?? "other",
+        url: patch.url ?? "",
+        label: patch.label ?? null,
+        sort_order: patch.sort_order ?? 0,
       })
       .select("id")
       .single();
@@ -130,20 +180,49 @@ export const deleteMemberLink = createServerFn({ method: "POST" })
   });
 
 /**
+ * Same runtime-allowlist shape as LINK_PATCH_KEYS above (and
+ * member-basics.server.ts's BASICS_KEYS) -- ContactPatch is DERIVED from
+ * this array, not defined independently. `members` has genuinely dangerous
+ * columns this endpoint must never be able to touch (`theme`,
+ * `member_type`, a `status` draft/published flip, ...), each owned by its
+ * own dedicated flow (ThemePicker, the publish gate, ...) -- this allowlist
+ * is what keeps this endpoint scoped to exactly phone/contact_email
+ * regardless of what a raw caller sends.
+ */
+const CONTACT_PATCH_KEYS = [
+  "phone",
+  "contact_email",
+] as const satisfies readonly (keyof MemberRow)[];
+
+type ContactPatch = Partial<Pick<MemberRow, (typeof CONTACT_PATCH_KEYS)[number]>>;
+
+/**
  * Phone and contact_email live here, not in the Basics editor (this plan's
  * Decision 8) -- artboard R is titled "links and contact."
  */
 export const updateMemberContact = createServerFn({ method: "POST" })
-  .inputValidator(
-    (data: { memberId: string; patch: { phone?: string | null; contact_email?: string | null } }) =>
-      data,
-  )
+  .inputValidator((data: { memberId: string; patch: ContactPatch }) => data)
   .handler(async ({ data }) => {
+    if (typeof data.patch !== "object" || data.patch === null) {
+      throw new Error("Invalid update.");
+    }
+
+    // Column allowlist -- see CONTACT_PATCH_KEYS's doc comment.
+    const patch: ContactPatch = Object.fromEntries(
+      Object.entries(data.patch).filter(([key]) =>
+        (CONTACT_PATCH_KEYS as readonly string[]).includes(key),
+      ),
+    ) as ContactPatch;
+
+    if (Object.keys(patch).length === 0) {
+      throw new Error("No contact fields to update.");
+    }
+
     const supabase = await getSupabaseServerClientForRequest();
     // .select("id") + row-count check -- same gotcha as above.
     const { data: updated, error } = await supabase
       .from("members")
-      .update(data.patch)
+      .update(patch)
       .eq("id", data.memberId)
       .select("id");
     if (error) throw new Error(error.message);

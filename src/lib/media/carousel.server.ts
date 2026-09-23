@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { initialCropForAspect } from "@/lib/media/crop-interaction";
+import { validateLinkUrl } from "@/lib/links/url-safety";
 import type { CarouselSlideRow, MediaAssetRow } from "@/lib/supabase/types";
 import type { CropRect } from "@/lib/media/crop";
 
@@ -77,7 +78,10 @@ export async function assertAssetOwnedByMember(
  * return a clean, actionable message instead.
  */
 function carouselSlotErrorMessage(error: { code?: string; message: string }): string {
-  if (error.code === "23505" && error.message.includes("carousel_slides_member_id_sort_order_key")) {
+  if (
+    error.code === "23505" &&
+    error.message.includes("carousel_slides_member_id_sort_order_key")
+  ) {
     return "That slot was just filled by another update -- refresh and try again.";
   }
   return error.message;
@@ -94,7 +98,8 @@ export const assignCarouselSlide = createServerFn({ method: "POST" })
     }) => data,
   )
   .handler(async ({ data }) => {
-    if (data.sortOrder < 0 || data.sortOrder > 3) throw new Error("Carousel slots are 0-3 (max four slides).");
+    if (data.sortOrder < 0 || data.sortOrder > 3)
+      throw new Error("Carousel slots are 0-3 (max four slides).");
 
     const supabase = await getSupabaseServerClientForRequest();
 
@@ -135,7 +140,12 @@ export const assignCarouselSlide = createServerFn({ method: "POST" })
 
     const { data: created, error } = await supabase
       .from("carousel_slides")
-      .insert({ member_id: data.memberId, asset_id: data.assetId, sort_order: data.sortOrder, crop })
+      .insert({
+        member_id: data.memberId,
+        asset_id: data.assetId,
+        sort_order: data.sortOrder,
+        crop,
+      })
       .select("id")
       .single();
     if (error) throw new Error(carouselSlotErrorMessage(error));
@@ -182,6 +192,34 @@ export const updateCarouselSlideCrop = createServerFn({ method: "POST" })
 export const updateCarouselSlideLink = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string; outboundUrl: string | null }) => data)
   .handler(async ({ data }) => {
+    // Write-boundary validation -- same stored-XSS shape as
+    // member_links.url (src/lib/links/member-links.server.ts's
+    // upsertMemberLink): carousel_slides.outbound_url has no DB-level
+    // scheme constraint either (supabase/migrations/
+    // 20260922035745_carousel_slides_table.sql, plain `text`), and
+    // MediaCarousel.tsx wraps a full 4:5 slide PHOTO in a real
+    // `<a href={slide.outbound_url}>` on the public profile -- a
+    // `javascript:` value here would execute for any visitor who clicks
+    // the slide, an arguably more temptingly-clickable surface than the
+    // small link pills that shape of bug was originally fixed on.
+    // Reusing url-safety.ts's validateLinkUrl rather than duplicating the
+    // check -- see that file's own doc comment for why this exact
+    // validation has to run at BOTH this write boundary and the render
+    // boundary (MediaCarousel.tsx): a signed-in member has direct
+    // RLS-scoped REST access to their own carousel_slides rows, so a bad
+    // scheme can reach `outbound_url` without ever calling this function.
+    // `null` clears the link and is always allowed; CarouselEditor.tsx's
+    // onLinkBlur already converts an empty input to `null` before calling
+    // this, but an empty string is treated the same as `null` here too
+    // (skipped, not rejected) for the same reason upsertMemberLink skips
+    // validation on an empty `url` -- it's already harmless, since
+    // isHttpUrl("") is false and the render-boundary guard below never
+    // turns it into a live href either.
+    if (data.outboundUrl !== null && data.outboundUrl.trim() !== "") {
+      const urlCheck = validateLinkUrl(data.outboundUrl);
+      if (!urlCheck.valid) throw new Error(urlCheck.reason);
+    }
+
     const supabase = await getSupabaseServerClientForRequest();
     const { data: updated, error } = await supabase
       .from("carousel_slides")
