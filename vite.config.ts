@@ -234,6 +234,24 @@ export default defineConfig(async ({ command, mode }) => {
             // exclusion since the file-level allowlist can't be split
             // per-export.
             "src/lib/guild/impersonation.server.ts",
+            // src/lib/guild/roster.server.ts (Task 14, Guild Admin phase)
+            // -- its one createServerFn export, getRoster, is imported
+            // straight into src/routes/guild.roster.tsx's own loader --
+            // the same safe client/server RPC boundary this deny rule
+            // exists to push people toward, already covered by the
+            // "**/*.server.*" glob above and excluded here for the same
+            // reason as the rest.
+            "src/lib/guild/roster.server.ts",
+            // src/lib/guild/create-member.server.ts (Task 12, reused by
+            // Task 15's CreateMemberDialog.tsx) -- same reasoning as the
+            // files above: its one createServerFn export,
+            // createMemberRecord, is called directly from
+            // CreateMemberDialog.tsx's own onSubmit handler -- the same
+            // safe client/server RPC boundary this deny rule exists to
+            // push people toward, already covered by the "**/*.server.*"
+            // glob above and excluded here for the same reason as the
+            // rest.
+            "src/lib/guild/create-member.server.ts",
           ],
           specifiers: ["server-only"],
         },
