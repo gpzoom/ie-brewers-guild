@@ -20,14 +20,12 @@ type Pin = {
 function membersToPins(members: Member[]): Pin[] {
   return members.flatMap((m) => {
     const multiLocation = m.locations.length > 1;
-    // Until the Guild decides whether each location gets its own profile
-    // page, every pin for this business links to the SAME one profile
-    // (the first-imported location's row) -- not its own pin's location
-    // -- matching the directory card's single "View profile" link below.
-    const slug = locationSlug(m.name, m.locations[0].city, multiLocation);
     return m.locations.map((l) => ({
       brewery: m.name,
-      slug,
+      // Each pin links to ITS OWN location's profile, not always the
+      // first -- clicking the Ontario pin should land on the Ontario
+      // profile, not Chino's, for a business with locations in both.
+      slug: locationSlug(m.name, l.city, multiLocation),
       city: l.city,
       address: l.address,
       lat: l.lat,

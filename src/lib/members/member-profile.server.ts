@@ -32,13 +32,12 @@ export type MemberProfileData = {
   crossLink: DirectoryEntry | null;
   headerPrev: DirectoryEntry | null;
   headerNext: DirectoryEntry | null;
-  // All of this SAME business's published location cities (by
-  // business_name), including this row's own -- not the visitor's
-  // browsing order (see getAdjacentInList's doc comment on
-  // headerPrev/headerNext for that unrelated concept). Always at least
-  // one entry (this row's own city); more than one only for a
-  // multi-location business.
-  locationCities: string[];
+  // The next of this SAME business's other published locations (by
+  // business_name), not the next member in the visitor's browsing order
+  // -- see getAdjacentInList's doc comment on headerPrev/headerNext for
+  // that unrelated concept. Null for a single-location business, or when
+  // this business's other locations aren't published yet.
+  nextLocation: DirectoryEntry | null;
   ogImageUrl: string | null;
   siteOrigin: string;
   // A single "now", computed once on the server and serialized as an ISO
@@ -261,25 +260,27 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
     }));
     const crossLink = getAdjacentInList(sameTypeEntries, typedMember.id).next;
 
-    // All of this business's published location cities, including this
-    // row's own -- imported one row per location (see
-    // docs/superpowers/plans/2026-09-21-import-existing-members.md,
+    // Next location: this business's other published rows, imported one
+    // per location (see docs/superpowers/plans/2026-09-21-import-existing-members.md,
     // "Decisions made while filling gaps the spec left open" #2 -- there's
     // no formal parent-business link in the schema, so business_name is
-    // the only thing tying sibling location rows together). Until the
-    // Guild decides whether each location should get its own linkable
-    // profile, this is display-only text on the ONE profile a
-    // multi-location business has (the first-imported row) -- not a set
-    // of links to the sibling rows, which still exist and are still each
-    // independently published, just not surfaced as separate profiles
-    // anywhere in the UI for now.
+    // the only thing tying sibling location rows together). Ordered by
+    // city so the cycle order is stable and predictable rather than
+    // depending on row-creation order.
     const { data: siblingRows } = await supabase
       .from("members")
-      .select("city")
+      .select("id, slug, business_name, city, member_type")
       .eq("status", "published")
       .eq("business_name", typedMember.business_name)
       .order("city");
-    const locationCities = (siblingRows ?? []).map((row) => row.city as string);
+    const siblingEntries: DirectoryEntry[] = (siblingRows ?? []).map((row) => ({
+      id: row.id as string,
+      slug: row.slug as string,
+      businessName: row.business_name as string,
+      city: row.city as string,
+      memberType: row.member_type as MemberType,
+    }));
+    const nextLocation = getAdjacentInList(siblingEntries, typedMember.id).next;
 
     return {
       member: typedMember,
@@ -310,7 +311,7 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
       crossLink,
       headerPrev,
       headerNext,
-      locationCities,
+      nextLocation,
       ogImageUrl,
       siteOrigin,
       now: now.toISOString(),
