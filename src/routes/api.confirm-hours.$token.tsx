@@ -38,7 +38,7 @@ export const Route = createFileRoute("/api/confirm-hours/$token")({
   loader: async ({ params }) => checkHoursConfirmToken({ data: { token: params.token } }),
   head: () => ({
     meta: [
-      { title: "Confirm your hours — IE Brewers Guild" },
+      { title: "Confirm your hours — Inland Southern California Brewers Guild" },
       // Unguessable one-off action URL (a signed, member-specific token),
       // same reasoning as survey.tsx/survey-results.tsx: no reason for a
       // search engine to ever index it. Not a security control -- the

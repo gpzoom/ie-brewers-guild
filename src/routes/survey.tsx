@@ -4,7 +4,7 @@ import Questionnaire from "@/components/Questionnaire";
 export const Route = createFileRoute("/survey")({
   head: () => ({
     meta: [
-      { title: "Website Questionnaire — IE Brewers Guild" },
+      { title: "Website Questionnaire — Inland Southern California Brewers Guild" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),

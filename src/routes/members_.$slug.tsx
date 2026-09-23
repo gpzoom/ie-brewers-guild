@@ -18,16 +18,16 @@ export const Route = createFileRoute("/members_/$slug")({
     // `?.trim() || fallback` catches both null and whitespace-only.
     const fallbackDescription =
       member.member_type === "producer"
-        ? `${member.business_name} — an independent producer member of the IE Brewers Guild in ${member.city}.`
+        ? `${member.business_name} — an independent producer member of the Inland Southern California Brewers Guild in ${member.city}.`
         : member.member_type === "mobile"
-          ? `${member.business_name} — an independent mobile member of the IE Brewers Guild in ${member.city}.`
-          : `${member.business_name} — an Allied Member of the IE Brewers Guild in ${member.city}.`;
+          ? `${member.business_name} — an independent mobile member of the Inland Southern California Brewers Guild in ${member.city}.`
+          : `${member.business_name} — an Allied Member of the Inland Southern California Brewers Guild in ${member.city}.`;
     const description = member.tagline?.trim() || fallbackDescription;
     const canonicalUrl = `${siteOrigin}/members/${member.slug}`;
 
     return {
       meta: [
-        { title: `${member.business_name} — IE Brewers Guild` },
+        { title: `${member.business_name} — Inland Southern California Brewers Guild` },
         { name: "description", content: description },
         { property: "og:title", content: member.business_name },
         { property: "og:description", content: description },

@@ -22,8 +22,8 @@ export const Route = createFileRoute("/members")({
   validateSearch: validateDirectorySearch,
   head: () => ({
     meta: [
-      { title: "Member Directory — IE Brewers Guild" },
-      { name: "description", content: "Discover the independent producers, mobile members, and Allied Members that make up the IE Brewers Guild." },
+      { title: "Member Directory — Inland Southern California Brewers Guild" },
+      { name: "description", content: "Discover the independent producers, mobile members, and Allied Members that make up the Inland Southern California Brewers Guild." },
       { property: "og:title", content: "Member Directory" },
       { property: "og:description", content: "The independent producers, mobile members, and Allied Members behind the guild." },
     ],

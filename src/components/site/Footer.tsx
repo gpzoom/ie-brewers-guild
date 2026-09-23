@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import logo from "@/assets/logo.jpg";
+import logo from "@/assets/logo.svg";
 
 export function Footer() {
   const [email, setEmail] = useState("");
@@ -21,8 +21,8 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-4 md:px-6">
         <div className="md:col-span-2">
           <Link to="/" className="flex items-center gap-2 font-display text-xl tracking-wider">
-            <img src={logo} alt="IE Brewers Guild" className="h-10 w-10 rounded-sm object-contain" />
-            IE Brewers Guild
+            <img src={logo} alt="Inland Southern California Brewers Guild" className="h-10 w-10 rounded-sm object-contain" />
+            Inland Southern California Brewers Guild
           </Link>
           <p className="mt-3 max-w-md text-sm text-muted-foreground">
             Promoting and protecting independent craft breweries through advocacy, education,
@@ -63,7 +63,7 @@ export function Footer() {
         </div>
       </div>
       <div className="flex flex-col items-center justify-between gap-2 border-t border-border/60 py-5 text-center text-xs text-muted-foreground sm:flex-row sm:px-6">
-        <span>© {new Date().getFullYear()} IE Brewers Guild. All rights reserved.</span>
+        <span>© {new Date().getFullYear()} Inland Southern California Brewers Guild. All rights reserved.</span>
         <Link to="/signin" className="min-h-11 py-2 hover:text-primary">
           Member sign in
         </Link>

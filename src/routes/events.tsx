@@ -8,9 +8,9 @@ const featuredImg = "/events/frontier-beer-fest.png";
 export const Route = createFileRoute("/events")({
   head: () => ({
     meta: [
-      { title: "Events — IE Brewers Guild" },
-      { name: "description", content: "Upcoming festivals, member meetups, and brew days hosted by the IE Brewers Guild." },
-      { property: "og:title", content: "Events — IE Brewers Guild" },
+      { title: "Events — Inland Southern California Brewers Guild" },
+      { name: "description", content: "Upcoming festivals, member meetups, and brew days hosted by the Inland Southern California Brewers Guild." },
+      { property: "og:title", content: "Events — Inland Southern California Brewers Guild" },
       { property: "og:description", content: "Upcoming festivals and community events." },
       { property: "og:image", content: featuredImg },
       { property: "twitter:image", content: featuredImg },

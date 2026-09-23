@@ -23,7 +23,7 @@ export const Route = createFileRoute("/admin")({
     ]);
     return { ...publishGateData, impersonatedMemberName };
   },
-  head: () => ({ meta: [{ title: "Member admin — IE Brewers Guild" }] }),
+  head: () => ({ meta: [{ title: "Member admin — Inland Southern California Brewers Guild" }] }),
   component: AdminLayout,
 });
 

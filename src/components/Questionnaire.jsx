@@ -115,7 +115,7 @@ export default function Questionnaire() {
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
           access_key: WEB3FORMS_KEY,
-          subject: "New IE Brewers Guild Questionnaire Response",
+          subject: "New Inland Southern California Brewers Guild Questionnaire Response",
           from_name: "IEBG Website Questionnaire",
           ...flatten(),
         }),
@@ -328,7 +328,7 @@ export default function Questionnaire() {
           <p className="save-note"><a href="#" onClick={(e) => { e.preventDefault(); download(); }}>Prefer to download a copy instead? Save as a file &darr;</a></p>
         </div>
 
-        <footer>IE Brewers Guild &nbsp;\u00b7&nbsp; Website Discovery &nbsp;\u00b7&nbsp; 2026</footer>
+        <footer>Inland Southern California Brewers Guild &nbsp;\u00b7&nbsp; Website Discovery &nbsp;\u00b7&nbsp; 2026</footer>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ export const Route = createFileRoute("/guild")({
     const session = await requireGuildAdminSession();
     return { userId: session.userId };
   },
-  head: () => ({ meta: [{ title: "Guild admin — IE Brewers Guild" }] }),
+  head: () => ({ meta: [{ title: "Guild admin — Inland Southern California Brewers Guild" }] }),
   component: GuildLayout,
 });
 

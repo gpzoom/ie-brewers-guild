@@ -27,7 +27,7 @@ function validateSignInSearch(search: Record<string, unknown>): SignInSearch {
 
 export const Route = createFileRoute("/signin")({
   validateSearch: validateSignInSearch,
-  head: () => ({ meta: [{ title: "Member sign in — IE Brewers Guild" }] }),
+  head: () => ({ meta: [{ title: "Member sign in — Inland Southern California Brewers Guild" }] }),
   component: SignInPage,
 });
 

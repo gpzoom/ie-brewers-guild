@@ -12,9 +12,9 @@ const featuredImg = "/events/frontier-beer-fest.png";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "IE Brewers Guild — Home" },
+      { title: "Inland Southern California Brewers Guild — Home" },
       { name: "description", content: "The home of independent craft breweries. Advocacy, education, and events that strengthen our local brewing community." },
-      { property: "og:title", content: "IE Brewers Guild — Home" },
+      { property: "og:title", content: "Inland Southern California Brewers Guild — Home" },
       { property: "og:description", content: "The home of independent craft breweries." },
       { property: "og:image", content: heroImg },
       { property: "twitter:image", content: heroImg },
@@ -50,7 +50,7 @@ function HomePage() {
       <PageHero
         image={heroImg}
         title="Welcome to the home of independent craft breweries."
-        subtitle="The IE Brewers Guild promotes and protects local independently-owned breweries and advocates for the strengthening of the craft beer industry."
+        subtitle="The Inland Southern California Brewers Guild promotes and protects local independently-owned breweries and advocates for the strengthening of the craft beer industry."
         minHeight="min-h-[85vh]"
       >
         <Button asChild size="lg"><Link to="/members">Meet our members</Link></Button>

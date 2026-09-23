@@ -27,7 +27,7 @@ import { Label } from "@/components/ui/label";
  * invoked.
  */
 export const Route = createFileRoute("/send/$token")({
-  head: () => ({ meta: [{ title: "Share a photo — IE Brewers Guild" }] }),
+  head: () => ({ meta: [{ title: "Share a photo — Inland Southern California Brewers Guild" }] }),
   component: SendPage,
 });
 

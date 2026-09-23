@@ -6,9 +6,9 @@ import heroImg from "@/assets/hero-about.jpg";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About — IE Brewers Guild" },
-      { name: "description", content: "Learn about the IE Brewers Guild's mission, history, and leadership team supporting independent breweries." },
-      { property: "og:title", content: "About — IE Brewers Guild" },
+      { title: "About — Inland Southern California Brewers Guild" },
+      { name: "description", content: "Learn about the Inland Southern California Brewers Guild's mission, history, and leadership team supporting independent breweries." },
+      { property: "og:title", content: "About — Inland Southern California Brewers Guild" },
       { property: "og:description", content: "Our mission, history, and leadership." },
       { property: "og:image", content: heroImg },
       { property: "twitter:image", content: heroImg },
@@ -40,7 +40,7 @@ function AboutPage() {
         <SectionHeader eyebrow="Our mission" title="Why the guild exists." />
         <div className="mt-6 space-y-5 text-foreground/85">
           <p>
-            The IE Brewers Guild promotes and protects local independently-owned craft breweries
+            The Inland Southern California Brewers Guild promotes and protects local independently-owned craft breweries
             and advocates for the strengthening of the craft beer industry. We believe a thriving
             local brewing scene means better beer, stronger small businesses, and more vibrant
             neighborhoods.

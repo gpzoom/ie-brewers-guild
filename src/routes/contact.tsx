@@ -12,9 +12,9 @@ import heroImg from "@/assets/hero-about.jpg";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact — IE Brewers Guild" },
-      { name: "description", content: "Get in touch with the IE Brewers Guild — membership, press, and general inquiries." },
-      { property: "og:title", content: "Contact — IE Brewers Guild" },
+      { title: "Contact — Inland Southern California Brewers Guild" },
+      { name: "description", content: "Get in touch with the Inland Southern California Brewers Guild — membership, press, and general inquiries." },
+      { property: "og:title", content: "Contact — Inland Southern California Brewers Guild" },
       { property: "og:description", content: "Membership, press, and general inquiries." },
     ],
   }),
