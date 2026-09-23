@@ -14,26 +14,42 @@ export function CategoriesEditor({ categories }: { categories: CategoryRow[] }) 
   async function handleCreate(event: FormEvent) {
     event.preventDefault();
     if (!newName.trim()) return;
-    await createCategory({ data: { name: newName.trim(), sortOrder: categories.length } });
-    setNewName("");
-    await router.invalidate();
+    try {
+      await createCategory({ data: { name: newName.trim(), sortOrder: categories.length } });
+      setNewName("");
+      await router.invalidate();
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Could not create this category.");
+    }
   }
 
   async function handleRename(category: CategoryRow, name: string) {
     if (!name.trim() || name === category.name) return;
-    await updateCategory({ data: { id: category.id, name: name.trim(), sortOrder: category.sort_order } });
-    await router.invalidate();
+    try {
+      await updateCategory({ data: { id: category.id, name: name.trim(), sortOrder: category.sort_order } });
+      await router.invalidate();
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Could not rename this category.");
+    }
   }
 
   async function handleReorder(category: CategoryRow, sortOrder: number) {
-    await updateCategory({ data: { id: category.id, name: category.name, sortOrder } });
-    await router.invalidate();
+    try {
+      await updateCategory({ data: { id: category.id, name: category.name, sortOrder } });
+      await router.invalidate();
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Could not reorder this category.");
+    }
   }
 
   async function handleDelete(category: CategoryRow) {
     if (!window.confirm(`Delete "${category.name}"? This can't be undone.`)) return;
-    await deleteCategory({ data: { id: category.id } });
-    await router.invalidate();
+    try {
+      await deleteCategory({ data: { id: category.id } });
+      await router.invalidate();
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Could not delete this category.");
+    }
   }
 
   return (
