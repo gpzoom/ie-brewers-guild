@@ -31,7 +31,7 @@ const MAX_SAFE_FILENAME_LENGTH = 120;
  * safe -- so it collapses anything outside a conservative allowlist to `_`
  * and caps the length, keeping the tail (where the extension lives).
  */
-function sanitizeFilename(rawName: string): string {
+export function sanitizeFilename(rawName: string): string {
   const base = rawName.split(/[\\/]/).pop() ?? "";
   const safe = base.replace(/[^A-Za-z0-9._-]/g, "_");
   // Cap the length FIRST, then strip leading dots -- stripping before
