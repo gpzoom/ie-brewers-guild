@@ -324,6 +324,18 @@ export default defineConfig(async ({ command, mode }) => {
             // people toward, already covered by the "**/*.server.*" glob
             // above and excluded here for the same reason as the rest.
             "src/lib/brand/active-brand.server.ts",
+            // src/lib/categories/categories.server.ts (Task 29, Guild Admin
+            // phase) -- same reasoning as the files above: its
+            // createServerFn export getCategories is imported straight into
+            // src/routes/guild.categories.tsx's own loader, and its other
+            // createServerFn exports, createCategory/updateCategory/
+            // deleteCategory, are called directly from
+            // CategoriesEditor.tsx's own handleCreate/handleRename/
+            // handleReorder/handleDelete handlers -- the same safe
+            // client/server RPC boundary this deny rule exists to push
+            // people toward, already covered by the "**/*.server.*" glob
+            // above and excluded here for the same reason as the rest.
+            "src/lib/categories/categories.server.ts",
           ],
           specifiers: ["server-only"],
         },
