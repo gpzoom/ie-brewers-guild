@@ -38,11 +38,12 @@ export default defineConfig(async ({ command, mode }) => {
           // src/lib/media/creator-upload.server.ts,
           // src/lib/media/review-tray.server.ts,
           // src/lib/hours/publish-gate.server.ts,
-          // src/lib/theme/member-theme.server.ts, and
-          // src/lib/events/events.server.ts are the files in this
-          // repo the restored "**/*.server.*" default pattern would now
-          // also catch, and all fourteen are deliberate exceptions, not a
-          // gap: every export of each file (`getMemberProfileData`;
+          // src/lib/theme/member-theme.server.ts,
+          // src/lib/events/events.server.ts, and
+          // src/lib/events/calendar-connection.server.ts are the files in
+          // this repo the restored "**/*.server.*" default pattern would
+          // now also catch, and all fifteen are deliberate exceptions, not
+          // a gap: every export of each file (`getMemberProfileData`;
           // `requireMemberSession`; `getMemberBasics`/`updateMemberBasics`;
           // `listHours`/`upsertHoursRow`/`deleteHoursRow`/
           // `upsertSpecialHoursRow`/`deleteSpecialHoursRow`;
@@ -58,7 +59,14 @@ export default defineConfig(async ({ command, mode }) => {
           // `publishMemberProfile`/`unpublishMemberProfile`/
           // `getPublishGateData`; `updateMemberTheme`; `listEvents`/
           // `createEvent`/`updateEvent`/`deleteEvent`/`setEventOverlay`/
-          // `clearEventOverlay`/`toggleEventHidden`)
+          // `clearEventOverlay`/`toggleEventHidden`;
+          // `getCalendarConnection`/`saveIcsConnection`/
+          // `refreshIcsConnectionNow` -- calendar-connection.server.ts's
+          // other export, `syncOneIcsConnection`, is a plain function, not
+          // a createServerFn, but it's never imported client-side either;
+          // it's only ever called from refreshIcsConnectionNow's own
+          // handler here and from the Task 29 cron, both server-only
+          // contexts)
           // is a createServerFn().handler(...) call
           // -- already the exact safe client/server RPC boundary this deny
           // rule exists to push people toward (see the plugin's own
@@ -97,7 +105,11 @@ export default defineConfig(async ({ command, mode }) => {
           // clearEventOverlay/toggleEventHidden from its own onAdd/
           // onFieldChange/onDelete/onOverlayChange/onToggleHidden handlers
           // the same way -- listEvents is likewise imported straight into
-          // the route's own loader instead), and
+          // the route's own loader instead -- and CalendarConnectionPanel.tsx,
+          // which calls saveIcsConnection/refreshIcsConnectionNow from its
+          // own onSave/onRefreshNow handlers the same way -- getCalendarConnection
+          // is likewise imported straight into the route's own loader
+          // instead), and
           // src/routes/send.$token.tsx (its own SendPage component calls
           // submitCreatorUpload directly from its onSubmit handler -- this
           // is the one route in this list with no server-side loader/action
@@ -141,6 +153,7 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/hours/publish-gate.server.ts",
             "src/lib/theme/member-theme.server.ts",
             "src/lib/events/events.server.ts",
+            "src/lib/events/calendar-connection.server.ts",
           ],
           specifiers: ["server-only"],
         },
