@@ -336,6 +336,72 @@ async function ensureLogoAsset(
   console.log(`    uploaded logo -> ${storagePath} (asset ${asset.id})`);
 }
 
+const MANAGED_LINK_KINDS = ["website", "facebook", "instagram", "other"];
+
+type LinkInsert = {
+  member_id: string;
+  kind: "website" | "facebook" | "instagram" | "other";
+  label: string | null;
+  url: string;
+  sort_order: number;
+};
+
+function buildLinkInserts(memberId: string, member: Member): LinkInsert[] {
+  const links: LinkInsert[] = [];
+  let sortOrder = 0;
+
+  if (member.website) {
+    links.push({ member_id: memberId, kind: "website", label: null, url: member.website, sort_order: sortOrder++ });
+  }
+  if (member.facebook) {
+    links.push({ member_id: memberId, kind: "facebook", label: null, url: member.facebook, sort_order: sortOrder++ });
+  }
+  if (member.instagram) {
+    links.push({ member_id: memberId, kind: "instagram", label: null, url: member.instagram, sort_order: sortOrder++ });
+  }
+  if (member.untappd) {
+    // No dedicated `untappd` kind in the member_links.kind check constraint
+    // -- use 'other' with a label, per the schema plan's allowed values.
+    links.push({ member_id: memberId, kind: "other", label: "Untappd", url: member.untappd, sort_order: sortOrder++ });
+  }
+  if (member.tourUrl) {
+    // Dropped, not migrated -- see "Decisions made while filling gaps the
+    // spec left open" (Decision 3) in the plan this implements. Logged so
+    // a future tourUrl addition to site.ts doesn't silently vanish.
+    console.warn(`    NOTE: ${member.name} has a tourUrl (${member.tourUrl}) -- not imported, no matching member_links kind`);
+  }
+
+  return links;
+}
+
+/**
+ * Replaces this member's website/facebook/instagram/other links with the
+ * current set from site.ts. Delete-then-insert, scoped to member_id and to
+ * the kinds this script manages -- safe because imported members are
+ * unclaimed (no member_users row yet, per the spec), so nothing else has
+ * written to member_links for these rows.
+ */
+async function syncMemberLinks(
+  supabase: SupabaseClient,
+  memberId: string,
+  member: Member,
+): Promise<void> {
+  const { error: deleteError } = await supabase
+    .from("member_links")
+    .delete()
+    .eq("member_id", memberId)
+    .in("kind", MANAGED_LINK_KINDS);
+  if (deleteError) throw deleteError;
+
+  const links = buildLinkInserts(memberId, member);
+  if (links.length === 0) return;
+
+  const { error: insertError } = await supabase.from("member_links").insert(links);
+  if (insertError) throw insertError;
+
+  console.log(`    synced ${links.length} link(s)`);
+}
+
 async function main(): Promise<void> {
   const { url, key } = requireSupabaseCredentials();
   const supabase = createClient(url, key, {
@@ -351,6 +417,7 @@ async function main(): Promise<void> {
     const memberRow = await upsertMember(supabase, row);
     console.log(`  [${memberRow.slug}] members row ready (id=${memberRow.id})`);
     await ensureLogoAsset(supabase, memberRow.id, row.member);
+    await syncMemberLinks(supabase, memberRow.id, row.member);
   }
 
   console.log("\nDone.");
