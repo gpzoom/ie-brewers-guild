@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { notFound } from "@tanstack/react-router";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseServerClient, getSupabaseServerClientForRequest } from "@/lib/supabase/server";
+import { readImpersonationState } from "@/lib/guild/impersonation.server";
 import { getOgPlaceholderPath } from "@/lib/media/og-placeholder";
 import { getAdjacentInList, type DirectoryEntry } from "@/lib/directory/list-position";
 import type { DirectorySort } from "@/lib/directory/search-params";
@@ -41,6 +42,17 @@ export type MemberProfileData = {
   // the client's first render reconstructs the identical Date from the same
   // string instead of reading its own (later, different) clock.
   now: string;
+  // True when this row isn't published -- the viewer only ever sees it at
+  // all here because RLS's owner/guild-admin policies let a signed-in
+  // editor (or an impersonating Guild admin) through where anon's
+  // published-only policy would have returned nothing. Drives the
+  // ProfilePreviewBanner instead of the ordinary public rendering.
+  isPreview: boolean;
+  // True specifically when the viewer is a Guild admin currently
+  // impersonating THIS member -- distinguishes the impersonation-flavored
+  // banner (with its "Stop" control) from a member editor plainly
+  // previewing their own unpublished row.
+  isImpersonatedPreview: boolean;
 };
 
 type GetMemberProfileInput = {
@@ -59,7 +71,17 @@ type GetMemberProfileInput = {
 export const getMemberProfileData = createServerFn({ method: "GET" })
   .inputValidator((data: GetMemberProfileInput) => data)
   .handler(async ({ data }): Promise<MemberProfileData> => {
-    const supabase = await getSupabaseServerClient();
+    // Try the session-bound client whenever a session exists at all, so a
+    // signed-in member (or an impersonating Guild admin) previewing an
+    // unpublished profile gets through RLS's owner/guild-admin select
+    // policies (schema plan, Tasks 3-4) instead of only the anon "published
+    // rows" policy. A signed-out visitor, or a signed-in user who isn't
+    // this row's own editor or an impersonating admin, still gets nothing
+    // back from either policy branch -- RLS decides this, not application
+    // code, same as everywhere else in this build.
+    const sessionClient = await getSupabaseServerClientForRequest();
+    const { data: sessionUser } = await sessionClient.auth.getUser();
+    const supabase = sessionUser?.user ? sessionClient : await getSupabaseServerClient();
     const request = getRequest();
     const siteOrigin = new URL(request.url).origin;
     // Computed once, here, and threaded through the whole response --
@@ -71,25 +93,34 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
       // Explicit column list, not select("*") -- application_note,
       // dues_received_at, approved_at, and approved_by_user_id are
       // revoked from anon at the column level and must not be requested.
+      // This stays an explicit list even now that a signed-in editor may
+      // use the session-bound client instead of anon: real Postgres
+      // expands select("*") to literally every column before permission
+      // is checked, regardless of which role is asking, so switching to
+      // "*" here would break anon's own published-row reads with a
+      // permission-denied error. The columns below already cover
+      // everything this function (and its preview/impersonation checks)
+      // need.
       .select(
         "id, slug, member_type, business_name, tagline, city, state, street_address, postal_code, latitude, longitude, service_area, lead_time, phone, contact_email, timezone, theme, logo_asset_id, cover_asset_id, cover_crop, og_image_asset_id, member_since_year, discount_percent, discount_no_fixed_percent, discount_redeem_text, status, hours_confirmed_at, published_at, trail_eligible, created_at, updated_at",
       )
       .eq("slug", data.slug)
       .maybeSingle();
 
-    // Covers both "no such slug" and "slug exists but the row isn't
-    // published" -- RLS already filtered the second case out before this
-    // code runs, so both look identical from here: the directory's own
-    // 404 (spec, "Slug not found"). The other spec 404 case -- "draft or
-    // still an application: 404 to the public, preview banner to its own
-    // members" -- is only half-implementable today: there is no member
-    // auth yet to show that banner to (Member Admin phase). This
-    // function only ever implements the public-404 half.
+    // Covers "no such slug", "slug exists but the row isn't published and
+    // the viewer isn't its editor or an impersonating admin", and RLS
+    // denying the session-bound client for any other reason -- all look
+    // identical from here: the directory's own 404 (spec, "Slug not
+    // found"). When the row IS reachable but unpublished, isPreview below
+    // is what renders the banner instead of the ordinary public page.
     if (memberError || !member) {
       throw notFound();
     }
 
     const typedMember = member as MemberRow;
+    const isPreview = typedMember.status !== "published";
+    const impersonation = isPreview ? await readImpersonationState() : null;
+    const isImpersonatedPreview = Boolean(impersonation && impersonation.memberId === typedMember.id);
 
     const [
       { data: hours },
@@ -255,5 +286,7 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
       ogImageUrl,
       siteOrigin,
       now: now.toISOString(),
+      isPreview,
+      isImpersonatedPreview,
     };
   });

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { getMemberProfileData } from "@/lib/members/member-profile.server";
 import { validateDirectorySearch } from "@/lib/directory/search-params";
 import { MemberProfileTemplate } from "@/components/profile/MemberProfileTemplate";
+import { ProfilePreviewBanner } from "@/components/guild/ProfilePreviewBanner";
 
 export const Route = createFileRoute("/members_/$slug")({
   validateSearch: validateDirectorySearch,
@@ -73,18 +74,19 @@ export const Route = createFileRoute("/members_/$slug")({
   },
   component: MemberProfilePage,
   // Catches notFound() thrown from THIS route's own loader (an
-  // unpublished/nonexistent slug) -- per the installed router-core
-  // not-found-and-errors skill, a leaf route's notFoundComponent works
-  // for exactly this case even though it can't catch unmatched-path
-  // not-founds. This gives the spec's required "directory's own 404,
-  // offering the member list" instead of the generic site 404 in
-  // __root.tsx. It does NOT yet cover the spec's other 404 case --
-  // "profile is a draft or still an application: ... preview banner to
-  // its own members" -- because member auth doesn't exist until the
-  // Member Admin phase. When that lands, this loader needs to branch:
-  // if the requester is an authenticated editor of this member, render
-  // the preview instead of throwing notFound(). Tracked here, not
-  // silently dropped.
+  // unpublished/nonexistent slug that the current viewer has no RLS path
+  // to read -- a signed-out visitor, or a signed-in user who is neither
+  // this row's own editor nor an impersonating Guild admin) -- per the
+  // installed router-core not-found-and-errors skill, a leaf route's
+  // notFoundComponent works for exactly this case even though it can't
+  // catch unmatched-path not-founds. This gives the spec's required
+  // "directory's own 404, offering the member list" instead of the
+  // generic site 404 in __root.tsx. The spec's other 404 case -- "profile
+  // is a draft or still an application: ... preview banner to its own
+  // members" -- is now handled in getMemberProfileData/MemberProfilePage
+  // below via isPreview/isImpersonatedPreview and ProfilePreviewBanner,
+  // once member auth (this row's own editor) or an active impersonation
+  // session lets the loader's query see the row at all.
   notFoundComponent: () => (
     // bg-canvas is required here for the exact reason it's required on
     // MemberProfileTemplate's own card wrapper: text-ink/text-ink-muted
@@ -106,5 +108,10 @@ export const Route = createFileRoute("/members_/$slug")({
 function MemberProfilePage() {
   const data = Route.useLoaderData();
   const search = Route.useSearch();
-  return <MemberProfileTemplate data={data} search={search} />;
+  return (
+    <>
+      {data.isPreview && <ProfilePreviewBanner isImpersonatedPreview={data.isImpersonatedPreview} />}
+      <MemberProfileTemplate data={data} search={search} />
+    </>
+  );
 }
