@@ -66,6 +66,36 @@ SUMMARY:TZID Test Event [guild]
 END:VEVENT
 END:VCALENDAR`;
 
+// Adversarial fixtures below: real external calendars (the kind a member
+// actually connects) are not guaranteed to be well-formed, so the parser
+// must degrade gracefully per malformed VEVENT rather than losing the
+// whole feed or corrupting the reconciliation key.
+
+const SAMPLE_ICS_WITH_MISSING_DTSTART = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Test//Test//EN
+BEGIN:VEVENT
+UID:event-good@example.com
+DTSTART:20261010T190000Z
+DTEND:20261010T220000Z
+SUMMARY:Trivia Night [guild]
+END:VEVENT
+BEGIN:VEVENT
+UID:event-no-dtstart@example.com
+SUMMARY:Broken Entry [guild]
+END:VEVENT
+END:VCALENDAR`;
+
+const SAMPLE_ICS_WITH_MISSING_UID = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Test//Test//EN
+BEGIN:VEVENT
+DTSTART:20261010T190000Z
+DTEND:20261010T220000Z
+SUMMARY:No UID Entry [guild]
+END:VEVENT
+END:VCALENDAR`;
+
 describe("parseIcsFeedForTag", () => {
   it("keeps only events matching the sync tag by title", () => {
     const ids = parseIcsFeedForTag(SAMPLE_ICS, "guild")
@@ -92,6 +122,21 @@ describe("parseIcsFeedForTag", () => {
     expect(events[0].startsAt).toBe("2026-10-10T19:00:00.000Z");
     // 14:00 PDT -> 21:00 UTC.
     expect(events[0].endsAt).toBe("2026-10-10T21:00:00.000Z");
+  });
+
+  it("skips a VEVENT with no resolvable DTSTART, without losing the rest of the feed", () => {
+    const events = parseIcsFeedForTag(SAMPLE_ICS_WITH_MISSING_DTSTART, "guild");
+    expect(events.map((e) => e.externalEventId)).toEqual(["event-good@example.com"]);
+  });
+
+  it("excludes a VEVENT with no UID, since it can't be safely reconciled on re-sync", () => {
+    const events = parseIcsFeedForTag(SAMPLE_ICS_WITH_MISSING_UID, "guild");
+    expect(events).toHaveLength(0);
+  });
+
+  it("returns no events for a blank/whitespace-only sync tag, rather than matching everything", () => {
+    expect(parseIcsFeedForTag(SAMPLE_ICS, "")).toEqual([]);
+    expect(parseIcsFeedForTag(SAMPLE_ICS, "   ")).toEqual([]);
   });
 });
 

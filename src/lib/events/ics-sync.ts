@@ -23,16 +23,40 @@ export type ParsedIcsEvent = {
  * oversight -- callers (calendar-connection.server.ts, ics-refresh-cron.server.ts)
  * should be aware a synced recurring event will effectively go stale after
  * its first occurrence passes, until/unless RRULE expansion is added.
+ *
+ * This parses untrusted, member-controlled external calendar feeds, so it
+ * fails closed/skips defensively rather than trusting the feed to be
+ * well-formed:
+ *  - A blank/whitespace-only sync tag returns no events. `calendar_
+ *    connections.sync_tag` is a nullable, unconstrained column, so an
+ *    unset tag is a realistic state; matching an empty needle against
+ *    every summary/category would import a member's entire personal
+ *    calendar -- exactly the privacy failure tag-based opt-in exists to
+ *    prevent (see the module doc above).
+ *  - A VEVENT with no resolvable `DTSTART` is skipped rather than thrown
+ *    on. `event.startDate` is `null` when DTSTART is missing/unparseable,
+ *    and one bad entry from a messy real-world calendar must not sink the
+ *    whole batch (the rest of the feed should still sync).
+ *  - A VEVENT with no `UID` is skipped. Without a stable external id it
+ *    can't be tracked via `unique(calendar_connection_id,
+ *    external_event_id)`; since Postgres never treats NULL = NULL for
+ *    uniqueness, letting it through with a null id would insert a new
+ *    duplicate row on every re-sync instead of ever reconciling.
  */
 export function parseIcsFeedForTag(icsText: string, syncTag: string): ParsedIcsEvent[] {
+  const needle = syncTag.trim().toLowerCase();
+  if (!needle) {
+    return [];
+  }
+
   const jcalData = ICAL.parse(icsText);
   const component = new ICAL.Component(jcalData);
   const vevents = component.getAllSubcomponents("vevent");
-  const needle = syncTag.trim().toLowerCase();
 
   return vevents
     .map((vevent) => new ICAL.Event(vevent))
     .filter((event) => {
+      if (!event.startDate || !event.uid) return false;
       const summary = (event.summary ?? "").toLowerCase();
       const categoriesProp = event.component.getFirstProperty("categories");
       const categories: string[] = categoriesProp
