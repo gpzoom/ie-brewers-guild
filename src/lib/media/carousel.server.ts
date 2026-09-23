@@ -215,9 +215,32 @@ export const updateCarouselSlideLink = createServerFn({ method: "POST" })
     // validation on an empty `url` -- it's already harmless, since
     // isHttpUrl("") is false and the render-boundary guard below never
     // turns it into a live href either.
-    if (data.outboundUrl !== null && data.outboundUrl.trim() !== "") {
-      const urlCheck = validateLinkUrl(data.outboundUrl);
-      if (!urlCheck.valid) throw new Error(urlCheck.reason);
+    //
+    // `typeof data.outboundUrl === "string"`, not just `!== null` --
+    // `.inputValidator`'s type annotation is only a compile-time promise
+    // (same caveat member-basics.server.ts's updateMemberBasics and
+    // upsertMemberLink's own patch-allowlist filtering both call out): a
+    // raw request not built through CarouselEditor's typed object
+    // literals could send a number/array/object for `outboundUrl`. The
+    // original `!== null && data.outboundUrl.trim() !== ""` shape called
+    // `.trim()` on whatever that was, throwing a raw, unfriendly
+    // `TypeError` straight out to the member instead of either a clean
+    // rejection or a clean pass-through. Restructured to match
+    // upsertMemberLink's exact `typeof ... === "string"` shape, plus an
+    // explicit rejection for a non-null, non-string value so it can't
+    // silently skip validation and reach `.update()` below unchecked (no
+    // XSS exposure either way -- nothing that fails a string check can
+    // carry a scheme through `validateLinkUrl` -- but writing an
+    // unvalidated non-string into a `text` column is still worth refusing
+    // outright rather than coercing or ignoring).
+    if (data.outboundUrl !== null) {
+      if (typeof data.outboundUrl !== "string") {
+        throw new Error("Invalid link.");
+      }
+      if (data.outboundUrl.trim() !== "") {
+        const urlCheck = validateLinkUrl(data.outboundUrl);
+        if (!urlCheck.valid) throw new Error(urlCheck.reason);
+      }
     }
 
     const supabase = await getSupabaseServerClientForRequest();
