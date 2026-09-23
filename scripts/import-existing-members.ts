@@ -183,5 +183,91 @@ if (isDryRun) {
   process.exit(0);
 }
 
-// The real import (Supabase client, upsert, logo upload, links) is added in
-// later tasks of docs/superpowers/plans/2026-09-21-import-existing-members.md.
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+
+function requireSupabaseCredentials(): { url: string; key: string } {
+  const url = process.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    console.error(
+      "Missing VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY. Copy .env.example to .env and fill both in.",
+    );
+    process.exit(1);
+  }
+  return { url, key };
+}
+
+type MemberRowResult = {
+  id: string;
+  slug: string;
+};
+
+/**
+ * Upsert one `members` row by slug. Slug is a pure function of business
+ * name + city (see buildImportRows above) and is computed identically on
+ * every run, so looking a row up by its slug and updating that row in
+ * place -- rather than tracking ids anywhere else -- is what keeps this
+ * script idempotent without ever changing the slug column's value (the
+ * members_enforce_owner_write_limits trigger from the schema plan blocks
+ * that for non-guild-admin writes, which this service-role script counts
+ * as, since it has no auth.uid() session).
+ */
+async function upsertMember(supabase: SupabaseClient, row: ImportRow): Promise<MemberRowResult> {
+  const { data: existing, error: selectError } = await supabase
+    .from("members")
+    .select("id")
+    .eq("slug", row.slug)
+    .maybeSingle();
+  if (selectError) throw selectError;
+
+  const payload = {
+    slug: row.slug,
+    member_type: row.memberType,
+    business_name: row.member.name,
+    city: row.location.city,
+    state: row.state,
+    street_address: row.street,
+    postal_code: row.postalCode,
+    latitude: row.location.lat,
+    longitude: row.location.lng,
+    status: "published",
+  };
+
+  if (existing) {
+    const { error: updateError } = await supabase.from("members").update(payload).eq("id", existing.id);
+    if (updateError) throw updateError;
+    return { id: existing.id as string, slug: row.slug };
+  }
+
+  const { data: inserted, error: insertError } = await supabase
+    .from("members")
+    .insert(payload)
+    .select("id")
+    .single();
+  if (insertError) throw insertError;
+  return { id: inserted.id as string, slug: row.slug };
+}
+
+async function main(): Promise<void> {
+  const { url, key } = requireSupabaseCredentials();
+  const supabase = createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const rows = buildImportRows();
+  logImportRows(rows);
+
+  console.log(`\nImporting ${rows.length} rows into Supabase...\n`);
+
+  for (const row of rows) {
+    const memberRow = await upsertMember(supabase, row);
+    console.log(`  [${memberRow.slug}] members row ready (id=${memberRow.id})`);
+  }
+
+  console.log("\nDone.");
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
