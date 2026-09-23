@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { format } from "date-fns";
-import { TZDate } from "@date-fns/tz";
 import {
   clearEventOverlay,
   createEvent,
@@ -9,6 +7,7 @@ import {
   toggleEventHidden,
   updateEvent,
 } from "@/lib/events/events.server";
+import { fromDatetimeLocalValue, toDatetimeLocalValue } from "@/lib/timezone/timezones";
 import type { EventOverlayStatus, EventRow } from "@/lib/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -22,59 +21,6 @@ const OVERLAY_OPTIONS: { value: EventOverlayStatus; label: string }[] = [
   { value: "canceled", label: "Canceled" },
 ];
 
-const DATETIME_LOCAL_FORMAT = "yyyy-MM-dd'T'HH:mm";
-
-/**
- * `event.starts_at` is a UTC ISO timestamp from the database. Formatting
- * it with plain `Date` getters (or slicing the ISO string directly) would
- * report wall-clock time in the BROWSER's own local timezone, not the
- * member's business timezone (`members.timezone`) -- wrong the moment a
- * member edits their schedule from a device set to a different timezone
- * than their business (traveling, a different device, etc.), silently
- * shifting every event time by the difference with no error shown.
- * `TZDate` reports its getters in the given IANA zone instead of the
- * system one, so combining it with `format` produces the wall-clock
- * string the `datetime-local` input actually wants, in the RIGHT zone.
- */
-function toDatetimeLocalValue(isoUtc: string, memberTimezone: string): string {
-  return format(new TZDate(isoUtc, memberTimezone), DATETIME_LOCAL_FORMAT);
-}
-
-/**
- * The inverse of toDatetimeLocalValue: a `datetime-local` input's value is
- * a naive "yyyy-MM-ddTHH:mm" string with no offset.
- *
- * IMPORTANT: `new TZDate(value, memberTimezone)` -- i.e. TZDate's
- * single-STRING constructor form -- is NOT actually timezone-aware for a
- * naive string like this one. Per @date-fns/tz's own source
- * (node_modules/@date-fns/tz/date/mini.js's constructor), a string
- * argument falls straight through to `+new Date(str)`, and ECMA-262
- * specifies that a date-time string with no timezone designator is
- * parsed as local time in the CURRENT SYSTEM timezone -- exactly the
- * browser-timezone bug this function exists to avoid. Verified
- * empirically: constructing `new TZDate("2026-10-05T18:00",
- * "America/Los_Angeles")` produces a DIFFERENT instant depending on the
- * system's own timezone (checked against America/New_York, UTC,
- * Asia/Tokyo, and America/Los_Angeles as the system zone), even though
- * the member-timezone argument never changes -- i.e. the single-string
- * form reintroduces the exact bug it looks like it fixes.
- *
- * TZDate's NUMERIC multi-argument constructor form (`new TZDate(year,
- * monthIndex, day, hours, minutes, memberTimezone)`) goes through a
- * different path (`adjustToSystemTZ`) that correctly reconciles the
- * given wall-clock components against the target zone regardless of the
- * system timezone -- verified to produce the identical instant across
- * all 4 system zones above. So the datetime-local value's components are
- * parsed out and passed as separate numeric args, never as one naive
- * string.
- */
-function fromDatetimeLocalValue(value: string, memberTimezone: string): string {
-  const [datePart, timePart] = value.split("T");
-  const [year, month, day] = datePart.split("-").map(Number);
-  const [hours, minutes] = timePart.split(":").map(Number);
-  return new TZDate(year, month - 1, day, hours, minutes, memberTimezone).toISOString();
-}
-
 /** Reinserts a single event back into the CURRENT list rather than
  * restoring a whole-array snapshot taken before the delete started --
  * same stale-whole-array-snapshot bug already found and fixed three times
@@ -82,10 +28,39 @@ function fromDatetimeLocalValue(value: string, memberTimezone: string): string {
  * 0bd8398; CreatorLinkPanel.tsx's onRevoke, commit 77852df;
  * ReviewTray.tsx's onApprove/onReject). Restoring a snapshot here would
  * resurrect any OTHER event that was deleted (and succeeded) while this
- * one's request was still in flight. */
+ * one's request was still in flight. A delete's own rollback correctly
+ * restores the WHOLE row (unlike onFieldChange/onOverlayChange/
+ * onToggleHidden below) because deleting IS an all-fields operation --
+ * there's no narrower scope to restore. */
 function reinsertEvent(prev: EventRow[], event: EventRow): EventRow[] {
   if (prev.some((e) => e.id === event.id)) return prev;
   return [...prev, event].sort((a, b) => (a.starts_at < b.starts_at ? -1 : a.starts_at > b.starts_at ? 1 : 0));
+}
+
+/**
+ * Picks just the given keys off `obj`. Used below to build a rollback
+ * snapshot scoped to only the fields a mutation actually touches, never
+ * the whole row.
+ *
+ * Review finding (Task 25): all four optimistic handlers used to snapshot
+ * the ENTIRE EventRow before their update and roll back to that whole
+ * snapshot on failure. Concrete failure this caused: a member blurs the
+ * Starts field (update in flight, snapshot has is_hidden: false), then
+ * ticks "Hide from profile" (succeeds -- server now has it hidden), then
+ * the date update fails -> a whole-row rollback would silently replace
+ * the row with the stale snapshot, un-hiding an event the server has
+ * actually hidden, with the checkbox visibly un-ticking itself and no
+ * indication anything is wrong with the hide state. Same root-cause class
+ * as the ThemePicker finding from Task 24 (rolling back with a
+ * stale/wrong-scope value), just per-field here instead of per-item.
+ * pickFields keeps each handler's rollback scoped to exactly the fields
+ * IT touched, so an unrelated field that changed via a different,
+ * successful action in the meantime is never reverted.
+ */
+function pickFields<T, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
+  const picked = {} as Pick<T, K>;
+  for (const key of keys) picked[key] = obj[key];
+  return picked;
 }
 
 /** Note fields left null render the event as "at your own address" (spec: venue fields are nullable). */
@@ -105,32 +80,21 @@ export function EventsEditor({
     setError(null);
     try {
       const created = await createEvent({
-        data: { memberId, startsAt: new Date().toISOString(), endsAt: null, venueName: null, city: null, address: null },
+        data: {
+          memberId,
+          title: null,
+          startsAt: new Date().toISOString(),
+          endsAt: null,
+          venueName: null,
+          city: null,
+          address: null,
+        },
       });
       // Nothing is optimistically added before this resolves, so there's
       // no rollback to do on failure -- just surface the error.
       setEvents((prev) => [...prev, created]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't add a new event — try again.");
-    }
-  }
-
-  async function onFieldChange(event: EventRow, patch: Parameters<typeof updateEvent>[0]["data"]["patch"]) {
-    setError(null);
-    // Snapshot only THIS event (as passed in, before the optimistic
-    // update below), not the whole `events` array -- see reinsertEvent's
-    // doc comment for why a whole-array snapshot would be wrong here too.
-    const previous = event;
-    setEvents((prev) => prev.map((e) => (e.id === event.id ? { ...e, ...toEventRowPatch(patch) } : e)));
-    try {
-      await updateEvent({ data: { id: event.id, patch } });
-    } catch (err) {
-      // Roll back this one event to what it was before this call --
-      // otherwise a failed save (including an RLS-denied one that now
-      // throws via updateEvent's row-count check) would leave the UI
-      // showing a change that never actually happened server-side.
-      setEvents((prev) => prev.map((e) => (e.id === event.id ? previous : e)));
-      setError(err instanceof Error ? err.message : "Couldn't save that change — try again.");
     }
   }
 
@@ -141,12 +105,34 @@ export function EventsEditor({
   // optimistic local copy below.
   function toEventRowPatch(patch: Parameters<typeof updateEvent>[0]["data"]["patch"]): Partial<EventRow> {
     const rowPatch: Partial<EventRow> = {};
+    if (patch.title !== undefined) rowPatch.title = patch.title;
     if (patch.startsAt !== undefined) rowPatch.starts_at = patch.startsAt;
     if (patch.endsAt !== undefined) rowPatch.ends_at = patch.endsAt;
     if (patch.venueName !== undefined) rowPatch.venue_name = patch.venueName;
     if (patch.city !== undefined) rowPatch.city = patch.city;
     if (patch.address !== undefined) rowPatch.address = patch.address;
     return rowPatch;
+  }
+
+  async function onFieldChange(event: EventRow, patch: Parameters<typeof updateEvent>[0]["data"]["patch"]) {
+    setError(null);
+    const rowPatch = toEventRowPatch(patch);
+    // Snapshot ONLY the fields this patch touches -- see pickFields' doc
+    // comment for why a whole-row snapshot would be wrong here.
+    const previousValues = pickFields(event, Object.keys(rowPatch) as (keyof EventRow)[]);
+    setEvents((prev) => prev.map((e) => (e.id === event.id ? { ...e, ...rowPatch } : e)));
+    try {
+      await updateEvent({ data: { id: event.id, patch } });
+    } catch (err) {
+      // Roll back just the patched fields to what they were before this
+      // call -- otherwise a failed save (including an RLS-denied one that
+      // now throws via updateEvent's row-count check) would leave the UI
+      // showing a change that never actually happened server-side, or
+      // worse, silently undo an unrelated field that a DIFFERENT,
+      // successful action changed while this one was in flight.
+      setEvents((prev) => prev.map((e) => (e.id === event.id ? { ...e, ...previousValues } : e)));
+      setError(err instanceof Error ? err.message : "Couldn't save that change — try again.");
+    }
   }
 
   async function onDelete(event: EventRow) {
@@ -163,41 +149,68 @@ export function EventsEditor({
     }
   }
 
-  async function onOverlayChange(event: EventRow, status: EventOverlayStatus | "none") {
+  /**
+   * Handles both the status Select (status change, no newStartsAt) and
+   * the "New date/time" input that appears once status is "rescheduled"
+   * (same status, new newStartsAt). When switching TO "rescheduled" with
+   * no explicit newStartsAt given, this falls back to whatever
+   * overlay_starts_at the event already has (so re-selecting
+   * "Rescheduled" after having set a date doesn't wipe it), and to
+   * `undefined` (-> null server-side) otherwise, which is exactly the
+   * "no new date entered yet" state the reschedule-date input then lets
+   * the member fill in.
+   */
+  async function onOverlayChange(event: EventRow, status: EventOverlayStatus | "none", newStartsAt?: string) {
     setError(null);
-    const previous = event;
+    // Snapshot ONLY the overlay_* fields -- see pickFields' doc comment.
+    // A whole-row rollback here would silently revert e.g. is_hidden or a
+    // hand-edited title if either changed, via a different successful
+    // action, while THIS overlay call was still in flight.
+    const previousOverlay = pickFields(event, ["overlay_status", "overlay_starts_at", "overlay_note", "overlay_set_at"]);
+
     if (status === "none") {
       setEvents((prev) =>
         prev.map((e) =>
-          e.id === event.id ? { ...e, overlay_status: null, overlay_starts_at: null, overlay_note: null, overlay_set_at: null } : e,
+          e.id === event.id
+            ? { ...e, overlay_status: null, overlay_starts_at: null, overlay_note: null, overlay_set_at: null }
+            : e,
         ),
       );
       try {
         await clearEventOverlay({ data: { eventId: event.id } });
       } catch (err) {
-        setEvents((prev) => prev.map((e) => (e.id === event.id ? previous : e)));
+        setEvents((prev) => prev.map((e) => (e.id === event.id ? { ...e, ...previousOverlay } : e)));
         setError(err instanceof Error ? err.message : "Couldn't clear that status — try again.");
       }
       return;
     }
-    setEvents((prev) => prev.map((e) => (e.id === event.id ? { ...e, overlay_status: status } : e)));
+
+    const effectiveNewStartsAt = status === "rescheduled" ? newStartsAt ?? event.overlay_starts_at ?? undefined : undefined;
+    setEvents((prev) =>
+      prev.map((e) =>
+        e.id === event.id
+          ? { ...e, overlay_status: status, overlay_starts_at: status === "rescheduled" ? effectiveNewStartsAt ?? null : null }
+          : e,
+      ),
+    );
     try {
-      await setEventOverlay({ data: { eventId: event.id, status } });
+      await setEventOverlay({ data: { eventId: event.id, status, newStartsAt: effectiveNewStartsAt } });
     } catch (err) {
-      setEvents((prev) => prev.map((e) => (e.id === event.id ? previous : e)));
+      setEvents((prev) => prev.map((e) => (e.id === event.id ? { ...e, ...previousOverlay } : e)));
       setError(err instanceof Error ? err.message : "Couldn't set that status — try again.");
     }
   }
 
   async function onToggleHidden(event: EventRow) {
     setError(null);
-    const previous = event;
-    const next = !event.is_hidden;
+    // Snapshot ONLY is_hidden -- see pickFields' doc comment.
+    const previousIsHidden = event.is_hidden;
+    const next = !previousIsHidden;
     setEvents((prev) => prev.map((e) => (e.id === event.id ? { ...e, is_hidden: next } : e)));
     try {
       await toggleEventHidden({ data: { eventId: event.id, isHidden: next } });
     } catch (err) {
-      setEvents((prev) => prev.map((e) => (e.id === event.id ? previous : e)));
+      setEvents((prev) => prev.map((e) => (e.id === event.id ? { ...e, is_hidden: previousIsHidden } : e)));
       setError(err instanceof Error ? err.message : "Couldn't update that setting — try again.");
     }
   }
@@ -222,7 +235,17 @@ export function EventsEditor({
           .filter((event) => event.source === "manual")
           .map((event) => (
             <li key={event.id} className="rounded-md border border-border p-3">
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div>
+                <Label htmlFor={`title-${event.id}`}>Title (optional)</Label>
+                <Input
+                  id={`title-${event.id}`}
+                  defaultValue={event.title ?? ""}
+                  className="mt-1 h-11"
+                  onBlur={(e) => onFieldChange(event, { title: e.target.value || null })}
+                />
+              </div>
+
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <div>
                   <Label htmlFor={`starts-${event.id}`}>Starts</Label>
                   <Input
@@ -230,7 +253,17 @@ export function EventsEditor({
                     type="datetime-local"
                     defaultValue={toDatetimeLocalValue(event.starts_at, memberTimezone)}
                     className="mt-1 h-11"
-                    onBlur={(e) => onFieldChange(event, { startsAt: fromDatetimeLocalValue(e.target.value, memberTimezone) })}
+                    onBlur={(e) => {
+                      // A cleared/incomplete datetime-local input reports
+                      // "" -- parsing that would throw uncaught, outside
+                      // any try/catch, since it happens before
+                      // onFieldChange's own try block even starts.
+                      // Guarding here means clearing the field is just a
+                      // no-op (the input keeps its last real value on the
+                      // next render) rather than a silent crash.
+                      if (!e.target.value) return;
+                      onFieldChange(event, { startsAt: fromDatetimeLocalValue(e.target.value, memberTimezone) });
+                    }}
                   />
                 </div>
                 <div>
@@ -261,6 +294,23 @@ export function EventsEditor({
                     </SelectContent>
                   </Select>
                 </div>
+
+                {event.overlay_status === "rescheduled" && (
+                  <div>
+                    <Label htmlFor={`reschedule-${event.id}`}>New date/time</Label>
+                    <Input
+                      id={`reschedule-${event.id}`}
+                      type="datetime-local"
+                      defaultValue={event.overlay_starts_at ? toDatetimeLocalValue(event.overlay_starts_at, memberTimezone) : ""}
+                      className="mt-1 h-11"
+                      onBlur={(e) => {
+                        // Same empty-value guard as the Starts field above.
+                        if (!e.target.value) return;
+                        onOverlayChange(event, "rescheduled", fromDatetimeLocalValue(e.target.value, memberTimezone));
+                      }}
+                    />
+                  </div>
+                )}
 
                 <label className="flex min-h-11 items-center gap-2">
                   <Checkbox checked={event.is_hidden} onCheckedChange={() => onToggleHidden(event)} />

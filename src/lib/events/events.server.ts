@@ -16,6 +16,7 @@ export const listEvents = createServerFn({ method: "GET" })
   });
 
 type HandEnteredEventInput = {
+  title: string | null;
   startsAt: string;
   endsAt: string | null;
   venueName: string | null;
@@ -36,6 +37,7 @@ export const createEvent = createServerFn({ method: "POST" })
       .insert({
         member_id: data.memberId,
         source: "manual",
+        title: data.title,
         starts_at: data.startsAt,
         ends_at: data.endsAt,
         venue_name: data.venueName,
@@ -69,6 +71,7 @@ export const updateEvent = createServerFn({ method: "POST" })
     const { data: updated, error } = await supabase
       .from("events")
       .update({
+        title: data.patch.title,
         starts_at: data.patch.startsAt,
         ends_at: data.patch.endsAt,
         venue_name: data.patch.venueName,
