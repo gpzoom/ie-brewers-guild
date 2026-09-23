@@ -36,7 +36,16 @@ import { Button } from "@/components/ui/button";
  */
 export const Route = createFileRoute("/api/confirm-hours/$token")({
   loader: async ({ params }) => checkHoursConfirmToken({ data: { token: params.token } }),
-  head: () => ({ meta: [{ title: "Confirm your hours — IE Brewers Guild" }] }),
+  head: () => ({
+    meta: [
+      { title: "Confirm your hours — IE Brewers Guild" },
+      // Unguessable one-off action URL (a signed, member-specific token),
+      // same reasoning as survey.tsx/survey-results.tsx: no reason for a
+      // search engine to ever index it. Not a security control -- the
+      // HMAC signature is -- just a cheap, correct thing to add.
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: ConfirmHoursPage,
 });
 

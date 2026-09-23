@@ -58,17 +58,13 @@ export type MemberRow = {
   discount_redeem_text: string | null;
   status: MemberStatus;
   hours_confirmed_at: string | null;
-  // Added by the Member Admin plan's Task 28 migration -- not present in
-  // the original schema plan's members table, and not yet backed by a
-  // live migration in this checkout (Task 28 creates the column later in
-  // this same plan; declared here first since Task 1 runs before Task
-  // 28). Typed optional rather than required: the brief's own instruction
-  // ("add as a new field on MemberRow") would otherwise break the
-  // existing `member as MemberRow` cast in
-  // src/lib/members/member-profile.server.ts, whose explicit anon-safe
-  // column list (predates Task 28) can't select a column that doesn't
-  // exist yet. Safe to tighten to required once Task 28's migration
-  // lands and that select list is updated to include it.
+  // Added by the Member Admin plan's Task 28 migration
+  // (20260923044945_members_hours_stale_notice.sql), now live on the
+  // linked project. Still typed optional rather than required, and should
+  // stay that way: src/lib/members/member-profile.server.ts's explicit
+  // anon-safe column list deliberately does NOT select this column (it's
+  // cron/service-role-only, never member- or public-facing), so the
+  // `member as MemberRow` cast there would break if this were required.
   hours_stale_notice_sent_at?: string | null;
   published_at: string | null;
 };

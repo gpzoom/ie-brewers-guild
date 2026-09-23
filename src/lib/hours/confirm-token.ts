@@ -47,14 +47,25 @@ export async function verifyHoursConfirmToken(
   const [payloadPart, signaturePart] = parts;
 
   let payload: string;
+  let providedSignature: Uint8Array;
   try {
     payload = new TextDecoder().decode(fromBase64Url(payloadPart));
+    providedSignature = fromBase64Url(signaturePart);
   } catch {
+    // atob() throws a raw DOMException on any character outside the
+    // base64 alphabet -- this covers BOTH segments, not just the payload.
+    // A plain-text email auto-linker routinely swallows trailing
+    // punctuation (")", "!", ",", ";", ...) into a copy-pasted URL, which
+    // lands here as a corrupted signature segment on an otherwise-valid
+    // link. Without this, that's an unhandled exception on a fully public
+    // endpoint (a raw 500 instead of a clean "this link isn't valid"
+    // message) -- caught in review, reproduced live against a real built
+    // Worker.
     return { valid: false, reason: "Malformed token." };
   }
 
   const expectedSignature = await hmacSign(secret, payload);
-  if (!timingSafeEqual(expectedSignature, fromBase64Url(signaturePart))) {
+  if (!timingSafeEqual(expectedSignature, providedSignature)) {
     return { valid: false, reason: "Invalid signature." };
   }
 

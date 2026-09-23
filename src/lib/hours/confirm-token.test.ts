@@ -31,4 +31,18 @@ describe("signHoursConfirmToken / verifyHoursConfirmToken", () => {
   it("rejects a malformed token", async () => {
     expect((await verifyHoursConfirmToken("not-a-real-token", SECRET)).valid).toBe(false);
   });
+
+  it("rejects a token whose signature segment has a stray non-base64url character", async () => {
+    // Reproduces a real plain-text-email-auto-linker failure mode: trailing
+    // punctuation (a closing paren, "!", ",", ";", ...) gets swallowed into
+    // a copy-pasted link, corrupting the signature segment specifically.
+    // Before the fix, atob() threw a raw, unhandled DOMException here
+    // instead of returning a clean { valid: false } verdict.
+    const token = await signHoursConfirmToken(MEMBER_ID, SECRET);
+    const [payload, signature] = token.split(".");
+    expect(await verifyHoursConfirmToken(`${payload}.${signature})`, SECRET)).toEqual({
+      valid: false,
+      reason: "Malformed token.",
+    });
+  });
 });
