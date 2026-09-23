@@ -72,6 +72,7 @@ function makeMember(overrides: Partial<MemberRow> = {}): MemberRow {
     logo_asset_id: null,
     cover_asset_id: null,
     cover_crop: null,
+    og_image_asset_id: null,
     member_since_year: null,
     discount_percent: null,
     discount_no_fixed_percent: false,

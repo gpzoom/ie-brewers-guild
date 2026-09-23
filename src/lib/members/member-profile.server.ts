@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { notFound } from "@tanstack/react-router";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getOgPlaceholderPath } from "@/lib/media/og-placeholder";
 import { getAdjacentInList, type DirectoryEntry } from "@/lib/directory/list-position";
 import type { DirectorySort } from "@/lib/directory/search-params";
 import type {
@@ -71,7 +72,7 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
       // dues_received_at, approved_at, and approved_by_user_id are
       // revoked from anon at the column level and must not be requested.
       .select(
-        "id, slug, member_type, business_name, tagline, city, state, street_address, postal_code, latitude, longitude, service_area, lead_time, phone, contact_email, timezone, theme, logo_asset_id, cover_asset_id, cover_crop, member_since_year, discount_percent, discount_no_fixed_percent, discount_redeem_text, status, hours_confirmed_at, published_at, trail_eligible, created_at, updated_at",
+        "id, slug, member_type, business_name, tagline, city, state, street_address, postal_code, latitude, longitude, service_area, lead_time, phone, contact_email, timezone, theme, logo_asset_id, cover_asset_id, cover_crop, og_image_asset_id, member_since_year, discount_percent, discount_no_fixed_percent, discount_redeem_text, status, hours_confirmed_at, published_at, trail_eligible, created_at, updated_at",
       )
       .eq("slug", data.slug)
       .maybeSingle();
@@ -168,10 +169,16 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
       ? supabase.storage.from("member-logos").getPublicUrl(logoAsset.storage_path).data.publicUrl
       : null;
 
-    const coverAssetIsMediaBucket = Boolean(coverAsset);
-    const ogImageUrl = coverAssetIsMediaBucket
-      ? `${siteOrigin}/api/member-media/${coverAsset!.id}`
-      : logoPublicUrl;
+    // The member's own explicit choice always wins; otherwise a branded,
+    // member-type-specific placeholder (not the cover/logo/site-generic
+    // chain this used to fall through -- see this plan's own design notes
+    // for why: a link preview should never look identical to the
+    // homepage's). The placeholder is served raw, same as the explicit
+    // asset branch -- social crawlers fetch this URL directly and never
+    // apply any crop.
+    const ogImageUrl = typedMember.og_image_asset_id
+      ? `${siteOrigin}/api/member-media/${typedMember.og_image_asset_id}`
+      : `${siteOrigin}${getOgPlaceholderPath(typedMember.member_type)}`;
 
     // Header prev/next: the visitor's own browsing order (spec, "Next in
     // the directory, not nearest"). If the visitor's filter doesn't

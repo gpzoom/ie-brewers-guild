@@ -207,6 +207,18 @@ export default defineConfig(async ({ command, mode }) => {
             // already covered by the "**/*.server.*" glob above and
             // excluded here for the same reason as the rest.
             "src/lib/members/discount.server.ts",
+            // src/lib/media/social-image.server.ts (Social Sharing Image
+            // feature) -- same reasoning as cover.server.ts above: both of
+            // its createServerFn exports (updateSocialImageAsset,
+            // clearSocialImageAsset) are called directly from
+            // src/components/admin/SocialImageEditor.tsx's own
+            // onChooseAsset/onRemove handlers, and getMemberSocialImage is
+            // imported straight into src/routes/admin.media.tsx's own
+            // loader -- the same safe client/server RPC boundary this deny
+            // rule exists to push people toward, already covered by the
+            // "**/*.server.*" glob above and excluded here for the same
+            // reason as the rest.
+            "src/lib/media/social-image.server.ts",
           ],
           specifiers: ["server-only"],
         },

@@ -52,6 +52,7 @@ export type MemberRow = {
   logo_asset_id: string | null;
   cover_asset_id: string | null;
   cover_crop: CropRect | null;
+  og_image_asset_id: string | null;
   member_since_year: number | null;
   discount_percent: number | null;
   discount_no_fixed_percent: boolean;

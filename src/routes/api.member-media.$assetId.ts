@@ -29,7 +29,7 @@ const ALLOWED_MEDIA_MIME_TYPES = new Set([
  * contents, and it does so only after re-implementing, in application
  * code, the exact rule the RLS policy on `media_assets` encodes:
  * `review_status = 'approved'` AND referenced by a published member's
- * logo, cover, or carousel slide. The service-role client bypasses RLS
+ * logo, cover, social sharing image, or carousel slide. The service-role client bypasses RLS
  * entirely, so this check is the only thing standing between "anyone
  * with an asset id" and every private file in the bucket -- do not relax
  * it without re-deriving it from the RLS policy in
@@ -52,14 +52,14 @@ async function findEligibleAsset(assetId: string) {
     return null;
   }
 
-  const { data: asLogoOrCover } = await supabase
+  const { data: asLogoOrCoverOrSocialImage } = await supabase
     .from("members")
     .select("id")
-    .or(`logo_asset_id.eq.${assetId},cover_asset_id.eq.${assetId}`)
+    .or(`logo_asset_id.eq.${assetId},cover_asset_id.eq.${assetId},og_image_asset_id.eq.${assetId}`)
     .eq("status", "published")
     .limit(1)
     .maybeSingle();
-  if (asLogoOrCover) {
+  if (asLogoOrCoverOrSocialImage) {
     return asset;
   }
 
