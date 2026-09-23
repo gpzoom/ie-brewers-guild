@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreateMemberDialog } from "@/components/guild/CreateMemberDialog";
 import { inviteMember } from "@/lib/guild/invite-member.server";
+import { startImpersonation } from "@/lib/guild/impersonation.server";
 import {
   approveMember,
   declineMember,
@@ -57,6 +58,11 @@ export function RosterTable({ entries }: { entries: RosterEntry[] }) {
     } catch (err) {
       window.alert(err instanceof Error ? err.message : "That action failed.");
     }
+  }
+
+  async function handleEditAsThem(entry: RosterEntry) {
+    await startImpersonation({ data: { memberId: entry.member.id } });
+    await router.navigate({ to: "/admin/basics" });
   }
 
   const filtered = useMemo(() => {
@@ -207,6 +213,13 @@ export function RosterTable({ entries }: { entries: RosterEntry[] }) {
                     className="min-h-11 rounded-md border border-border px-3 py-1 text-sm font-medium hover:bg-muted"
                   >
                     {entry.member.dues_received_at ? "Clear dues received" : "Mark dues received"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleEditAsThem(entry)}
+                    className="min-h-11 rounded-md border border-border px-3 py-1 text-sm font-medium hover:bg-muted"
+                  >
+                    Edit as them
                   </button>
                 </div>
               </td>
