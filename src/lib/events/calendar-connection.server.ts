@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { buildEventUpsertRows, parseIcsFeedForTag } from "@/lib/events/ics-sync";
+import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { CalendarConnectionRow } from "@/lib/supabase/types";
 
 /**
@@ -170,6 +171,14 @@ export const saveIcsConnection = createServerFn({ method: "POST" })
       if (!updated || updated.length === 0) {
         throw new Error("Save failed — you may not have permission to edit this connection.");
       }
+
+      await recordAuditLogIfImpersonating({
+        memberId: data.memberId,
+        tableName: "calendar_connections",
+        rowId: existing.id as string,
+        action: "update",
+      });
+
       return { id: existing.id as string };
     }
 
@@ -179,6 +188,14 @@ export const saveIcsConnection = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+
+    await recordAuditLogIfImpersonating({
+      memberId: data.memberId,
+      tableName: "calendar_connections",
+      rowId: created.id as string,
+      action: "insert",
+    });
+
     return { id: created.id as string };
   });
 

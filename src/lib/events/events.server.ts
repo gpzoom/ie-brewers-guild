@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
+import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { EventOverlayStatus, EventRow } from "@/lib/supabase/types";
 
 export const listEvents = createServerFn({ method: "GET" })
@@ -47,6 +48,14 @@ export const createEvent = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
+
+    await recordAuditLogIfImpersonating({
+      memberId: data.memberId,
+      tableName: "events",
+      rowId: (row as EventRow).id,
+      action: "insert",
+    });
+
     return row as EventRow;
   });
 
@@ -79,11 +88,19 @@ export const updateEvent = createServerFn({ method: "POST" })
         address: data.patch.address,
       })
       .eq("id", data.id)
-      .select("id");
+      .select("id, member_id");
     if (error) throw new Error(error.message);
     if (!updated || updated.length === 0) {
       throw new Error("Save failed — you may not have permission to edit this event.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: updated[0].member_id as string,
+      tableName: "events",
+      rowId: data.id,
+      action: "update",
+    });
+
     return { ok: true as const };
   });
 
@@ -93,11 +110,23 @@ export const deleteEvent = createServerFn({ method: "POST" })
     const supabase = await getSupabaseServerClientForRequest();
     // Same row-count check as updateEvent above -- DELETE has the exact
     // same silent-zero-rows-on-RLS-denial behavior as UPDATE.
-    const { data: deleted, error } = await supabase.from("events").delete().eq("id", data.id).select("id");
+    const { data: deleted, error } = await supabase
+      .from("events")
+      .delete()
+      .eq("id", data.id)
+      .select("id, member_id");
     if (error) throw new Error(error.message);
     if (!deleted || deleted.length === 0) {
       throw new Error("Delete failed — you may not have permission to delete this event.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: deleted[0].member_id as string,
+      tableName: "events",
+      rowId: data.id,
+      action: "delete",
+    });
+
     return { ok: true as const };
   });
 
@@ -121,11 +150,19 @@ export const setEventOverlay = createServerFn({ method: "POST" })
         overlay_set_at: new Date().toISOString(),
       })
       .eq("id", data.eventId)
-      .select("id");
+      .select("id, member_id");
     if (error) throw new Error(error.message);
     if (!updated || updated.length === 0) {
       throw new Error("Save failed — you may not have permission to edit this event.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: updated[0].member_id as string,
+      tableName: "events",
+      rowId: data.eventId,
+      action: "update",
+    });
+
     return { ok: true as const };
   });
 
@@ -138,11 +175,19 @@ export const clearEventOverlay = createServerFn({ method: "POST" })
       .from("events")
       .update({ overlay_status: null, overlay_starts_at: null, overlay_note: null, overlay_set_at: null })
       .eq("id", data.eventId)
-      .select("id");
+      .select("id, member_id");
     if (error) throw new Error(error.message);
     if (!updated || updated.length === 0) {
       throw new Error("Save failed — you may not have permission to edit this event.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: updated[0].member_id as string,
+      tableName: "events",
+      rowId: data.eventId,
+      action: "update",
+    });
+
     return { ok: true as const };
   });
 
@@ -155,10 +200,18 @@ export const toggleEventHidden = createServerFn({ method: "POST" })
       .from("events")
       .update({ is_hidden: data.isHidden })
       .eq("id", data.eventId)
-      .select("id");
+      .select("id, member_id");
     if (error) throw new Error(error.message);
     if (!updated || updated.length === 0) {
       throw new Error("Save failed — you may not have permission to edit this event.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: updated[0].member_id as string,
+      tableName: "events",
+      rowId: data.eventId,
+      action: "update",
+    });
+
     return { ok: true as const };
   });

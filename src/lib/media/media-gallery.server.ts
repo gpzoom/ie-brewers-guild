@@ -3,6 +3,7 @@ import { fileTypeFromBuffer } from "file-type";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { validateUploadedImage } from "@/lib/media/validate-file";
 import { stripImageMetadata } from "@/lib/media/strip-exif";
+import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { MediaAssetRow } from "@/lib/supabase/types";
 
 export const listMemberMedia = createServerFn({ method: "GET" })
@@ -152,6 +153,13 @@ export const uploadMemberMedia = createServerFn({ method: "POST" })
       .single();
     if (insertError) throw new Error(insertError.message);
 
+    await recordAuditLogIfImpersonating({
+      memberId,
+      tableName: "media_assets",
+      rowId: (row as MediaAssetRow).id,
+      action: "insert",
+    });
+
     return row as MediaAssetRow;
   });
 
@@ -184,11 +192,18 @@ export const deleteMemberMedia = createServerFn({ method: "POST" })
       .from("media_assets")
       .delete()
       .eq("id", data.id)
-      .select("id, storage_path");
+      .select("id, storage_path, member_id");
     if (error) throw new Error(error.message);
     if (!deleted || deleted.length === 0) {
       throw new Error("Delete failed — you may not have permission to remove this photo.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: deleted[0].member_id as string,
+      tableName: "media_assets",
+      rowId: data.id,
+      action: "delete",
+    });
 
     // storage.remove() returns { data, error } -- it does NOT throw on
     // failure (an RLS-filtered-to-zero-rows removal or a transient storage

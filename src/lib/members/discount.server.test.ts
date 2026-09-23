@@ -35,6 +35,18 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
+// updateMemberDiscount now calls recordAuditLogIfImpersonating after its
+// write (Task 21) -- that wrapper reads the impersonation cookie via h3's
+// getCookie(), which throws outside a real request's AsyncLocalStorage
+// context ("No StartEvent found"). This file's tests call the handler
+// directly, with no request context at all, and aren't testing audit
+// logging (that's audit-log-coverage.test.ts's job) -- stub the wrapper to
+// a no-op so those tests keep exercising exactly what they're for: the
+// allowlist filter, range validation, and XOR logic.
+vi.mock("@/lib/guild/audit-log.server", () => ({
+  recordAuditLogIfImpersonating: async () => {},
+}));
+
 const { applyDiscountXor, assertValidDiscountPercent, filterDiscountPatch, updateMemberDiscount } =
   await import("./discount.server");
 

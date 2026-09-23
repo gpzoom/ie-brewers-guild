@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { validateLinkUrl } from "@/lib/links/url-safety";
+import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { MemberLinkKind, MemberLinkRow, MemberRow } from "@/lib/supabase/types";
 
 export const listMemberLinks = createServerFn({ method: "GET" })
@@ -139,6 +140,14 @@ export const upsertMemberLink = createServerFn({ method: "POST" })
       if (!updated || updated.length === 0) {
         throw new Error("Save failed — you may not have permission to edit this link.");
       }
+
+      await recordAuditLogIfImpersonating({
+        memberId: data.memberId,
+        tableName: "member_links",
+        rowId: data.id,
+        action: "update",
+      });
+
       return { id: data.id };
     }
     // The INSERT branch deliberately has no row-count check -- an
@@ -157,6 +166,14 @@ export const upsertMemberLink = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+
+    await recordAuditLogIfImpersonating({
+      memberId: data.memberId,
+      tableName: "member_links",
+      rowId: created.id as string,
+      action: "insert",
+    });
+
     return { id: created.id as string };
   });
 
@@ -171,11 +188,19 @@ export const deleteMemberLink = createServerFn({ method: "POST" })
       .from("member_links")
       .delete()
       .eq("id", data.id)
-      .select("id");
+      .select("id, member_id");
     if (error) throw new Error(error.message);
     if (!deleted || deleted.length === 0) {
       throw new Error("Delete failed — you may not have permission to remove this link.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: deleted[0].member_id as string,
+      tableName: "member_links",
+      rowId: data.id,
+      action: "delete",
+    });
+
     return { ok: true as const };
   });
 
@@ -229,6 +254,14 @@ export const updateMemberContact = createServerFn({ method: "POST" })
     if (!updated || updated.length === 0) {
       throw new Error("Save failed — you may not have permission to edit this member.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: data.memberId,
+      tableName: "members",
+      rowId: data.memberId,
+      action: "update",
+    });
+
     return { ok: true as const };
   });
 

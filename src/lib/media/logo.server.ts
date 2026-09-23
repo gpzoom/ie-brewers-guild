@@ -3,6 +3,7 @@ import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { readPngHeight, validateUploadedImage } from "@/lib/media/validate-file";
 import { stripImageMetadata } from "@/lib/media/strip-exif";
 import { sanitizeFilename } from "@/lib/media/media-gallery.server";
+import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 
 const MIN_LOGO_HEIGHT_PX = 400;
 
@@ -113,6 +114,13 @@ export const uploadMemberLogo = createServerFn({ method: "POST" })
       .single();
     if (insertError) throw new Error(insertError.message);
 
+    await recordAuditLogIfImpersonating({
+      memberId,
+      tableName: "media_assets",
+      rowId: assetRow.id as string,
+      action: "insert",
+    });
+
     // .select("id") + row-count check -- PostgREST reports an RLS-denied
     // update as success with zero rows affected, not as an `error` (same
     // gotcha member-basics.server.ts/hours-editor.server.ts/
@@ -129,6 +137,13 @@ export const uploadMemberLogo = createServerFn({ method: "POST" })
     if (!updated || updated.length === 0) {
       throw new Error("Save failed — you may not have permission to edit this member.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId,
+      tableName: "members",
+      rowId: memberId,
+      action: "update",
+    });
 
     const { data: publicUrl } = supabase.storage.from("member-logos").getPublicUrl(storagePath);
     return { assetId: assetRow.id as string, publicUrl: publicUrl.publicUrl };

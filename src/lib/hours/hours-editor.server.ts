@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
+import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { HoursRow, SpecialHoursRow } from "@/lib/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -161,6 +162,14 @@ export const upsertHoursRow = createServerFn({ method: "POST" })
       if (!updated || updated.length === 0) {
         throw new Error("Save failed -- you may not have permission to edit this row.");
       }
+
+      await recordAuditLogIfImpersonating({
+        memberId: data.memberId,
+        tableName: "hours",
+        rowId: data.id,
+        action: "update",
+      });
+
       return { id: data.id };
     }
 
@@ -173,6 +182,14 @@ export const upsertHoursRow = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+
+    await recordAuditLogIfImpersonating({
+      memberId: data.memberId,
+      tableName: "hours",
+      rowId: created.id as string,
+      action: "insert",
+    });
+
     return { id: created.id as string };
   });
 
@@ -184,11 +201,19 @@ export const deleteHoursRow = createServerFn({ method: "POST" })
       .from("hours")
       .delete()
       .eq("id", data.id)
-      .select("id");
+      .select("id, member_id");
     if (error) throw new Error(error.message);
     if (!deleted || deleted.length === 0) {
       throw new Error("Delete failed -- you may not have permission to remove this row.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: deleted[0].member_id as string,
+      tableName: "hours",
+      rowId: data.id,
+      action: "delete",
+    });
+
     return { ok: true as const };
   });
 
@@ -283,6 +308,14 @@ export const upsertSpecialHoursRow = createServerFn({ method: "POST" })
       if (!updated || updated.length === 0) {
         throw new Error("Save failed -- you may not have permission to edit this row.");
       }
+
+      await recordAuditLogIfImpersonating({
+        memberId: data.memberId,
+        tableName: "special_hours",
+        rowId: data.id,
+        action: "update",
+      });
+
       return { id: data.id };
     }
 
@@ -295,6 +328,14 @@ export const upsertSpecialHoursRow = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(specialHoursErrorMessage(error));
+
+    await recordAuditLogIfImpersonating({
+      memberId: data.memberId,
+      tableName: "special_hours",
+      rowId: created.id as string,
+      action: "insert",
+    });
+
     return { id: created.id as string };
   });
 
@@ -306,10 +347,18 @@ export const deleteSpecialHoursRow = createServerFn({ method: "POST" })
       .from("special_hours")
       .delete()
       .eq("id", data.id)
-      .select("id");
+      .select("id, member_id");
     if (error) throw new Error(error.message);
     if (!deleted || deleted.length === 0) {
       throw new Error("Delete failed -- you may not have permission to remove this row.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: deleted[0].member_id as string,
+      tableName: "special_hours",
+      rowId: data.id,
+      action: "delete",
+    });
+
     return { ok: true as const };
   });

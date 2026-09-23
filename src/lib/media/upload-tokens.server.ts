@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { generateUploadToken, hashUploadToken } from "@/lib/media/upload-tokens";
+import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { UploadTokenRow } from "@/lib/supabase/types";
 
 export const listUploadTokens = createServerFn({ method: "GET" })
@@ -57,6 +58,13 @@ export const createUploadToken = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
+    await recordAuditLogIfImpersonating({
+      memberId: data.memberId,
+      tableName: "upload_tokens",
+      rowId: (row as UploadTokenRow).id,
+      action: "insert",
+    });
+
     return { token: row as UploadTokenRow, rawToken };
   });
 
@@ -75,10 +83,18 @@ export const revokeUploadToken = createServerFn({ method: "POST" })
       .from("upload_tokens")
       .update({ revoked_at: new Date().toISOString() })
       .eq("id", data.id)
-      .select("id");
+      .select("id, member_id");
     if (error) throw new Error(error.message);
     if (!updated || updated.length === 0) {
       throw new Error("Revoke failed — you may not have permission to revoke this link.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: updated[0].member_id as string,
+      tableName: "upload_tokens",
+      rowId: data.id,
+      action: "update",
+    });
+
     return { ok: true as const };
   });

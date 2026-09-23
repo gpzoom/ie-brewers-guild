@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { isValidIanaTimezone } from "@/lib/timezone/timezones";
+import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { MemberRow, MemberType } from "@/lib/supabase/types";
 
 /**
@@ -140,6 +141,14 @@ export const updateMemberBasics = createServerFn({ method: "POST" })
     if (!updated || updated.length === 0) {
       throw new Error("Save failed -- you may not have permission to edit this member.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: data.memberId,
+      tableName: "members",
+      rowId: data.memberId,
+      action: "update",
+    });
+
     return { ok: true as const };
   });
 

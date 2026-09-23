@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
+import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { MediaAssetRow } from "@/lib/supabase/types";
 
 export const listPendingMedia = createServerFn({ method: "GET" })
@@ -31,11 +32,19 @@ export const approvePendingMedia = createServerFn({ method: "POST" })
       .from("media_assets")
       .update({ review_status: "approved" })
       .eq("id", data.id)
-      .select("id");
+      .select("id, member_id");
     if (error) throw new Error(error.message);
     if (!updated || updated.length === 0) {
       throw new Error("Approve failed — you may not have permission to review this photo.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: updated[0].member_id as string,
+      tableName: "media_assets",
+      rowId: data.id,
+      action: "update",
+    });
+
     return { ok: true as const };
   });
 
@@ -50,10 +59,18 @@ export const rejectPendingMedia = createServerFn({ method: "POST" })
       .from("media_assets")
       .update({ review_status: "rejected" })
       .eq("id", data.id)
-      .select("id");
+      .select("id, member_id");
     if (error) throw new Error(error.message);
     if (!updated || updated.length === 0) {
       throw new Error("Reject failed — you may not have permission to review this photo.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: updated[0].member_id as string,
+      tableName: "media_assets",
+      rowId: data.id,
+      action: "update",
+    });
+
     return { ok: true as const };
   });

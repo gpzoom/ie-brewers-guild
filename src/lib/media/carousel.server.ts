@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { initialCropForAspect } from "@/lib/media/crop-interaction";
 import { validateLinkUrl } from "@/lib/links/url-safety";
+import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { CarouselSlideRow, MediaAssetRow } from "@/lib/supabase/types";
 import type { CropRect } from "@/lib/media/crop";
 
@@ -135,6 +136,14 @@ export const assignCarouselSlide = createServerFn({ method: "POST" })
       if (!updated || updated.length === 0) {
         throw new Error("Save failed -- you may not have permission to edit this slide.");
       }
+
+      await recordAuditLogIfImpersonating({
+        memberId: data.memberId,
+        tableName: "carousel_slides",
+        rowId: existing.id,
+        action: "update",
+      });
+
       return { id: existing.id, crop };
     }
 
@@ -149,6 +158,14 @@ export const assignCarouselSlide = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(carouselSlotErrorMessage(error));
+
+    await recordAuditLogIfImpersonating({
+      memberId: data.memberId,
+      tableName: "carousel_slides",
+      rowId: created.id as string,
+      action: "insert",
+    });
+
     return { id: created.id as string, crop };
   });
 
@@ -165,11 +182,19 @@ export const unassignCarouselSlide = createServerFn({ method: "POST" })
       .from("carousel_slides")
       .delete()
       .eq("id", data.id)
-      .select("id");
+      .select("id, member_id");
     if (error) throw new Error(error.message);
     if (!deleted || deleted.length === 0) {
       throw new Error("Remove failed -- you may not have permission to remove this slide.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: deleted[0].member_id as string,
+      tableName: "carousel_slides",
+      rowId: data.id,
+      action: "delete",
+    });
+
     return { ok: true as const };
   });
 
@@ -181,11 +206,19 @@ export const updateCarouselSlideCrop = createServerFn({ method: "POST" })
       .from("carousel_slides")
       .update({ crop: data.crop })
       .eq("id", data.id)
-      .select("id");
+      .select("id, member_id");
     if (error) throw new Error(error.message);
     if (!updated || updated.length === 0) {
       throw new Error("Save failed -- you may not have permission to edit this slide.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: updated[0].member_id as string,
+      tableName: "carousel_slides",
+      rowId: data.id,
+      action: "update",
+    });
+
     return { ok: true as const };
   });
 
@@ -248,10 +281,18 @@ export const updateCarouselSlideLink = createServerFn({ method: "POST" })
       .from("carousel_slides")
       .update({ outbound_url: data.outboundUrl })
       .eq("id", data.id)
-      .select("id");
+      .select("id, member_id");
     if (error) throw new Error(error.message);
     if (!updated || updated.length === 0) {
       throw new Error("Save failed -- you may not have permission to edit this slide.");
     }
+
+    await recordAuditLogIfImpersonating({
+      memberId: updated[0].member_id as string,
+      tableName: "carousel_slides",
+      rowId: data.id,
+      action: "update",
+    });
+
     return { ok: true as const };
   });
