@@ -260,6 +260,17 @@ export default defineConfig(async ({ command, mode }) => {
             // people toward, already covered by the "**/*.server.*" glob
             // above and excluded here for the same reason as the rest.
             "src/lib/guild/invite-member.server.ts",
+            // src/lib/guild/member-admin-actions.server.ts (Task 17, Guild
+            // Admin phase) -- same reasoning as the files above: its
+            // createServerFn exports (approveMember, declineMember,
+            // suspendMember, correctMemberType, setTrailEligible,
+            // setDuesReceived, updateMemberByGuildAdmin) are called
+            // directly from RosterTable.tsx's own onClick/onChange
+            // handlers -- the same safe client/server RPC boundary this
+            // deny rule exists to push people toward, already covered by
+            // the "**/*.server.*" glob above and excluded here for the
+            // same reason as the rest.
+            "src/lib/guild/member-admin-actions.server.ts",
           ],
           specifiers: ["server-only"],
         },

@@ -68,6 +68,27 @@ export type MemberRow = {
   // `member as MemberRow` cast there would break if this were required.
   hours_stale_notice_sent_at?: string | null;
   published_at: string | null;
+  // Added by the Guild Admin plan's Task 17 (roster approve/decline/
+  // suspend/member_type-correction/trail_eligible/dues actions) -- these
+  // four columns are the write-limited ones the schema's own trigger
+  // (members_enforce_owner_write_limits, supabase/migrations/
+  // 20260922034558_members_table.sql) reserves to a Guild admin, and
+  // Task 17's roster actions both read and write them, so they can no
+  // longer stay excluded per the "Deliberately excludes columns no admin
+  // task reads or writes" note below (now stale for these four; updated
+  // alongside this addition). trail_eligible is required -- it's already
+  // in member-profile.server.ts's anon-safe explicit column list. The
+  // other three are typed optional rather than required, same reasoning
+  // as hours_stale_notice_sent_at just above: member-profile.server.ts's
+  // explicit column list deliberately does NOT select
+  // dues_received_at/approved_at/approved_by_user_id (its own comment:
+  // "revoked from anon at the column level and must not be requested"),
+  // so the `member as MemberRow` cast there would break if these were
+  // required.
+  dues_received_at?: string | null;
+  approved_at?: string | null;
+  approved_by_user_id?: string | null;
+  trail_eligible: boolean;
 };
 
 export type MediaAssetRow = {
@@ -182,11 +203,15 @@ export type CategoryRow = {
 // this file; verified against supabase/migrations/ as of the
 // final-review-fixes migration (20260922153458_final_review_fixes.sql).
 // Deliberately excludes columns no admin task reads or writes (e.g.
-// members.dues_received_at/.approved_at/.approved_by_user_id/
-// .application_note/.trail_eligible, media_assets.duration_ms,
+// members.application_note, media_assets.duration_ms,
 // calendar_connections.google_refresh_token -- Google OAuth/Vault wiring
 // is out of scope for this phase) -- same "columns actually used"
 // philosophy as the rest of this file, not an oversight.
+// members.dues_received_at/.approved_at/.approved_by_user_id/
+// .trail_eligible were part of this original exclusion list too, but are
+// now on MemberRow itself (added by the Guild Admin plan's Task 17, see
+// that comment above) since that task's roster actions read and write
+// them.
 
 export type ProfileRow = {
   id: string;

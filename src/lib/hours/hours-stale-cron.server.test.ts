@@ -81,6 +81,10 @@ function makeMember(overrides: Partial<MemberRow> = {}): MemberRow {
     hours_confirmed_at: "2026-01-01T00:00:00.000Z",
     hours_stale_notice_sent_at: null,
     published_at: "2026-01-01T00:00:00.000Z",
+    // trail_eligible was added to MemberRow (required) by the Guild Admin
+    // plan's Task 17 -- unrelated to this cron test, just a fixture
+    // default so this factory still satisfies the type.
+    trail_eligible: false,
     ...overrides,
   };
 }

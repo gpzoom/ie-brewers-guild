@@ -7,6 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreateMemberDialog } from "@/components/guild/CreateMemberDialog";
 import { inviteMember } from "@/lib/guild/invite-member.server";
+import {
+  approveMember,
+  declineMember,
+  suspendMember,
+  setTrailEligible,
+  correctMemberType,
+  setDuesReceived,
+} from "@/lib/guild/member-admin-actions.server";
 
 const CLAIM_STATE_LABEL: Record<RosterEntry["claimState"], string> = {
   unclaimed: "Unclaimed",
@@ -39,6 +47,15 @@ export function RosterTable({ entries }: { entries: RosterEntry[] }) {
       window.alert(err instanceof Error ? err.message : "Could not send the invite.");
     } finally {
       setInvitingId(null);
+    }
+  }
+
+  async function runAction(action: () => Promise<unknown>) {
+    try {
+      await action();
+      await router.invalidate();
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "That action failed.");
     }
   }
 
@@ -119,20 +136,79 @@ export function RosterTable({ entries }: { entries: RosterEntry[] }) {
             <tr key={entry.member.id} className="border-b border-border/60">
               <td className="px-3 py-3 font-medium">{entry.member.business_name}</td>
               <td className="px-3 py-3">{entry.member.city}</td>
-              <td className="px-3 py-3 capitalize">{entry.member.member_type}</td>
+              <td className="px-3 py-3">
+                <label className="sr-only" htmlFor={`member-type-${entry.member.id}`}>
+                  Member type for {entry.member.business_name}
+                </label>
+                <select
+                  id={`member-type-${entry.member.id}`}
+                  value={entry.member.member_type}
+                  onChange={(e) =>
+                    runAction(() => correctMemberType({ data: { memberId: entry.member.id, memberType: e.target.value as MemberType } }))
+                  }
+                  className="min-h-11 rounded-md border border-border bg-background px-2 text-sm capitalize"
+                >
+                  <option value="producer">Producer</option>
+                  <option value="mobile">Mobile</option>
+                  <option value="allied">Allied Member</option>
+                </select>
+              </td>
               <td className="px-3 py-3 capitalize">{entry.member.status}</td>
               <td className="px-3 py-3">{CLAIM_STATE_LABEL[entry.claimState]}</td>
               <td className="px-3 py-3">
-                {entry.claimState === "unclaimed" && (
+                <div className="flex flex-wrap gap-1">
+                  {entry.claimState === "unclaimed" && (
+                    <button
+                      type="button"
+                      onClick={() => handleInvite(entry)}
+                      disabled={invitingId === entry.member.id}
+                      className="min-h-11 rounded-md border border-border px-3 py-1 text-sm font-medium hover:bg-muted"
+                    >
+                      {invitingId === entry.member.id ? "Inviting…" : "Invite"}
+                    </button>
+                  )}
+                  {entry.member.status !== "published" && (
+                    <button
+                      type="button"
+                      onClick={() => runAction(() => approveMember({ data: { memberId: entry.member.id } }))}
+                      className="min-h-11 rounded-md border border-open/50 px-3 py-1 text-sm font-medium text-open hover:bg-open/10"
+                    >
+                      Approve
+                    </button>
+                  )}
+                  {entry.member.status !== "declined" && (
+                    <button
+                      type="button"
+                      onClick={() => runAction(() => declineMember({ data: { memberId: entry.member.id } }))}
+                      className="min-h-11 rounded-md border border-border px-3 py-1 text-sm font-medium hover:bg-muted"
+                    >
+                      Decline
+                    </button>
+                  )}
+                  {entry.member.status !== "suspended" && (
+                    <button
+                      type="button"
+                      onClick={() => runAction(() => suspendMember({ data: { memberId: entry.member.id } }))}
+                      className="min-h-11 rounded-md border border-danger/50 px-3 py-1 text-sm font-medium text-danger hover:bg-danger/10"
+                    >
+                      Suspend
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => handleInvite(entry)}
-                    disabled={invitingId === entry.member.id}
+                    onClick={() => runAction(() => setTrailEligible({ data: { memberId: entry.member.id, eligible: !entry.member.trail_eligible } }))}
                     className="min-h-11 rounded-md border border-border px-3 py-1 text-sm font-medium hover:bg-muted"
                   >
-                    {invitingId === entry.member.id ? "Inviting…" : "Invite"}
+                    {entry.member.trail_eligible ? "Remove from Trail" : "Add to Trail"}
                   </button>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => runAction(() => setDuesReceived({ data: { memberId: entry.member.id, receivedAt: entry.member.dues_received_at ? null : new Date().toISOString() } }))}
+                    className="min-h-11 rounded-md border border-border px-3 py-1 text-sm font-medium hover:bg-muted"
+                  >
+                    {entry.member.dues_received_at ? "Clear dues received" : "Mark dues received"}
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
