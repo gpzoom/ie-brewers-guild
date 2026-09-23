@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 import type { RosterEntry } from "@/lib/guild/roster.server";
 import type { MemberType } from "@/lib/supabase/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreateMemberDialog } from "@/components/guild/CreateMemberDialog";
+import { inviteMember } from "@/lib/guild/invite-member.server";
 
 const CLAIM_STATE_LABEL: Record<RosterEntry["claimState"], string> = {
   unclaimed: "Unclaimed",
@@ -23,6 +25,22 @@ export function RosterTable({ entries }: { entries: RosterEntry[] }) {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<MemberType | "all">("all");
   const [claimFilter, setClaimFilter] = useState<RosterEntry["claimState"] | "all">("all");
+  const router = useRouter();
+  const [invitingId, setInvitingId] = useState<string | null>(null);
+
+  async function handleInvite(entry: RosterEntry) {
+    const email = entry.ownerEmail ?? window.prompt(`Invite email for ${entry.member.business_name}:`);
+    if (!email) return;
+    setInvitingId(entry.member.id);
+    try {
+      await inviteMember({ data: { memberId: entry.member.id, email } });
+      await router.invalidate();
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Could not send the invite.");
+    } finally {
+      setInvitingId(null);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -93,6 +111,7 @@ export function RosterTable({ entries }: { entries: RosterEntry[] }) {
             <th className="px-3 py-2">Type</th>
             <th className="px-3 py-2">Status</th>
             <th className="px-3 py-2">Roster state</th>
+            <th className="px-3 py-2">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -103,11 +122,23 @@ export function RosterTable({ entries }: { entries: RosterEntry[] }) {
               <td className="px-3 py-3 capitalize">{entry.member.member_type}</td>
               <td className="px-3 py-3 capitalize">{entry.member.status}</td>
               <td className="px-3 py-3">{CLAIM_STATE_LABEL[entry.claimState]}</td>
+              <td className="px-3 py-3">
+                {entry.claimState === "unclaimed" && (
+                  <button
+                    type="button"
+                    onClick={() => handleInvite(entry)}
+                    disabled={invitingId === entry.member.id}
+                    className="min-h-11 rounded-md border border-border px-3 py-1 text-sm font-medium hover:bg-muted"
+                  >
+                    {invitingId === entry.member.id ? "Inviting…" : "Invite"}
+                  </button>
+                )}
+              </td>
             </tr>
           ))}
           {filtered.length === 0 && (
             <tr>
-              <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
+              <td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">
                 No members match this search and filter combination.
               </td>
             </tr>

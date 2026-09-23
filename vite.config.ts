@@ -252,6 +252,14 @@ export default defineConfig(async ({ command, mode }) => {
             // glob above and excluded here for the same reason as the
             // rest.
             "src/lib/guild/create-member.server.ts",
+            // src/lib/guild/invite-member.server.ts (Task 16, Guild Admin
+            // phase) -- same reasoning as the files above: its one
+            // createServerFn export, inviteMember, is called directly from
+            // RosterTable.tsx's own handleInvite handler -- the same safe
+            // client/server RPC boundary this deny rule exists to push
+            // people toward, already covered by the "**/*.server.*" glob
+            // above and excluded here for the same reason as the rest.
+            "src/lib/guild/invite-member.server.ts",
           ],
           specifiers: ["server-only"],
         },

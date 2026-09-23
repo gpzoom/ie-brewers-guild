@@ -17,7 +17,8 @@
  */
 export type TransactionalEmailPayload =
   | { trigger: "creator_upload_pending"; memberId: string; assetId: string; creatorName: string | null }
-  | { trigger: "hours_stale"; memberId: string; confirmUrl: string };
+  | { trigger: "hours_stale"; memberId: string; confirmUrl: string }
+  | { trigger: "member_invited"; memberId: string; email: string };
 
 export async function sendTransactionalEmail(payload: TransactionalEmailPayload): Promise<void> {
   throw new Error(
