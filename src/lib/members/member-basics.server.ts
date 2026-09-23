@@ -150,6 +150,15 @@ export const updateMemberBasics = createServerFn({ method: "POST" })
  * write path) -- it's included purely so Task 24's /admin/theme route can
  * reuse this same loader per that plan's own stated choice, rather than
  * this file's editor writing it.
+ *
+ * `discount_percent`/`discount_no_fixed_percent`/`discount_redeem_text`
+ * are likewise read-only here (never part of BASICS_KEYS/BasicsPatch --
+ * updateMemberDiscount in discount.server.ts is their own, separate write
+ * path, with its own DISCOUNT_KEYS runtime allowlist). Task 31's own
+ * stated interface ("Consumes: getMemberBasics") reuses this same loader
+ * for /admin/discount, matching the exact precedent Task 24 set for
+ * `theme` above -- a read-only extension of this select list/type, not a
+ * new field added to the writable BASICS_KEYS allowlist.
  */
 export type BasicsMember = Pick<
   MemberRow,
@@ -165,6 +174,9 @@ export type BasicsMember = Pick<
   | "timezone"
   | "member_type"
   | "theme"
+  | "discount_percent"
+  | "discount_no_fixed_percent"
+  | "discount_redeem_text"
 >;
 
 export const getMemberBasics = createServerFn({ method: "GET" })
@@ -180,7 +192,7 @@ export const getMemberBasics = createServerFn({ method: "GET" })
       // scopes to the caller's own member row) but there's no reason for
       // this editor's response payload to carry columns it never renders.
       .select(
-        "id, business_name, tagline, city, state, street_address, service_area, lead_time, member_since_year, timezone, member_type, theme",
+        "id, business_name, tagline, city, state, street_address, service_area, lead_time, member_since_year, timezone, member_type, theme, discount_percent, discount_no_fixed_percent, discount_redeem_text",
       )
       .eq("id", data.memberId)
       .single();

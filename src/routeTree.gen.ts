@@ -28,6 +28,7 @@ import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminLinksRouteImport } from './routes/admin.links'
 import { Route as AdminHoursRouteImport } from './routes/admin.hours'
 import { Route as AdminEventsRouteImport } from './routes/admin.events'
+import { Route as AdminDiscountRouteImport } from './routes/admin.discount'
 import { Route as AdminBasicsRouteImport } from './routes/admin.basics'
 import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
 import { Route as ApiConfirmHoursTokenRouteImport } from './routes/api.confirm-hours.$token'
@@ -128,6 +129,11 @@ const AdminEventsRoute = AdminEventsRouteImport.update({
   path: '/events',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDiscountRoute = AdminDiscountRouteImport.update({
+  id: '/discount',
+  path: '/discount',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBasicsRoute = AdminBasicsRouteImport.update({
   id: '/basics',
   path: '/basics',
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/admin/basics': typeof AdminBasicsRoute
+  '/admin/discount': typeof AdminDiscountRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/hours': typeof AdminHoursRoute
   '/admin/links': typeof AdminLinksRoute
@@ -185,6 +192,7 @@ export interface FileRoutesByTo {
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/admin/basics': typeof AdminBasicsRoute
+  '/admin/discount': typeof AdminDiscountRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/hours': typeof AdminHoursRoute
   '/admin/links': typeof AdminLinksRoute
@@ -211,6 +219,7 @@ export interface FileRoutesById {
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/admin/basics': typeof AdminBasicsRoute
+  '/admin/discount': typeof AdminDiscountRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/hours': typeof AdminHoursRoute
   '/admin/links': typeof AdminLinksRoute
@@ -238,6 +247,7 @@ export interface FileRouteTypes {
     | '/survey'
     | '/survey-results'
     | '/admin/basics'
+    | '/admin/discount'
     | '/admin/events'
     | '/admin/hours'
     | '/admin/links'
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
     | '/survey'
     | '/survey-results'
     | '/admin/basics'
+    | '/admin/discount'
     | '/admin/events'
     | '/admin/hours'
     | '/admin/links'
@@ -287,6 +298,7 @@ export interface FileRouteTypes {
     | '/survey'
     | '/survey-results'
     | '/admin/basics'
+    | '/admin/discount'
     | '/admin/events'
     | '/admin/hours'
     | '/admin/links'
@@ -455,6 +467,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/discount': {
+      id: '/admin/discount'
+      path: '/discount'
+      fullPath: '/admin/discount'
+      preLoaderRoute: typeof AdminDiscountRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/basics': {
       id: '/admin/basics'
       path: '/basics'
@@ -488,6 +507,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminBasicsRoute: typeof AdminBasicsRoute
+  AdminDiscountRoute: typeof AdminDiscountRoute
   AdminEventsRoute: typeof AdminEventsRoute
   AdminHoursRoute: typeof AdminHoursRoute
   AdminLinksRoute: typeof AdminLinksRoute
@@ -498,6 +518,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminBasicsRoute: AdminBasicsRoute,
+  AdminDiscountRoute: AdminDiscountRoute,
   AdminEventsRoute: AdminEventsRoute,
   AdminHoursRoute: AdminHoursRoute,
   AdminLinksRoute: AdminLinksRoute,

@@ -196,6 +196,17 @@ export default defineConfig(async ({ command, mode }) => {
             // people toward, already covered by the "**/*.server.*" glob
             // above and excluded here for the same reason as the rest.
             "src/lib/links/member-links.server.ts",
+            // src/lib/members/discount.server.ts (Task 31) -- same
+            // reasoning as the files above: its one createServerFn export,
+            // updateMemberDiscount, is called directly from
+            // src/components/admin/DiscountEditor.tsx's own save() handler
+            // (src/routes/admin.discount.tsx's loader instead reuses
+            // member-basics.server.ts's getMemberBasics, already covered
+            // by its own exclusion entry) -- the same safe client/server
+            // RPC boundary this deny rule exists to push people toward,
+            // already covered by the "**/*.server.*" glob above and
+            // excluded here for the same reason as the rest.
+            "src/lib/members/discount.server.ts",
           ],
           specifiers: ["server-only"],
         },
