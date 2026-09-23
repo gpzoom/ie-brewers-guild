@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { updateMemberDiscount } from "@/lib/members/discount.server";
+import { applyDiscountXor, updateMemberDiscount } from "@/lib/members/discount.server";
 import { isFieldVisibleForMemberType } from "@/lib/members/type-fields";
 import type { BasicsMember } from "@/lib/members/member-basics.server";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -61,12 +61,31 @@ export function DiscountEditor({ member }: { member: BasicsMember }) {
    * the allowlist/range-validation/row-count throws added to
    * discount.server.ts) would leave the optimistic change showing with no
    * rollback and no visible error. Rollback snapshot is taken from `local`
-   * BEFORE the optimistic update, scoped to just the field(s) in `patch`
-   * via pickFields -- see that function's own doc comment for why a
-   * whole-object snapshot would be wrong here.
+   * BEFORE the optimistic update, scoped to just the field(s) in the
+   * (post-mirroring) patch via pickFields -- see that function's own doc
+   * comment for why a whole-object snapshot would be wrong here.
+   *
+   * Applies discount.server.ts's own applyDiscountXor to the CLIENT copy
+   * of the patch before applying it locally, so `local` never diverges
+   * from what the server actually persists -- reusing that exact
+   * function (rather than reimplementing the same two-line mutation here)
+   * so the two copies can't drift apart. Without this, checking "No fixed
+   * percentage" would set `local.discount_no_fixed_percent = true` but
+   * leave `local.discount_percent` at its old numeric value (only the
+   * DATABASE row gets nulled, via the server's own applyDiscountXor call)
+   * -- and since the percent `<Input>` below is uncontrolled, unchecking
+   * the box again would then redisplay that stale number instead of
+   * empty, and an ordinary blur with no retyping would silently
+   * resurrect it and flip discount_no_fixed_percent back to false
+   * server-side. See the `key={...}` comment on the Input below for the
+   * other half of this fix -- that half makes the Input's DOM value
+   * actually refresh from `local.discount_percent`; this half is what
+   * makes that value correct once it does.
    */
-  function save(patch: Parameters<typeof updateMemberDiscount>[0]["data"]["patch"]) {
+  function save(rawPatch: Parameters<typeof updateMemberDiscount>[0]["data"]["patch"]) {
     setError(null);
+    const patch = applyDiscountXor(rawPatch);
+
     const previousValues = pickFields(local, Object.keys(patch) as (keyof BasicsMember)[]);
     setLocal((prev) => ({ ...prev, ...patch }));
     updateMemberDiscount({ data: { memberId: member.id, patch } }).catch((err: unknown) => {
@@ -92,6 +111,25 @@ export function DiscountEditor({ member }: { member: BasicsMember }) {
       <div>
         <Label htmlFor="discount-percent">Discount percentage</Label>
         <Input
+          // Remount whenever discount_no_fixed_percent flips -- this
+          // Input is uncontrolled (defaultValue, not value), so its
+          // displayed DOM value otherwise never updates from React state
+          // after the initial mount, even once `local.discount_percent`
+          // changes underneath it. Concretely: check "No fixed
+          // percentage" (server nulls discount_percent via the XOR logic
+          // in discount.server.ts) -> uncheck it again (field re-enables
+          // but, without this key, would still show the STALE
+          // pre-toggle number, not the fresh null) -> an ordinary
+          // tab-through blur with no retyping would then call
+          // save({ discount_percent: <stale value> }), which the
+          // server's own XOR logic would use to silently flip
+          // discount_no_fixed_percent back to false -- reverting the
+          // member's just-completed choice on a completely ordinary
+          // interaction, not an edge case. Changing `key` forces React to
+          // discard the old DOM node and mount a fresh one, which reads
+          // `defaultValue` from the CURRENT `local.discount_percent`
+          // (null -> "") rather than keeping the stale one around.
+          key={String(local.discount_no_fixed_percent)}
           id="discount-percent"
           type="number"
           min={0}

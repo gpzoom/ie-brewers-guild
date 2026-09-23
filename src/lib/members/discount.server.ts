@@ -99,7 +99,29 @@ export function assertValidDiscountPercent(value: number | null | undefined): vo
  * Percent XOR "no fixed percentage" (spec, "Allied Member discount"): if
  * discount_no_fixed_percent is being set true, discount_percent is cleared
  * in the same patch, and vice versa -- never both set at once.
+ *
+ * Extracted as its own pure function -- not just inlined in the handler
+ * below -- so DiscountEditor.tsx's client-side optimistic state can call
+ * this SAME function to mirror the mutation locally, rather than
+ * reimplementing (and risking drifting from) it. Without that mirroring,
+ * `local` state on the client would diverge from what this handler
+ * actually persists: checking "No fixed percentage" would null
+ * `discount_percent` in the database via this function, but leave the
+ * client's own `local.discount_percent` at its old numeric value, which
+ * -- because DiscountEditor's percent `<Input>` is uncontrolled -- would
+ * then redisplay as a stale, non-empty value the next time that field
+ * re-enables, letting an ordinary blur with no retyping silently
+ * resurrect the old percent and revert the member's choice. See
+ * DiscountEditor.tsx's save() and its percent `<Input>`'s `key` prop for
+ * the client half of this fix.
  */
+export function applyDiscountXor(patch: DiscountPatch): DiscountPatch {
+  const next = { ...patch };
+  if (next.discount_no_fixed_percent === true) next.discount_percent = null;
+  if (typeof next.discount_percent === "number") next.discount_no_fixed_percent = false;
+  return next;
+}
+
 export const updateMemberDiscount = createServerFn({ method: "POST" })
   .inputValidator((data: { memberId: string; patch: DiscountPatch }) => data)
   .handler(async ({ data }) => {
@@ -107,22 +129,21 @@ export const updateMemberDiscount = createServerFn({ method: "POST" })
     // any validation below and before the XOR logic, so a disallowed key
     // can never smuggle itself through by piggybacking on a request that
     // also happens to patch a legitimate field.
-    const patch = filterDiscountPatch(data.patch);
+    const filtered = filterDiscountPatch(data.patch);
 
-    if (Object.keys(patch).length === 0) {
+    if (Object.keys(filtered).length === 0) {
       throw new Error("No discount fields to update.");
     }
 
-    // Range validation runs on the RAW filtered value, before the XOR
-    // logic below has a chance to overwrite discount_percent -- a request
-    // that sets an out-of-range discount_percent must be rejected
-    // regardless of what else is in the same patch.
-    if ("discount_percent" in patch) {
-      assertValidDiscountPercent(patch.discount_percent);
+    // Range validation runs on the RAW filtered value, before applyDiscountXor
+    // below has a chance to overwrite discount_percent -- a request that
+    // sets an out-of-range discount_percent must be rejected regardless of
+    // what else is in the same patch.
+    if ("discount_percent" in filtered) {
+      assertValidDiscountPercent(filtered.discount_percent);
     }
 
-    if (patch.discount_no_fixed_percent === true) patch.discount_percent = null;
-    if (typeof patch.discount_percent === "number") patch.discount_no_fixed_percent = false;
+    const patch = applyDiscountXor(filtered);
 
     const supabase = await getSupabaseServerClientForRequest();
     // .select("id") + row-count check -- PostgREST reports an RLS-denied
