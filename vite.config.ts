@@ -25,7 +25,26 @@ export default defineConfig(async ({ command, mode }) => {
           // createServerOnlyFn's compile-time body-stripping is the real,
           // still-working guarantee against secret leaks -- but it costs
           // nothing to keep both patterns active.
-          files: ["**/*.server.*", "**/server/**"],
+          // ics-refresh-cron.server.ts and hours-stale-cron.server.ts
+          // (Task 29) are already covered by the "**/*.server.*" glob above
+          // -- listed here explicitly too, redundantly but harmlessly, per
+          // this task's own instructions. Unlike every file in excludeFiles
+          // below, neither exports a createServerFn: refreshAllIcsConnections
+          // and sendHoursStaleNotices are plain async functions with no
+          // client caller at all, only ever dynamically imported from
+          // src/server.ts's own `scheduled` handler (a Worker-only entry
+          // point, never bundled for the client) -- so, deliberately, they
+          // are NOT added to excludeFiles the way the sixteen RPC-boundary
+          // files below are. Doing so would defeat the point of import
+          // protection for these two: it would let the client bundle
+          // reference code that talks to the service-role Supabase client
+          // and reads HOURS_CONFIRM_SECRET.
+          files: [
+            "**/*.server.*",
+            "**/server/**",
+            "src/lib/events/ics-refresh-cron.server.ts",
+            "src/lib/hours/hours-stale-cron.server.ts",
+          ],
           // src/lib/members/member-profile.server.ts,
           // src/lib/auth/require-member-session.server.ts,
           // src/lib/members/member-basics.server.ts,
