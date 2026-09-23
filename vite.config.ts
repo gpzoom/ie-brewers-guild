@@ -37,10 +37,11 @@ export default defineConfig(async ({ command, mode }) => {
           // src/lib/media/upload-tokens.server.ts,
           // src/lib/media/creator-upload.server.ts,
           // src/lib/media/review-tray.server.ts,
-          // src/lib/hours/publish-gate.server.ts, and
-          // src/lib/theme/member-theme.server.ts are the files in this
+          // src/lib/hours/publish-gate.server.ts,
+          // src/lib/theme/member-theme.server.ts, and
+          // src/lib/events/events.server.ts are the files in this
           // repo the restored "**/*.server.*" default pattern would now
-          // also catch, and all thirteen are deliberate exceptions, not a
+          // also catch, and all fourteen are deliberate exceptions, not a
           // gap: every export of each file (`getMemberProfileData`;
           // `requireMemberSession`; `getMemberBasics`/`updateMemberBasics`;
           // `listHours`/`upsertHoursRow`/`deleteHoursRow`/
@@ -55,7 +56,9 @@ export default defineConfig(async ({ command, mode }) => {
           // `submitCreatorUpload`;
           // `listPendingMedia`/`approvePendingMedia`/`rejectPendingMedia`;
           // `publishMemberProfile`/`unpublishMemberProfile`/
-          // `getPublishGateData`; `updateMemberTheme`)
+          // `getPublishGateData`; `updateMemberTheme`; `listEvents`/
+          // `createEvent`/`updateEvent`/`deleteEvent`/`setEventOverlay`/
+          // `clearEventOverlay`/`toggleEventHidden`)
           // is a createServerFn().handler(...) call
           // -- already the exact safe client/server RPC boundary this deny
           // rule exists to push people toward (see the plugin's own
@@ -88,7 +91,13 @@ export default defineConfig(async ({ command, mode }) => {
           // the route's own loader instead), src/routes/admin.theme.tsx
           // (plus ThemePicker.tsx, which calls updateMemberTheme from its
           // own onSelect handler the same way -- getMemberBasics is
-          // imported straight into the route's own loader instead), and
+          // imported straight into the route's own loader instead),
+          // src/routes/admin.events.tsx (plus EventsEditor.tsx, which
+          // calls createEvent/updateEvent/deleteEvent/setEventOverlay/
+          // clearEventOverlay/toggleEventHidden from its own onAdd/
+          // onFieldChange/onDelete/onOverlayChange/onToggleHidden handlers
+          // the same way -- listEvents is likewise imported straight into
+          // the route's own loader instead), and
           // src/routes/send.$token.tsx (its own SendPage component calls
           // submitCreatorUpload directly from its onSubmit handler -- this
           // is the one route in this list with no server-side loader/action
@@ -101,9 +110,9 @@ export default defineConfig(async ({ command, mode }) => {
           // emitted its RPC provider module. See creator-upload.server.ts's
           // own doc comment) import them directly by design, per TanStack
           // Start's own createServerFn convention -- that is not a
-          // violation to catch, so all twelve are excluded here rather than
-          // renamed off the *.server.* convention project-wide. The next
-          // file added to this list should get the same treatment: update
+          // violation to catch, so all fourteen are excluded here rather
+          // than renamed off the *.server.* convention project-wide. The
+          // next file added to this list should get the same treatment: update
           // this comment to describe it too, so the gap that broke the
           // build for require-member-session.server.ts doesn't repeat.
           //
@@ -131,6 +140,7 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/media/review-tray.server.ts",
             "src/lib/hours/publish-gate.server.ts",
             "src/lib/theme/member-theme.server.ts",
+            "src/lib/events/events.server.ts",
           ],
           specifiers: ["server-only"],
         },

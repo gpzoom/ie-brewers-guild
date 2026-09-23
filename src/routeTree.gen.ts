@@ -26,6 +26,7 @@ import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminThemeRouteImport } from './routes/admin.theme'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminHoursRouteImport } from './routes/admin.hours'
+import { Route as AdminEventsRouteImport } from './routes/admin.events'
 import { Route as AdminBasicsRouteImport } from './routes/admin.basics'
 import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
 import { Route as ApiAdminMediaAssetIdRouteImport } from './routes/api.admin-media.$assetId'
@@ -115,6 +116,11 @@ const AdminHoursRoute = AdminHoursRouteImport.update({
   path: '/hours',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEventsRoute = AdminEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBasicsRoute = AdminBasicsRouteImport.update({
   id: '/basics',
   path: '/basics',
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/admin/basics': typeof AdminBasicsRoute
+  '/admin/events': typeof AdminEventsRoute
   '/admin/hours': typeof AdminHoursRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/theme': typeof AdminThemeRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/admin/basics': typeof AdminBasicsRoute
+  '/admin/events': typeof AdminEventsRoute
   '/admin/hours': typeof AdminHoursRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/theme': typeof AdminThemeRoute
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/admin/basics': typeof AdminBasicsRoute
+  '/admin/events': typeof AdminEventsRoute
   '/admin/hours': typeof AdminHoursRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/theme': typeof AdminThemeRoute
@@ -211,6 +220,7 @@ export interface FileRouteTypes {
     | '/survey'
     | '/survey-results'
     | '/admin/basics'
+    | '/admin/events'
     | '/admin/hours'
     | '/admin/media'
     | '/admin/theme'
@@ -232,6 +242,7 @@ export interface FileRouteTypes {
     | '/survey'
     | '/survey-results'
     | '/admin/basics'
+    | '/admin/events'
     | '/admin/hours'
     | '/admin/media'
     | '/admin/theme'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/survey'
     | '/survey-results'
     | '/admin/basics'
+    | '/admin/events'
     | '/admin/hours'
     | '/admin/media'
     | '/admin/theme'
@@ -404,6 +416,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminHoursRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/events': {
+      id: '/admin/events'
+      path: '/events'
+      fullPath: '/admin/events'
+      preLoaderRoute: typeof AdminEventsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/basics': {
       id: '/admin/basics'
       path: '/basics'
@@ -430,6 +449,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminBasicsRoute: typeof AdminBasicsRoute
+  AdminEventsRoute: typeof AdminEventsRoute
   AdminHoursRoute: typeof AdminHoursRoute
   AdminMediaRoute: typeof AdminMediaRoute
   AdminThemeRoute: typeof AdminThemeRoute
@@ -438,6 +458,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminBasicsRoute: AdminBasicsRoute,
+  AdminEventsRoute: AdminEventsRoute,
   AdminHoursRoute: AdminHoursRoute,
   AdminMediaRoute: AdminMediaRoute,
   AdminThemeRoute: AdminThemeRoute,
