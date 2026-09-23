@@ -34,7 +34,7 @@ export type ParsedIcsEvent = {
  *    calendar -- exactly the privacy failure tag-based opt-in exists to
  *    prevent (see the module doc above).
  *  - A VEVENT with no resolvable `DTSTART` is skipped rather than thrown
- *    on. `event.startDate` is `null` when DTSTART is missing/unparseable,
+ *    on. `event.startDate` is `null` when DTSTART is missing entirely,
  *    and one bad entry from a messy real-world calendar must not sink the
  *    whole batch (the rest of the feed should still sync).
  *  - A VEVENT with no `UID` is skipped. Without a stable external id it
@@ -42,6 +42,14 @@ export type ParsedIcsEvent = {
  *    external_event_id)`; since Postgres never treats NULL = NULL for
  *    uniqueness, letting it through with a null id would insert a new
  *    duplicate row on every re-sync instead of ever reconciling.
+ *  - A VEVENT whose `DTSTART`/`DTEND`/`UID` is *present but syntactically
+ *    invalid* (e.g. `DTSTART:NOT-A-VALID-DATE`) is also skipped. Unlike a
+ *    missing property (which ical.js resolves to `null`), a malformed-but-
+ *    present value throws synchronously from inside ical.js the moment the
+ *    property is read/hydrated -- so extraction for each VEVENT happens
+ *    inside a try/catch, and any VEVENT that throws while being read is
+ *    treated the same as one with a missing property: skipped, without
+ *    losing the rest of the feed.
  */
 export function parseIcsFeedForTag(icsText: string, syncTag: string): ParsedIcsEvent[] {
   const needle = syncTag.trim().toLowerCase();
@@ -53,23 +61,39 @@ export function parseIcsFeedForTag(icsText: string, syncTag: string): ParsedIcsE
   const component = new ICAL.Component(jcalData);
   const vevents = component.getAllSubcomponents("vevent");
 
-  return vevents
-    .map((vevent) => new ICAL.Event(vevent))
-    .filter((event) => {
-      if (!event.startDate || !event.uid) return false;
-      const summary = (event.summary ?? "").toLowerCase();
+  const parsedEvents: ParsedIcsEvent[] = [];
+
+  for (const vevent of vevents) {
+    const event = new ICAL.Event(vevent);
+    try {
+      // Read every property this event needs up front, inside the try:
+      // a syntactically invalid DTSTART/DTEND/UID throws the moment it's
+      // read (not lazily later), so anything that can throw must be read
+      // here rather than after the tag-match check below.
+      const { uid, startDate, endDate, summary } = event;
+      if (!uid || !startDate) continue;
+
+      const summaryLower = (summary ?? "").toLowerCase();
       const categoriesProp = event.component.getFirstProperty("categories");
       const categories: string[] = categoriesProp
         ? (categoriesProp.getValues() as string[]).map((c) => c.toLowerCase())
         : [];
-      return summary.includes(needle) || categories.some((category) => category.includes(needle));
-    })
-    .map((event) => ({
-      externalEventId: event.uid,
-      startsAt: event.startDate.toJSDate().toISOString(),
-      endsAt: event.endDate ? event.endDate.toJSDate().toISOString() : null,
-      summary: event.summary ?? "",
-    }));
+      const matchesTag =
+        summaryLower.includes(needle) || categories.some((category) => category.includes(needle));
+      if (!matchesTag) continue;
+
+      parsedEvents.push({
+        externalEventId: uid,
+        startsAt: startDate.toJSDate().toISOString(),
+        endsAt: endDate ? endDate.toJSDate().toISOString() : null,
+        summary: summary ?? "",
+      });
+    } catch {
+      continue;
+    }
+  }
+
+  return parsedEvents;
 }
 
 export type EventUpsertRow = {

@@ -96,6 +96,44 @@ SUMMARY:No UID Entry [guild]
 END:VEVENT
 END:VCALENDAR`;
 
+// DTSTART is *present* here, just syntactically garbage -- unlike the
+// missing-DTSTART case above, ical.js throws synchronously while
+// hydrating this value rather than returning null.
+const SAMPLE_ICS_WITH_INVALID_DTSTART = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Test//Test//EN
+BEGIN:VEVENT
+UID:event-good@example.com
+DTSTART:20261010T190000Z
+DTEND:20261010T220000Z
+SUMMARY:Trivia Night [guild]
+END:VEVENT
+BEGIN:VEVENT
+UID:event-bad-dtstart@example.com
+DTSTART:NOT-A-VALID-DATE
+SUMMARY:Broken Entry [guild]
+END:VEVENT
+END:VCALENDAR`;
+
+// Same idea, but the malformed value is on DTEND instead, with an
+// otherwise entirely valid UID + DTSTART.
+const SAMPLE_ICS_WITH_INVALID_DTEND = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Test//Test//EN
+BEGIN:VEVENT
+UID:event-good@example.com
+DTSTART:20261010T190000Z
+DTEND:20261010T220000Z
+SUMMARY:Trivia Night [guild]
+END:VEVENT
+BEGIN:VEVENT
+UID:event-bad-dtend@example.com
+DTSTART:20261012T190000Z
+DTEND:NOT-A-VALID-DATE
+SUMMARY:Broken Entry [guild]
+END:VEVENT
+END:VCALENDAR`;
+
 describe("parseIcsFeedForTag", () => {
   it("keeps only events matching the sync tag by title", () => {
     const ids = parseIcsFeedForTag(SAMPLE_ICS, "guild")
@@ -137,6 +175,16 @@ describe("parseIcsFeedForTag", () => {
   it("returns no events for a blank/whitespace-only sync tag, rather than matching everything", () => {
     expect(parseIcsFeedForTag(SAMPLE_ICS, "")).toEqual([]);
     expect(parseIcsFeedForTag(SAMPLE_ICS, "   ")).toEqual([]);
+  });
+
+  it("skips a VEVENT with a syntactically invalid (present but garbage) DTSTART, without crashing the batch", () => {
+    const events = parseIcsFeedForTag(SAMPLE_ICS_WITH_INVALID_DTSTART, "guild");
+    expect(events.map((e) => e.externalEventId)).toEqual(["event-good@example.com"]);
+  });
+
+  it("skips a VEVENT with a syntactically invalid (present but garbage) DTEND, without crashing the batch", () => {
+    const events = parseIcsFeedForTag(SAMPLE_ICS_WITH_INVALID_DTEND, "guild");
+    expect(events.map((e) => e.externalEventId)).toEqual(["event-good@example.com"]);
   });
 });
 
