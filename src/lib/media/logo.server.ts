@@ -47,7 +47,20 @@ export const uploadMemberLogo = createServerFn({ method: "POST" })
     if (!(file instanceof File)) throw new Error("No file provided.");
 
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const validation = await validateUploadedImage({ bytes, claimedMimeType: file.type, allowSvg: true });
+    // Logos are PNG-only (see this function's doc comment above) -- SVG is
+    // rejected AFTER validateUploadedImage succeeds, by the explicit check
+    // just below. Without a logo-specific maxBytes, the expensive SVG
+    // tokenize/scan inside validateUploadedImage would still run to
+    // completion on anything up to the module's general 25MB default before
+    // that later PNG-only rejection ever happens -- reachable before any
+    // auth check in this handler. 2MB is well above any legitimate PNG logo
+    // size and keeps that worst-case scan cost small.
+    const validation = await validateUploadedImage({
+      bytes,
+      claimedMimeType: file.type,
+      allowSvg: true,
+      maxBytes: 2 * 1024 * 1024,
+    });
     if (!validation.valid) {
       // "Reject at upload with a message that says why, rather than accepting and looking bad" (spec).
       throw new Error(

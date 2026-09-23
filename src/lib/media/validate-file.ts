@@ -315,7 +315,7 @@ function decodeXmlEntities(text: string): string {
  *   external links or data:-URI-embedded raster that a real design tool
  *   might emit. That's a deliberate false-positive trade-off in the safe
  *   direction, not an oversight.
- * - hasUnsafeSmilHrefTargeting closes a bypass of the two checks above,
+ * - hasUnsafeRawTagReferences closes a bypass of the two checks above,
  *   found in review: SMIL's `<animate>`/`<set>` can target `href` or
  *   `xlink:href` *indirectly* via `attributeName="href"` (or
  *   `"xlink:href"`) combined with `to=`/`values=`/`from=`/`by=` carrying the
@@ -340,14 +340,22 @@ function decodeXmlEntities(text: string): string {
  *   animation cycle) -- hasUnsafeKeyframeList below splits on `;` and
  *   checks every keyframe, not just the captured string as a whole.
  *
- * **PARSE ORDER MATTERS for the SMIL check specifically -- tokenize FIRST,
- * decode SECOND.** The whole-document regex checks above (dangerous
- * elements, `on*=` handlers, `attributeName="on..."`, `<!ENTITY`, literal
- * `href=` values) deliberately scan the fully-decoded text: they don't need
+ * **PARSE ORDER MATTERS for the href and SMIL checks specifically --
+ * tokenize FIRST, decode SECOND.** The whole-document regex checks above
+ * (dangerous elements, `on*=` handlers, `attributeName="on..."`,
+ * `<!ENTITY`) deliberately scan the fully-decoded text: they don't need
  * real tag boundaries, and decoding first only makes them MORE eager to
- * reject, which is the safe direction. The SMIL check is the one place that
- * genuinely depends on knowing where an element's start tag ends, and for
- * it, decoding first was a confirmed Critical bypass: an entity-encoded
+ * reject, which is the safe direction. The href check (literal
+ * `href=`/`xlink:href=` values, hasUnsafeHrefValue above) and the SMIL
+ * check are NOT like those -- both genuinely depend on knowing where an
+ * element's start tag and attribute values end, which is why
+ * hasUnsafeRawTagReferences below re-checks real `href`/`xlink:href`
+ * attributes (tokenized from raw markup) in addition to the SMIL targeting
+ * case, rather than treating hasUnsafeHrefValue's whole-document regex as
+ * sufficient on its own; see that function's own doc comment for the
+ * confirmed carrier-attribute bypass this closes for the href case
+ * specifically. For the SMIL check, decoding first was a confirmed Critical
+ * bypass: an entity-encoded
  * `&quot;&gt;` sitting in an unrelated "carrier" attribute
  * (`<animate attributeName="href" x="&quot;&gt;" values="javascript:alert(1)"/>`,
  * also spellable `&#34;&#62;` / `&#x22;&#x3e;`) decodes into a literal `">`
@@ -360,7 +368,7 @@ function decodeXmlEntities(text: string): string {
  * only an unquoted `>` closes a tag -- delivering those characters via a
  * character reference is perfectly legal and does NOT affect tokenization),
  * and decodes character references only WITHIN an already-delimited
- * attribute value. So hasUnsafeSmilHrefTargeting below runs
+ * attribute value. So hasUnsafeRawTagReferences below runs
  * extractStartTags/extractAttributes over the RAW text and calls
  * decodeXmlEntities on each individual attribute VALUE, after its
  * boundaries are already known.
@@ -429,7 +437,7 @@ function hasUnsafeHrefValue(decodedText: string): boolean {
  *
  * MUST be given raw markup, never entity-decoded text -- see the
  * "PARSE ORDER MATTERS" note above. Its only caller
- * (hasUnsafeSmilHrefTargeting) passes raw.
+ * (hasUnsafeRawTagReferences) passes raw.
  */
 function extractStartTags(text: string): string[] {
   const tags: string[] = [];
