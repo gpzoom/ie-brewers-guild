@@ -35,7 +35,18 @@ export function CreatorLinkPanel({
 
   async function onRevoke(id: string) {
     setRevokeError(null);
-    const previousTokens = tokens;
+    // Snapshot only the ONE token being revoked, not the whole `tokens`
+    // array -- rolling back to a whole-array snapshot would be the same
+    // stale-snapshot race already found and fixed in CarouselEditor.tsx's
+    // crop-autosave (commit 0bd8398): if a second revoke (for a different
+    // token) completes -- optimistically or for real -- while this one's
+    // request is still in flight, restoring the pre-this-call snapshot
+    // would silently revert that OTHER token's now-current state back to
+    // whatever it was before this call started, with no error shown for
+    // it. Capturing just this token and rolling back with a targeted,
+    // functional update means only this one failed revoke is ever
+    // touched, regardless of what else changed in the array meanwhile.
+    const previousToken = tokens.find((t) => t.id === id);
     setTokens((prev) =>
       prev.map((t) => (t.id === id ? { ...t, revoked_at: new Date().toISOString() } : t)),
     );
@@ -45,7 +56,9 @@ export function CreatorLinkPanel({
       // Roll back the optimistic flip above -- otherwise a failed revoke
       // (including an RLS-denied one) would leave this link showing
       // "revoked" in the UI while it's still actually active server-side.
-      setTokens(previousTokens);
+      if (previousToken) {
+        setTokens((prev) => prev.map((t) => (t.id === id ? previousToken : t)));
+      }
       setRevokeError(err instanceof Error ? err.message : "Couldn't revoke this link.");
     }
   }
