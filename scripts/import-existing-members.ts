@@ -16,6 +16,8 @@
  *   node --env-file=.env scripts/import-existing-members.ts --dry-run   # inspect only, no DB/network calls
  *   node --env-file=.env scripts/import-existing-members.ts             # actually import (idempotent, safe to re-run)
  */
+import { existsSync, readFileSync } from "node:fs";
+import { resolve, extname, basename } from "node:path";
 import { members, type Member, type Location } from "../src/data/site.ts";
 
 // ---------------------------------------------------------------------------
@@ -248,6 +250,92 @@ async function upsertMember(supabase: SupabaseClient, row: ImportRow): Promise<M
   return { id: inserted.id as string, slug: row.slug };
 }
 
+const MIME_TYPES: Record<string, string> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml",
+};
+
+/**
+ * Uploads the member's local logo file (from public/members/...) to the
+ * member-logos bucket and creates its media_assets row, then points
+ * members.logo_asset_id at it. Skipped entirely if the row already has a
+ * logo_asset_id (idempotent) or if the local file is missing (logged, not
+ * fatal -- an import shouldn't abort over one bad path).
+ *
+ * Every members row gets its OWN media_assets row and its OWN storage
+ * object, even when several rows share one business's logo file --
+ * media_assets.member_id and the member-logos storage path convention
+ * ({member_id}/...) are both scoped to a single members row in the
+ * finalized schema. See "Decisions made while filling gaps the spec left
+ * open" (Decision 2) in the plan this implements.
+ */
+async function ensureLogoAsset(
+  supabase: SupabaseClient,
+  memberId: string,
+  member: Member,
+): Promise<void> {
+  if (!member.logo) return;
+
+  const { data: memberRow, error: fetchError } = await supabase
+    .from("members")
+    .select("logo_asset_id")
+    .eq("id", memberId)
+    .single();
+  if (fetchError) throw fetchError;
+  if (memberRow.logo_asset_id) {
+    console.log(`    logo already set (asset ${memberRow.logo_asset_id}), skipping upload`);
+    return;
+  }
+
+  const localPath = resolve(process.cwd(), "public", member.logo.replace(/^\//, ""));
+  if (!existsSync(localPath)) {
+    console.warn(`    WARNING: logo file not found at ${localPath} -- leaving logo_asset_id null for ${member.name}`);
+    return;
+  }
+
+  const ext = extname(localPath).toLowerCase();
+  const mimeType = MIME_TYPES[ext];
+  if (!mimeType) {
+    console.warn(`    WARNING: unrecognized logo file extension "${ext}" for ${member.name} -- leaving logo_asset_id null`);
+    return;
+  }
+
+  const fileBuffer = readFileSync(localPath);
+  const storagePath = `${memberId}/logo${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("member-logos")
+    .upload(storagePath, fileBuffer, { contentType: mimeType, upsert: true });
+  if (uploadError) throw uploadError;
+
+  const { data: asset, error: assetError } = await supabase
+    .from("media_assets")
+    .insert({
+      member_id: memberId,
+      storage_path: storagePath,
+      kind: "image",
+      mime_type: mimeType,
+      byte_size: fileBuffer.byteLength,
+      original_filename: basename(localPath),
+      source: "member_upload",
+      review_status: "approved",
+    })
+    .select("id")
+    .single();
+  if (assetError) throw assetError;
+
+  const { error: linkError } = await supabase
+    .from("members")
+    .update({ logo_asset_id: asset.id })
+    .eq("id", memberId);
+  if (linkError) throw linkError;
+
+  console.log(`    uploaded logo -> ${storagePath} (asset ${asset.id})`);
+}
+
 async function main(): Promise<void> {
   const { url, key } = requireSupabaseCredentials();
   const supabase = createClient(url, key, {
@@ -262,6 +350,7 @@ async function main(): Promise<void> {
   for (const row of rows) {
     const memberRow = await upsertMember(supabase, row);
     console.log(`  [${memberRow.slug}] members row ready (id=${memberRow.id})`);
+    await ensureLogoAsset(supabase, memberRow.id, row.member);
   }
 
   console.log("\nDone.");
