@@ -313,6 +313,22 @@ export const refreshIcsConnectionNow = createServerFn({ method: "POST" })
     if (error || !connection) throw new Error("Calendar connection not found.");
     await syncOneIcsConnection(supabase, connection as CalendarConnectionRow);
 
+    // syncOneIcsConnection itself stays free of impersonation-specific
+    // logic -- it's shared verbatim with the Task 29 cron, which runs on
+    // the service-role client with no session/request context at all, so
+    // recordAuditLogIfImpersonating couldn't run there anyway. Logged here
+    // instead, once per "Refresh now" click, against the connection row it
+    // just wrote (whether the sync itself succeeded or failed -- either
+    // way this handler's caller is a signed-in member's own session write
+    // to calendar_connections, same as saveIcsConnection's two branches
+    // above).
+    await recordAuditLogIfImpersonating({
+      memberId: (connection as CalendarConnectionRow).member_id,
+      tableName: "calendar_connections",
+      rowId: data.connectionId,
+      action: "update",
+    });
+
     // syncOneIcsConnection swallows every failure into the row itself
     // (sync_status/last_sync_error) rather than throwing -- deliberately,
     // so one bad feed can't interrupt the Task 29 cron's batch run. That
