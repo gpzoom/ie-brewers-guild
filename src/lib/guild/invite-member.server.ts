@@ -30,7 +30,20 @@ export const inviteMember = createServerFn({ method: "POST" })
       user_id: inviteData.user.id,
       role: "owner",
     });
-    if (memberUserError) throw new Error(memberUserError.message);
+    if (memberUserError) {
+      // Roll back the auth user so a partial failure never leaves an
+      // orphaned, unlinked auth.users row behind -- without this, the
+      // member would stay stuck "unclaimed" forever and a re-invite for
+      // the same email would hit unverified inviteUserByEmail behavior
+      // against an already-registered-but-unlinked user.
+      await serviceClient.auth.admin.deleteUser(inviteData.user.id).catch((cleanupErr) => {
+        console.error(
+          "inviteMember: failed to roll back orphaned auth user after member_users insert failure",
+          cleanupErr,
+        );
+      });
+      throw new Error(memberUserError.message);
+    }
 
     try {
       await sendTransactionalEmail({ trigger: "member_invited", memberId: data.memberId, email: data.email });
