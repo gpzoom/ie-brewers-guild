@@ -25,6 +25,7 @@ import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminThemeRouteImport } from './routes/admin.theme'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
+import { Route as AdminLinksRouteImport } from './routes/admin.links'
 import { Route as AdminHoursRouteImport } from './routes/admin.hours'
 import { Route as AdminEventsRouteImport } from './routes/admin.events'
 import { Route as AdminBasicsRouteImport } from './routes/admin.basics'
@@ -112,6 +113,11 @@ const AdminMediaRoute = AdminMediaRouteImport.update({
   path: '/media',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminLinksRoute = AdminLinksRouteImport.update({
+  id: '/links',
+  path: '/links',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminHoursRoute = AdminHoursRouteImport.update({
   id: '/hours',
   path: '/hours',
@@ -157,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/hours': typeof AdminHoursRoute
+  '/admin/links': typeof AdminLinksRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/theme': typeof AdminThemeRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -180,6 +187,7 @@ export interface FileRoutesByTo {
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/hours': typeof AdminHoursRoute
+  '/admin/links': typeof AdminLinksRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/theme': typeof AdminThemeRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -205,6 +213,7 @@ export interface FileRoutesById {
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/hours': typeof AdminHoursRoute
+  '/admin/links': typeof AdminLinksRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/theme': typeof AdminThemeRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -231,6 +240,7 @@ export interface FileRouteTypes {
     | '/admin/basics'
     | '/admin/events'
     | '/admin/hours'
+    | '/admin/links'
     | '/admin/media'
     | '/admin/theme'
     | '/auth/callback'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/admin/basics'
     | '/admin/events'
     | '/admin/hours'
+    | '/admin/links'
     | '/admin/media'
     | '/admin/theme'
     | '/auth/callback'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/admin/basics'
     | '/admin/events'
     | '/admin/hours'
+    | '/admin/links'
     | '/admin/media'
     | '/admin/theme'
     | '/auth/callback'
@@ -422,6 +434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMediaRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/links': {
+      id: '/admin/links'
+      path: '/links'
+      fullPath: '/admin/links'
+      preLoaderRoute: typeof AdminLinksRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/hours': {
       id: '/admin/hours'
       path: '/hours'
@@ -471,6 +490,7 @@ interface AdminRouteChildren {
   AdminBasicsRoute: typeof AdminBasicsRoute
   AdminEventsRoute: typeof AdminEventsRoute
   AdminHoursRoute: typeof AdminHoursRoute
+  AdminLinksRoute: typeof AdminLinksRoute
   AdminMediaRoute: typeof AdminMediaRoute
   AdminThemeRoute: typeof AdminThemeRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -480,6 +500,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBasicsRoute: AdminBasicsRoute,
   AdminEventsRoute: AdminEventsRoute,
   AdminHoursRoute: AdminHoursRoute,
+  AdminLinksRoute: AdminLinksRoute,
   AdminMediaRoute: AdminMediaRoute,
   AdminThemeRoute: AdminThemeRoute,
   AdminIndexRoute: AdminIndexRoute,

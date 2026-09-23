@@ -1,4 +1,5 @@
 import type { MemberLinkRow } from "@/lib/supabase/types";
+import { isHttpUrl } from "@/lib/links/url-safety";
 import { ExternalLink } from "lucide-react";
 
 type LinkPillsProps = {
@@ -25,11 +26,23 @@ const LABELS: Record<MemberLinkRow["kind"], string> = {
  * member only sets links relevant to their own type.
  */
 export function LinkPills({ links }: LinkPillsProps) {
-  if (links.length === 0) return null;
+  // Render-boundary guard -- this is what actually protects every visitor,
+  // regardless of how a non-http(s) `url` (e.g. `javascript:...`) got into
+  // the row: existing data, a bypass of upsertMemberLink's own
+  // write-boundary check (member_links.url has no DB-level scheme
+  // constraint, and a member has direct RLS-scoped REST access to their
+  // own rows), or a future write path (Guild-admin tool, CSV import) that
+  // never runs that check at all. See url-safety.ts's isHttpUrl doc
+  // comment. A link that isn't a genuine http(s) URL is skipped entirely --
+  // never rendered as a clickable <a>, and not rendered as inert text
+  // either, since it's either garbage or (for a freshly-added, not-yet-filled
+  // link) just not ready to show yet.
+  const safeLinks = links.filter((link) => isHttpUrl(link.url));
+  if (safeLinks.length === 0) return null;
 
   return (
     <ul className="flex flex-wrap gap-2">
-      {links.map((link) => (
+      {safeLinks.map((link) => (
         <li key={link.id}>
           <a
             href={link.url}

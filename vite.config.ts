@@ -182,6 +182,20 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/events/events.server.ts",
             "src/lib/events/calendar-connection.server.ts",
             "src/lib/hours/confirm-token.server.ts",
+            // src/lib/links/member-links.server.ts (Task 30) -- same
+            // reasoning as the sixteen files above: every export
+            // (listMemberLinks, upsertMemberLink, deleteMemberLink,
+            // updateMemberContact, getMemberContactInfo) is a
+            // createServerFn().handler(...) call, and src/routes/admin.links.tsx
+            // imports listMemberLinks/getMemberContactInfo straight into its
+            // own loader while src/components/admin/LinksContactEditor.tsx
+            // calls upsertMemberLink/deleteMemberLink/updateMemberContact
+            // directly from its own onAdd/onFieldChange/onRemove/
+            // onPhoneBlur/onContactEmailBlur handlers -- the same safe
+            // client/server RPC boundary this deny rule exists to push
+            // people toward, already covered by the "**/*.server.*" glob
+            // above and excluded here for the same reason as the rest.
+            "src/lib/links/member-links.server.ts",
           ],
           specifiers: ["server-only"],
         },
