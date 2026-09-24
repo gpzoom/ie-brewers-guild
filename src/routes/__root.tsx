@@ -15,6 +15,8 @@ import { Footer } from "@/components/site/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import { UnderConstruction } from "@/components/site/UnderConstruction";
 import { getActiveBrandTokens } from "@/lib/brand/active-brand.server";
+import { getGuildAdminStatus } from "@/lib/guild/guild-admin-status.server";
+import { GuildAdminBar } from "@/components/guild/GuildAdminBar";
 
 const UNDER_CONSTRUCTION = import.meta.env.VITE_UNDER_CONSTRUCTION === "true";
 
@@ -67,7 +69,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  loader: async () => getActiveBrandTokens(),
+  loader: async () => {
+    // Run in parallel -- these are two unrelated concerns (theme tokens,
+    // Guild-admin-bar visibility) that both need to be known before the
+    // page renders, and there's no reason to pay for them sequentially.
+    // getGuildAdminStatus is cheap for the vast majority of anonymous
+    // visitors (it short-circuits on cookie presence before doing any
+    // real session check -- see its own doc comment).
+    const [brand, adminStatus] = await Promise.all([getActiveBrandTokens(), getGuildAdminStatus()]);
+    return { ...brand, isGuildAdmin: adminStatus.isGuildAdmin };
+  },
   head: ({ loaderData }) => ({
     meta: UNDER_CONSTRUCTION
       ? [
@@ -139,6 +150,7 @@ function isBarePathname(pathname: string) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { isGuildAdmin } = Route.useLoaderData();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isBare = isBarePathname(pathname);
 
@@ -150,6 +162,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <div className="flex min-h-screen flex-col">
         {!isBare && <Header />}
+        {/* Persistent across every non-bare page, not just /guild -- see
+            GuildAdminBar's own doc comment for the bug this fixes. */}
+        {!isBare && isGuildAdmin && <GuildAdminBar />}
         <main className="flex-1">
           <Outlet />
         </main>

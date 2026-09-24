@@ -1,6 +1,5 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { requireGuildAdminSession } from "@/lib/auth/require-guild-admin-session.server";
-import { GuildShell } from "@/components/guild/GuildShell";
 
 export const Route = createFileRoute("/guild")({
   beforeLoad: async () => {
@@ -11,10 +10,14 @@ export const Route = createFileRoute("/guild")({
   component: GuildLayout,
 });
 
+// No shell component here any more -- the Guild admin nav now renders
+// globally, right under the public header, via __root.tsx's GuildAdminBar
+// (see that component's doc comment for why). __root.tsx's own <main>
+// already wraps this Outlet, so this is just padding, not a landmark.
 function GuildLayout() {
   return (
-    <GuildShell>
+    <div className="px-4 py-6">
       <Outlet />
-    </GuildShell>
+    </div>
   );
 }

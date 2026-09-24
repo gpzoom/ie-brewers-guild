@@ -19,7 +19,7 @@ export function Header() {
       <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 md:px-6">
         <Link to="/" className="flex items-center gap-2 font-display text-lg tracking-wider">
           <img src={logo} alt="Inland Southern California Brewers Guild" className="h-14 w-14 rounded-sm object-contain" />
-          <span>Inland Southern California Brewers Guild</span>
+          <span>ISC Brewers Guild</span>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">

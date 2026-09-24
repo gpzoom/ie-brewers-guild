@@ -349,6 +349,16 @@ export default defineConfig(async ({ command, mode }) => {
             // people toward, already covered by the "**/*.server.*" glob
             // above and excluded here for the same reason as the rest.
             "src/lib/contact/submit-contact-form.server.ts",
+            // src/lib/guild/guild-admin-status.server.ts (persistent Guild
+            // admin bar) -- same reasoning as submit-contact-form.server.ts
+            // above: its one createServerFn export, getGuildAdminStatus, is
+            // called directly from src/routes/__root.tsx's own root loader,
+            // which runs on both server and client (every navigation) --
+            // the same safe client/server RPC boundary this deny rule
+            // exists to push people toward, already covered by the
+            // "**/*.server.*" glob above and excluded here for the same
+            // reason as the rest.
+            "src/lib/guild/guild-admin-status.server.ts",
           ],
           specifiers: ["server-only"],
         },
