@@ -169,6 +169,16 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/members/member-profile.server.ts",
             "src/lib/auth/require-member-session.server.ts",
             "src/lib/members/member-basics.server.ts",
+            // src/lib/members/member-email.server.ts (Guild-admin sign-in
+            // email change) -- same reasoning as member-basics.server.ts
+            // right above: its two createServerFn exports, getMemberEmail
+            // and updateMemberEmail, are called directly from
+            // src/routes/admin.basics.tsx's own loader and from
+            // BasicsForm.tsx's SignInEmailEditor -- the same safe
+            // client/server RPC boundary this deny rule exists to push
+            // people toward, already covered by the "**/*.server.*" glob
+            // above and excluded here for the same reason as the rest.
+            "src/lib/members/member-email.server.ts",
             "src/lib/hours/hours-editor.server.ts",
             "src/lib/media/media-gallery.server.ts",
             "src/lib/media/carousel.server.ts",

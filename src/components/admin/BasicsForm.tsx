@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { type BasicsMember, type BasicsPatch, updateMemberBasics } from "@/lib/members/member-basics.server";
+import { updateMemberEmail } from "@/lib/members/member-email.server";
 import { isFieldVisibleForMemberType, LOCATION_FIELD_LABEL } from "@/lib/members/type-fields";
 import { listIanaTimezones } from "@/lib/timezone/timezones";
 import type { MemberType } from "@/lib/supabase/types";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,6 +40,74 @@ function SaveIndicator({ state }: { state: SaveState }) {
 }
 
 /**
+ * The sign-in email tied to this member's account, shown and editable
+ * ONLY while a Guild admin is impersonating this member (product decision,
+ * 2026-09-24 -- see member-email.server.ts's own doc comment on
+ * changeMemberEmail for the full reasoning: a departed employee should
+ * never be able to permanently lock a member out of, or retain access to,
+ * their own account). An explicit "Update email" button, not autosave --
+ * unlike every field above, a half-typed value here would otherwise get
+ * committed as someone's actual login credential 400ms after a keystroke.
+ */
+function SignInEmailEditor({ memberId, email }: { memberId: string; email: string | null }) {
+  const [value, setValue] = useState(email ?? "");
+  const [status, setStatus] = useState<SaveState>(IDLE);
+
+  async function handleUpdate() {
+    setStatus({ status: "saving" });
+    try {
+      await updateMemberEmail({ data: { memberId, newEmail: value } });
+      setStatus({ status: "saved" });
+    } catch (error) {
+      setStatus({
+        status: "error",
+        message: error instanceof Error ? error.message : "Couldn't update the email — try again.",
+      });
+    }
+  }
+
+  // No member_users row yet -- this member has never been invited/claimed,
+  // so there is no account to change an email ON. changeMemberEmail's own
+  // server-side check would reject this the same way, but surfacing it
+  // here avoids a confusing round-trip error on a button that could never
+  // have worked. Use the roster's existing "Invite" action instead, which
+  // is the flow that actually creates the first account+email.
+  if (email === null) {
+    return (
+      <div className="rounded-md border border-border bg-muted/40 p-4">
+        <p className="text-sm text-foreground">
+          This member hasn't been invited yet, so there's no sign-in email to show or change here. Use{" "}
+          <strong>Invite</strong> from the Guild roster to give them their first one.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border border-warn/40 bg-warn/10 p-4">
+      <Label htmlFor="member_email">Sign-in email</Label>
+      <p className="mt-1 text-xs text-muted-foreground">
+        The email this member uses to sign in. Changing it takes effect immediately — the member will need to
+        sign in with the new address from then on.
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <Input
+          id="member_email"
+          type="email"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="h-11 max-w-sm"
+        />
+        <Button type="button" onClick={handleUpdate} disabled={status.status === "saving"} className="h-11">
+          {status.status === "saving" ? "Updating…" : "Update email"}
+        </Button>
+      </div>
+      <SaveIndicator state={status} />
+    </div>
+  );
+}
+
+/**
  * Every field here autosaves via its own small patch -- debounced ~400ms
  * after the last keystroke for text fields (this plan's Decision 6),
  * immediately on change for the radio/select -- never a whole-form submit.
@@ -46,7 +116,15 @@ function SaveIndicator({ state }: { state: SaveState }) {
  * the server-side column allowlist in member-basics.server.ts is what
  * actually enforces it, this is just the client half of the same rule.
  */
-export function BasicsForm({ member }: { member: BasicsMember }) {
+export function BasicsForm({
+  member,
+  email = null,
+  isImpersonating = false,
+}: {
+  member: BasicsMember;
+  email?: string | null;
+  isImpersonating?: boolean;
+}) {
   const [local, setLocal] = useState(member);
   const [status, setStatus] = useState<Record<string, SaveState>>({});
 
@@ -167,6 +245,8 @@ export function BasicsForm({ member }: { member: BasicsMember }) {
 
   return (
     <div className="max-w-2xl space-y-6">
+      {isImpersonating && <SignInEmailEditor memberId={member.id} email={email} />}
+
       <div>
         <Label htmlFor="business_name">Business name</Label>
         <Input
