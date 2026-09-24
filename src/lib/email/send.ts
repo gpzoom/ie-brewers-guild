@@ -1,28 +1,88 @@
 /**
- * The Resend-calling implementation for every transactional email lives in
- * the Contact Form + Resend phase — the very next phase in this build
- * sequence. This file only defines the payload shape and the call sites
- * this phase is responsible for firing (this plan's Decisions 17–18):
- * "Creator uploads to a gallery -> the member" and "Hours stale past 90
- * days -> the member." The other three of the spec's five triggers belong
- * to Guild Admin ("Member invited") or the Contact Form phase (both
- * "Contact form submitted" rows) and are not called from anywhere in this
- * plan.
+ * The real Resend-calling implementation of every transactional email the
+ * spec's "Transactional email" table describes (docs/member-profiles.md).
+ * Every existing call site already wraps sendTransactionalEmail() in
+ * try/catch and logs-and-continues on failure (creator-upload.server.ts,
+ * hours-stale-cron.server.ts, invite-member.server.ts, and this phase's own
+ * submit-contact-form.server.ts) -- that contract is unchanged from the
+ * throwing stub this replaces. It still throws on a genuine send failure
+ * (a non-2xx Resend response, or a missing RESEND_API_KEY), so those
+ * existing try/catch blocks keep doing something meaningful.
  *
- * This throws deliberately, rather than silently succeeding as a no-op --
- * a no-op would look like working code and isn't. Every call site in this
- * plan wraps the call in try/catch and logs-and-continues, so an upload or
- * a stale-hours cron run still succeeds today even though the email itself
- * doesn't yet.
+ * It does NOT throw when a memberId-only trigger's target member has no
+ * one to email yet (resolveRecipient returns null for an unclaimed,
+ * imported member -- spec, "Migrating the existing members") -- that's an
+ * expected, non-error state, not a broken send, so it logs a notice and
+ * returns instead of raising an alarm for something that isn't failing.
+ *
+ * A single fetch() call against Resend's HTTP API, not the `resend` npm
+ * package -- one POST with a bearer token and a JSON body needs nothing an
+ * SDK adds, matching every other borderline-dependency decision already
+ * made in this build (see this plan's Decision 1).
  */
-export type TransactionalEmailPayload =
-  | { trigger: "creator_upload_pending"; memberId: string; assetId: string; creatorName: string | null }
-  | { trigger: "hours_stale"; memberId: string; confirmUrl: string }
-  | { trigger: "member_invited"; memberId: string; email: string };
+import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { buildEmailContent } from "@/lib/email/build-email-content";
+import { resolveRecipient } from "@/lib/email/resolve-recipient.server";
+
+export type { TransactionalEmailPayload } from "@/lib/email/build-email-content";
+import type { TransactionalEmailPayload } from "@/lib/email/build-email-content";
+
+const RESEND_API_URL = "https://api.resend.com/emails";
+
+// mail.iscbrewersguild.org is already verified in Resend (SPF/DKIM/DMARC in
+// place before the first send) -- spec, "Transactional email"; task brief's
+// "Known facts." No further domain-verification work belongs in this file.
+const TRANSACTIONAL_FROM_ADDRESS = "IE Brewers Guild <notifications@mail.iscbrewersguild.org>";
+
+type EmailWorkerEnv = { RESEND_API_KEY?: string };
+
+// Duplicated locally rather than exported from src/lib/supabase/server.ts's
+// own getWorkerEnv, matching the convention the Guild Admin phase's
+// impersonation module already established for the same reason: avoid
+// widening an existing file's public API for one new env key.
+async function getEmailWorkerEnv(): Promise<EmailWorkerEnv> {
+  const { env } = await import("cloudflare:workers");
+  return env as EmailWorkerEnv;
+}
 
 export async function sendTransactionalEmail(payload: TransactionalEmailPayload): Promise<void> {
-  throw new Error(
-    `sendTransactionalEmail() is not implemented yet (trigger: "${payload.trigger}"). ` +
-      "Wire this up in the Contact Form + Resend phase — see docs/member-profiles.md, 'Transactional email'.",
-  );
+  const supabase = await getSupabaseServiceRoleClient();
+  const to = await resolveRecipient(payload, supabase);
+
+  if (!to) {
+    const memberIdNote = "memberId" in payload ? ` (memberId: ${payload.memberId})` : "";
+    console.warn(
+      `sendTransactionalEmail: no recipient for trigger "${payload.trigger}"${memberIdNote} -- skipping, nothing sent.`,
+    );
+    return;
+  }
+
+  const env = await getEmailWorkerEnv();
+  if (!env.RESEND_API_KEY) {
+    throw new Error("Missing RESEND_API_KEY in the Worker environment.");
+  }
+
+  const content = buildEmailContent(payload);
+
+  const response = await fetch(RESEND_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: TRANSACTIONAL_FROM_ADDRESS,
+      to: [to],
+      subject: content.subject,
+      html: content.html,
+      text: content.text,
+    }),
+  });
+
+  if (!response.ok) {
+    const responseBody = await response.text().catch(() => "");
+    throw new Error(
+      `Resend request failed for trigger "${payload.trigger}" (${response.status} ${response.statusText}): ${responseBody}`,
+    );
+  }
 }

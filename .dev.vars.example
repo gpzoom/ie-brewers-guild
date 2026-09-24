@@ -10,3 +10,8 @@
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+
+# From the Resend dashboard (resend.com/api-keys). Used to send every
+# transactional email in src/lib/email/send.ts. mail.iscbrewersguild.org is
+# already verified in Resend -- no domain setup needed, just the key.
+RESEND_API_KEY=
