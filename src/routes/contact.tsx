@@ -33,7 +33,21 @@ export const Route = createFileRoute("/contact")({
           env as { CREATOR_UPLOAD_RATE_LIMITER?: { limit: (opts: { key: string }) => Promise<{ success: boolean }> } }
         ).CREATOR_UPLOAD_RATE_LIMITER;
         const clientIp = request.headers.get("CF-Connecting-IP") ?? "unknown";
-        const { success } = (await rateLimiter?.limit({ key: `contact:${clientIp}` })) ?? { success: true };
+
+        // FAILS CLOSED: same reasoning as submitCreatorUpload in
+        // creator-upload.server.ts -- this binding is the sole spam/abuse
+        // guard on this fully public, unauthenticated endpoint, so a
+        // missing binding must not silently allow every request through.
+        if (!rateLimiter) {
+          console.error(
+            "contact POST: CREATOR_UPLOAD_RATE_LIMITER binding is missing -- refusing to process this submission rather than allowing it through unlimited.",
+          );
+          return new Response(
+            JSON.stringify({ ok: false, errors: { message: "Something went wrong. Try again in a moment." } }),
+            { status: 503, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        const { success } = await rateLimiter.limit({ key: `contact:${clientIp}` });
 
         if (!success) {
           return new Response(
