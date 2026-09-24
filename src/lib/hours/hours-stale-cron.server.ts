@@ -2,6 +2,7 @@ import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { signHoursConfirmToken } from "@/lib/hours/confirm-token";
 import { sendTransactionalEmail } from "@/lib/email/send";
 import { hasAlreadyBeenNotifiedForCurrentStalenessEpisode } from "@/lib/hours/hours-stale-cron";
+import { SITE_URL } from "@/lib/email/build-email-content";
 import type { MemberRow } from "@/lib/supabase/types";
 
 /**
@@ -48,7 +49,7 @@ export async function sendHoursStaleNotices(): Promise<void> {
     }
 
     const token = await signHoursConfirmToken(member.id, secret);
-    const siteOrigin = "https://iebrewersguild.org"; // no in-flight request to read an origin from in a cron -- the production domain is hardcoded here rather than left as a TODO.
+    const siteOrigin = SITE_URL; // no in-flight request to read an origin from in a cron -- reuses the same production-domain constant build-email-content.ts already defines, rather than a second hardcoded literal.
 
     // "Notified" must only ever mean "actually emailed" -- hours_stale_notice_sent_at
     // is the ONLY signal hasAlreadyBeenNotifiedForCurrentStalenessEpisode has for

@@ -336,6 +336,19 @@ export default defineConfig(async ({ command, mode }) => {
             // people toward, already covered by the "**/*.server.*" glob
             // above and excluded here for the same reason as the rest.
             "src/lib/categories/categories.server.ts",
+            // src/lib/contact/submit-contact-form.server.ts (contact form +
+            // Resend integration) -- same reasoning as send.$token.tsx
+            // above: its one createServerFn export, submitContactForm, is
+            // called directly from src/routes/contact.tsx's own
+            // ContactPage component, from its onSubmit handler -- routing
+            // it through a route-level server.handlers.POST instead is
+            // exactly what broke this in production the first time
+            // (confirmed against a real built Worker: the RPC id never
+            // made it into the server-function manifest) -- the same safe
+            // client/server RPC boundary this deny rule exists to push
+            // people toward, already covered by the "**/*.server.*" glob
+            // above and excluded here for the same reason as the rest.
+            "src/lib/contact/submit-contact-form.server.ts",
           ],
           specifiers: ["server-only"],
         },

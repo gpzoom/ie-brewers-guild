@@ -88,8 +88,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Inland Southern California Brewers Guild — Independent Craft Breweries" },
       { name: "twitter:description", content: "Promoting and protecting independent craft breweries through advocacy, education, and community events." },
-      { property: "og:image", content: "https://iebrewersguild.org/og/site-default.png" },
-      { name: "twitter:image", content: "https://iebrewersguild.org/og/site-default.png" },
+      { property: "og:image", content: "https://iscbrewersguild.org/og/site-default.png" },
+      { name: "twitter:image", content: "https://iscbrewersguild.org/og/site-default.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

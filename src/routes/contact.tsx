@@ -12,73 +12,15 @@ import { submitContactForm } from "@/lib/contact/submit-contact-form.server";
 import {
   validateContactFormInput,
   type ContactFormFieldErrors,
-  type ContactFormInput,
 } from "@/lib/contact/contact-form-validation";
 import { GUILD_NOTIFICATION_EMAIL } from "@/lib/email/build-email-content";
 
-/**
- * The rate limiter check lives here, at the request boundary, rather than
- * inside submitContactForm -- a server.handlers POST gives a clean point to
- * check env.CREATOR_UPLOAD_RATE_LIMITER before the createServerFn's own body
- * ever runs. This reuses the Member Admin phase's existing per-token
- * creator-upload rate limiter under a new "contact:<ip>" key namespace
- * (this plan's Decision 8) rather than adding a second ratelimits binding.
- */
 export const Route = createFileRoute("/contact")({
-  server: {
-    handlers: {
-      POST: async ({ request }) => {
-        const { env } = await import("cloudflare:workers");
-        const rateLimiter = (
-          env as { CREATOR_UPLOAD_RATE_LIMITER?: { limit: (opts: { key: string }) => Promise<{ success: boolean }> } }
-        ).CREATOR_UPLOAD_RATE_LIMITER;
-        const clientIp = request.headers.get("CF-Connecting-IP") ?? "unknown";
-
-        // FAILS CLOSED: same reasoning as submitCreatorUpload in
-        // creator-upload.server.ts -- this binding is the sole spam/abuse
-        // guard on this fully public, unauthenticated endpoint, so a
-        // missing binding must not silently allow every request through.
-        if (!rateLimiter) {
-          console.error(
-            "contact POST: CREATOR_UPLOAD_RATE_LIMITER binding is missing -- refusing to process this submission rather than allowing it through unlimited.",
-          );
-          return new Response(
-            JSON.stringify({ ok: false, errors: { message: "Something went wrong. Try again in a moment." } }),
-            { status: 503, headers: { "Content-Type": "application/json" } },
-          );
-        }
-        const { success } = await rateLimiter.limit({ key: `contact:${clientIp}` });
-
-        if (!success) {
-          return new Response(
-            JSON.stringify({ ok: false, errors: { message: "Too many submissions. Try again in a minute." } }),
-            { status: 429, headers: { "Content-Type": "application/json" } },
-          );
-        }
-
-        let body: ContactFormInput;
-        try {
-          body = (await request.json()) as ContactFormInput;
-        } catch {
-          return new Response(JSON.stringify({ ok: false, errors: { message: "Malformed request." } }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-
-        const result = await submitContactForm({ data: body });
-        return new Response(JSON.stringify(result), {
-          status: result.ok ? 200 : 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      },
-    },
-  },
   head: () => ({
     meta: [
-      { title: "Contact — IE Brewers Guild" },
-      { name: "description", content: "Get in touch with the IE Brewers Guild — membership, press, and general inquiries." },
-      { property: "og:title", content: "Contact — IE Brewers Guild" },
+      { title: "Contact — Inland Southern California Brewers Guild" },
+      { name: "description", content: "Get in touch with the Inland Southern California Brewers Guild — membership, press, and general inquiries." },
+      { property: "og:title", content: "Contact — Inland Southern California Brewers Guild" },
       { property: "og:description", content: "Membership, press, and general inquiries." },
     ],
   }),
@@ -86,14 +28,6 @@ export const Route = createFileRoute("/contact")({
 });
 
 const EMPTY_FORM = { name: "", email: "", phone: "", message: "", wantsMembershipInfo: false, honeypot: "" };
-
-/**
- * Matches the union the POST handler above actually returns:
- * SubmitContactFormResult's { ok: false; errors: ContactFormFieldErrors }
- * for validation failures, plus the { message } field the handler adds
- * itself for the rate-limit (429) and malformed-request (400) cases.
- */
-type ContactSubmitResponse = { ok: true } | { ok: false; errors: ContactFormFieldErrors & { message?: string } };
 
 function ContactPage() {
   const [form, setForm] = useState(EMPTY_FORM);
@@ -122,8 +56,7 @@ function ContactPage() {
     setFieldErrors({});
 
     try {
-      const response = await fetch("/contact", { method: "POST", body: JSON.stringify(form) });
-      const result = (await response.json()) as ContactSubmitResponse;
+      const result = await submitContactForm({ data: form });
 
       if (!result.ok) {
         setStatus("error");
