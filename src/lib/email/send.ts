@@ -21,7 +21,8 @@
  * made in this build (see this plan's Decision 1).
  */
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { buildEmailContent, ORG_SHORT_NAME } from "@/lib/email/build-email-content";
+import { getRequest } from "@tanstack/react-start/server";
+import { buildEmailContent, ORG_SHORT_NAME, resolveEmailSiteUrl } from "@/lib/email/build-email-content";
 import { resolveRecipient } from "@/lib/email/resolve-recipient.server";
 
 export type { TransactionalEmailPayload } from "@/lib/email/build-email-content";
@@ -45,6 +46,17 @@ async function getEmailWorkerEnv(): Promise<EmailWorkerEnv> {
   return env as EmailWorkerEnv;
 }
 
+// The in-flight request's URL, so email links point back at the site that
+// sent them (see resolveEmailSiteUrl). A cron run has no request, and
+// getRequest() throws outside one -- null then means "use SITE_URL".
+function currentRequestUrl(): string | null {
+  try {
+    return getRequest().url;
+  } catch {
+    return null;
+  }
+}
+
 export async function sendTransactionalEmail(payload: TransactionalEmailPayload): Promise<void> {
   const supabase = await getSupabaseServiceRoleClient();
   const to = await resolveRecipient(payload, supabase);
@@ -62,7 +74,7 @@ export async function sendTransactionalEmail(payload: TransactionalEmailPayload)
     throw new Error("Missing RESEND_API_KEY in the Worker environment.");
   }
 
-  const content = buildEmailContent(payload);
+  const content = buildEmailContent(payload, resolveEmailSiteUrl(currentRequestUrl()));
 
   const response = await fetch(RESEND_API_URL, {
     method: "POST",

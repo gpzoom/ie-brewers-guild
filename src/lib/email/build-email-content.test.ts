@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildEmailContent, GUILD_NOTIFICATION_EMAIL, ORG_NAME, ORG_SHORT_NAME, SITE_URL } from "./build-email-content";
+import {
+  buildEmailContent,
+  GUILD_NOTIFICATION_EMAIL,
+  ORG_NAME,
+  ORG_SHORT_NAME,
+  resolveEmailSiteUrl,
+  SITE_URL,
+} from "./build-email-content";
 
 describe("named constants", () => {
   it("GUILD_NOTIFICATION_EMAIL is the Guild's real, currently-used contact inbox", () => {
@@ -8,6 +15,35 @@ describe("named constants", () => {
 
   it("SITE_URL is the Guild's real domain", () => {
     expect(SITE_URL).toBe("https://iscbrewersguild.org");
+  });
+});
+
+describe("resolveEmailSiteUrl", () => {
+  it("falls back to SITE_URL when there is no request (e.g. a cron run)", () => {
+    expect(resolveEmailSiteUrl(null)).toBe(SITE_URL);
+  });
+
+  it("uses the staging origin for a request to the staging site", () => {
+    expect(resolveEmailSiteUrl("https://ie-brewers-guild-staging.boblelle77.workers.dev/_serverFn/abc?x=1")).toBe(
+      "https://ie-brewers-guild-staging.boblelle77.workers.dev",
+    );
+  });
+
+  it("uses the production domain for a request to production", () => {
+    expect(resolveEmailSiteUrl("https://www.iscbrewersguild.org/guild")).toBe("https://www.iscbrewersguild.org");
+    expect(resolveEmailSiteUrl("https://iscbrewersguild.org/guild")).toBe("https://iscbrewersguild.org");
+  });
+
+  it("allows local development", () => {
+    expect(resolveEmailSiteUrl("http://localhost:3000/guild")).toBe("http://localhost:3000");
+  });
+
+  it("never links to a host that isn't the Guild's own", () => {
+    expect(resolveEmailSiteUrl("https://evil.example.com/guild")).toBe(SITE_URL);
+    expect(resolveEmailSiteUrl("https://iscbrewersguild.org.evil.com/")).toBe(SITE_URL);
+    expect(resolveEmailSiteUrl("https://someone-else.workers.dev/")).toBe(SITE_URL);
+    expect(resolveEmailSiteUrl("http://iscbrewersguild.org/")).toBe(SITE_URL);
+    expect(resolveEmailSiteUrl("not a url")).toBe(SITE_URL);
   });
 });
 
@@ -53,6 +89,14 @@ describe("buildEmailContent: member_invited", () => {
     const content = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" });
     expect(content.text).toContain(`${SITE_URL}/signin`);
     expect(content.html).toContain(`${SITE_URL}/signin`);
+  });
+
+  it("links to the given site URL when one is passed (e.g. staging)", () => {
+    const staging = "https://ie-brewers-guild-staging.boblelle77.workers.dev";
+    const content = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" }, staging);
+    expect(content.text).toContain(`${staging}/signin`);
+    expect(content.html).toContain(`${staging}/signin`);
+    expect(content.text).not.toContain(SITE_URL);
   });
 
   it("uses the Guild's current name, never the outdated IE Brewers Guild", () => {

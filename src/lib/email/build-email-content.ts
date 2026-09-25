@@ -45,6 +45,32 @@ export const SITE_URL = "https://iscbrewersguild.org";
 export const ORG_NAME = "Inland Southern California Brewers Guild";
 export const ORG_SHORT_NAME = "ISC Brewers Guild";
 
+/**
+ * The site origin an email's links should point at: the site that sent the
+ * email, so an invite sent from staging links back to staging rather than
+ * to production (which may not have the page yet). Only the Guild's own
+ * hosts are honored -- the production domain, this account's
+ * workers.dev deployments (production and staging), and local dev --
+ * anything else, or no request at all (e.g. the hours-stale cron), falls
+ * back to SITE_URL, so a link in an email can never point somewhere else.
+ */
+export function resolveEmailSiteUrl(requestUrl: string | null): string {
+  if (!requestUrl) return SITE_URL;
+  let url: URL;
+  try {
+    url = new URL(requestUrl);
+  } catch {
+    return SITE_URL;
+  }
+  const host = url.hostname;
+  const isOwnHost =
+    (url.protocol === "https:" &&
+      (host === "iscbrewersguild.org" || host === "www.iscbrewersguild.org" || host.endsWith(".boblelle77.workers.dev"))) ||
+    host === "localhost" ||
+    host === "127.0.0.1";
+  return isOwnHost ? url.origin : SITE_URL;
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -60,20 +86,20 @@ function wrapHtml(paragraphs: string[]): string {
     .join("\n")}</div>`;
 }
 
-export function buildEmailContent(payload: TransactionalEmailPayload): EmailContent {
+export function buildEmailContent(payload: TransactionalEmailPayload, siteUrl: string = SITE_URL): EmailContent {
   switch (payload.trigger) {
     case "creator_upload_pending": {
       const attribution = payload.creatorName ? ` from ${payload.creatorName}` : "";
       const text =
         `Something is waiting for review. A file${attribution} was uploaded to your media gallery and ` +
-        `needs your approval before it can appear on your profile.\n\nReview it: ${SITE_URL}/admin/media`;
+        `needs your approval before it can appear on your profile.\n\nReview it: ${siteUrl}/admin/media`;
       return {
         subject: "Something's waiting for your review",
         text,
         html: wrapHtml([
           `Something is waiting for review. A file${escapeHtml(attribution)} was uploaded to your media ` +
             "gallery and needs your approval before it can appear on your profile.",
-          `<a href="${SITE_URL}/admin/media">Review it in your admin panel</a>`,
+          `<a href="${siteUrl}/admin/media">Review it in your admin panel</a>`,
         ]),
       };
     }
@@ -94,7 +120,7 @@ export function buildEmailContent(payload: TransactionalEmailPayload): EmailCont
     }
 
     case "member_invited": {
-      const signInUrl = `${SITE_URL}/signin`;
+      const signInUrl = `${siteUrl}/signin`;
       const text =
         `Welcome to the ${ORG_NAME}! The Guild has created a profile for your business on the ` +
         `member directory. Sign in anytime with this email address to start filling it in:\n\n${signInUrl}`;
