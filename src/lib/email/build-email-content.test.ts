@@ -85,17 +85,17 @@ describe("buildEmailContent: hours_stale", () => {
 });
 
 describe("buildEmailContent: member_invited", () => {
-  it("links to SITE_URL/signin, not a token URL", () => {
+  it("links to the Member Portal sign-in (SITE_URL/signin?next=/portal), not a token URL", () => {
     const content = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" });
-    expect(content.text).toContain(`${SITE_URL}/signin`);
-    expect(content.html).toContain(`${SITE_URL}/signin`);
+    expect(content.text).toContain(`${SITE_URL}/signin?next=/portal`);
+    expect(content.html).toContain(`${SITE_URL}/signin?next=/portal`);
   });
 
   it("links to the given site URL when one is passed (e.g. staging)", () => {
     const staging = "https://ie-brewers-guild-staging.boblelle77.workers.dev";
     const content = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" }, staging);
-    expect(content.text).toContain(`${staging}/signin`);
-    expect(content.html).toContain(`${staging}/signin`);
+    expect(content.text).toContain(`${staging}/signin?next=/portal`);
+    expect(content.html).toContain(`${staging}/signin?next=/portal`);
     expect(content.text).not.toContain(SITE_URL);
   });
 

@@ -367,6 +367,13 @@ export default defineConfig(async ({ command, mode }) => {
             // loader). Already covered by the "**/*.server.*" glob above
             // and excluded here for the same reason as the rest.
             "src/lib/drafts/drafts.server.ts",
+            // src/lib/portal/portal-session.server.ts (Member Portal, phase
+            // 3) -- same reasoning as the files above: getPortalState is
+            // imported straight into src/routes/portal.index.tsx's own
+            // loader, and choosePortalMember is called from that page's
+            // "Choose a business" onClick handler. Its pure helpers live in
+            // portal-access.ts / portal-destination.ts, not here.
+            "src/lib/portal/portal-session.server.ts",
           ],
           specifiers: ["server-only"],
         },

@@ -1,6 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { safeNextPath } from "@/lib/auth/safe-next-path";
 import {
   BrandBar,
   CanvasCard,
@@ -24,6 +25,8 @@ const NOTICE_MESSAGES: Record<string, string> = {
 
 type SignInSearch = {
   notice?: string;
+  /** Where to land after sign-in. Only allowlisted /portal paths survive (safeNextPath). */
+  next?: string;
 };
 
 function validateSignInSearch(search: Record<string, unknown>): SignInSearch {
@@ -31,6 +34,11 @@ function validateSignInSearch(search: Record<string, unknown>): SignInSearch {
 
   if (typeof search.notice === "string") {
     result.notice = search.notice;
+  }
+
+  const next = safeNextPath(search.next);
+  if (next) {
+    result.next = next;
   }
 
   return result;
@@ -49,7 +57,12 @@ export const Route = createFileRoute("/signin")({
  * replaced by the artboard's "Check your email" card.
  */
 function SignInPage() {
-  const { notice } = Route.useSearch();
+  const search = Route.useSearch();
+  const notice = search.notice;
+  // Re-validated here: the router keeps search keys validateSearch dropped
+  // (non-strict search), so a rejected `next` can still show up in
+  // useSearch() as the raw string. Only a safeNextPath result is used.
+  const next = safeNextPath(search.next);
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -58,9 +71,15 @@ function SignInPage() {
   const sendLink = async (): Promise<string | null> => {
     try {
       const supabase = getSupabaseBrowserClient();
+      // `next` has passed safeNextPath, so nothing but an allowlisted path
+      // is ever written into the magic link. Without a `next`, the link is
+      // exactly what it always was.
+      const callback = `${window.location.origin}/auth/callback`;
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        options: {
+          emailRedirectTo: next ? `${callback}?next=${encodeURIComponent(next)}` : callback,
+        },
       });
       return error ? error.message : null;
     } catch (err) {
@@ -149,6 +168,11 @@ function SignInPage() {
           ) : (
             <CanvasCard>
               <div className="flex flex-col gap-[9px]">
+                {next && (
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-subtle">
+                    Member Portal
+                  </p>
+                )}
                 <CanvasHeading>Member sign in</CanvasHeading>
                 <p className={leadClass}>
                   Enter the email the Guild has for you and we'll send a link that signs you in. No

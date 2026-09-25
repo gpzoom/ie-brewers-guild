@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { resolveUserRoleAndTarget } from "./role-routing";
+import { resolveCallbackRedirect, resolveUserRoleAndTarget } from "./role-routing";
 
 function fakeSupabase(responses: {
   profile: { is_guild_admin: boolean } | null;
@@ -54,5 +54,31 @@ describe("resolveUserRoleAndTarget", () => {
   it("falls back to /signin when the user has neither role", async () => {
     const supabase = fakeSupabase({ profile: null, memberUser: null });
     expect(await resolveUserRoleAndTarget(supabase, "u1")).toEqual({ role: "none", redirectTo: "/signin" });
+  });
+});
+
+describe("resolveCallbackRedirect", () => {
+  const admin = { role: "guild_admin", redirectTo: "/guild" } as const;
+  const member = { role: "member_editor", memberId: "m1", redirectTo: "/admin" } as const;
+  const none = { role: "none", redirectTo: "/signin" } as const;
+
+  it("without next, routes by role exactly as before", () => {
+    expect(resolveCallbackRedirect(admin, undefined, false)).toBe("/guild");
+    expect(resolveCallbackRedirect(admin, undefined, true)).toBe("/guild");
+    expect(resolveCallbackRedirect(member, undefined, false)).toBe("/admin");
+    expect(resolveCallbackRedirect(none, undefined, false)).toBe("/signin");
+  });
+
+  it("sends a member to next", () => {
+    expect(resolveCallbackRedirect(member, "/portal", false)).toBe("/portal");
+  });
+
+  it("sends someone with no member link yet to next, so /portal can accept their invite", () => {
+    expect(resolveCallbackRedirect(none, "/portal", false)).toBe("/portal");
+  });
+
+  it("sends a Guild admin to /guild unless they're editing as a member", () => {
+    expect(resolveCallbackRedirect(admin, "/portal", false)).toBe("/guild");
+    expect(resolveCallbackRedirect(admin, "/portal", true)).toBe("/portal");
   });
 });

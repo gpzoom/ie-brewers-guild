@@ -120,7 +120,7 @@ export function buildEmailContent(payload: TransactionalEmailPayload, siteUrl: s
     }
 
     case "member_invited": {
-      const signInUrl = `${siteUrl}/signin`;
+      const signInUrl = `${siteUrl}/signin?next=/portal`;
       const text =
         `Welcome to the ${ORG_NAME}! The Guild has created a profile for your business on the ` +
         `member directory. Sign in anytime with this email address to start filling it in:\n\n${signInUrl}`;

@@ -43,3 +43,20 @@ export async function resolveUserRoleAndTarget(
 
   return { role: "none", redirectTo: "/signin" };
 }
+
+/**
+ * Where /auth/callback sends someone once their session exists. `next` must
+ * already have passed safeNextPath. A valid `next` wins for members and for
+ * people with no member link yet (/portal is where pending invites are
+ * accepted); a Guild admin follows it only while editing as a member,
+ * otherwise they go to /guild as always. No `next` → plain role routing.
+ */
+export function resolveCallbackRedirect(
+  routing: RoleRoutingResult,
+  next: string | undefined,
+  isImpersonating: boolean,
+): string {
+  if (!next) return routing.redirectTo;
+  if (routing.role === "guild_admin" && !isImpersonating) return routing.redirectTo;
+  return next;
+}

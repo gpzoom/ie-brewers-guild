@@ -20,6 +20,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as GuildIndexRouteImport } from './routes/guild.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SendTokenRouteImport } from './routes/send.$token'
@@ -94,6 +95,11 @@ const AboutRoute = AboutRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalIndexRoute = PortalIndexRouteImport.update({
+  id: '/portal/',
+  path: '/portal/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuildIndexRoute = GuildIndexRouteImport.update({
@@ -226,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/send/$token': typeof SendTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/guild/': typeof GuildIndexRoute
+  '/portal/': typeof PortalIndexRoute
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
@@ -257,6 +264,7 @@ export interface FileRoutesByTo {
   '/send/$token': typeof SendTokenRoute
   '/admin': typeof AdminIndexRoute
   '/guild': typeof GuildIndexRoute
+  '/portal': typeof PortalIndexRoute
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
@@ -291,6 +299,7 @@ export interface FileRoutesById {
   '/send/$token': typeof SendTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/guild/': typeof GuildIndexRoute
+  '/portal/': typeof PortalIndexRoute
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
@@ -326,6 +335,7 @@ export interface FileRouteTypes {
     | '/send/$token'
     | '/admin/'
     | '/guild/'
+    | '/portal/'
     | '/api/admin-media/$assetId'
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
@@ -357,6 +367,7 @@ export interface FileRouteTypes {
     | '/send/$token'
     | '/admin'
     | '/guild'
+    | '/portal'
     | '/api/admin-media/$assetId'
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
@@ -390,6 +401,7 @@ export interface FileRouteTypes {
     | '/send/$token'
     | '/admin/'
     | '/guild/'
+    | '/portal/'
     | '/api/admin-media/$assetId'
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
@@ -411,6 +423,7 @@ export interface RootRouteChildren {
   AuthCallbackRoute: typeof AuthCallbackRoute
   MembersSlugRoute: typeof MembersSlugRoute
   SendTokenRoute: typeof SendTokenRoute
+  PortalIndexRoute: typeof PortalIndexRoute
   ApiAdminMediaAssetIdRoute: typeof ApiAdminMediaAssetIdRoute
   ApiConfirmHoursTokenRoute: typeof ApiConfirmHoursTokenRoute
   ApiMemberMediaAssetIdRoute: typeof ApiMemberMediaAssetIdRoute
@@ -493,6 +506,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/': {
+      id: '/portal/'
+      path: '/portal'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guild/': {
@@ -696,6 +716,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthCallbackRoute: AuthCallbackRoute,
   MembersSlugRoute: MembersSlugRoute,
   SendTokenRoute: SendTokenRoute,
+  PortalIndexRoute: PortalIndexRoute,
   ApiAdminMediaAssetIdRoute: ApiAdminMediaAssetIdRoute,
   ApiConfirmHoursTokenRoute: ApiConfirmHoursTokenRoute,
   ApiMemberMediaAssetIdRoute: ApiMemberMediaAssetIdRoute,

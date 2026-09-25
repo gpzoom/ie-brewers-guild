@@ -68,9 +68,14 @@ export function Footer() {
       </div>
       <div className="flex flex-col items-center justify-between gap-2 border-t border-border/60 py-5 text-center text-xs text-muted-foreground sm:flex-row sm:px-6">
         <span>© {new Date().getFullYear()} ISC Brewers Guild. All rights reserved.</span>
-        <Link to="/signin" className="min-h-11 py-2 hover:text-primary">
-          Member sign in
-        </Link>
+        <div className="flex flex-col items-center sm:items-end">
+          <Link to="/signin" className="min-h-11 py-2 hover:text-primary">
+            Member sign in
+          </Link>
+          <Link to="/signin" search={{ next: "/portal" }} className="min-h-11 py-2 hover:text-primary">
+            Member Portal
+          </Link>
+        </div>
       </div>
     </footer>
   );
