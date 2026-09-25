@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { getPublishGateData, type PublishGateData } from "@/lib/hours/publish-gate.server";
 import {
@@ -9,7 +9,11 @@ import {
   type DraftStatus,
 } from "@/lib/drafts/drafts.server";
 import { draftSaveQueue } from "@/lib/drafts/save-queue";
-import { publishNeedsHoursCheck } from "@/lib/drafts/sections";
+import {
+  publishNeedsHoursCheck,
+  type DraftHours,
+  type DraftSpecialHours,
+} from "@/lib/drafts/sections";
 import {
   canSubmitPublish,
   computeHoursConfirmationBadge,
@@ -19,6 +23,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { saveNoteText } from "@/components/admin/SaveNote";
 import { useDraftStatus, usePendingDraftSaves } from "@/components/admin/DraftStatusContext";
+import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 import {
   Dialog,
   DialogClose,
@@ -72,6 +77,54 @@ const dialogButtonClass =
   "inline-flex h-[46px] items-center justify-center rounded-[9px] border border-[#D3CBBD] bg-transparent px-[19px] text-[14px] font-medium text-ink transition-colors hover:bg-canvas-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
 
 /**
+ * The publish check's read-only "What visitors will see" week (artboard
+ * AdminPublish), shared by this dialog and the setup wizard's publish step.
+ */
+export function PublishHoursTable({
+  hours,
+  specialHours,
+  editLink,
+}: {
+  hours: DraftHours[];
+  specialHours: DraftSpecialHours[];
+  /** The "Edit hours" link in the table's header, if any. */
+  editLink?: ReactNode;
+}) {
+  return (
+    <div className="overflow-hidden rounded-[12px] border border-canvas-border bg-white">
+      <div className="flex items-center justify-between gap-3 border-b border-canvas-2 bg-[#FCFAF6] py-1 pl-4 pr-2">
+        <h3 className="font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
+          What visitors will see
+        </h3>
+        {editLink}
+      </div>
+      <ul className="py-0.5">
+        {WEEK_ORDER.map((weekday) => {
+          const value = formatWeekdayHours(hours, weekday);
+          const muted = value === "Closed" || value === "Not set";
+          return (
+            <li
+              key={weekday}
+              className="flex justify-between gap-4 px-4 py-[9px] text-[13px] last:pb-[11px]"
+            >
+              <span className="text-ink">{WEEKDAYS[weekday]}</span>
+              <span className={`text-right ${muted ? "text-ink-subtle" : "text-[#3A332C]"}`}>
+                {value}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      {specialHours.length > 0 && (
+        <p className="border-t border-canvas-2 px-4 py-2.5 text-[12px] text-ink-muted">
+          {specialHours.length} holiday/one-off change(s) on file.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
  * The top bar's publish controls (plan phase 2, "Top bar"): the
  * "Unpublished changes" label (plus the owner's "Photo changes from
  * [email] waiting to publish"), Discard changes, Publish changes, and Move
@@ -95,6 +148,7 @@ export function PublishGateDialog({
 }) {
   const router = useRouter();
   const draft = useDraftStatus();
+  const hoursLink = useMemberEditing()?.paths.hours ?? null;
   const [open, setOpen] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -397,45 +451,22 @@ export function PublishGateDialog({
                 </p>
               )
             ) : (
-              <div className="overflow-hidden rounded-[12px] border border-canvas-border bg-white">
-                <div className="flex items-center justify-between gap-3 border-b border-canvas-2 bg-[#FCFAF6] py-1 pl-4 pr-2">
-                  <h3 className="font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
-                    What visitors will see
-                  </h3>
-                  <Link
-                    to="/admin/basics"
-                    hash="hours"
-                    onClick={() => setOpen(false)}
-                    className="inline-flex min-h-11 items-center px-2 text-[12px] font-medium text-brand hover:text-brand-hover"
-                  >
-                    Edit hours
-                  </Link>
-                </div>
-                <ul className="py-0.5">
-                  {WEEK_ORDER.map((weekday) => {
-                    const value = formatWeekdayHours(freshData.hours, weekday);
-                    const muted = value === "Closed" || value === "Not set";
-                    return (
-                      <li
-                        key={weekday}
-                        className="flex justify-between gap-4 px-4 py-[9px] text-[13px] last:pb-[11px]"
-                      >
-                        <span className="text-ink">{WEEKDAYS[weekday]}</span>
-                        <span
-                          className={`text-right ${muted ? "text-ink-subtle" : "text-[#3A332C]"}`}
-                        >
-                          {value}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-                {freshData.specialHours.length > 0 && (
-                  <p className="border-t border-canvas-2 px-4 py-2.5 text-[12px] text-ink-muted">
-                    {freshData.specialHours.length} holiday/one-off change(s) on file.
-                  </p>
-                )}
-              </div>
+              <PublishHoursTable
+                hours={freshData.hours}
+                specialHours={freshData.specialHours}
+                editLink={
+                  hoursLink && (
+                    <Link
+                      to={hoursLink.to}
+                      hash={hoursLink.hash}
+                      onClick={() => setOpen(false)}
+                      className="inline-flex min-h-11 items-center px-2 text-[12px] font-medium text-brand hover:text-brand-hover"
+                    >
+                      Edit hours
+                    </Link>
+                  )
+                }
+              />
             ))}
 
           {!isMobile && (

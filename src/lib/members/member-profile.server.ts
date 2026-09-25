@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { notFound } from "@tanstack/react-router";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -293,7 +293,16 @@ export type MemberPreviewData = {
  */
 export const getMemberPreviewData = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => data)
-  .handler(async ({ data }): Promise<MemberPreviewData> => {
+  .handler(async ({ data }): Promise<MemberPreviewData> => loadMemberPreviewData(data.memberId));
+
+/**
+ * getMemberPreviewData's body as a plain helper, for other server code on
+ * the same request (the setup wizard's preview step resolves the member
+ * server-side first). Reads through the signed-in session client.
+ */
+export const loadMemberPreviewData = createServerOnlyFn(
+  async (memberId: string): Promise<MemberPreviewData> => {
+    const data = { memberId };
     const supabase = await getSupabaseServerClientForRequest();
     const siteOrigin = new URL(getRequest().url).origin;
     const now = new Date();
@@ -326,4 +335,5 @@ export const getMemberPreviewData = createServerFn({ method: "GET" })
       },
     });
     return { profile, appliedSections, isPublished: liveMember.status === "published" };
-  });
+  },
+);

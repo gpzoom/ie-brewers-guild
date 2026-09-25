@@ -1,4 +1,4 @@
-import { getRouteApi } from "@tanstack/react-router";
+import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 
 /**
  * The "how saving works" line under editing pages and in the phone publish
@@ -13,10 +13,11 @@ export function saveNoteText(isPublished: boolean): string {
     : "Changes save as you type. Your profile stays hidden until you publish it.";
 }
 
-const adminRoute = getRouteApi("/admin");
-
-/** saveNoteText for the member being edited, from the /admin layout's loader. */
+/**
+ * saveNoteText for the member being edited, from the member editing
+ * context (provided by the /admin layout and the /portal layouts).
+ */
 export function SaveNoteText() {
-  const { publishGateData } = adminRoute.useLoaderData();
-  return <>{saveNoteText(publishGateData.status === "published")}</>;
+  const editing = useMemberEditing();
+  return <>{saveNoteText(editing?.isPublished ?? false)}</>;
 }

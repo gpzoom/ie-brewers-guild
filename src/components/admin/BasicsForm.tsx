@@ -7,6 +7,7 @@ import { updateMemberEmail } from "@/lib/members/member-email.server";
 import { isFieldVisibleForMemberType, LOCATION_FIELD_LABEL } from "@/lib/members/type-fields";
 import { listIanaTimezones } from "@/lib/timezone/timezones";
 import type { MemberType } from "@/lib/supabase/types";
+import { MEMBER_TYPE_OPTIONS } from "@/lib/members/member-type-options";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SaveNoteText } from "@/components/admin/SaveNote";
+import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 import {
   Field,
   IDLE,
@@ -40,27 +42,6 @@ const SAVE_DEBOUNCE_MS = 400;
 const MIN_MEMBER_SINCE_YEAR = 1800;
 const MAX_MEMBER_SINCE_YEAR = new Date().getFullYear() + 1;
 
-// Copy from artboard AdminBasics's MEMBER TYPE cards.
-const MEMBER_TYPE_OPTIONS: { value: MemberType; title: string; description: string }[] = [
-  {
-    value: "producer",
-    title: "Producer with a taproom",
-    description:
-      "Brewery, meadery, cidery or distillery the public can visit. Shows weekly hours, an open-now status and directions.",
-  },
-  {
-    value: "mobile",
-    title: "Mobile member",
-    description:
-      "Entertainment, food truck or pop-up. Shows an appearance calendar and a booking button instead of hours.",
-  },
-  {
-    value: "allied",
-    title: "Allied Member",
-    description:
-      "Supply house, ingredients, equipment or services. Same layout as a producer, with business hours and a trade contact.",
-  },
-];
 
 /**
  * The sign-in email tied to this member's account, shown and editable
@@ -176,6 +157,7 @@ export function BasicsForm({
   isImpersonating = false,
   logo,
   hours,
+  showHeading = true,
 }: {
   memberId: string;
   memberType: MemberType;
@@ -188,7 +170,10 @@ export function BasicsForm({
   logo?: ReactNode;
   /** The weekly/special hours editor (HoursEditor), shown after IDENTITY. */
   hours?: ReactNode;
+  /** False where the page around it has its own heading (the setup wizard's step chrome). */
+  showHeading?: boolean;
 }) {
+  const editing = useMemberEditing();
   const saveDraft = useSaveDraftSection(memberId);
   const initialValues: BasicsFormValues = { ...basics, member_type: memberType };
   const [local, setLocal] = useState<BasicsFormValues>(initialValues);
@@ -331,9 +316,11 @@ export function BasicsForm({
 
   return (
     <div className="flex max-w-[972px] flex-col gap-[22px] md:gap-[30px]">
-      <h1 className="font-display text-[24px] leading-tight text-ink md:text-[27px]">
-        Basics &amp; hours
-      </h1>
+      {showHeading && (
+        <h1 className="font-display text-[24px] leading-tight text-ink md:text-[27px]">
+          Basics &amp; hours
+        </h1>
+      )}
 
       {isImpersonating && <SignInEmailEditor memberId={memberId} email={email} />}
 
@@ -628,12 +615,17 @@ export function BasicsForm({
               </h2>
               <InfoBox>
                 Mobile members don't show weekly hours — your{" "}
-                <Link
-                  to="/admin/events"
-                  className="font-medium text-brand underline-offset-2 hover:text-brand-hover hover:underline"
-                >
-                  events calendar
-                </Link>{" "}
+                {editing?.paths.events ? (
+                  <Link
+                    to={editing.paths.events.to}
+                    hash={editing.paths.events.hash}
+                    className="font-medium text-brand underline-offset-2 hover:text-brand-hover hover:underline"
+                  >
+                    events calendar
+                  </Link>
+                ) : (
+                  "events calendar"
+                )}{" "}
                 is your schedule. Any hours you entered before are kept in case you switch back.
               </InfoBox>
             </section>

@@ -1,10 +1,24 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { redirect } from "@tanstack/react-router";
 import { getCookie, setCookie } from "@tanstack/react-start/server";
-import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { readImpersonationState, touchImpersonationActivity } from "@/lib/guild/impersonation.server";
-import { acceptPendingInvites, listPortalMemberships, pickMembership } from "@/lib/portal/portal-access";
-import { resolvePortalDestination, type PortalDestination, type PortalRole } from "@/lib/portal/portal-destination";
+import {
+  getSupabaseServerClientForRequest,
+  getSupabaseServiceRoleClient,
+} from "@/lib/supabase/server";
+import {
+  readImpersonationState,
+  touchImpersonationActivity,
+} from "@/lib/guild/impersonation.server";
+import {
+  acceptPendingInvites,
+  listPortalMemberships,
+  pickMembership,
+} from "@/lib/portal/portal-access";
+import {
+  resolvePortalDestination,
+  type PortalDestination,
+  type PortalRole,
+} from "@/lib/portal/portal-destination";
 
 /**
  * Remembers which business someone linked to several members picked on
@@ -48,8 +62,27 @@ export type PortalState =
  * pick one (none / choose / one), then apply the wizard-or-portal rule.
  */
 export const getPortalState = createServerFn({ method: "GET" })
-  .inputValidator((data: { forceChoose?: boolean }) => ({ forceChoose: data?.forceChoose === true }))
+  .inputValidator((data: { forceChoose?: boolean }) => ({
+    forceChoose: data?.forceChoose === true,
+  }))
   .handler(async ({ data }): Promise<PortalState> => {
+    const { state } = await resolvePortalState({
+      forceChoose: data.forceChoose,
+      acceptInvites: true,
+    });
+    return state;
+  });
+
+/**
+ * getPortalState's body, shared with requirePortalMember. Also returns the
+ * signed-in user's id (never sent to the page by getPortalState).
+ */
+const resolvePortalState = createServerOnlyFn(
+  async (options: {
+    forceChoose: boolean;
+    acceptInvites: boolean;
+  }): Promise<{ state: PortalState; userId: string }> => {
+    const data = { forceChoose: options.forceChoose };
     const supabase = await getSupabaseServerClientForRequest();
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
@@ -72,22 +105,27 @@ export const getPortalState = createServerFn({ method: "GET" })
       }
       const role: PortalRole = "owner";
       return {
-        kind: "ready",
-        memberId: impersonation.memberId,
-        memberName: (member.business_name as string | null)?.trim() || "Unnamed business",
-        role,
-        isImpersonating: true,
-        destination: resolvePortalDestination({
-          typeConfirmedAt: member.type_confirmed_at as string | null,
-          setupCompletedAt: member.setup_completed_at as string | null,
+        userId: user.id,
+        state: {
+          kind: "ready",
+          memberId: impersonation.memberId,
+          memberName: (member.business_name as string | null)?.trim() || "Unnamed business",
           role,
-        }),
-        membershipCount: 1,
-        adminOpensOtherName: null,
+          isImpersonating: true,
+          destination: resolvePortalDestination({
+            typeConfirmedAt: member.type_confirmed_at as string | null,
+            setupCompletedAt: member.setup_completed_at as string | null,
+            role,
+          }),
+          membershipCount: 1,
+          adminOpensOtherName: null,
+        },
       };
     }
 
-    await acceptPendingInvites(service, { id: user.id, email: user.email });
+    if (options.acceptInvites) {
+      await acceptPendingInvites(service, { id: user.id, email: user.email });
+    }
     const memberships = await listPortalMemberships(service, user.id);
 
     if (memberships.length === 0) {
@@ -104,32 +142,67 @@ export const getPortalState = createServerFn({ method: "GET" })
     const pick = pickMembership(memberships, getCookie(PORTAL_MEMBER_COOKIE), data.forceChoose);
 
     if (pick.kind === "none") {
-      return { kind: "no-member", email: user.email ?? null };
+      return { userId: user.id, state: { kind: "no-member", email: user.email ?? null } };
     }
     if (pick.kind === "choose") {
       return {
-        kind: "choose",
-        memberships: pick.memberships.map((m) => ({ memberId: m.memberId, businessName: m.businessName, role: m.role })),
+        userId: user.id,
+        state: {
+          kind: "choose",
+          memberships: pick.memberships.map((m) => ({
+            memberId: m.memberId,
+            businessName: m.businessName,
+            role: m.role,
+          })),
+        },
       };
     }
 
     const chosen = pick.membership;
     const oldest = memberships[0];
     return {
-      kind: "ready",
-      memberId: chosen.memberId,
-      memberName: chosen.businessName,
-      role: chosen.role,
-      isImpersonating: false,
-      destination: resolvePortalDestination({
-        typeConfirmedAt: chosen.typeConfirmedAt,
-        setupCompletedAt: chosen.setupCompletedAt,
+      userId: user.id,
+      state: {
+        kind: "ready",
+        memberId: chosen.memberId,
+        memberName: chosen.businessName,
         role: chosen.role,
-      }),
-      membershipCount: memberships.length,
-      adminOpensOtherName: oldest.memberId === chosen.memberId ? null : oldest.businessName,
+        isImpersonating: false,
+        destination: resolvePortalDestination({
+          typeConfirmedAt: chosen.typeConfirmedAt,
+          setupCompletedAt: chosen.setupCompletedAt,
+          role: chosen.role,
+        }),
+        membershipCount: memberships.length,
+        adminOpensOtherName: oldest.memberId === chosen.memberId ? null : oldest.businessName,
+      },
     };
-  });
+  },
+);
+
+export type PortalMember = Extract<PortalState, { kind: "ready" }> & { userId: string };
+
+/**
+ * The server-side member check for everything under /portal/setup (and the
+ * phase 5 portal sections): who is signed in, which business they're
+ * working on, and their role -- worked out again from the session on
+ * EVERY call, exactly as /portal does it (impersonation cookie from the
+ * same Guild admin, else the user's own member_users rows plus the
+ * "Choose a business" cookie, which only ever narrows to one of those
+ * rows). The member id is never taken from the client.
+ *
+ * Throws a redirect: to sign-in (returning to /portal) when signed out, and
+ * to /portal when there's no single business to work on (none linked, or
+ * a choice still to make) -- /portal shows the right screen for those.
+ * Doesn't accept invites (only /portal's own front door does that).
+ */
+export const requirePortalMember = createServerOnlyFn(async (): Promise<PortalMember> => {
+  const { state, userId } = await resolvePortalState({ forceChoose: false, acceptInvites: false });
+  if (state.kind !== "ready") {
+    throw redirect({ href: "/portal" });
+  }
+  return { ...state, userId };
+});
 
 /**
  * "Choose a business": remembers the pick. Refuses a member the signed-in
@@ -138,7 +211,11 @@ export const getPortalState = createServerFn({ method: "GET" })
  */
 export const choosePortalMember = createServerFn({ method: "POST" })
   .inputValidator((data: { memberId: string }) => {
-    if (typeof data?.memberId !== "string" || data.memberId.length === 0 || data.memberId.length > 64) {
+    if (
+      typeof data?.memberId !== "string" ||
+      data.memberId.length === 0 ||
+      data.memberId.length > 64
+    ) {
       throw new Error("Choose a business.");
     }
     return { memberId: data.memberId };

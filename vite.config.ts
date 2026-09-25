@@ -374,6 +374,18 @@ export default defineConfig(async ({ command, mode }) => {
             // "Choose a business" onClick handler. Its pure helpers live in
             // portal-access.ts / portal-destination.ts, not here.
             "src/lib/portal/portal-session.server.ts",
+            // src/lib/portal/portal-setup.server.ts (Member Portal, phase
+            // 4: the setup wizard) -- same reasoning as the files above:
+            // getPortalSetupShell is imported straight into
+            // src/routes/portal.setup.tsx's own beforeLoad and
+            // getPortalStepData into portal.setup.$step.tsx's loader;
+            // confirmPortalMemberType and completePortalSetup are called
+            // from the Confirm type and The basics steps' click handlers
+            // (src/components/portal/setup/IntroSteps.tsx). Its per-section
+            // loaders live in section-data.server.ts, which only this file
+            // imports at runtime (client components import its types only),
+            // so that one stays protected.
+            "src/lib/portal/portal-setup.server.ts",
           ],
           specifiers: ["server-only"],
         },

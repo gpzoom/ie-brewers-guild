@@ -38,6 +38,7 @@ export async function resolveRecipient(
     case "contact_confirmation":
       return payload.email;
     case "contact_form_submitted":
+    case "member_type_changed_in_setup":
       return GUILD_NOTIFICATION_EMAIL;
     case "creator_upload_pending":
     case "hours_stale":

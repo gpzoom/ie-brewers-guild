@@ -1,6 +1,10 @@
-import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { choosePortalMember, getPortalState, type PortalState } from "@/lib/portal/portal-session.server";
+import {
+  choosePortalMember,
+  getPortalState,
+  type PortalState,
+} from "@/lib/portal/portal-session.server";
 import { signOutEverything } from "@/lib/auth/sign-out.server";
 import type { PortalRole, WizardStepName } from "@/lib/portal/portal-destination";
 import {
@@ -16,20 +20,30 @@ import {
 type PortalSearch = { switch?: boolean };
 
 function validatePortalSearch(search: Record<string, unknown>): PortalSearch {
-  return search.switch === true || search.switch === 1 || search.switch === "1" ? { switch: true } : {};
+  return search.switch === true || search.switch === 1 || search.switch === "1"
+    ? { switch: true }
+    : {};
 }
 
 /**
  * /portal: the Member Portal's front door (docs/member-profiles.md, "Getting
  * in" and "Wizard or portal: one rule"). getPortalState does all the
  * deciding server-side -- sign-in check, invite acceptance, which business,
- * wizard or portal. Phase 3 renders an interim landing page that says where
- * the member would go; phases 4-5 replace it with the wizard and the portal.
+ * wizard or portal. While setup is incomplete it sends the member into the
+ * setup wizard (phase 4) at the first of steps 1-3 that isn't done. Once
+ * setup is complete it still shows the interim landing page -- the portal
+ * itself is phase 5 -- with a "Continue setup" link to the wizard's Review.
  */
 export const Route = createFileRoute("/portal/")({
   validateSearch: validatePortalSearch,
   loaderDeps: ({ search }) => ({ forceChoose: search.switch === true }),
-  loader: ({ deps }) => getPortalState({ data: { forceChoose: deps.forceChoose } }),
+  loader: async ({ deps }) => {
+    const state = await getPortalState({ data: { forceChoose: deps.forceChoose } });
+    if (state.kind === "ready" && state.destination.kind === "wizard") {
+      throw redirect({ to: "/portal/setup/$step", params: { step: state.destination.step } });
+    }
+    return state;
+  },
   head: () => ({ meta: [{ title: "Member Portal — Inland Southern California Brewers Guild" }] }),
   component: PortalPage,
 });
@@ -66,7 +80,9 @@ function PortalPage() {
 
 function ReadyCard({ state }: { state: Extract<PortalState, { kind: "ready" }> }) {
   const next =
-    state.destination.kind === "wizard" ? `Setup: next step is ${STEP_LABELS[state.destination.step]}` : "Portal";
+    state.destination.kind === "wizard"
+      ? `Setup: next step is ${STEP_LABELS[state.destination.step]}`
+      : "Portal";
   return (
     <CanvasCard>
       <div className="flex flex-col gap-[9px]">
@@ -90,13 +106,22 @@ function ReadyCard({ state }: { state: Extract<PortalState, { kind: "ready" }> }
       </div>
 
       <div className="flex flex-col gap-2.5">
-        <a href="/admin" className={primaryButtonClass}>
+        {state.role !== "media_events" && (
+          <Link to="/portal/setup/$step" params={{ step: "review" }} className={primaryButtonClass}>
+            Continue setup
+          </Link>
+        )}
+        <a
+          href="/admin"
+          className={state.role !== "media_events" ? secondaryButtonClass : primaryButtonClass}
+        >
           Continue in the current admin
         </a>
         {state.adminOpensOtherName && (
           <p className="text-[13px] leading-normal text-ink-muted text-pretty">
-            The current admin opens <strong className="font-semibold text-ink">{state.adminOpensOtherName}</strong>,
-            the first business linked to your sign-in.
+            The current admin opens{" "}
+            <strong className="font-semibold text-ink">{state.adminOpensOtherName}</strong>, the
+            first business linked to your sign-in.
           </p>
         )}
         {state.membershipCount > 1 && (
@@ -109,7 +134,11 @@ function ReadyCard({ state }: { state: Extract<PortalState, { kind: "ready" }> }
   );
 }
 
-function ChooseCard({ memberships }: { memberships: Extract<PortalState, { kind: "choose" }>["memberships"] }) {
+function ChooseCard({
+  memberships,
+}: {
+  memberships: Extract<PortalState, { kind: "choose" }>["memberships"];
+}) {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -133,7 +162,9 @@ function ChooseCard({ memberships }: { memberships: Extract<PortalState, { kind:
       <div className="flex flex-col gap-[9px]">
         <p className={eyebrowClass}>Member Portal</p>
         <CanvasHeading>Choose a business</CanvasHeading>
-        <p className={leadClass}>Your sign-in is linked to more than one business. Which one are you working on?</p>
+        <p className={leadClass}>
+          Your sign-in is linked to more than one business. Which one are you working on?
+        </p>
       </div>
 
       <ul className="flex flex-col gap-2.5">
@@ -187,7 +218,8 @@ function NoMemberCard({ email }: { email: string | null }) {
         <p className={leadClass}>
           {email ? (
             <>
-              You're signed in as <strong className="font-semibold text-ink break-all">{email}</strong>, but that
+              You're signed in as{" "}
+              <strong className="font-semibold text-ink break-all">{email}</strong>, but that
               address isn't linked to a member business yet.
             </>
           ) : (
@@ -198,7 +230,12 @@ function NoMemberCard({ email }: { email: string | null }) {
       </div>
 
       <div className="flex flex-col gap-2.5">
-        <button type="button" onClick={signOut} disabled={signingOut} className={secondaryButtonClass}>
+        <button
+          type="button"
+          onClick={signOut}
+          disabled={signingOut}
+          className={secondaryButtonClass}
+        >
           {signingOut ? "Signing out…" : "Sign in with a different email"}
         </button>
         <p className="text-[13px] leading-[1.55] text-ink-muted text-pretty">

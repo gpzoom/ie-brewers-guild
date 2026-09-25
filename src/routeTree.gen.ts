@@ -24,6 +24,7 @@ import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as GuildIndexRouteImport } from './routes/guild.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SendTokenRouteImport } from './routes/send.$token'
+import { Route as PortalSetupRouteImport } from './routes/portal.setup'
 import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
 import { Route as GuildRosterRouteImport } from './routes/guild.roster'
 import { Route as GuildInquiriesRouteImport } from './routes/guild.inquiries'
@@ -38,6 +39,8 @@ import { Route as AdminHoursRouteImport } from './routes/admin.hours'
 import { Route as AdminEventsRouteImport } from './routes/admin.events'
 import { Route as AdminDiscountRouteImport } from './routes/admin.discount'
 import { Route as AdminBasicsRouteImport } from './routes/admin.basics'
+import { Route as PortalSetupIndexRouteImport } from './routes/portal.setup.index'
+import { Route as PortalSetupStepRouteImport } from './routes/portal.setup.$step'
 import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
 import { Route as ApiConfirmHoursTokenRouteImport } from './routes/api.confirm-hours.$token'
 import { Route as ApiAdminMediaAssetIdRouteImport } from './routes/api.admin-media.$assetId'
@@ -117,6 +120,11 @@ const SendTokenRoute = SendTokenRouteImport.update({
   path: '/send/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalSetupRoute = PortalSetupRouteImport.update({
+  id: '/portal/setup',
+  path: '/portal/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MembersSlugRoute = MembersSlugRouteImport.update({
   id: '/members_/$slug',
   path: '/members/$slug',
@@ -187,6 +195,16 @@ const AdminBasicsRoute = AdminBasicsRouteImport.update({
   path: '/basics',
   getParentRoute: () => AdminRoute,
 } as any)
+const PortalSetupIndexRoute = PortalSetupIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortalSetupRoute,
+} as any)
+const PortalSetupStepRoute = PortalSetupStepRouteImport.update({
+  id: '/$step',
+  path: '/$step',
+  getParentRoute: () => PortalSetupRoute,
+} as any)
 const ApiMemberMediaAssetIdRoute = ApiMemberMediaAssetIdRouteImport.update({
   id: '/api/member-media/$assetId',
   path: '/api/member-media/$assetId',
@@ -229,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
   '/members/$slug': typeof MembersSlugRoute
+  '/portal/setup': typeof PortalSetupRouteWithChildren
   '/send/$token': typeof SendTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/guild/': typeof GuildIndexRoute
@@ -236,6 +255,8 @@ export interface FileRoutesByFullPath {
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
+  '/portal/setup/$step': typeof PortalSetupStepRoute
+  '/portal/setup/': typeof PortalSetupIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -268,6 +289,8 @@ export interface FileRoutesByTo {
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
+  '/portal/setup/$step': typeof PortalSetupStepRoute
+  '/portal/setup': typeof PortalSetupIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -296,6 +319,7 @@ export interface FileRoutesById {
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
   '/members_/$slug': typeof MembersSlugRoute
+  '/portal/setup': typeof PortalSetupRouteWithChildren
   '/send/$token': typeof SendTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/guild/': typeof GuildIndexRoute
@@ -303,6 +327,8 @@ export interface FileRoutesById {
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
+  '/portal/setup/$step': typeof PortalSetupStepRoute
+  '/portal/setup/': typeof PortalSetupIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -332,6 +358,7 @@ export interface FileRouteTypes {
     | '/guild/inquiries'
     | '/guild/roster'
     | '/members/$slug'
+    | '/portal/setup'
     | '/send/$token'
     | '/admin/'
     | '/guild/'
@@ -339,6 +366,8 @@ export interface FileRouteTypes {
     | '/api/admin-media/$assetId'
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
+    | '/portal/setup/$step'
+    | '/portal/setup/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -371,6 +400,8 @@ export interface FileRouteTypes {
     | '/api/admin-media/$assetId'
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
+    | '/portal/setup/$step'
+    | '/portal/setup'
   id:
     | '__root__'
     | '/'
@@ -398,6 +429,7 @@ export interface FileRouteTypes {
     | '/guild/inquiries'
     | '/guild/roster'
     | '/members_/$slug'
+    | '/portal/setup'
     | '/send/$token'
     | '/admin/'
     | '/guild/'
@@ -405,6 +437,8 @@ export interface FileRouteTypes {
     | '/api/admin-media/$assetId'
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
+    | '/portal/setup/$step'
+    | '/portal/setup/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -422,6 +456,7 @@ export interface RootRouteChildren {
   AdminPreviewRoute: typeof AdminPreviewRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   MembersSlugRoute: typeof MembersSlugRoute
+  PortalSetupRoute: typeof PortalSetupRouteWithChildren
   SendTokenRoute: typeof SendTokenRoute
   PortalIndexRoute: typeof PortalIndexRoute
   ApiAdminMediaAssetIdRoute: typeof ApiAdminMediaAssetIdRoute
@@ -536,6 +571,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SendTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/setup': {
+      id: '/portal/setup'
+      path: '/portal/setup'
+      fullPath: '/portal/setup'
+      preLoaderRoute: typeof PortalSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/members_/$slug': {
       id: '/members_/$slug'
       path: '/members/$slug'
@@ -634,6 +676,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBasicsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/portal/setup/': {
+      id: '/portal/setup/'
+      path: '/'
+      fullPath: '/portal/setup/'
+      preLoaderRoute: typeof PortalSetupIndexRouteImport
+      parentRoute: typeof PortalSetupRoute
+    }
+    '/portal/setup/$step': {
+      id: '/portal/setup/$step'
+      path: '/$step'
+      fullPath: '/portal/setup/$step'
+      preLoaderRoute: typeof PortalSetupStepRouteImport
+      parentRoute: typeof PortalSetupRoute
+    }
     '/api/member-media/$assetId': {
       id: '/api/member-media/$assetId'
       path: '/api/member-media/$assetId'
@@ -700,6 +756,20 @@ const GuildRouteChildren: GuildRouteChildren = {
 
 const GuildRouteWithChildren = GuildRoute._addFileChildren(GuildRouteChildren)
 
+interface PortalSetupRouteChildren {
+  PortalSetupStepRoute: typeof PortalSetupStepRoute
+  PortalSetupIndexRoute: typeof PortalSetupIndexRoute
+}
+
+const PortalSetupRouteChildren: PortalSetupRouteChildren = {
+  PortalSetupStepRoute: PortalSetupStepRoute,
+  PortalSetupIndexRoute: PortalSetupIndexRoute,
+}
+
+const PortalSetupRouteWithChildren = PortalSetupRoute._addFileChildren(
+  PortalSetupRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -715,6 +785,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminPreviewRoute: AdminPreviewRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   MembersSlugRoute: MembersSlugRoute,
+  PortalSetupRoute: PortalSetupRouteWithChildren,
   SendTokenRoute: SendTokenRoute,
   PortalIndexRoute: PortalIndexRoute,
   ApiAdminMediaAssetIdRoute: ApiAdminMediaAssetIdRoute,

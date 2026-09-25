@@ -213,3 +213,31 @@ describe("buildEmailContent: contact_form_submitted", () => {
     expect(content.html).toContain("&lt;script&gt;");
   });
 });
+
+describe("buildEmailContent: member_type_changed_in_setup", () => {
+  const payload = {
+    trigger: "member_type_changed_in_setup" as const,
+    memberId: "m1",
+    memberName: "Hop House",
+    oldType: "producer" as const,
+    newType: "mobile" as const,
+  };
+
+  it("says who changed their type, from what to what, during setup", () => {
+    const content = buildEmailContent(payload);
+    expect(content.text).toContain("Hop House changed their type from Producer to Mobile member during setup.");
+    expect(content.subject).toContain("Hop House");
+  });
+
+  it("links to the roster on the site that sent it", () => {
+    const content = buildEmailContent(payload, "https://staging.example");
+    expect(content.text).toContain("https://staging.example/guild/roster");
+    expect(content.html).toContain('href="https://staging.example/guild/roster"');
+  });
+
+  it("HTML-escapes the member name", () => {
+    const content = buildEmailContent({ ...payload, memberName: "A <b>&</b> B" });
+    expect(content.html).not.toContain("<b>");
+    expect(content.html).toContain("A &lt;b&gt;&amp;&lt;/b&gt; B");
+  });
+});

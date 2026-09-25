@@ -132,11 +132,12 @@ export function CarouselEditor({
   // re-picking the option that's already selected.
   const selectRefs = useRef<Record<number, HTMLSelectElement | null>>({});
 
+  // On unmount (leaving the page or a wizard step mid-drag), every crop
+  // still waiting out its debounce is SENT, not dropped. Through a ref so
+  // the cleanup calls this render's flushCropSave (it reads only refs).
+  const flushOnUnmountRef = useRef<() => void>(() => {});
   useEffect(() => {
-    const timers = cropDebounceTimers.current;
-    return () => {
-      for (const timer of Object.values(timers)) clearTimeout(timer);
-    };
+    return () => flushOnUnmountRef.current();
   }, []);
 
   // Resync from the loader whenever it re-runs (router.invalidate() after a
@@ -303,6 +304,13 @@ export function CarouselEditor({
     saveCropNow(slideId, slot);
   }
 
+  flushOnUnmountRef.current = () => {
+    for (const slideId of Object.keys(cropDebounceTimers.current)) {
+      const slot = slidesRef.current.find((s) => s.id === slideId)?.sort_order ?? 0;
+      flushCropSave(slideId, slot);
+    }
+  };
+
   function onCropChange(slide: CarouselSlideRow, crop: CarouselSlideRow["crop"]) {
     // Written SYNCHRONOUSLY, before anything else below -- this is what
     // makes latestCropRef always current regardless of React's render
@@ -402,8 +410,8 @@ export function CarouselEditor({
                         carousel slide, which this member's own admin panel
                         can't rely on while they're still assigning/editing
                         slots (and possibly still draft/pending themselves).
-                        /api/admin-media instead checks OWNERSHIP via
-                        requireMemberSession(), which is the right rule here.
+                        /api/admin-media instead checks OWNERSHIP
+                        (canViewAdminMedia), which is the right rule here.
                         See src/routes/api.admin-media.$assetId.ts and
                         MediaGallery.tsx's identical choice. */}
                     <button

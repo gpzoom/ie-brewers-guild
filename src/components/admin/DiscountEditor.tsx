@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { applyDiscountXor, type DiscountPatch } from "@/lib/members/discount";
 import { isFieldVisibleForMemberType } from "@/lib/members/type-fields";
 import type { DiscountDraft } from "@/lib/drafts/sections";
@@ -47,10 +47,16 @@ export function DiscountEditor({
   memberId,
   memberType,
   discount,
+  showHeading = true,
+  children,
 }: {
   memberId: string;
   memberType: MemberType;
   discount: DiscountDraft;
+  /** False where the page around it has its own heading (the setup wizard's step chrome). */
+  showHeading?: boolean;
+  /** Extra discount-section content shown under the discount block (the supply categories picker). */
+  children?: ReactNode;
 }) {
   const saveDraft = useSaveDraftSection(memberId);
   const [local, setLocal] = useState(discount);
@@ -59,7 +65,7 @@ export function DiscountEditor({
   if (!isFieldVisibleForMemberType(memberType, "discount")) {
     return (
       <div className="flex max-w-[640px] flex-col gap-[26px]">
-        <PageHeading />
+        {showHeading && <PageHeading />}
         <div className="flex items-start gap-3 rounded-[11px] bg-canvas-2 px-[17px] py-[15px] text-ink-muted">
           <svg
             width="17"
@@ -127,7 +133,7 @@ export function DiscountEditor({
 
   return (
     <div className="flex max-w-[640px] flex-col gap-[26px]">
-      <PageHeading />
+      {showHeading && <PageHeading />}
 
       {error && (
         <p role="alert" className="text-[13px] text-danger">
@@ -230,6 +236,8 @@ export function DiscountEditor({
           />
         </div>
       </section>
+
+      {children}
 
       <div className="flex items-center gap-5 border-t border-[#E6E0D6] pt-[22px]">
         <p className="text-[13px] text-ink-muted">

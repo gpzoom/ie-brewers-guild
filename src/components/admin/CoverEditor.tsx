@@ -102,10 +102,12 @@ export function CoverEditor({
   // shape as CarouselEditor.tsx's selectRefs.
   const selectRef = useRef<HTMLSelectElement | null>(null);
 
+  // On unmount (leaving the page or a wizard step mid-drag), a crop still
+  // waiting out its debounce is SENT, not dropped. Through a ref so the
+  // cleanup calls this render's flushCropSave (it reads only refs anyway).
+  const flushOnUnmountRef = useRef<() => void>(() => {});
   useEffect(() => {
-    return () => {
-      if (cropDebounceTimer.current) clearTimeout(cropDebounceTimer.current);
-    };
+    return () => flushOnUnmountRef.current();
   }, []);
 
   function friendlyMessage(err: unknown, fallback: string) {
@@ -221,6 +223,8 @@ export function CoverEditor({
     saveCropNow();
   }
 
+  flushOnUnmountRef.current = flushCropSave;
+
   function onCropChange(next: CropRect) {
     // Written SYNCHRONOUSLY, before anything else below -- this is what
     // makes latestCropRef always current regardless of React's render
@@ -265,7 +269,7 @@ export function CoverEditor({
           // this member's own admin panel can't rely on while they're
           // still choosing/editing their cover (and possibly still
           // draft/pending themselves). /api/admin-media instead checks
-          // OWNERSHIP via requireMemberSession(), which is the right rule
+          // OWNERSHIP (canViewAdminMedia), which is the right rule
           // here. See src/routes/api.admin-media.$assetId.ts and
           // CarouselEditor.tsx's identical choice.
           //

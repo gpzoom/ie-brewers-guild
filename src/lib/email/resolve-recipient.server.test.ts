@@ -68,6 +68,15 @@ describe("resolveRecipient", () => {
     expect(to).toBe(GUILD_NOTIFICATION_EMAIL);
   });
 
+  it("member_type_changed_in_setup always goes to the Guild's notification address", async () => {
+    const supabase = fakeSupabase({ memberUser: { user_id: "u1" }, userEmail: "owner@example.com" });
+    const to = await resolveRecipient(
+      { trigger: "member_type_changed_in_setup", memberId: "m1", memberName: "Hop House", oldType: "producer", newType: "allied" },
+      supabase,
+    );
+    expect(to).toBe(GUILD_NOTIFICATION_EMAIL);
+  });
+
   it("creator_upload_pending resolves the first member_users owner's real email", async () => {
     const supabase = fakeSupabase({ memberUser: { user_id: "u1" }, userEmail: "owner@example.com" });
     const to = await resolveRecipient(

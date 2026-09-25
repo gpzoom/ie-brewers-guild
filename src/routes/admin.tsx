@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { requireMemberSession } from "@/lib/auth/require-member-session.server";
 import { getPublishGateData } from "@/lib/hours/publish-gate.server";
@@ -7,6 +7,11 @@ import { getMemberDisplayName } from "@/lib/guild/impersonation.server";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { PublishGateDialog } from "@/components/admin/PublishGateDialog";
 import { DraftStatusProvider, useDraftStatus } from "@/components/admin/DraftStatusContext";
+import {
+  ADMIN_EDITING_PATHS,
+  MemberEditingProvider,
+  type MemberEditingValue,
+} from "@/components/admin/MemberEditingContext";
 
 export const Route = createFileRoute("/admin")({
   beforeLoad: async () => {
@@ -35,11 +40,31 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminLayout() {
-  const { draftStatus } = Route.useLoaderData();
+  const { draftStatus, publishGateData, memberName } = Route.useLoaderData();
+  const { memberId, isImpersonating } = Route.useRouteContext();
+  // What the editors under /admin need to know about who's being edited
+  // (MemberEditingContext) -- all from this layout's own loader, so nothing
+  // extra is fetched.
+  const editing = useMemo<MemberEditingValue>(
+    () => ({
+      memberId,
+      memberName,
+      memberType: publishGateData.memberType,
+      role: draftStatus.role,
+      isImpersonating,
+      isPublished: publishGateData.status === "published",
+      slug: publishGateData.slug,
+      surface: "admin",
+      paths: ADMIN_EDITING_PATHS,
+    }),
+    [memberId, memberName, publishGateData, draftStatus.role, isImpersonating],
+  );
   return (
-    <DraftStatusProvider initial={draftStatus}>
-      <AdminLayoutInner />
-    </DraftStatusProvider>
+    <MemberEditingProvider value={editing}>
+      <DraftStatusProvider initial={draftStatus}>
+        <AdminLayoutInner />
+      </DraftStatusProvider>
+    </MemberEditingProvider>
   );
 }
 

@@ -37,38 +37,50 @@ export const getPublishGateData = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => data)
   .handler(async ({ data }): Promise<PublishGateData> => {
     const supabase = await getSupabaseServerClientForRequest();
-
-    const [memberResult, draftResult, eventsResult] = await Promise.all([
-      supabase
-        .from("members")
-        .select("status, member_type, slug, hours_confirmed_at")
-        .eq("id", data.memberId)
-        .single(),
-      supabase.rpc("ensure_member_draft", { p_member_id: data.memberId }),
-      supabase.from("events").select("starts_at").eq("member_id", data.memberId),
-    ]);
-
-    if (memberResult.error || !memberResult.data) {
-      throw new Error(memberResult.error?.message ?? "Member not found.");
-    }
-    if (draftResult.error) throw new Error(draftResult.error.message);
-    if (eventsResult.error) throw new Error(eventsResult.error.message);
-
-    const member = memberResult.data as {
-      status: MemberStatus;
-      member_type: MemberType;
-      slug: string;
-      hours_confirmed_at: string | null;
-    };
-    const basics = normalizeDraftData((draftResult.data as { data?: unknown } | null)?.data).basics;
-
-    return {
-      status: member.status,
-      memberType: member.member_type,
-      slug: member.slug,
-      hoursConfirmedAt: member.hours_confirmed_at,
-      hours: basics.hours,
-      specialHours: basics.special_hours,
-      appearanceStartTimes: (eventsResult.data ?? []).map((row) => row.starts_at as string),
-    };
+    return loadPublishGateData(supabase, data.memberId);
   });
+
+/**
+ * getPublishGateData's body as a plain helper, for other server code on
+ * the same request (the setup wizard's publish step resolves the member
+ * server-side, then reads the same data). Uses the caller's session client.
+ */
+export async function loadPublishGateData(
+  supabase: Awaited<ReturnType<typeof getSupabaseServerClientForRequest>>,
+  memberId: string,
+): Promise<PublishGateData> {
+  const data = { memberId };
+  const [memberResult, draftResult, eventsResult] = await Promise.all([
+    supabase
+      .from("members")
+      .select("status, member_type, slug, hours_confirmed_at")
+      .eq("id", data.memberId)
+      .single(),
+    supabase.rpc("ensure_member_draft", { p_member_id: data.memberId }),
+    supabase.from("events").select("starts_at").eq("member_id", data.memberId),
+  ]);
+
+  if (memberResult.error || !memberResult.data) {
+    throw new Error(memberResult.error?.message ?? "Member not found.");
+  }
+  if (draftResult.error) throw new Error(draftResult.error.message);
+  if (eventsResult.error) throw new Error(eventsResult.error.message);
+
+  const member = memberResult.data as {
+    status: MemberStatus;
+    member_type: MemberType;
+    slug: string;
+    hours_confirmed_at: string | null;
+  };
+  const basics = normalizeDraftData((draftResult.data as { data?: unknown } | null)?.data).basics;
+
+  return {
+    status: member.status,
+    memberType: member.member_type,
+    slug: member.slug,
+    hoursConfirmedAt: member.hours_confirmed_at,
+    hours: basics.hours,
+    specialHours: basics.special_hours,
+    appearanceStartTimes: (eventsResult.data ?? []).map((row) => row.starts_at as string),
+  };
+}

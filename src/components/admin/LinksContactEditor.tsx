@@ -6,6 +6,7 @@ import type { DraftLink } from "@/lib/drafts/sections";
 import type { MemberLinkKind, MemberType } from "@/lib/supabase/types";
 import { SaveNoteText } from "@/components/admin/SaveNote";
 import { useSaveDraftSection } from "@/components/admin/DraftStatusContext";
+import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 
 // Friendly names for the link kinds (artboard R's select options).
 const LINK_KIND_LABEL: Partial<Record<MemberLinkKind, string>> = {
@@ -59,6 +60,7 @@ export function LinksContactEditor({
   initialLinks,
   memberType,
   contact,
+  showHeading = true,
 }: {
   memberId: string;
   initialLinks: DraftLink[];
@@ -71,8 +73,11 @@ export function LinksContactEditor({
     city: string | null;
     state: string | null;
   };
+  /** False where the page around it has its own heading (the setup wizard's step chrome). */
+  showHeading?: boolean;
 }) {
   const saveDraft = useSaveDraftSection(memberId);
+  const basicsLink = useMemberEditing()?.paths.basics ?? null;
   const [links, setLinks] = useState<LinkRow[]>(() =>
     initialLinks.map((link, index) => ({ ...link, id: `link-${index}` })),
   );
@@ -164,14 +169,16 @@ export function LinksContactEditor({
 
   return (
     <div className="flex flex-col gap-[26px]">
-      <div className="flex flex-col gap-1.5">
-        <h1 className="font-display text-[28px] font-bold leading-tight tracking-[-0.01em] text-ink">
-          Links &amp; contact
-        </h1>
-        <p className="text-[13px] text-ink-muted">
-          The pills on your profile, and the ways people reach you.
-        </p>
-      </div>
+      {showHeading && (
+        <div className="flex flex-col gap-1.5">
+          <h1 className="font-display text-[28px] font-bold leading-tight tracking-[-0.01em] text-ink">
+            Links &amp; contact
+          </h1>
+          <p className="text-[13px] text-ink-muted">
+            The pills on your profile, and the ways people reach you.
+          </p>
+        </div>
+      )}
 
       {error && (
         <p role="alert" className="text-[13px] text-danger">
@@ -280,12 +287,15 @@ export function LinksContactEditor({
               </div>
             ))}
           </dl>
-          <Link
-            to="/admin/basics"
-            className="inline-flex min-h-11 items-center self-start text-[13px] font-medium text-brand hover:text-brand-hover"
-          >
-            Edit on Basics &amp; hours
-          </Link>
+          {basicsLink && (
+            <Link
+              to={basicsLink.to}
+              hash={basicsLink.hash}
+              className="inline-flex min-h-11 items-center self-start text-[13px] font-medium text-brand hover:text-brand-hover"
+            >
+              Edit on Basics &amp; hours
+            </Link>
+          )}
         </div>
         <p className="text-xs text-ink-subtle">
           These are edited with your other basics, so there's only one place to keep them right.

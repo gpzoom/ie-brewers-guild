@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getSupabaseServerClientForRequest,
@@ -275,6 +275,17 @@ export const getDraftStatus = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => data)
   .handler(async ({ data }): Promise<DraftStatus> => {
     const supabase = await getSupabaseServerClientForRequest();
+    return loadDraftStatus(supabase, data.memberId);
+  });
+
+/**
+ * getDraftStatus's body as a plain helper, for other server code on the
+ * same request (the setup wizard's layout resolves the member server-side,
+ * then reads the same status).
+ */
+export const loadDraftStatus = createServerOnlyFn(
+  async (supabase: SessionClient, memberId: string): Promise<DraftStatus> => {
+    const data = { memberId };
     const user = await requireUser(supabase);
     const [role, memberResult, draftResult] = await Promise.all([
       loadViewerRole(supabase, data.memberId, user.id),
@@ -328,4 +339,5 @@ export const getDraftStatus = createServerFn({ method: "GET" })
     }
 
     return { ...topBar, status, role, dirtySections, photoChangesFrom };
-  });
+  },
+);

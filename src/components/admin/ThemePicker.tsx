@@ -51,6 +51,7 @@ export function ThemePicker({
   city,
   state,
   tagline,
+  showHeading = true,
 }: {
   memberId: string;
   currentTheme: MemberThemeName;
@@ -59,6 +60,8 @@ export function ThemePicker({
   city?: string | null;
   state?: string | null;
   tagline?: string | null;
+  /** False where the page around it has its own heading (the setup wizard's step chrome). */
+  showHeading?: boolean;
 }) {
   // Phase 2: the choice saves to the member's DRAFT (the `theme` section)
   // and reaches the public page when published.
@@ -137,13 +140,15 @@ export function ThemePicker({
   return (
     <div className="flex flex-col gap-8 lg:flex-row">
       <div className="flex min-w-0 flex-1 flex-col gap-6">
-        <div className="flex flex-col gap-1.5">
-          <h1 className="font-display text-[27px] font-bold leading-tight text-ink">Theme</h1>
-          <p className="text-pretty text-[13px] text-ink-muted">
-            Pick the color that carries your buttons, highlights and cover fallback. Every option
-            is checked for legibility, so none of them can make your page hard to read.
-          </p>
-        </div>
+        {showHeading && (
+          <div className="flex flex-col gap-1.5">
+            <h1 className="font-display text-[27px] font-bold leading-tight text-ink">Theme</h1>
+            <p className="text-pretty text-[13px] text-ink-muted">
+              Pick the color that carries your buttons, highlights and cover fallback. Every option
+              is checked for legibility, so none of them can make your page hard to read.
+            </p>
+          </div>
+        )}
 
         <fieldset className="m-0 grid min-w-0 grid-cols-2 gap-3 border-0 p-0 sm:grid-cols-4">
           <legend className="mb-3 p-0 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
