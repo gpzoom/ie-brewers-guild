@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "@tanstack/react-router";
-import { clearCoverAsset, updateCoverAsset, updateCoverCrop } from "@/lib/media/cover.server";
 import { CropEditor } from "@/components/admin/CropEditor";
-import { COVER_ASPECT, DESKTOP_COVER_ASPECT } from "@/lib/media/crop-interaction";
+import { hasPendingDraftSaves, useSaveDraftSection } from "@/components/admin/DraftStatusContext";
+import { COVER_ASPECT, DESKTOP_COVER_ASPECT, initialCropForAspect } from "@/lib/media/crop-interaction";
 import type { CropRect } from "@/lib/media/crop";
 import type { MediaAssetRow } from "@/lib/supabase/types";
 
@@ -22,7 +21,14 @@ const FULL_IMAGE_CROP: CropRect = { x: 0, y: 0, w: 1, h: 1 };
 // dragged position is always what gets persisted.
 const CROP_SAVE_DEBOUNCE_MS = 400;
 
-/** "Theme color fills the band" is the empty state everywhere a member has no cover photo set (spec, "Profile hero and theme"). */
+/**
+ * "Theme color fills the band" is the empty state everywhere a member has
+ * no cover photo set (spec, "Profile hero and theme").
+ *
+ * Phase 2: the cover photo and its crop are part of the member's DRAFT
+ * (`basics`: cover_asset_id, cover_crop) and go live when published. The
+ * database checks the photo is in this member's gallery.
+ */
 export function CoverEditor({
   memberId,
   coverAssetId,
@@ -34,7 +40,7 @@ export function CoverEditor({
   coverCrop: CropRect | null;
   galleryAssets: MediaAssetRow[];
 }) {
-  const router = useRouter();
+  const saveDraft = useSaveDraftSection(memberId);
   const [assetId, setAssetId] = useState(coverAssetId);
   const [crop, setCrop] = useState<CropRect>(coverCrop ?? FULL_IMAGE_CROP);
   const [error, setError] = useState<string | undefined>(undefined);
@@ -63,26 +69,30 @@ export function CoverEditor({
   // Crop save requests currently on the wire. Used both to skip a loader
   // resync that could carry the pre-save crop (see below) and to let
   // onChooseAsset wait for them, so an old photo's crop can't land after
-  // updateCoverAsset and be applied to the new cover.
+  // the new cover is chosen and be applied to it.
   const cropSavesInFlight = useRef<Set<Promise<void>>>(new Set());
 
   // Resync from the loader whenever it re-runs (router.invalidate() after a
-  // gallery upload/delete, or after this editor's own choose/remove) --
-  // otherwise this local copy stays frozen at first render, e.g. still
-  // showing a cover photo that was just deleted from the gallery (the FK is
-  // ON DELETE SET NULL, so the server has already cleared it). A crop the
+  // gallery upload/delete, a publish, or this editor's own choose/remove) --
+  // otherwise this local copy stays frozen at first render. A crop the
   // member is mid-way through editing (debounce timer pending, or its save
   // request still in flight) is kept -- a refresh that started before that
   // save landed would otherwise snap the photo back to the old position.
+  // Both skip while a basics save is queued or running: the loader's
+  // snapshot is then older than what this editor holds.
   useEffect(() => {
+    if (hasPendingDraftSaves(memberId, "basics")) return;
     setAssetId(coverAssetId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-sync on new loader data only
   }, [coverAssetId]);
   useEffect(() => {
+    if (hasPendingDraftSaves(memberId, "basics")) return;
     if (cropDebounceTimer.current || cropSavesInFlight.current.size > 0) return;
     const next = coverCrop ?? FULL_IMAGE_CROP;
     savedCropRef.current = next;
     latestCropRef.current = next;
     setCrop(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-sync on new loader data only
   }, [coverCrop]);
   // Lets a failed choose reset the <select>'s own DOM value back to ""
   // -- see onChooseAsset's catch block for why: it's an uncontrolled
@@ -103,8 +113,8 @@ export function CoverEditor({
   }
 
   /**
-   * Awaits the mutation and shows a real error on failure instead of the
-   * brief's given fire-and-forget shape -- if updateCoverAsset throws
+   * Awaits the save and shows a real error on failure instead of the
+   * brief's given fire-and-forget shape -- if the save throws
    * (ownership-check failure, an RLS denial, ...) that would otherwise be
    * an unhandled promise rejection with the <select> left showing the
    * just-picked photo while nothing was actually saved and no error ever
@@ -120,16 +130,19 @@ export function CoverEditor({
     try {
       // A crop save already on the wire targets the OLD photo; let it land
       // (or fail and roll back) before the new cover and its crop are set.
+      // (Saves for the section are also queued in order.)
       // saveCropNow's promises never reject, so this can't throw.
       await Promise.all([...cropSavesInFlight.current]);
-      const result = await updateCoverAsset({
-        data: { memberId, assetId: asset.id, assetWidth: asset.width, assetHeight: asset.height },
-      });
-      savedCropRef.current = result.crop;
-      latestCropRef.current = result.crop;
+      // A centered crop at the band's shape, from the photo's stored size.
+      const initialCrop: CropRect =
+        asset.width && asset.height
+          ? initialCropForAspect(asset.width, asset.height, COVER_ASPECT)
+          : FULL_IMAGE_CROP;
+      await saveDraft("basics", { cover_asset_id: asset.id, cover_crop: initialCrop });
+      savedCropRef.current = initialCrop;
+      latestCropRef.current = initialCrop;
       setAssetId(asset.id);
-      setCrop(result.crop);
-      void router.invalidate();
+      setCrop(initialCrop);
     } catch (err) {
       if (selectRef.current) selectRef.current.value = "";
       setError(friendlyMessage(err, "Couldn't set this cover photo — try again."));
@@ -146,13 +159,12 @@ export function CoverEditor({
     try {
       // Same as onChooseAsset: don't let an in-flight crop save land after the clear.
       await Promise.all([...cropSavesInFlight.current]);
-      await clearCoverAsset({ data: { memberId } });
+      await saveDraft("basics", { cover_asset_id: null, cover_crop: null });
       setAssetId(null);
       savedCropRef.current = FULL_IMAGE_CROP;
       latestCropRef.current = FULL_IMAGE_CROP;
       setCrop(FULL_IMAGE_CROP);
       if (selectRef.current) selectRef.current.value = "";
-      void router.invalidate();
     } catch (err) {
       setError(friendlyMessage(err, "Couldn't remove the cover photo — try again."));
     } finally {
@@ -175,7 +187,7 @@ export function CoverEditor({
    */
   function saveCropNow() {
     const cropToSave = latestCropRef.current;
-    const request: Promise<void> = updateCoverCrop({ data: { memberId, crop: cropToSave } })
+    const request: Promise<void> = saveDraft("basics", { cover_crop: cropToSave })
       .then(() => {
         savedCropRef.current = cropToSave;
         setError(undefined);

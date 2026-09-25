@@ -1,22 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getMemberBasics } from "@/lib/members/member-basics.server";
+import { getMemberDraft } from "@/lib/drafts/drafts.server";
 import { ThemePicker } from "@/components/admin/ThemePicker";
 
+/** Theme -- reads and saves the draft's `theme` section; the preview card uses the draft's basics. */
 export const Route = createFileRoute("/admin/theme")({
-  loader: async ({ context }) => getMemberBasics({ data: { memberId: context.memberId } }),
+  loader: async ({ context }) => getMemberDraft({ data: { memberId: context.memberId } }),
   component: ThemeRoute,
 });
 
 function ThemeRoute() {
-  const member = Route.useLoaderData();
+  const draft = Route.useLoaderData();
+  const basics = draft.data.basics;
   return (
     <ThemePicker
-      memberId={member.id}
-      currentTheme={member.theme}
-      businessName={member.business_name}
-      city={member.city}
-      state={member.state}
-      tagline={member.tagline}
+      memberId={draft.member.id}
+      currentTheme={draft.data.theme.theme}
+      businessName={basics.business_name}
+      city={basics.city}
+      state={basics.state}
+      tagline={basics.tagline}
     />
   );
 }

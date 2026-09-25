@@ -5,6 +5,7 @@ import { MemberImage } from "@/components/profile/MemberImage";
 import { isHttpUrl } from "@/lib/links/url-safety";
 import type { CarouselSlideRow, MediaAssetRow } from "@/lib/supabase/types";
 import type { MemberThemeName } from "@/lib/theme/member-themes";
+import type { ProfileMediaMode } from "@/lib/members/profile-object";
 import { cn } from "@/lib/utils";
 
 const MAX_SLIDES = 4;
@@ -13,7 +14,7 @@ type MediaCarouselProps = {
   slides: (CarouselSlideRow & { asset: MediaAssetRow })[];
   memberName: string;
   theme: MemberThemeName;
-  isPreview: boolean;
+  mediaMode: ProfileMediaMode;
 };
 
 // "View on Instagram →" (artboards D/E/V/L) -- named for where the
@@ -51,7 +52,7 @@ const pillClass = "rounded-pill bg-[#E0D9CC]/90 px-2.5 py-1 text-[10px] tracking
  * component should never render a fifth slide even if a future admin
  * tool or a manual DB fix lets one through upstream.
  */
-export function MediaCarousel({ slides, memberName, theme, isPreview }: MediaCarouselProps) {
+export function MediaCarousel({ slides, memberName, theme, mediaMode }: MediaCarouselProps) {
   const capped = slides.slice(0, MAX_SLIDES);
   const [api, setApi] = useState<CarouselApi>();
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -94,7 +95,7 @@ export function MediaCarousel({ slides, memberName, theme, isPreview }: MediaCar
             <CarouselItem key={slide.id}>
               <div className="relative">
                 <MemberImage
-                  src={`${isPreview ? "/api/admin-media" : "/api/member-media"}/${slide.asset.id}`}
+                  src={`${mediaMode === "preview" ? "/api/admin-media" : "/api/member-media"}/${slide.asset.id}`}
                   crop={slide.crop}
                   alt={`${memberName} photo`}
                   theme={theme}

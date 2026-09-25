@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "@tanstack/react-router";
-import { clearSocialImageAsset, updateSocialImageAsset } from "@/lib/media/social-image.server";
+import { hasPendingDraftSaves, useSaveDraftSection } from "@/components/admin/DraftStatusContext";
 import { getOgPlaceholderPath } from "@/lib/media/og-placeholder";
 import type { MediaAssetRow, MemberType } from "@/lib/supabase/types";
 
@@ -8,6 +7,10 @@ import type { MediaAssetRow, MemberType } from "@/lib/supabase/types";
  * "Social Sharing Image" is this feature's public name throughout the
  * admin UI -- members don't know what OpenGraph is, and the term never
  * appears here (this plan's own design notes).
+ *
+ * Phase 2 (plan Decision 3): it's part of the member's DRAFT
+ * (`basics.og_image_asset_id`, owners and full editors only) and goes
+ * live when published.
  */
 export function SocialImageEditor({
   memberId,
@@ -20,7 +23,7 @@ export function SocialImageEditor({
   ogImageAssetId: string | null;
   galleryAssets: MediaAssetRow[];
 }) {
-  const router = useRouter();
+  const saveDraft = useSaveDraftSection(memberId);
   const [assetId, setAssetId] = useState(ogImageAssetId);
   const [error, setError] = useState<string | undefined>(undefined);
   const [busy, setBusy] = useState(false);
@@ -28,10 +31,14 @@ export function SocialImageEditor({
   // same reasoning as CoverEditor.tsx's selectRef.
   const selectRef = useRef<HTMLSelectElement | null>(null);
 
-  // Resync from the loader when it re-runs (e.g. the chosen image was just
-  // deleted from the gallery -- og_image_asset_id is ON DELETE SET NULL).
+  // Resync from the loader when it re-runs (a publish, discard, or this
+  // editor's own choose/remove).
   useEffect(() => {
+    // Skipped while a basics save is queued or running: the loader's
+    // snapshot is then older than what this editor holds.
+    if (hasPendingDraftSaves(memberId, "basics")) return;
     setAssetId(ogImageAssetId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-sync on new loader data only
   }, [ogImageAssetId]);
 
   function friendlyMessage(err: unknown, fallback: string) {
@@ -42,9 +49,8 @@ export function SocialImageEditor({
     setError(undefined);
     setBusy(true);
     try {
-      await updateSocialImageAsset({ data: { memberId, assetId: asset.id } });
+      await saveDraft("basics", { og_image_asset_id: asset.id });
       setAssetId(asset.id);
-      void router.invalidate();
     } catch (err) {
       if (selectRef.current) selectRef.current.value = "";
       setError(friendlyMessage(err, "Couldn't set this image — try again."));
@@ -57,10 +63,9 @@ export function SocialImageEditor({
     setError(undefined);
     setBusy(true);
     try {
-      await clearSocialImageAsset({ data: { memberId } });
+      await saveDraft("basics", { og_image_asset_id: null });
       setAssetId(null);
       if (selectRef.current) selectRef.current.value = "";
-      void router.invalidate();
     } catch (err) {
       setError(friendlyMessage(err, "Couldn't remove this image — try again."));
     } finally {

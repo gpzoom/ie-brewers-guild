@@ -7,14 +7,20 @@ type Result = { data: unknown; error: { message: string } | null };
 /**
  * Minimal chainable stand-in for the PostgREST builder: every filter
  * returns the same builder, and the result is picked by (table, whether
- * .delete() was called) when it's awaited or .maybeSingle()'d. Records the
- * order of deletes and their filters so the test can assert slides go
- * before the asset.
+ * .delete() was called) when it's awaited or .maybeSingle()'d. Records
+ * every delete so a test can assert nothing was deleted when a photo is in
+ * use.
  */
 function fakeClient(opts: {
   asset: { id: string; member_id: string } | null;
-  slideIds?: string[];
-  slidesError?: { message: string } | null;
+  member?: {
+    logo_asset_id: string | null;
+    cover_asset_id: string | null;
+    og_image_asset_id: string | null;
+  };
+  liveSlideAssetIds?: string[];
+  draftData?: unknown;
+  readError?: { message: string } | null;
   assetDeleteRows?: Array<{ id: string; storage_path: string; member_id: string }>;
   removeError?: { message: string } | null;
 }) {
@@ -27,10 +33,26 @@ function fakeClient(opts: {
       const filters: string[] = [];
       const resolveResult = (): Result => {
         if (table === "media_assets" && !isDelete) return { data: opts.asset, error: null };
-        if (table === "carousel_slides" && isDelete) {
+        if (table === "members") {
           return {
-            data: (opts.slideIds ?? []).map((id) => ({ id })),
-            error: opts.slidesError ?? null,
+            data: opts.member ?? {
+              logo_asset_id: null,
+              cover_asset_id: null,
+              og_image_asset_id: null,
+            },
+            error: opts.readError ?? null,
+          };
+        }
+        if (table === "carousel_slides") {
+          return {
+            data: (opts.liveSlideAssetIds ?? []).map((asset_id) => ({ asset_id })),
+            error: null,
+          };
+        }
+        if (table === "member_drafts") {
+          return {
+            data: opts.draftData === undefined ? null : { data: opts.draftData },
+            error: null,
           };
         }
         if (table === "media_assets" && isDelete)
@@ -90,41 +112,51 @@ function auditSpy() {
   return { entries, record };
 }
 
+const ASSET = { id: "asset-1", member_id: "member-1" };
+const DELETED_ROW = [{ id: "asset-1", storage_path: "member-1/x.jpg", member_id: "member-1" }];
+
 describe("deleteMediaAssetCore", () => {
-  it("removes the photo's carousel slides first, then the asset, and audit-logs each", async () => {
-    const { client, deletes, removed } = fakeClient({
-      asset: { id: "asset-1", member_id: "member-1" },
-      slideIds: ["slide-a", "slide-b"],
-      assetDeleteRows: [{ id: "asset-1", storage_path: "member-1/x.jpg", member_id: "member-1" }],
-    });
+  it("deletes an unused photo and audit-logs it", async () => {
+    const { client, deletes, removed } = fakeClient({ asset: ASSET, assetDeleteRows: DELETED_ROW });
     const audit = auditSpy();
 
     const result = await deleteMediaAssetCore("asset-1", client, audit.record);
 
-    expect(result).toEqual({
-      ok: true,
-      fileRemoved: true,
-      removedSlideIds: ["slide-a", "slide-b"],
-    });
-    expect(deletes.map((d) => d.table)).toEqual(["carousel_slides", "media_assets"]);
-    expect(deletes[0].filters).toEqual(["asset_id=asset-1", "member_id=member-1"]);
+    expect(result).toEqual({ ok: true, fileRemoved: true });
+    expect(deletes.map((d) => d.table)).toEqual(["media_assets"]);
     expect(removed).toEqual([["member-1/x.jpg"]]);
     expect(audit.entries).toEqual([
-      { memberId: "member-1", tableName: "carousel_slides", rowId: "slide-a", action: "delete" },
-      { memberId: "member-1", tableName: "carousel_slides", rowId: "slide-b", action: "delete" },
       { memberId: "member-1", tableName: "media_assets", rowId: "asset-1", action: "delete" },
     ]);
   });
 
-  it("works for a photo that isn't in the carousel", async () => {
-    const { client } = fakeClient({
-      asset: { id: "asset-1", member_id: "member-1" },
-      assetDeleteRows: [{ id: "asset-1", storage_path: "member-1/x.jpg", member_id: "member-1" }],
+  it("refuses a photo in the live carousel, says where, and deletes nothing", async () => {
+    const { client, deletes } = fakeClient({ asset: ASSET, liveSlideAssetIds: ["asset-1"] });
+    await expect(deleteMediaAssetCore("asset-1", client, auditSpy().record)).rejects.toThrow(
+      /a carousel slide \(on your live page\)/,
+    );
+    expect(deletes).toEqual([]);
+  });
+
+  it("refuses a photo that's only the draft's cover", async () => {
+    const { client, deletes } = fakeClient({
+      asset: ASSET,
+      draftData: { basics: { cover_asset_id: "asset-1" }, media: { slides: [] } },
     });
-    const audit = auditSpy();
-    const result = await deleteMediaAssetCore("asset-1", client, audit.record);
-    expect(result.removedSlideIds).toEqual([]);
-    expect(audit.entries.map((e) => e.tableName)).toEqual(["media_assets"]);
+    await expect(deleteMediaAssetCore("asset-1", client, auditSpy().record)).rejects.toThrow(
+      /your cover photo \(in your unpublished changes\)/,
+    );
+    expect(deletes).toEqual([]);
+  });
+
+  it("refuses a photo that's the live logo", async () => {
+    const { client } = fakeClient({
+      asset: ASSET,
+      member: { logo_asset_id: "asset-1", cover_asset_id: null, og_image_asset_id: null },
+    });
+    await expect(deleteMediaAssetCore("asset-1", client, auditSpy().record)).rejects.toThrow(
+      /your logo/,
+    );
   });
 
   it("refuses (and touches nothing) when the asset isn't visible to the caller", async () => {
@@ -137,22 +169,16 @@ describe("deleteMediaAssetCore", () => {
     expect(audit.entries).toEqual([]);
   });
 
-  it("does not delete the asset if removing its slides fails", async () => {
-    const { client, deletes } = fakeClient({
-      asset: { id: "asset-1", member_id: "member-1" },
-      slidesError: { message: "boom" },
-    });
+  it("refuses when it can't check where the photo is used", async () => {
+    const { client, deletes } = fakeClient({ asset: ASSET, readError: { message: "boom" } });
     await expect(deleteMediaAssetCore("asset-1", client, auditSpy().record)).rejects.toThrow(
-      "boom",
+      /boom/,
     );
-    expect(deletes.map((d) => d.table)).toEqual(["carousel_slides"]);
+    expect(deletes).toEqual([]);
   });
 
   it("reports an RLS-blocked asset delete (zero rows) as a failure", async () => {
-    const { client } = fakeClient({
-      asset: { id: "asset-1", member_id: "member-1" },
-      assetDeleteRows: [],
-    });
+    const { client } = fakeClient({ asset: ASSET, assetDeleteRows: [] });
     await expect(deleteMediaAssetCore("asset-1", client, auditSpy().record)).rejects.toThrow(
       /permission/,
     );
@@ -160,8 +186,8 @@ describe("deleteMediaAssetCore", () => {
 
   it("reports a storage cleanup failure as non-fatal", async () => {
     const { client } = fakeClient({
-      asset: { id: "asset-1", member_id: "member-1" },
-      assetDeleteRows: [{ id: "asset-1", storage_path: "member-1/x.jpg", member_id: "member-1" }],
+      asset: ASSET,
+      assetDeleteRows: DELETED_ROW,
       removeError: { message: "nope" },
     });
     const result = await deleteMediaAssetCore("asset-1", client, auditSpy().record);

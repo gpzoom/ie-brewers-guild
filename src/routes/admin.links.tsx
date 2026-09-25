@@ -1,43 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getMemberContactInfo, listMemberLinks } from "@/lib/links/member-links.server";
-import { getMemberBasics } from "@/lib/members/member-basics.server";
+import { getMemberDraft } from "@/lib/drafts/drafts.server";
 import { LinksContactEditor } from "@/components/admin/LinksContactEditor";
 
+/**
+ * Links & contact. The link pills read and save the draft's `links`
+ * section. Phone, sales email and address are edited on Basics & hours
+ * (plan Decision 2 moved phone and sales email into the `basics` section);
+ * this page only shows them, from the same draft, with a pointer there.
+ */
 export const Route = createFileRoute("/admin/links")({
-  loader: async ({ context }) => {
-    // getMemberContactInfo, not the Basics editor's getMemberBasics --
-    // BasicsMember doesn't carry phone/contact_email at all (Decision 8
-    // keeps those out of Basics on purpose), so getMemberBasics's result
-    // has no `.phone`/`.contact_email` to read here. See
-    // member-links.server.ts's MemberContactInfo doc comment.
-    //
-    // getMemberBasics is loaded too, read-only, only so the Contact section
-    // can SHOW the street address (artboard R puts it here). Its one
-    // editor stays on Basics & hours; this page links there.
-    const [links, member, basics] = await Promise.all([
-      listMemberLinks({ data: { memberId: context.memberId } }),
-      getMemberContactInfo({ data: { memberId: context.memberId } }),
-      getMemberBasics({ data: { memberId: context.memberId } }),
-    ]);
-    return {
-      links,
-      member,
-      address: { street: basics.street_address, city: basics.city, state: basics.state },
-    };
-  },
+  loader: async ({ context }) => getMemberDraft({ data: { memberId: context.memberId } }),
   component: LinksRoute,
 });
 
 function LinksRoute() {
-  const { links, member, address } = Route.useLoaderData();
+  const draft = Route.useLoaderData();
+  const basics = draft.data.basics;
   return (
     <LinksContactEditor
-      memberId={member.id}
-      initialLinks={links}
-      phone={member.phone}
-      contactEmail={member.contact_email}
-      memberType={member.member_type}
-      address={address}
+      memberId={draft.member.id}
+      initialLinks={draft.data.links.links}
+      memberType={draft.member.member_type}
+      contact={{
+        phone: basics.phone,
+        contactEmail: basics.contact_email,
+        street: basics.street_address,
+        city: basics.city,
+        state: basics.state,
+      }}
     />
   );
 }

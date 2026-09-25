@@ -1,61 +1,59 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getMemberBasics } from "@/lib/members/member-basics.server";
+import { getMemberDraft } from "@/lib/drafts/drafts.server";
 import { getMemberEmail } from "@/lib/members/member-email.server";
-import { listHours } from "@/lib/hours/hours-editor.server";
-import { getMemberLogo } from "@/lib/media/logo.server";
 import { BasicsForm } from "@/components/admin/BasicsForm";
 import { HoursEditor } from "@/components/admin/HoursEditor";
 import { LogoUploader } from "@/components/admin/LogoUploader";
 
 /**
  * "Basics & hours" -- one page (artboard AdminBasics; owner decision
- * 2026-09-25, docs/design/README.md). Basics fields, the logo, and weekly +
- * special hours all live here; /admin/hours now redirects to this page's
- * #hours section.
+ * 2026-09-25, docs/design/README.md). Basics fields, phone and sales email
+ * (plan Decision 2), the logo, and weekly + special hours all live here;
+ * /admin/hours redirects to this page's #hours section.
+ *
+ * Everything on it reads from and saves to the member's DRAFT (the
+ * `basics` section) except member type, which isn't drafted.
  */
 export const Route = createFileRoute("/admin/basics")({
   loader: async ({ context }) => {
     // The sign-in email field only matters (and is only editable) while
     // impersonating -- see BasicsForm's own doc comment -- so it's only
-    // fetched then, sparing an ordinary member's own page load an extra
-    // service-role lookup it will never render.
-    const [member, emailData, hoursData, logo] = await Promise.all([
-      getMemberBasics({ data: { memberId: context.memberId } }),
+    // fetched then.
+    const [draft, emailData] = await Promise.all([
+      getMemberDraft({ data: { memberId: context.memberId } }),
       context.isImpersonating
         ? getMemberEmail({ data: { memberId: context.memberId } })
         : Promise.resolve(null),
-      listHours({ data: { memberId: context.memberId } }),
-      getMemberLogo({ data: { memberId: context.memberId } }),
     ]);
-    return {
-      member,
-      email: emailData?.email ?? null,
-      hours: hoursData.hours,
-      specialHours: hoursData.specialHours,
-      logoUrl: logo.logoUrl,
-    };
+    return { draft, email: emailData?.email ?? null };
   },
   component: BasicsRoute,
 });
 
 function BasicsRoute() {
-  const { member, email, hours, specialHours, logoUrl } = Route.useLoaderData();
+  const { draft, email } = Route.useLoaderData();
   const { memberId, isImpersonating } = Route.useRouteContext();
+  const basics = draft.data.basics;
   return (
     <BasicsForm
-      member={member}
+      memberId={memberId}
+      memberType={draft.member.member_type}
+      typeConfirmed={draft.member.type_confirmed_at !== null}
+      basics={basics}
       email={email}
       isImpersonating={isImpersonating}
       logo={
         <LogoUploader
           memberId={memberId}
-          initialLogoUrl={logoUrl}
-          initialBackground={member.logo_background ?? "light"}
-          theme={member.theme}
-          businessName={member.business_name}
+          initialLogoUrl={draft.logoUrl}
+          initialBackground={basics.logo_background}
+          theme={draft.data.theme.theme}
+          businessName={basics.business_name}
         />
       }
-      hours={<HoursEditor memberId={memberId} hours={hours} specialHours={specialHours} />}
+      hours={
+        <HoursEditor memberId={memberId} hours={basics.hours} specialHours={basics.special_hours} />
+      }
     />
   );
 }

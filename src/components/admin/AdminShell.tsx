@@ -64,7 +64,7 @@ export function AdminShell({
   isImpersonating = false,
   impersonatedMemberName = null,
   previewHref,
-  isPublished = false,
+  liveHref,
   publishSlot,
   children,
 }: {
@@ -72,8 +72,10 @@ export function AdminShell({
   memberName?: string | null;
   isImpersonating?: boolean;
   impersonatedMemberName?: string | null;
+  /** The draft preview (/admin/preview). */
   previewHref?: string;
-  isPublished?: boolean;
+  /** The live public page, once the member is published. */
+  liveHref?: string;
   publishSlot?: ReactNode;
   children: ReactNode;
 }) {
@@ -90,8 +92,6 @@ export function AdminShell({
     await router.navigate({ to: "/" });
   }
 
-  const previewLabel = isPublished ? "View profile" : "Preview";
-
   return (
     <div className="flex min-h-screen flex-col bg-canvas text-ink">
       {isImpersonating && (
@@ -99,7 +99,7 @@ export function AdminShell({
           message={
             <>
               You are editing as {impersonatedMemberName ?? "this member"}. Changes are saved to their
-              profile.
+              draft and go live when you publish.
             </>
           }
           actions={
@@ -112,7 +112,7 @@ export function AdminShell({
 
       <AppTopBar label="ISC Brewers Guild · Member admin" shortLabel="Member admin">
         {memberName && (
-          <span className="hidden max-w-[16rem] truncate text-[13px] text-text-muted md:inline">
+          <span className="hidden max-w-[16rem] truncate text-[13px] text-text-muted xl:inline">
             {memberName}
           </span>
         )}
@@ -123,7 +123,18 @@ export function AdminShell({
             rel="noopener"
             className={`${topBarOutlineClass} max-md:h-11 max-md:border-0 max-md:px-2.5 max-md:text-text-muted`}
           >
-            {previewLabel}
+            Preview
+          </a>
+        )}
+        {liveHref && (
+          <a
+            href={liveHref}
+            target="_blank"
+            rel="noopener"
+            className={`${topBarOutlineClass} max-md:h-11 max-md:border-0 max-md:px-2.5 max-md:text-text-muted`}
+          >
+            <span className="md:hidden">Live page</span>
+            <span className="hidden md:inline">View profile</span>
           </a>
         )}
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-canvas-2 bg-canvas px-4 pb-4 pt-3 md:static md:inset-auto md:z-auto md:border-0 md:bg-transparent md:p-0">
@@ -155,10 +166,10 @@ export function AdminShell({
           Not a <main> -- the root layout (src/routes/__root.tsx) already
           renders one <main> around the whole route Outlet, /admin
           included. A second <main> here would be a duplicate landmark.
-          pb-36 on a phone keeps the last field clear of the pinned
+          pb-56 on a phone keeps the last field clear of the pinned
           Publish bar.
         */}
-        <div className="min-w-0 flex-1 px-4 pb-36 pt-5 md:px-9 md:py-[30px]" data-member-id={memberId}>
+        <div className="min-w-0 flex-1 px-4 pb-56 pt-5 md:px-9 md:py-[30px]" data-member-id={memberId}>
           {children}
         </div>
       </div>

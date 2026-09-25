@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { listMemberMedia } from "@/lib/media/media-gallery.server";
-import { listCarouselSlides } from "@/lib/media/carousel.server";
-import { getMemberCover } from "@/lib/media/cover.server";
-import { getMemberSocialImage } from "@/lib/media/social-image.server";
+import { getMemberDraft } from "@/lib/drafts/drafts.server";
 import { listUploadTokens } from "@/lib/media/upload-tokens.server";
 import { listPendingMedia } from "@/lib/media/review-tray.server";
 import { MediaGallery } from "@/components/admin/MediaGallery";
@@ -14,15 +12,13 @@ import { ReviewTray } from "@/components/admin/ReviewTray";
 
 export const Route = createFileRoute("/admin/media")({
   loader: async ({ context }) => {
-    const [assets, slides, cover, socialImage, uploadTokens, pending] = await Promise.all([
+    const [assets, draft, uploadTokens, pending] = await Promise.all([
       listMemberMedia({ data: { memberId: context.memberId } }),
-      listCarouselSlides({ data: { memberId: context.memberId } }),
-      getMemberCover({ data: { memberId: context.memberId } }),
-      getMemberSocialImage({ data: { memberId: context.memberId } }),
+      getMemberDraft({ data: { memberId: context.memberId } }),
       listUploadTokens({ data: { memberId: context.memberId } }),
       listPendingMedia({ data: { memberId: context.memberId } }),
     ]);
-    return { assets, slides, cover, socialImage, uploadTokens, pending };
+    return { assets, draft, uploadTokens, pending };
   },
   component: MediaRoute,
 });
@@ -31,9 +27,15 @@ export const Route = createFileRoute("/admin/media")({
  * Photos & video (artboard AdminMedia): slides + crop at the top, then the
  * gallery upload box, cover photo, creator link + review tray, and the
  * social sharing image. The logo lives on Basics & hours.
+ *
+ * Phase 2: the slides (draft `media` section) and the cover and social
+ * sharing image (draft `basics`) read from and save to the member's
+ * DRAFT. The gallery itself, creator links and the review tray aren't
+ * drafted -- uploads, approvals and deletes happen straight away.
  */
 function MediaRoute() {
-  const { assets, slides, cover, socialImage, uploadTokens, pending } = Route.useLoaderData();
+  const { assets, draft, uploadTokens, pending } = Route.useLoaderData();
+  const basics = draft.data.basics;
   const { memberId } = Route.useRouteContext();
   return (
     <div className="flex flex-col gap-8 md:gap-9">
@@ -42,18 +44,23 @@ function MediaRoute() {
           Photos &amp; video
         </h1>
         <p className="text-[13px] text-ink-muted">
-          Up to four slides. Visitors swipe through them on your profile, so lead with your best one.
+          Up to four slides. Visitors swipe through them on your profile, so lead with your best
+          one.
         </p>
       </header>
 
-      <CarouselEditor memberId={memberId} initialSlides={slides} galleryAssets={assets} />
+      <CarouselEditor
+        memberId={memberId}
+        initialSlides={draft.data.media.slides}
+        galleryAssets={assets}
+      />
 
-      <MediaGallery memberId={memberId} assets={assets} slides={slides} />
+      <MediaGallery memberId={memberId} assets={assets} />
 
       <CoverEditor
         memberId={memberId}
-        coverAssetId={cover.cover_asset_id}
-        coverCrop={cover.cover_crop}
+        coverAssetId={basics.cover_asset_id}
+        coverCrop={basics.cover_crop}
         galleryAssets={assets}
       />
 
@@ -68,8 +75,8 @@ function MediaRoute() {
 
       <SocialImageEditor
         memberId={memberId}
-        memberType={socialImage.member_type}
-        ogImageAssetId={socialImage.og_image_asset_id}
+        memberType={draft.member.member_type}
+        ogImageAssetId={basics.og_image_asset_id}
         galleryAssets={assets}
       />
     </div>

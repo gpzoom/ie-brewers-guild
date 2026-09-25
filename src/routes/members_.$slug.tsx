@@ -125,7 +125,9 @@ function MemberProfilePage() {
           memberName={data.member.business_name}
         />
       )}
-      <MemberProfileTemplate data={data} search={search} />
+      {/* An unpublished row (visible only to its own editors) has no public
+          photos yet, so it loads them the way the draft preview does. */}
+      <MemberProfileTemplate data={data} search={search} mediaMode={data.isPreview ? "preview" : "live"} />
     </>
   );
 }

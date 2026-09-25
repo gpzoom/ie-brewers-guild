@@ -2,15 +2,15 @@ import { getRouteApi } from "@tanstack/react-router";
 
 /**
  * The "how saving works" line under editing pages and in the phone publish
- * bar. Every edit writes straight to the member's real row -- there is no
- * separate draft copy -- so for a published member changes are live at
- * once; publishing only ever matters while the profile is still a draft.
- * (The artboards' "Publishing needs one more step" implied otherwise.)
+ * bar. Every edit saves to the member's draft as they type; nothing reaches
+ * the live page until they publish (plan phase 2). Worded for the two
+ * cases so it's never wrong: a live page changes when you publish; a
+ * never-published one stays hidden until you publish it.
  */
 export function saveNoteText(isPublished: boolean): string {
   return isPublished
-    ? "Changes save automatically and appear on your live profile right away."
-    : "Changes save automatically. Your profile stays hidden until you publish it.";
+    ? "Changes save as you type and go live when you publish."
+    : "Changes save as you type. Your profile stays hidden until you publish it.";
 }
 
 const adminRoute = getRouteApi("/admin");

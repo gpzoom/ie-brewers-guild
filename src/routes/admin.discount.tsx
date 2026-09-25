@@ -1,13 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getMemberBasics } from "@/lib/members/member-basics.server";
+import { getMemberDraft } from "@/lib/drafts/drafts.server";
 import { DiscountEditor } from "@/components/admin/DiscountEditor";
 
+/** The Allied Member discount -- reads and saves the draft's `discount` section. */
 export const Route = createFileRoute("/admin/discount")({
-  loader: async ({ context }) => getMemberBasics({ data: { memberId: context.memberId } }),
+  loader: async ({ context }) => getMemberDraft({ data: { memberId: context.memberId } }),
   component: DiscountRoute,
 });
 
 function DiscountRoute() {
-  const member = Route.useLoaderData();
-  return <DiscountEditor member={member} />;
+  const draft = Route.useLoaderData();
+  return (
+    <DiscountEditor
+      memberId={draft.member.id}
+      memberType={draft.member.member_type}
+      discount={draft.data.discount}
+    />
+  );
 }

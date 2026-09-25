@@ -1,12 +1,21 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { notFound } from "@tanstack/react-router";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServerClient, getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { readImpersonationState } from "@/lib/guild/impersonation.server";
-import { getOgPlaceholderPath } from "@/lib/media/og-placeholder";
 import { getAdjacentInList, type DirectoryEntry } from "@/lib/directory/list-position";
 import type { DirectorySort } from "@/lib/directory/search-params";
 import { logoBackgroundColor } from "@/lib/members/logo-background";
+import {
+  applyDraftSections,
+  buildProfileObject,
+  referencedAssetIds,
+  type MemberProfileData,
+  type ProfileRows,
+} from "@/lib/members/profile-object";
+import { loadMemberDraftBundle } from "@/lib/drafts/drafts.server";
+import { DRAFT_SECTIONS, isFullEditor, type DraftSection } from "@/lib/drafts/sections";
 import type {
   CarouselSlideRow,
   CategoryRow,
@@ -20,61 +29,174 @@ import type {
   ThemeName,
 } from "@/lib/supabase/types";
 
-export type MemberProfileData = {
-  member: MemberRow;
-  hours: HoursRow[];
-  specialHours: SpecialHoursRow[];
-  carouselSlides: (CarouselSlideRow & { asset: MediaAssetRow })[];
-  links: MemberLinkRow[];
-  events: EventRow[];
-  categories: CategoryRow[];
-  logoAsset: MediaAssetRow | null;
-  coverAsset: MediaAssetRow | null;
-  logoPublicUrl: string | null;
-  crossLink: DirectoryEntry | null;
-  headerPrev: DirectoryEntry | null;
-  headerNext: DirectoryEntry | null;
-  // This member's 1-based place in the same browsing order headerPrev/
-  // headerNext walk ("7 / 24" in the header, artboards D/L). Null when the
-  // member isn't in that list (e.g. an unpublished preview).
-  headerPosition: { index: number; total: number } | null;
-  // The cross-link card's own logo (public member-logos URL), or null.
-  crossLinkLogoUrl: string | null;
-  // The cross-link member's own logo tile color (their logo_background).
-  crossLinkLogoBackground: string | null;
-  // The next of this SAME business's other published locations (by
-  // business_name), not the next member in the visitor's browsing order
-  // -- see getAdjacentInList's doc comment on headerPrev/headerNext for
-  // that unrelated concept. Null for a single-location business, or when
-  // this business's other locations aren't published yet.
-  nextLocation: DirectoryEntry | null;
-  ogImageUrl: string | null;
+export type { MemberProfileData } from "@/lib/members/profile-object";
+
+/**
+ * Loaders that fill the profile object (src/lib/members/profile-object.ts)
+ * for MemberProfileTemplate: getMemberProfileData for the live
+ * /members/$slug page, getMemberPreviewData for /admin/preview (the draft).
+ * The shaping itself is the pure buildProfileObject; everything here is
+ * reading rows.
+ */
+
+// Explicit column list, not select("*") -- application_note,
+// dues_received_at, approved_at and approved_by_user_id are revoked from
+// anon at the column level, and Postgres expands "*" to every column before
+// checking permission, so "*" would break anon's published-row reads.
+const MEMBER_COLUMNS =
+  "id, slug, member_type, business_name, tagline, city, state, street_address, postal_code, latitude, longitude, service_area, lead_time, phone, contact_email, timezone, theme, logo_asset_id, logo_background, cover_asset_id, cover_crop, og_image_asset_id, member_since_year, discount_percent, discount_no_fixed_percent, discount_redeem_text, status, hours_confirmed_at, published_at, trail_eligible, created_at, updated_at";
+
+function toEntries(rows: unknown[] | null): DirectoryEntry[] {
+  return (rows ?? []).map((raw) => {
+    const row = raw as Record<string, unknown>;
+    return {
+      id: row.id as string,
+      slug: row.slug as string,
+      businessName: row.business_name as string,
+      city: row.city as string,
+      memberType: row.member_type as MemberType,
+    };
+  });
+}
+
+async function readLiveRows(supabase: SupabaseClient, member: MemberRow): Promise<ProfileRows> {
+  const [
+    { data: hours },
+    { data: specialHours },
+    { data: slides },
+    { data: links },
+    { data: memberCategories },
+  ] = await Promise.all([
+    supabase.from("hours").select("*").eq("member_id", member.id),
+    supabase.from("special_hours").select("*").eq("member_id", member.id),
+    supabase.from("carousel_slides").select("*").eq("member_id", member.id).order("sort_order"),
+    supabase.from("member_links").select("*").eq("member_id", member.id).order("sort_order"),
+    supabase.from("member_categories").select("category_id").eq("member_id", member.id),
+  ]);
+  return {
+    member,
+    hours: (hours ?? []) as HoursRow[],
+    specialHours: (specialHours ?? []) as SpecialHoursRow[],
+    slides: (slides ?? []) as CarouselSlideRow[],
+    links: (links ?? []) as MemberLinkRow[],
+    categoryIds: (memberCategories ?? []).map((row) => row.category_id as string),
+  };
+}
+
+/**
+ * Everything around the member's own rows: their photos, events,
+ * categories, and the directory neighbours for the header and cross-link.
+ * Returns the finished profile object.
+ */
+async function assembleProfile(args: {
+  supabase: SupabaseClient;
+  rows: ProfileRows;
+  filter?: MemberType;
   siteOrigin: string;
-  // A single "now", computed once on the server and serialized as an ISO
-  // string, rather than every consumer (MemberProfileTemplate, StatusBlock,
-  // EventsModule) independently calling `new Date()`/`Date.now()` during
-  // render. Reusing one instant everywhere is what avoids the SSR/hydration
-  // mismatch class of bug: the server renders against this exact value, and
-  // the client's first render reconstructs the identical Date from the same
-  // string instead of reading its own (later, different) clock.
-  now: string;
-  // True when this row isn't published -- the viewer only ever sees it at
-  // all here because RLS's owner/guild-admin policies let a signed-in
-  // editor (or an impersonating Guild admin) through where anon's
-  // published-only policy would have returned nothing. Drives the
-  // ProfilePreviewBanner instead of the ordinary public rendering.
-  isPreview: boolean;
-  // True specifically when the viewer is a Guild admin currently
-  // impersonating THIS member -- distinguishes the impersonation-flavored
-  // banner (with its "Stop" control) from a member editor plainly
-  // previewing their own unpublished row.
-  isImpersonatedPreview: boolean;
-  // True when a Guild admin is impersonating THIS member, published or not.
-  isImpersonatingThisMember: boolean;
-  // True when the signed-in viewer is one of this member's own editors
-  // (member_users link), published or not. False while impersonating.
-  viewerIsEditor: boolean;
-};
+  now: Date;
+  flags: Pick<
+    MemberProfileData,
+    "isPreview" | "isImpersonatedPreview" | "isImpersonatingThisMember" | "viewerIsEditor"
+  >;
+}): Promise<MemberProfileData> {
+  const { supabase, rows } = args;
+  const member = rows.member;
+  const assetIds = referencedAssetIds(rows);
+
+  // Header prev/next follow the visitor's own browsing order (spec, "Next
+  // in the directory, not nearest"). A filter that doesn't match this
+  // member (a stale shared link) falls back to the unfiltered order.
+  const effectiveFilter = args.filter === member.member_type ? args.filter : undefined;
+  let directoryQuery = supabase
+    .from("members")
+    .select("id, slug, business_name, city, member_type")
+    .eq("status", "published")
+    .order("business_name");
+  if (effectiveFilter) directoryQuery = directoryQuery.eq("member_type", effectiveFilter);
+
+  const [
+    assetsResult,
+    eventsResult,
+    categoriesResult,
+    directoryResult,
+    sameTypeResult,
+    siblingResult,
+  ] = await Promise.all([
+    assetIds.length
+      ? supabase.from("media_assets").select("*").in("id", assetIds)
+      : Promise.resolve({ data: [] as MediaAssetRow[] }),
+    supabase.from("events").select("*").eq("member_id", member.id).order("starts_at"),
+    rows.categoryIds.length
+      ? supabase.from("categories").select("*").in("id", rows.categoryIds).order("sort_order")
+      : Promise.resolve({ data: [] as CategoryRow[] }),
+    directoryQuery,
+    // Cross-link card: always this member's own type, however the visitor arrived.
+    supabase
+      .from("members")
+      .select("id, slug, business_name, city, member_type, logo_asset_id, logo_background, theme")
+      .eq("status", "published")
+      .eq("member_type", member.member_type)
+      .order("business_name"),
+    // Next location: this business's other published rows (business_name is
+    // the only thing tying sibling locations together), by city.
+    supabase
+      .from("members")
+      .select("id, slug, business_name, city, member_type")
+      .eq("status", "published")
+      .eq("business_name", member.business_name)
+      .order("city"),
+  ]);
+
+  const assets = (assetsResult.data ?? []) as MediaAssetRow[];
+  const logoAsset = member.logo_asset_id
+    ? assets.find((a) => a.id === member.logo_asset_id)
+    : undefined;
+  const logoPublicUrl = logoAsset
+    ? supabase.storage.from("member-logos").getPublicUrl(logoAsset.storage_path).data.publicUrl
+    : null;
+
+  const sameTypeRows = (sameTypeResult.data ?? []) as Array<Record<string, unknown>>;
+  const sameTypeEntries = toEntries(sameTypeRows);
+  const crossLink = getAdjacentInList(sameTypeEntries, member.id).next;
+  const crossLinkRow = crossLink ? sameTypeRows.find((row) => row.id === crossLink.id) : undefined;
+  const crossLinkLogoBackground = crossLinkRow
+    ? logoBackgroundColor(
+        crossLinkRow.logo_background as string | null,
+        crossLinkRow.theme as ThemeName,
+      )
+    : null;
+  let crossLinkLogoUrl: string | null = null;
+  const crossLinkLogoAssetId = crossLinkRow?.logo_asset_id as string | null | undefined;
+  if (crossLinkLogoAssetId) {
+    // media_assets' own RLS still decides whether it's readable (approved only, for anon).
+    const { data: crossLinkLogo } = await supabase
+      .from("media_assets")
+      .select("storage_path")
+      .eq("id", crossLinkLogoAssetId)
+      .maybeSingle();
+    if (crossLinkLogo?.storage_path) {
+      crossLinkLogoUrl = supabase.storage
+        .from("member-logos")
+        .getPublicUrl(crossLinkLogo.storage_path as string).data.publicUrl;
+    }
+  }
+
+  return buildProfileObject({
+    rows,
+    assets,
+    events: (eventsResult.data ?? []) as EventRow[],
+    categories: (categoriesResult.data ?? []) as CategoryRow[],
+    logoPublicUrl,
+    directoryEntries: toEntries(directoryResult.data),
+    sameTypeEntries,
+    siblingEntries: toEntries(siblingResult.data),
+    crossLinkLogoUrl,
+    crossLinkLogoBackground,
+    siteOrigin: args.siteOrigin,
+    now: args.now,
+    flags: args.flags,
+  });
+}
 
 type GetMemberProfileInput = {
   slug: string;
@@ -83,73 +205,47 @@ type GetMemberProfileInput = {
 };
 
 /**
- * Fetches everything the public profile page needs for one slug, in one
- * server round trip. RLS (anon key, "members: public can read published
- * rows" and the matching child-table policies) is what actually enforces
- * "published only" here -- this function doesn't re-check status itself
- * beyond noticing an empty result.
+ * The live public profile for one slug, in one server round trip. RLS
+ * (anon key, "members: public can read published rows" and the matching
+ * child-table policies) is what enforces "published only" -- this doesn't
+ * re-check status beyond noticing an empty result.
  */
 export const getMemberProfileData = createServerFn({ method: "GET" })
   .inputValidator((data: GetMemberProfileInput) => data)
   .handler(async ({ data }): Promise<MemberProfileData> => {
-    // Try the session-bound client whenever a session exists at all, so a
-    // signed-in member (or an impersonating Guild admin) previewing an
-    // unpublished profile gets through RLS's owner/guild-admin select
-    // policies (schema plan, Tasks 3-4) instead of only the anon "published
-    // rows" policy. A signed-out visitor, or a signed-in user who isn't
-    // this row's own editor or an impersonating admin, still gets nothing
-    // back from either policy branch -- RLS decides this, not application
-    // code, same as everywhere else in this build.
+    // The session-bound client whenever a session exists at all, so a
+    // signed-in member (or an impersonating Guild admin) looking at an
+    // unpublished profile gets through RLS's owner/Guild-admin select
+    // policies. Anyone else still gets nothing back -- RLS decides.
     const sessionClient = await getSupabaseServerClientForRequest();
     const { data: sessionUser } = await sessionClient.auth.getUser();
     const supabase = sessionUser?.user ? sessionClient : await getSupabaseServerClient();
-    const request = getRequest();
-    const siteOrigin = new URL(request.url).origin;
-    // Computed once, here, and threaded through the whole response --
-    // see MemberProfileData.now's own doc comment.
+    const siteOrigin = new URL(getRequest().url).origin;
     const now = new Date();
 
     const { data: member, error: memberError } = await supabase
       .from("members")
-      // Explicit column list, not select("*") -- application_note,
-      // dues_received_at, approved_at, and approved_by_user_id are
-      // revoked from anon at the column level and must not be requested.
-      // This stays an explicit list even now that a signed-in editor may
-      // use the session-bound client instead of anon: real Postgres
-      // expands select("*") to literally every column before permission
-      // is checked, regardless of which role is asking, so switching to
-      // "*" here would break anon's own published-row reads with a
-      // permission-denied error. The columns below already cover
-      // everything this function (and its preview/impersonation checks)
-      // need.
-      .select(
-        "id, slug, member_type, business_name, tagline, city, state, street_address, postal_code, latitude, longitude, service_area, lead_time, phone, contact_email, timezone, theme, logo_asset_id, logo_background, cover_asset_id, cover_crop, og_image_asset_id, member_since_year, discount_percent, discount_no_fixed_percent, discount_redeem_text, status, hours_confirmed_at, published_at, trail_eligible, created_at, updated_at",
-      )
+      .select(MEMBER_COLUMNS)
       .eq("slug", data.slug)
       .maybeSingle();
 
-    // Covers "no such slug", "slug exists but the row isn't published and
-    // the viewer isn't its editor or an impersonating admin", and RLS
-    // denying the session-bound client for any other reason -- all look
-    // identical from here: the directory's own 404 (spec, "Slug not
-    // found"). When the row IS reachable but unpublished, isPreview below
-    // is what renders the banner instead of the ordinary public page.
+    // "No such slug", "not published and the viewer can't see it", and any
+    // other RLS denial all look the same: the directory's own 404.
     if (memberError || !member) {
       throw notFound();
     }
 
-    const typedMember = member as MemberRow;
+    const typedMember = member as unknown as MemberRow;
     const isPreview = typedMember.status !== "published";
-    // Checked for published profiles too (not just previews), so whoever can
-    // edit this profile -- an impersonating Guild admin or the member's own
-    // editor -- always gets a "Back to editing" way out of the public page.
+    // Checked for published profiles too, so whoever can edit this profile
+    // always gets a "Back to editing" way out of the public page.
     const impersonation = sessionUser?.user ? await readImpersonationState() : null;
-    const isImpersonatingThisMember = Boolean(impersonation && impersonation.memberId === typedMember.id);
-    const isImpersonatedPreview = isPreview && isImpersonatingThisMember;
+    const isImpersonatingThisMember = Boolean(
+      impersonation && impersonation.memberId === typedMember.id,
+    );
     let viewerIsEditor = false;
     if (sessionUser?.user && !isImpersonatingThisMember) {
-      // RLS ("member_users: users can read their own links") lets a signed-in
-      // user see only their own rows, so a hit here means they edit this member.
+      // "member_users: users can read their own links" -- a hit means they edit this member.
       const { data: link } = await sessionClient
         .from("member_users")
         .select("member_id")
@@ -160,223 +256,74 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
       viewerIsEditor = Boolean(link);
     }
 
-    const [
-      { data: hours },
-      { data: specialHours },
-      { data: slides },
-      { data: links },
-      { data: events },
-      { data: memberCategories },
-    ] = await Promise.all([
-      supabase.from("hours").select("*").eq("member_id", typedMember.id),
-      supabase.from("special_hours").select("*").eq("member_id", typedMember.id),
-      supabase.from("carousel_slides").select("*").eq("member_id", typedMember.id).order("sort_order"),
-      supabase.from("member_links").select("*").eq("member_id", typedMember.id).order("sort_order"),
-      supabase.from("events").select("*").eq("member_id", typedMember.id).order("starts_at"),
-      supabase.from("member_categories").select("category_id").eq("member_id", typedMember.id),
-    ]);
-
-    const assetIds = new Set<string>();
-    for (const slide of slides ?? []) assetIds.add((slide as CarouselSlideRow).asset_id);
-    if (typedMember.logo_asset_id) assetIds.add(typedMember.logo_asset_id);
-    if (typedMember.cover_asset_id) assetIds.add(typedMember.cover_asset_id);
-
-    const { data: assets } = assetIds.size
-      ? await supabase.from("media_assets").select("*").in("id", Array.from(assetIds))
-      : { data: [] as MediaAssetRow[] };
-    const assetsById = new Map((assets ?? []).map((asset) => [(asset as MediaAssetRow).id, asset as MediaAssetRow]));
-
-    // "Coming up"/"Where we'll be" only ever shows the future or the
-    // happening-right-now (spec's events table has no notion of a
-    // past-events view on the public profile) -- filter to events whose
-    // EFFECTIVE END is still ahead of `now`, not just their start. A mobile
-    // member's only event, at a venue right now (starts_at in the past,
-    // ends_at in the future), must not vanish into "No dates announced
-    // yet" the instant its start time passes while it's still actively
-    // happening. A canceled event is exempt from this date filter entirely
-    // and always stays visible even once its original date has passed
-    // (spec, "Events": "a canceled event stays visible rather than
-    // disappearing") -- a rescheduled-then-canceled event, or one canceled
-    // after the fact, would otherwise have no future date at all and get
-    // swept up here.
-    //
-    // When an event has been rescheduled (overlay_starts_at set), there is
-    // no overlay_ends_at column to derive a new end time from, so the
-    // effective end falls back to the rescheduled start itself rather than
-    // reusing the ORIGINAL event's ends_at -- the original ends_at could be
-    // an unrelated, already-passed time from before the reschedule, which
-    // would incorrectly filter the event out even though it's still
-    // upcoming at its new time.
-    //
-    // is_hidden filtering is NOT done here -- it happens twice, on
-    // purpose, in defense of depth: the public RLS policy on `events`
-    // (migration 20260922153458_final_review_fixes.sql, section 2) already
-    // adds `and not events.is_hidden`, so a hidden event never reaches
-    // this anon-key query result in the first place; application code
-    // (EventsModule's own filter, and MemberProfileTemplate's
-    // nextEvent/tonightEvent computation) re-filters it too, so the public
-    // profile is still correct even if that RLS predicate were ever
-    // dropped from a future migration.
-    const upcomingOrCanceledEvents = (events ?? []).filter((row) => {
-      const event = row as EventRow;
-      if (event.overlay_status === "canceled") return true;
-      const effectiveEnd = event.overlay_starts_at
-        ? new Date(event.overlay_starts_at).getTime()
-        : new Date(event.ends_at ?? event.starts_at).getTime();
-      return effectiveEnd >= now.getTime();
-    });
-
-    const categoryIds = (memberCategories ?? []).map((row) => row.category_id as string);
-    const { data: categories } = categoryIds.length
-      ? await supabase.from("categories").select("*").in("id", categoryIds).order("sort_order")
-      : { data: [] as CategoryRow[] };
-
-    const logoAsset = typedMember.logo_asset_id ? assetsById.get(typedMember.logo_asset_id) ?? null : null;
-    const coverAsset = typedMember.cover_asset_id ? assetsById.get(typedMember.cover_asset_id) ?? null : null;
-
-    const logoPublicUrl = logoAsset
-      ? supabase.storage.from("member-logos").getPublicUrl(logoAsset.storage_path).data.publicUrl
-      : null;
-
-    // The member's own explicit choice always wins; otherwise a branded,
-    // member-type-specific placeholder (not the cover/logo/site-generic
-    // chain this used to fall through -- see this plan's own design notes
-    // for why: a link preview should never look identical to the
-    // homepage's). The placeholder is served raw, same as the explicit
-    // asset branch -- social crawlers fetch this URL directly and never
-    // apply any crop.
-    const ogImageUrl = typedMember.og_image_asset_id
-      ? `${siteOrigin}/api/member-media/${typedMember.og_image_asset_id}`
-      : `${siteOrigin}${getOgPlaceholderPath(typedMember.member_type)}`;
-
-    // Header prev/next: the visitor's own browsing order (spec, "Next in
-    // the directory, not nearest"). If the visitor's filter doesn't
-    // actually match this member (e.g. a shared link with a stale or
-    // mismatched filter), fall back to the unfiltered default order
-    // rather than silently excluding the member they're looking at.
-    const effectiveFilter = data.filter === typedMember.member_type ? data.filter : undefined;
-    let directoryQuery = supabase
-      .from("members")
-      .select("id, slug, business_name, city, member_type")
-      .eq("status", "published")
-      .order("business_name");
-    if (effectiveFilter) {
-      directoryQuery = directoryQuery.eq("member_type", effectiveFilter);
-    }
-    const { data: directoryRows } = await directoryQuery;
-    const directoryEntries: DirectoryEntry[] = (directoryRows ?? []).map((row) => ({
-      id: row.id as string,
-      slug: row.slug as string,
-      businessName: row.business_name as string,
-      city: row.city as string,
-      memberType: row.member_type as MemberType,
-    }));
-    const { prev: headerPrev, next: headerNext } = getAdjacentInList(directoryEntries, typedMember.id);
-    const positionIndex = directoryEntries.findIndex((entry) => entry.id === typedMember.id);
-    const headerPosition =
-      positionIndex === -1 ? null : { index: positionIndex + 1, total: directoryEntries.length };
-
-    // Cross-link card: always scoped to this member's own type, regardless
-    // of how the visitor arrived (spec: producers point at another
-    // producer, mobile members at another mobile member, Allied Members
-    // at another Allied Member).
-    const { data: sameTypeRows } = await supabase
-      .from("members")
-      .select("id, slug, business_name, city, member_type, logo_asset_id, logo_background, theme")
-      .eq("status", "published")
-      .eq("member_type", typedMember.member_type)
-      .order("business_name");
-    const sameTypeEntries: DirectoryEntry[] = (sameTypeRows ?? []).map((row) => ({
-      id: row.id as string,
-      slug: row.slug as string,
-      businessName: row.business_name as string,
-      city: row.city as string,
-      memberType: row.member_type as MemberType,
-    }));
-    const crossLink = getAdjacentInList(sameTypeEntries, typedMember.id).next;
-
-    // The cross-link card's logo (always on a light chip -- spec, "Logos
-    // and assets"). One extra lookup for one asset; media_assets' own RLS
-    // still decides whether it's readable (approved only, for anon).
-    const crossLinkRow = crossLink ? (sameTypeRows ?? []).find((row) => row.id === crossLink.id) : undefined;
-    const crossLinkLogoAssetId = crossLinkRow?.logo_asset_id as string | null | undefined;
-    // That member's own logo tile color, so their logo reads the same here as on their page.
-    const crossLinkLogoBackground = crossLinkRow
-      ? logoBackgroundColor(crossLinkRow.logo_background as string | null, crossLinkRow.theme as ThemeName)
-      : null;
-    let crossLinkLogoUrl: string | null = null;
-    if (crossLinkLogoAssetId) {
-      const { data: crossLinkLogo } = await supabase
-        .from("media_assets")
-        .select("storage_path")
-        .eq("id", crossLinkLogoAssetId)
-        .maybeSingle();
-      if (crossLinkLogo?.storage_path) {
-        crossLinkLogoUrl = supabase.storage.from("member-logos").getPublicUrl(crossLinkLogo.storage_path as string).data.publicUrl;
-      }
-    }
-
-    // Next location: this business's other published rows, imported one
-    // per location (see docs/superpowers/plans/2026-09-21-import-existing-members.md,
-    // "Decisions made while filling gaps the spec left open" #2 -- there's
-    // no formal parent-business link in the schema, so business_name is
-    // the only thing tying sibling location rows together). Ordered by
-    // city so the cycle order is stable and predictable rather than
-    // depending on row-creation order.
-    const { data: siblingRows } = await supabase
-      .from("members")
-      .select("id, slug, business_name, city, member_type")
-      .eq("status", "published")
-      .eq("business_name", typedMember.business_name)
-      .order("city");
-    const siblingEntries: DirectoryEntry[] = (siblingRows ?? []).map((row) => ({
-      id: row.id as string,
-      slug: row.slug as string,
-      businessName: row.business_name as string,
-      city: row.city as string,
-      memberType: row.member_type as MemberType,
-    }));
-    const nextLocation = getAdjacentInList(siblingEntries, typedMember.id).next;
-
-    return {
-      member: typedMember,
-      hours: (hours ?? []) as HoursRow[],
-      specialHours: (specialHours ?? []) as SpecialHoursRow[],
-      carouselSlides: (slides ?? [])
-        .map((slide) => {
-          const typedSlide = slide as CarouselSlideRow;
-          const asset = assetsById.get(typedSlide.asset_id);
-          // carousel_slides' public-read policy only requires the parent
-          // member be published; media_assets' public-read policy ALSO
-          // requires review_status = 'approved'. A slide can therefore be
-          // readable while the asset it points at is not (moderated to
-          // pending/rejected), in which case assetsById.get() returns
-          // undefined here. Drop that slide rather than casting through
-          // the undefined -- MediaCarousel reads slide.asset.id
-          // unconditionally and would throw, turning this into an SSR 500
-          // for every visitor of that member's profile.
-          return asset ? { ...typedSlide, asset } : null;
-        })
-        .filter((slide): slide is CarouselSlideRow & { asset: MediaAssetRow } => slide !== null),
-      links: (links ?? []) as MemberLinkRow[],
-      events: upcomingOrCanceledEvents as EventRow[],
-      categories: (categories ?? []) as CategoryRow[],
-      logoAsset,
-      coverAsset,
-      logoPublicUrl,
-      crossLink,
-      headerPrev,
-      headerNext,
-      headerPosition,
-      crossLinkLogoUrl,
-      crossLinkLogoBackground,
-      nextLocation,
-      ogImageUrl,
+    const rows = await readLiveRows(supabase, typedMember);
+    return assembleProfile({
+      supabase,
+      rows,
+      filter: data.filter,
       siteOrigin,
-      now: now.toISOString(),
-      isPreview,
-      isImpersonatedPreview,
-      isImpersonatingThisMember,
-      viewerIsEditor,
-    };
+      now,
+      flags: {
+        isPreview,
+        isImpersonatedPreview: isPreview && isImpersonatingThisMember,
+        isImpersonatingThisMember,
+        viewerIsEditor,
+      },
+    });
+  });
+
+export type MemberPreviewData = {
+  profile: MemberProfileData;
+  /** Which draft sections the preview applied (all, or just media for a Photos & events editor). */
+  appliedSections: DraftSection[];
+  isPublished: boolean;
+};
+
+/**
+ * The draft rendered through the same template, for /admin/preview (spec,
+ * "Drafts": "Preview renders the real profile template from the draft").
+ * An owner, full editor or Guild admin sees the whole draft; a Photos &
+ * events editor sees the live page with only their media draft applied,
+ * because that's exactly what their Publish would put live.
+ *
+ * Everything is read through the signed-in session client: the member's
+ * own rows (published or not), their draft, and their photos. The template
+ * is rendered with mediaMode="preview", so the cover and slides load
+ * through /api/admin-media (ownership check), not the public route.
+ */
+export const getMemberPreviewData = createServerFn({ method: "GET" })
+  .inputValidator((data: { memberId: string }) => data)
+  .handler(async ({ data }): Promise<MemberPreviewData> => {
+    const supabase = await getSupabaseServerClientForRequest();
+    const siteOrigin = new URL(getRequest().url).origin;
+    const now = new Date();
+
+    const bundle = await loadMemberDraftBundle(supabase, data.memberId);
+    const { data: member, error } = await supabase
+      .from("members")
+      .select(MEMBER_COLUMNS)
+      .eq("id", data.memberId)
+      .maybeSingle();
+    if (error || !member) throw notFound();
+    const liveMember = member as unknown as MemberRow;
+
+    const appliedSections: DraftSection[] = isFullEditor(bundle.role)
+      ? [...DRAFT_SECTIONS]
+      : ["media"];
+    const liveRows = await readLiveRows(supabase, liveMember);
+    const rows = applyDraftSections(liveRows, bundle.data, appliedSections);
+
+    const profile = await assembleProfile({
+      supabase,
+      rows,
+      siteOrigin,
+      now,
+      flags: {
+        isPreview: true,
+        isImpersonatedPreview: false,
+        isImpersonatingThisMember: false,
+        viewerIsEditor: true,
+      },
+    });
+    return { profile, appliedSections, isPublished: liveMember.status === "published" };
   });

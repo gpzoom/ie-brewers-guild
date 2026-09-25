@@ -5,6 +5,7 @@ import { stripImageMetadata } from "@/lib/media/strip-exif";
 import { resolveImageDimensions } from "@/lib/media/image-dimensions";
 import { sanitizeFilename } from "@/lib/media/media-gallery.server";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
+import { normalizeSections } from "@/lib/drafts/sections";
 
 const MIN_LOGO_HEIGHT_PX = 400;
 
@@ -126,65 +127,28 @@ export const uploadMemberLogo = createServerFn({ method: "POST" })
       action: "insert",
     });
 
-    // .select("id") + row-count check -- PostgREST reports an RLS-denied
-    // update as success with zero rows affected, not as an `error` (same
-    // gotcha member-basics.server.ts/hours-editor.server.ts/
-    // media-gallery.server.ts/carousel.server.ts/cover.server.ts's
-    // updateCoverAsset all guard against for this exact members-table
-    // write pattern). Without this, a write blocked by RLS would silently
-    // report success even though logo_asset_id was never actually set.
-    const { data: updated, error: memberError } = await supabase
-      .from("members")
-      .update({ logo_asset_id: assetRow.id })
-      .eq("id", memberId)
-      .select("id");
-    if (memberError) throw new Error(memberError.message);
-    if (!updated || updated.length === 0) {
-      throw new Error("Save failed — you may not have permission to edit this member.");
+    // Phase 2: the new logo goes into the member's DRAFT (basics), not the
+    // live row -- it shows on the public page once they publish. The file
+    // and its media_assets row above are live right away, like any gallery
+    // upload (the gallery isn't drafted). save_member_draft_section checks
+    // the caller may edit basics and that the asset is this member's, and
+    // audits it when the caller is a Guild admin.
+    const { data: draftRow, error: draftError } = await supabase.rpc("save_member_draft_section", {
+      p_member_id: memberId,
+      p_section: "basics",
+      p_data: { logo_asset_id: assetRow.id },
+    });
+    if (draftError || !draftRow) {
+      throw new Error(
+        draftError?.message ??
+          "Your logo was uploaded to your gallery, but we couldn't set it as your logo — try again.",
+      );
     }
 
-    await recordAuditLogIfImpersonating({
-      memberId,
-      tableName: "members",
-      rowId: memberId,
-      action: "update",
-    });
-
     const { data: publicUrl } = supabase.storage.from("member-logos").getPublicUrl(storagePath);
-    return { assetId: assetRow.id as string, publicUrl: publicUrl.publicUrl };
-  });
-
-/**
- * Resolves the member's current logo to a public URL for admin.media.tsx's
- * loader to hand LogoUploader as `initialLogoUrl` -- same two-step
- * (members.logo_asset_id -> media_assets.storage_path -> getPublicUrl)
- * member-profile.server.ts's own logoPublicUrl resolution uses, just
- * scoped to one member instead of a whole profile-page payload. A missing
- * asset row (shouldn't happen, but logo_asset_id isn't FK-enforced against
- * a caller-owned row any more strictly than cover_asset_id is -- see
- * cover.server.ts's updateCoverAsset doc comment) degrades to "no logo"
- * rather than throwing, since a broken logo reference shouldn't block the
- * whole media admin page from loading.
- */
-export const getMemberLogo = createServerFn({ method: "GET" })
-  .inputValidator((data: { memberId: string }) => data)
-  .handler(async ({ data }) => {
-    const supabase = await getSupabaseServerClientForRequest();
-    const { data: member, error } = await supabase
-      .from("members")
-      .select("logo_asset_id")
-      .eq("id", data.memberId)
-      .single();
-    if (error || !member) throw new Error("Member not found.");
-    if (!member.logo_asset_id) return { logoUrl: null };
-
-    const { data: asset, error: assetError } = await supabase
-      .from("media_assets")
-      .select("storage_path")
-      .eq("id", member.logo_asset_id)
-      .single();
-    if (assetError || !asset) return { logoUrl: null };
-
-    const { data: publicUrl } = supabase.storage.from("member-logos").getPublicUrl(asset.storage_path);
-    return { logoUrl: publicUrl.publicUrl };
+    return {
+      assetId: assetRow.id as string,
+      publicUrl: publicUrl.publicUrl,
+      dirtySections: normalizeSections((draftRow as { dirty_sections: unknown }).dirty_sections),
+    };
   });

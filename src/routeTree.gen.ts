@@ -29,6 +29,7 @@ import { Route as GuildInquiriesRouteImport } from './routes/guild.inquiries'
 import { Route as GuildCategoriesRouteImport } from './routes/guild.categories'
 import { Route as GuildBrandRouteImport } from './routes/guild.brand'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AdminPreviewRouteImport } from './routes/admin_.preview'
 import { Route as AdminThemeRouteImport } from './routes/admin.theme'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminLinksRouteImport } from './routes/admin.links'
@@ -140,6 +141,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminPreviewRoute = AdminPreviewRouteImport.update({
+  id: '/admin_/preview',
+  path: '/admin/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminThemeRoute = AdminThemeRouteImport.update({
   id: '/theme',
   path: '/theme',
@@ -210,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/admin/links': typeof AdminLinksRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/theme': typeof AdminThemeRoute
+  '/admin/preview': typeof AdminPreviewRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/guild/brand': typeof GuildBrandRoute
   '/guild/categories': typeof GuildCategoriesRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByTo {
   '/admin/links': typeof AdminLinksRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/theme': typeof AdminThemeRoute
+  '/admin/preview': typeof AdminPreviewRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/guild/brand': typeof GuildBrandRoute
   '/guild/categories': typeof GuildCategoriesRoute
@@ -273,6 +281,7 @@ export interface FileRoutesById {
   '/admin/links': typeof AdminLinksRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/theme': typeof AdminThemeRoute
+  '/admin_/preview': typeof AdminPreviewRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/guild/brand': typeof GuildBrandRoute
   '/guild/categories': typeof GuildCategoriesRoute
@@ -307,6 +316,7 @@ export interface FileRouteTypes {
     | '/admin/links'
     | '/admin/media'
     | '/admin/theme'
+    | '/admin/preview'
     | '/auth/callback'
     | '/guild/brand'
     | '/guild/categories'
@@ -337,6 +347,7 @@ export interface FileRouteTypes {
     | '/admin/links'
     | '/admin/media'
     | '/admin/theme'
+    | '/admin/preview'
     | '/auth/callback'
     | '/guild/brand'
     | '/guild/categories'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/admin/links'
     | '/admin/media'
     | '/admin/theme'
+    | '/admin_/preview'
     | '/auth/callback'
     | '/guild/brand'
     | '/guild/categories'
@@ -395,6 +407,7 @@ export interface RootRouteChildren {
   SigninRoute: typeof SigninRoute
   SurveyRoute: typeof SurveyRoute
   SurveyResultsRoute: typeof SurveyResultsRoute
+  AdminPreviewRoute: typeof AdminPreviewRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   MembersSlugRoute: typeof MembersSlugRoute
   SendTokenRoute: typeof SendTokenRoute
@@ -545,6 +558,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin_/preview': {
+      id: '/admin_/preview'
+      path: '/admin/preview'
+      fullPath: '/admin/preview'
+      preLoaderRoute: typeof AdminPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/theme': {
       id: '/admin/theme'
       path: '/theme'
@@ -672,6 +692,7 @@ const rootRouteChildren: RootRouteChildren = {
   SigninRoute: SigninRoute,
   SurveyRoute: SurveyRoute,
   SurveyResultsRoute: SurveyResultsRoute,
+  AdminPreviewRoute: AdminPreviewRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   MembersSlugRoute: MembersSlugRoute,
   SendTokenRoute: SendTokenRoute,

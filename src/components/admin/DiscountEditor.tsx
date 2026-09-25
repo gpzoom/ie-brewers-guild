@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { applyDiscountXor, updateMemberDiscount } from "@/lib/members/discount.server";
+import { applyDiscountXor, type DiscountPatch } from "@/lib/members/discount";
 import { isFieldVisibleForMemberType } from "@/lib/members/type-fields";
-import type { BasicsMember } from "@/lib/members/member-basics.server";
+import type { DiscountDraft } from "@/lib/drafts/sections";
+import type { MemberType } from "@/lib/supabase/types";
+import { useSaveDraftSection } from "@/components/admin/DraftStatusContext";
 import { SaveNoteText } from "@/components/admin/SaveNote";
 
 const controlClass =
@@ -37,18 +39,24 @@ function pickFields<T, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
  * and member-basics.server.ts's own patch-only-what-changed model means
  * switching away from allied and back leaves these columns untouched.
  *
- * `member` is `BasicsMember` (member-basics.server.ts), not the full
- * `MemberRow` -- getMemberBasics's select list is scoped to exactly the
- * columns Basics/Theme/Discount actually read, so that's what this route's
- * loader hands down. See BasicsMember's own doc comment for why the
- * discount columns are read-only there (updateMemberDiscount below is
- * their real write path).
+ * Phase 2: reads and saves the member's DRAFT (the `discount` section);
+ * changes reach the public page when published. Member type is live (it
+ * isn't drafted) and only decides whether this editor shows.
  */
-export function DiscountEditor({ member }: { member: BasicsMember }) {
-  const [local, setLocal] = useState(member);
+export function DiscountEditor({
+  memberId,
+  memberType,
+  discount,
+}: {
+  memberId: string;
+  memberType: MemberType;
+  discount: DiscountDraft;
+}) {
+  const saveDraft = useSaveDraftSection(memberId);
+  const [local, setLocal] = useState(discount);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isFieldVisibleForMemberType(local.member_type, "discount")) {
+  if (!isFieldVisibleForMemberType(memberType, "discount")) {
     return (
       <div className="flex max-w-[640px] flex-col gap-[26px]">
         <PageHeading />
@@ -80,15 +88,15 @@ export function DiscountEditor({ member }: { member: BasicsMember }) {
   /**
    * Optimistically applies `patch`, then awaits the mutation and rolls
    * back on failure -- the brief's given fire-and-forget shape had no
-   * try/catch at all, so a rejection from updateMemberDiscount (including
-   * the allowlist/range-validation/row-count throws added to
-   * discount.server.ts) would leave the optimistic change showing with no
+   * try/catch at all, so a rejection from the draft save (including the
+   * range checks in src/lib/drafts/validate-patch.ts) would leave the
+   * optimistic change showing with no
    * rollback and no visible error. Rollback snapshot is taken from `local`
    * BEFORE the optimistic update, scoped to just the field(s) in the
    * (post-mirroring) patch via pickFields -- see that function's own doc
    * comment for why a whole-object snapshot would be wrong here.
    *
-   * Applies discount.server.ts's own applyDiscountXor to the CLIENT copy
+   * Applies src/lib/members/discount.ts's own applyDiscountXor to the CLIENT copy
    * of the patch before applying it locally, so `local` never diverges
    * from what the server actually persists -- reusing that exact
    * function (rather than reimplementing the same two-line mutation here)
@@ -105,13 +113,13 @@ export function DiscountEditor({ member }: { member: BasicsMember }) {
    * actually refresh from `local.discount_percent`; this half is what
    * makes that value correct once it does.
    */
-  function save(rawPatch: Parameters<typeof updateMemberDiscount>[0]["data"]["patch"]) {
+  function save(rawPatch: DiscountPatch) {
     setError(null);
     const patch = applyDiscountXor(rawPatch);
 
-    const previousValues = pickFields(local, Object.keys(patch) as (keyof BasicsMember)[]);
+    const previousValues = pickFields(local, Object.keys(patch) as (keyof DiscountDraft)[]);
     setLocal((prev) => ({ ...prev, ...patch }));
-    updateMemberDiscount({ data: { memberId: member.id, patch } }).catch((err: unknown) => {
+    saveDraft("discount", patch).catch((err: unknown) => {
       setLocal((prev) => ({ ...prev, ...previousValues }));
       setError(friendlyMessage(err, "Couldn't save that change — try again."));
     });
@@ -156,7 +164,7 @@ export function DiscountEditor({ member }: { member: BasicsMember }) {
               // after the initial mount, even once `local.discount_percent`
               // changes underneath it. Concretely: check "No fixed
               // percentage" (server nulls discount_percent via the XOR logic
-              // in discount.server.ts) -> uncheck it again (field re-enables
+              // in src/lib/members/discount.ts) -> uncheck it again (field re-enables
               // but, without this key, would still show the STALE
               // pre-toggle number, not the fresh null) -> an ordinary
               // tab-through blur with no retyping would then call

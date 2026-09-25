@@ -6,6 +6,7 @@ import { stripImageMetadata } from "@/lib/media/strip-exif";
 import { resolveImageDimensions } from "@/lib/media/image-dimensions";
 import { recordAuditLogIfImpersonating, type AuditableAction } from "@/lib/guild/audit-log.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { assetInUseMessage, findAssetUsages } from "@/lib/media/asset-usage";
 import type { MediaAssetRow } from "@/lib/supabase/types";
 
 export const listMemberMedia = createServerFn({ method: "GET" })
@@ -178,24 +179,28 @@ type AuditRecorder = (params: {
   action: AuditableAction;
 }) => Promise<void>;
 
-export type DeleteMemberMediaResult = { ok: true; fileRemoved: boolean; removedSlideIds: string[] };
+export type DeleteMemberMediaResult = { ok: true; fileRemoved: boolean };
 
 /**
  * The testable core of deleteMemberMedia (the createServerFn export below
  * just injects the real client + audit recorder -- see
  * member-email.server.ts for why the logic lives outside the wrapper).
  *
- * `carousel_slides.asset_id -> media_assets(id)` is ON DELETE RESTRICT, so
- * deleting a gallery photo that's in the carousel used to fail outright
- * with a raw FK error. Owner decision: deleting the photo removes it from
- * the carousel too. So this first looks the asset up (RLS-scoped -- an
- * asset the caller can't see reads as "no permission"), deletes THAT
- * member's carousel_slides rows pointing at it (audit-logging each), and
- * only then deletes the asset. There's no transaction over PostgREST: if
- * the asset delete then fails, the slides are already gone -- acceptable,
- * since the member was deleting the photo anyway and the UI warned them
- * it would leave the carousel. cover_asset_id / og_image_asset_id /
- * logo_asset_id are ON DELETE SET NULL, so they need nothing here.
+ * Plan Decision 5: a photo the live profile OR the member's draft uses
+ * (logo, cover, social sharing image, a carousel slide) can't be deleted;
+ * the member gets a message saying where it's used instead
+ * (src/lib/media/asset-usage.ts). This replaces the earlier "deleting it
+ * removes it from the carousel too" behavior: with drafts, quietly editing
+ * the live carousel -- or leaving the draft pointing at a photo that no
+ * longer exists -- would change the page without anyone choosing to.
+ *
+ * Looks the asset up first (RLS-scoped -- an asset the caller can't see
+ * reads as "no permission"), then reads the member's live references and
+ * draft through the same session client: every linked role can read its
+ * own member row, slides and draft, and a Guild admin can read them all.
+ * The live FKs back the carousel part up (carousel_slides.asset_id is ON
+ * DELETE RESTRICT); logo/cover/social image are ON DELETE SET NULL, which
+ * is exactly the silent change this check is here to prevent.
  */
 export async function deleteMediaAssetCore(
   assetId: string,
@@ -213,17 +218,44 @@ export async function deleteMediaAssetCore(
   }
   const memberId = asset.member_id as string;
 
-  const { data: removedSlides, error: slidesError } = await supabase
-    .from("carousel_slides")
-    .delete()
-    .eq("asset_id", assetId)
-    .eq("member_id", memberId)
-    .select("id");
-  if (slidesError) throw new Error(slidesError.message);
-  const removedSlideIds = (removedSlides ?? []).map((slide) => slide.id as string);
-  for (const slideId of removedSlideIds) {
-    await recordAudit({ memberId, tableName: "carousel_slides", rowId: slideId, action: "delete" });
+  const [memberResult, slidesResult, draftResult] = await Promise.all([
+    supabase
+      .from("members")
+      .select("logo_asset_id, cover_asset_id, og_image_asset_id")
+      .eq("id", memberId)
+      .maybeSingle(),
+    supabase.from("carousel_slides").select("asset_id").eq("member_id", memberId),
+    supabase.from("member_drafts").select("data").eq("member_id", memberId).maybeSingle(),
+  ]);
+  for (const result of [memberResult, slidesResult, draftResult]) {
+    if (result.error) {
+      throw new Error(`Couldn't check where this photo is used: ${result.error.message}`);
+    }
   }
+  const usageMessage = assetInUseMessage(
+    findAssetUsages({
+      assetId,
+      live:
+        (memberResult.data as {
+          logo_asset_id: string | null;
+          cover_asset_id: string | null;
+          og_image_asset_id: string | null;
+        } | null) ?? null,
+      liveSlideAssetIds: ((slidesResult.data ?? []) as Array<{ asset_id: string }>).map(
+        (slide) => slide.asset_id,
+      ),
+      draftData: (draftResult.data as { data?: unknown } | null)?.data ?? null,
+    }),
+  );
+  if (usageMessage) throw new Error(usageMessage);
+
+  // Check-then-delete isn't atomic: someone could put this photo into the
+  // draft between the check above and the delete below. That's acceptable
+  // -- the draft would then point at a photo that no longer exists, and
+  // publish_member_draft refuses any photo that isn't in the member's
+  // gallery, so it can never reach the live page; the member just picks
+  // another photo. (A live carousel reference is also blocked by the ON
+  // DELETE RESTRICT foreign key.)
 
   // Delete the DB row first, then the storage object -- and check the
   // row count, not just `error`. PostgREST reports an RLS-denied delete
@@ -277,7 +309,7 @@ export async function deleteMediaAssetCore(
     .from("member-media")
     .remove([deleted[0].storage_path as string]);
 
-  return { ok: true, fileRemoved: !removeError, removedSlideIds };
+  return { ok: true, fileRemoved: !removeError };
 }
 
 export const deleteMemberMedia = createServerFn({ method: "POST" })

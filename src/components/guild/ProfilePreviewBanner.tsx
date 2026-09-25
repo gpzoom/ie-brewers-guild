@@ -15,6 +15,11 @@ import { StatusBand, bandButtonClass } from "@/components/shell/AppChrome";
  * Anyone who can edit gets "Back to editing" to /admin, so leaving the
  * editor to look at the profile never strands them (or ends an
  * impersonation session) -- Stop is a separate, explicit choice.
+ *
+ * Phase 2: this page always shows what's LIVE (the published version, or
+ * for a never-published member the rows as they stand). Unpublished draft
+ * changes are only visible at /admin/preview, so editors also get a
+ * "Preview changes" link there.
  */
 export function ProfilePreviewBanner({
   isPreview,
@@ -43,12 +48,12 @@ export function ProfilePreviewBanner({
     // Artboard GuildMembers's band wording, plus which version is showing.
     const who = memberName ?? "this member";
     message = isPreview
-      ? `You are editing as ${who}. Changes are saved to their profile. This is their unpublished draft.`
-      : `You are editing as ${who}. Changes are saved to their profile. This is their live page.`;
+      ? `You are editing as ${who}. This page isn't published yet, and it doesn't show their unpublished changes.`
+      : `You are editing as ${who}. This is their live page, without their unpublished changes.`;
   } else if (viewerIsEditor) {
     message = isPreview
-      ? "This is a preview of your profile. It isn't published yet — only you can see this page."
-      : "This is your live profile, as visitors see it.";
+      ? "Your profile isn't published yet — only you can see this page. Your latest changes show in Preview."
+      : "This is your live profile, as visitors see it. Changes you haven't published show in Preview.";
   } else if (viewerIsGuildAdmin) {
     message = "This profile isn't published yet — only the member and Guild admins can see it.";
   } else {
@@ -70,6 +75,11 @@ export function ProfilePreviewBanner({
             <Link to="/admin/basics" className={bandButtonClass}>
               Back to editing
             </Link>
+          )}
+          {canEdit && (
+            <a href="/admin/preview" className={bandButtonClass}>
+              Preview changes
+            </a>
           )}
           {!canEdit && viewerIsGuildAdmin && (
             <Link to="/guild/roster" className={bandButtonClass}>

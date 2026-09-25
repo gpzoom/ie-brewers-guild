@@ -1,15 +1,11 @@
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "@tanstack/react-router";
-import { CAROUSEL_ASPECT } from "@/lib/media/crop-interaction";
-import {
-  assignCarouselSlide,
-  unassignCarouselSlide,
-  updateCarouselSlideCrop,
-  updateCarouselSlideLink,
-} from "@/lib/media/carousel.server";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CAROUSEL_ASPECT, initialCropForAspect } from "@/lib/media/crop-interaction";
 import { CropEditor, cropActionButtonClass } from "@/components/admin/CropEditor";
+import { hasPendingDraftSaves, useSaveDraftSection } from "@/components/admin/DraftStatusContext";
 import { computeCropStyle } from "@/lib/media/crop";
-import type { CarouselSlideRow, MediaAssetRow } from "@/lib/supabase/types";
+import { validateLinkUrl } from "@/lib/links/url-safety";
+import type { DraftSlide } from "@/lib/drafts/sections";
+import type { MediaAssetRow } from "@/lib/supabase/types";
 
 const SLOTS = [0, 1, 2, 3];
 
@@ -30,18 +26,60 @@ const sectionLabelClass =
 // debounce timer's last snapshot happened to be mid-drag.
 const CROP_SAVE_DEBOUNCE_MS = 400;
 
-/** "Portrait" everywhere a member can see it -- "4:5" appears once, as small gray supporting text (spec, "The slot"). */
+/**
+ * A draft slide plus a client-only key. Draft slides have no ids; the key
+ * is position + photo, so the same slide keeps the same key across a
+ * loader refresh (the resync below relies on that), and assigning a new
+ * photo to a slot gives it a fresh one.
+ */
+type CarouselSlideRow = DraftSlide & { id: string };
+
+function slideKey(slide: Pick<DraftSlide, "sort_order" | "asset_id">) {
+  return `${slide.sort_order}:${slide.asset_id}`;
+}
+
+function toRows(slides: DraftSlide[]): CarouselSlideRow[] {
+  return slides.map((slide) => ({ ...slide, id: slideKey(slide) }));
+}
+
+function toDraftSlides(rows: CarouselSlideRow[]): DraftSlide[] {
+  return rows.map(({ asset_id, crop, outbound_url, sort_order }) => ({ asset_id, crop, outbound_url, sort_order }));
+}
+
+/**
+ * "Portrait" everywhere a member can see it -- "4:5" appears once, as small
+ * gray supporting text (spec, "The slot").
+ *
+ * Phase 2: the slides are the member's DRAFT `media` section. Every change
+ * (assign, remove, crop, tap-through link) saves the whole slide list
+ * (saves are queued in order), and goes live when published -- by an owner
+ * or full editor with Publish changes, or a Photos & events editor with
+ * Publish photos.
+ */
 export function CarouselEditor({
   memberId,
-  initialSlides,
+  initialSlides: initialDraftSlides,
   galleryAssets,
 }: {
   memberId: string;
-  initialSlides: CarouselSlideRow[];
+  initialSlides: DraftSlide[];
   galleryAssets: MediaAssetRow[];
 }) {
-  const router = useRouter();
+  const saveDraft = useSaveDraftSection(memberId);
+  const initialSlides = useMemo(() => toRows(initialDraftSlides), [initialDraftSlides]);
   const [slides, setSlides] = useState(initialSlides);
+  // The same list, updated SYNCHRONOUSLY with every change (optimistically,
+  // before its save), and read by each save WHEN IT RUNS (the patch is a
+  // function) -- so a save queued before another change still sends the
+  // latest slides, and nothing removed is ever sent again.
+  const slidesRef = useRef<CarouselSlideRow[]>(initialSlides);
+  function updateSlides(update: (prev: CarouselSlideRow[]) => CarouselSlideRow[]) {
+    slidesRef.current = update(slidesRef.current);
+    setSlides(slidesRef.current);
+  }
+  function saveSlides() {
+    return saveDraft("media", () => ({ slides: toDraftSlides(slidesRef.current) }));
+  }
   // One error slot per carousel position -- assign/unassign/crop/link
   // failures all render into the same spot, since only one of those
   // actions can realistically be in flight for a given slot at a time.
@@ -102,13 +140,13 @@ export function CarouselEditor({
   }, []);
 
   // Resync from the loader whenever it re-runs (router.invalidate() after a
-  // gallery upload/delete or after an assign/unassign here) -- otherwise
-  // this local copy stays frozen at first render, e.g. still showing a
-  // slide whose photo was just deleted from the gallery (which now removes
-  // it from the carousel server-side). A slide the member is mid-way
-  // through re-cropping (debounce timer pending, or its save request still
-  // in flight) keeps its local crop.
+  // gallery upload/delete or a publish) -- otherwise this local copy stays
+  // frozen at first render. Skipped entirely while any media save is queued
+  // or running: the loader's snapshot is then older than what's here. A
+  // slide the member is mid-way through re-cropping (debounce timer
+  // pending, or its save request still in flight) keeps its local crop.
   useEffect(() => {
+    if (hasPendingDraftSaves(memberId, "media")) return;
     const isPending = (id: string) =>
       Boolean(cropDebounceTimers.current[id]) || (cropSavesInFlight.current[id] ?? 0) > 0;
     const next = initialSlides.map((slide) =>
@@ -122,7 +160,8 @@ export function CarouselEditor({
         latestCropRef.current[slide.id] = slide.crop;
       }
     }
-    setSlides(next);
+    updateSlides(() => next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-sync on new loader data only
   }, [initialSlides]);
 
   function slideForSlot(slot: number) {
@@ -139,33 +178,41 @@ export function CarouselEditor({
 
   /**
    * Fire-and-forget with no error handling was the brief's given shape --
-   * if assignCarouselSlide throws (ownership-check failure, an RLS
+   * if the save throws (ownership-check failure, an RLS
    * denial, a unique-slot race, ...) that became an unhandled promise
    * rejection with the <select> left showing the just-picked photo while
-   * nothing was actually saved and no error was ever shown. There's no
-   * optimistic slide to roll back here (the given code only mutates
-   * `slides` AFTER a successful response), so this just needs the
-   * try/catch to surface a real message -- same shape as HoursEditor's
-   * addRowForWeekday.
+   * nothing was actually saved and no error was ever shown. The slide is
+   * put in place straight away (so any save from now on includes it) and
+   * taken back out -- restoring whatever was in the slot -- if its save
+   * fails.
    */
   async function onAssign(slot: number, asset: MediaAssetRow) {
     setSlotError(slot, undefined);
+    // A centered portrait crop from the photo's stored size.
+    const crop =
+      asset.width && asset.height
+        ? initialCropForAspect(asset.width, asset.height, CAROUSEL_ASPECT)
+        : { x: 0, y: 0, w: 1, h: 1 };
+    const slide: CarouselSlideRow = {
+      id: slideKey({ sort_order: slot, asset_id: asset.id }),
+      asset_id: asset.id,
+      crop,
+      outbound_url: null,
+      sort_order: slot,
+    };
+    const previous = slidesRef.current.find((s) => s.sort_order === slot);
+    savedCropRef.current[slide.id] = crop;
+    latestCropRef.current[slide.id] = crop;
+    updateSlides((prev) => [...prev.filter((s) => s.sort_order !== slot), slide]);
+    setSelectedSlot(slot);
     try {
-      const { id, crop } = await assignCarouselSlide({
-        data: { memberId, sortOrder: slot, assetId: asset.id, asset: { width: asset.width, height: asset.height } },
-      });
-      savedCropRef.current[id] = crop;
-      latestCropRef.current[id] = crop;
-      setSlides((prev) => [
-        ...prev.filter((slide) => slide.sort_order !== slot),
-        { id, member_id: memberId, asset_id: asset.id, crop, outbound_url: null, sort_order: slot },
-      ]);
-      setSelectedSlot(slot);
-      // Keeps the loader's `slides` current for MediaGallery's "this photo
-      // is in your carousel" delete warning. Not awaited: the assign itself
-      // already succeeded, so a refresh hiccup mustn't hit the catch below.
-      void router.invalidate();
+      await saveSlides();
     } catch (error) {
+      updateSlides((prev) => {
+        if (!prev.some((s) => s.id === slide.id)) return prev;
+        const without = prev.filter((s) => s.id !== slide.id);
+        return previous ? [...without, previous] : without;
+      });
       // Reset the uncontrolled <select>'s own DOM value -- otherwise the
       // browser keeps showing the just-picked (but never actually saved)
       // option, and re-picking that SAME option again to retry does
@@ -186,7 +233,7 @@ export function CarouselEditor({
    * shape as MediaGallery.tsx's onDelete/reinsertAsset.
    */
   async function onUnassign(slide: CarouselSlideRow) {
-    setSlides((prev) => prev.filter((s) => s.id !== slide.id));
+    updateSlides((prev) => prev.filter((s) => s.id !== slide.id));
     setSlotError(slide.sort_order, undefined);
 
     const timer = cropDebounceTimers.current[slide.id];
@@ -196,12 +243,11 @@ export function CarouselEditor({
     }
 
     try {
-      await unassignCarouselSlide({ data: { id: slide.id } });
+      await saveSlides();
       delete savedCropRef.current[slide.id];
       delete latestCropRef.current[slide.id];
-      void router.invalidate();
     } catch (error) {
-      setSlides((prev) => (prev.some((s) => s.id === slide.id) ? prev : [...prev, slide]));
+      updateSlides((prev) => (prev.some((s) => s.id === slide.id) ? prev : [...prev, slide]));
       setSlotError(slide.sort_order, friendlyMessage(error, "Couldn't remove this slide — try again."));
     }
   }
@@ -217,7 +263,9 @@ export function CarouselEditor({
     if (!cropToSave) return;
 
     cropSavesInFlight.current[slideId] = (cropSavesInFlight.current[slideId] ?? 0) + 1;
-    updateCarouselSlideCrop({ data: { id: slideId, crop: cropToSave } })
+    // The slide list already carries this crop (onCropChange updates it
+    // synchronously), so the save just sends the list as it stands.
+    saveSlides()
       .then(() => {
         savedCropRef.current[slideId] = cropToSave;
         setSlotError(slot, undefined);
@@ -230,7 +278,7 @@ export function CarouselEditor({
           // this ref and re-send the crop that just failed instead of
           // the rolled-back one the member is now looking at.
           latestCropRef.current[slideId] = rollback;
-          setSlides((prev) => prev.map((s) => (s.id === slideId ? { ...s, crop: rollback } : s)));
+          updateSlides((prev) => prev.map((s) => (s.id === slideId ? { ...s, crop: rollback } : s)));
         }
         setSlotError(slot, friendlyMessage(error, "Couldn't save this crop — try again."));
       })
@@ -263,7 +311,7 @@ export function CarouselEditor({
 
     // Local/visual update is instant on every call -- dragging must stay
     // responsive regardless of the network debounce below.
-    setSlides((prev) => prev.map((s) => (s.id === slide.id ? { ...s, crop } : s)));
+    updateSlides((prev) => prev.map((s) => (s.id === slide.id ? { ...s, crop } : s)));
 
     if (cropDebounceTimers.current[slide.id]) clearTimeout(cropDebounceTimers.current[slide.id]);
     cropDebounceTimers.current[slide.id] = setTimeout(() => {
@@ -287,11 +335,27 @@ export function CarouselEditor({
   async function onLinkBlur(slide: CarouselSlideRow, outboundUrl: string | null) {
     setSlotError(slide.sort_order, undefined);
     try {
-      await updateCarouselSlideLink({ data: { id: slide.id, outboundUrl } });
-      setSlides((prev) =>
-        prev.map((s) => (s.id === slide.id ? { ...s, outbound_url: outboundUrl } : s)),
-      );
+      if (outboundUrl !== null) {
+        const check = validateLinkUrl(outboundUrl);
+        if (!check.valid) throw new Error(check.reason);
+      }
     } catch (error) {
+      setSlotError(slide.sort_order, friendlyMessage(error, "Couldn't save this link — try again."));
+      return;
+    }
+    const current = slidesRef.current.find((s) => s.id === slide.id);
+    if (!current || current.outbound_url === outboundUrl) return;
+    const previousUrl = current.outbound_url;
+    // Applied straight away, rolled back (on this slide, this field) if the save fails.
+    updateSlides((prev) =>
+      prev.map((s) => (s.id === slide.id ? { ...s, outbound_url: outboundUrl } : s)),
+    );
+    try {
+      await saveSlides();
+    } catch (error) {
+      updateSlides((prev) =>
+        prev.map((s) => (s.id === slide.id ? { ...s, outbound_url: previousUrl } : s)),
+      );
       setSlotError(slide.sort_order, friendlyMessage(error, "Couldn't save this link — try again."));
     }
   }

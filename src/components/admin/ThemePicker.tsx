@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { MEMBER_THEMES, getMemberThemeHex, type MemberThemeName } from "@/lib/theme/member-themes";
-import { updateMemberTheme } from "@/lib/theme/member-theme.server";
+import { useSaveDraftSection } from "@/components/admin/DraftStatusContext";
 
 // The four swatches in the "No cover photo yet?" panel (artboard K) --
 // illustrative only, not the member's choice.
@@ -60,6 +60,9 @@ export function ThemePicker({
   state?: string | null;
   tagline?: string | null;
 }) {
+  // Phase 2: the choice saves to the member's DRAFT (the `theme` section)
+  // and reaches the public page when published.
+  const saveDraft = useSaveDraftSection(memberId);
   const [selected, setSelected] = useState(currentTheme);
   const [error, setError] = useState<string | undefined>(undefined);
 
@@ -89,7 +92,7 @@ export function ThemePicker({
 
   /**
    * Awaits the mutation and rolls back on failure, instead of the brief's
-   * given fire-and-forget shape -- if updateMemberTheme throws (an
+   * given fire-and-forget shape -- if the save throws (an
    * RLS-denied write surfaced as the new row-count-zero error, or the
    * database's own CHECK constraint rejecting a value) that would
    * otherwise be an unhandled promise rejection with the swatch left
@@ -104,7 +107,7 @@ export function ThemePicker({
     setError(undefined);
     setSelected(theme);
     try {
-      await updateMemberTheme({ data: { memberId, theme } });
+      await saveDraft("theme", { theme });
       // Same staleness guard as the catch block below -- without it, an
       // OLDER click's late-arriving SUCCESS (not just a failure) can
       // still clobber savedThemeRef back to a stale value after a newer

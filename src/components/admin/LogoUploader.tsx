@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { uploadMemberLogo } from "@/lib/media/logo.server";
 import { appendMeasuredDimensions } from "@/lib/media/image-dimensions";
-import { updateMemberBasics } from "@/lib/members/member-basics.server";
+import { useDraftStatus, useSaveDraftSection } from "@/components/admin/DraftStatusContext";
 import {
   LOGO_BACKGROUNDS,
   LOGO_BACKGROUND_LABELS,
@@ -21,8 +21,11 @@ import { secondaryButtonClass } from "@/components/admin/basics/ui";
  * Also the logo's tile color (members.logo_background): a mostly-white
  * logo vanishes on the default white tile, so the member picks white, dark
  * or their theme color, with a live preview of the profile header drawn
- * through the same logoBackgroundColor the public page uses. The choice
- * autosaves through updateMemberBasics like every other Basics field.
+ * through the same logoBackgroundColor the public page uses.
+ *
+ * Phase 2: both the uploaded logo and the tile color go into the member's
+ * DRAFT (basics) and show on the public page once published. The upload
+ * itself still lands in the gallery straight away (uploadMemberLogo).
  */
 export function LogoUploader({
   memberId,
@@ -44,6 +47,8 @@ export function LogoUploader({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const savedBackgroundRef = useRef<LogoBackground>(initialBackground);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const saveDraft = useSaveDraftSection(memberId);
+  const reportSaved = useDraftStatus()?.reportSaved;
 
   async function onFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -55,8 +60,9 @@ export function LogoUploader({
     formData.append("file", file);
     await appendMeasuredDimensions(formData, file);
     try {
-      const { publicUrl } = await uploadMemberLogo({ data: formData });
+      const { publicUrl, dirtySections } = await uploadMemberLogo({ data: formData });
       setLogoUrl(publicUrl);
+      reportSaved?.("basics", dirtySections);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
@@ -71,7 +77,7 @@ export function LogoUploader({
     setError(null);
     setSaveState("saving");
     try {
-      await updateMemberBasics({ data: { memberId, patch: { logo_background: next } } });
+      await saveDraft("basics", { logo_background: next });
       savedBackgroundRef.current = next;
       setSaveState("saved");
     } catch (err) {

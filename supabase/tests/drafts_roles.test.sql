@@ -4,7 +4,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(149);
+insert into _tap (line) select plan(151);
 
 -- ---------------------------------------------------------------------
 -- Photos & events editor (media_events) on m1
@@ -153,24 +153,26 @@ insert into _tap (line) select ok(
    where m1.id = 'f1000000-0000-4000-8000-000000000001' and m3.id = 'f1000000-0000-4000-8000-000000000003'),
   'media_events direct writes: live m1 and m3 unchanged');
 
--- ...while the owner and full editor can still write live tables directly,
--- which today's /admin editors depend on until phase 2.
+-- ...and since phase 2 (20260925210100_lock_live_profile_writes.sql) the
+-- owner and full editor can't write the drafted live data directly either:
+-- only publish_member_draft / unpublish_member change it. (More cases in
+-- live_locks.test.sql.)
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000002","role":"authenticated"}';
-insert into _tap (line) select isnt_empty(
-  $q$ update public.members set tagline = 'Editor direct' where id = 'f1000000-0000-4000-8000-000000000001' returning 1 $q$,
-  'editor: direct members update still allowed');
-insert into _tap (line) select lives_ok(
+insert into _tap (line) select throws_ok(
+  $q$ update public.members set tagline = 'Editor direct' where id = 'f1000000-0000-4000-8000-000000000001' $q$,
+  '42501', null, 'editor: direct members update of a drafted column is denied');
+insert into _tap (line) select throws_ok(
   $q$ insert into public.carousel_slides (member_id, asset_id, crop, sort_order)
       values ('f1000000-0000-4000-8000-000000000001', 'f2000000-0000-4000-8000-000000000001', '{"x":0,"y":0,"w":1,"h":1}', 3) $q$,
-  'editor: direct carousel_slides insert still allowed');
+  '42501', null, 'editor: direct carousel_slides insert is denied');
 set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000001","role":"authenticated"}';
-insert into _tap (line) select isnt_empty(
-  $q$ update public.members set hours_confirmed_at = now() where id = 'f1000000-0000-4000-8000-000000000001' returning 1 $q$,
-  'owner: can still set hours_confirmed_at directly (publishMemberProfile)');
-insert into _tap (line) select isnt_empty(
-  $q$ update public.members set status = 'published' where id = 'f1000000-0000-4000-8000-000000000003' returning 1 $q$,
-  'owner: can still publish directly (publishMemberProfile)');
+insert into _tap (line) select throws_ok(
+  $q$ update public.members set hours_confirmed_at = now() where id = 'f1000000-0000-4000-8000-000000000001' $q$,
+  '42501', null, 'owner: can no longer set hours_confirmed_at directly');
+insert into _tap (line) select throws_ok(
+  $q$ update public.members set status = 'published' where id = 'f1000000-0000-4000-8000-000000000003' $q$,
+  '42501', null, 'owner: can no longer publish directly');
 
 set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000003","role":"authenticated"}';
 
@@ -420,7 +422,7 @@ insert into _tap (line) select throws_ok(
 
 -- ---------------------------------------------------------------------
 -- Function privileges: internal helpers are unreachable from the API;
--- the six exposed functions are for signed-in users only.
+-- the exposed functions are for signed-in users only.
 -- ---------------------------------------------------------------------
 reset role;
 insert into _tap (line) select is(
@@ -446,6 +448,7 @@ from (values
   ('public.discard_member_draft_sections(uuid,text[])'),
   ('public.confirm_member_type(uuid,text)'),
   ('public.complete_member_setup(uuid)'),
+  ('public.unpublish_member(uuid)'),
   ('public.member_role(uuid)'),
   ('public.is_member_full_editor(uuid)'),
   ('public.can_edit_section(uuid,text)')

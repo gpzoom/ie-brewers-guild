@@ -155,6 +155,14 @@ export default defineConfig(async ({ command, mode }) => {
           // this comment to describe it too, so the gap that broke the
           // build for require-member-session.server.ts doesn't repeat.
           //
+          // Phase 2 (member drafts) deleted hours-editor.server.ts,
+          // carousel.server.ts, cover.server.ts, member-theme.server.ts,
+          // member-links.server.ts, discount.server.ts and
+          // social-image.server.ts -- their live writes became draft saves
+          // through src/lib/drafts/drafts.server.ts (listed below) -- so
+          // their entries are gone from excludeFiles; the paragraph above
+          // still describes them as they were.
+          //
           // "**/node_modules/**" MUST stay listed here too -- a custom
           // `excludeFiles` array replaces the framework's own default
           // (["**/node_modules/**"]) rather than merging with it, exactly
@@ -179,56 +187,15 @@ export default defineConfig(async ({ command, mode }) => {
             // people toward, already covered by the "**/*.server.*" glob
             // above and excluded here for the same reason as the rest.
             "src/lib/members/member-email.server.ts",
-            "src/lib/hours/hours-editor.server.ts",
             "src/lib/media/media-gallery.server.ts",
-            "src/lib/media/carousel.server.ts",
-            "src/lib/media/cover.server.ts",
             "src/lib/media/logo.server.ts",
             "src/lib/media/upload-tokens.server.ts",
             "src/lib/media/creator-upload.server.ts",
             "src/lib/media/review-tray.server.ts",
             "src/lib/hours/publish-gate.server.ts",
-            "src/lib/theme/member-theme.server.ts",
             "src/lib/events/events.server.ts",
             "src/lib/events/calendar-connection.server.ts",
             "src/lib/hours/confirm-token.server.ts",
-            // src/lib/links/member-links.server.ts (Task 30) -- same
-            // reasoning as the sixteen files above: every export
-            // (listMemberLinks, upsertMemberLink, deleteMemberLink,
-            // updateMemberContact, getMemberContactInfo) is a
-            // createServerFn().handler(...) call, and src/routes/admin.links.tsx
-            // imports listMemberLinks/getMemberContactInfo straight into its
-            // own loader while src/components/admin/LinksContactEditor.tsx
-            // calls upsertMemberLink/deleteMemberLink/updateMemberContact
-            // directly from its own onAdd/onFieldChange/onRemove/
-            // onPhoneBlur/onContactEmailBlur handlers -- the same safe
-            // client/server RPC boundary this deny rule exists to push
-            // people toward, already covered by the "**/*.server.*" glob
-            // above and excluded here for the same reason as the rest.
-            "src/lib/links/member-links.server.ts",
-            // src/lib/members/discount.server.ts (Task 31) -- same
-            // reasoning as the files above: its one createServerFn export,
-            // updateMemberDiscount, is called directly from
-            // src/components/admin/DiscountEditor.tsx's own save() handler
-            // (src/routes/admin.discount.tsx's loader instead reuses
-            // member-basics.server.ts's getMemberBasics, already covered
-            // by its own exclusion entry) -- the same safe client/server
-            // RPC boundary this deny rule exists to push people toward,
-            // already covered by the "**/*.server.*" glob above and
-            // excluded here for the same reason as the rest.
-            "src/lib/members/discount.server.ts",
-            // src/lib/media/social-image.server.ts (Social Sharing Image
-            // feature) -- same reasoning as cover.server.ts above: both of
-            // its createServerFn exports (updateSocialImageAsset,
-            // clearSocialImageAsset) are called directly from
-            // src/components/admin/SocialImageEditor.tsx's own
-            // onChooseAsset/onRemove handlers, and getMemberSocialImage is
-            // imported straight into src/routes/admin.media.tsx's own
-            // loader -- the same safe client/server RPC boundary this deny
-            // rule exists to push people toward, already covered by the
-            // "**/*.server.*" glob above and excluded here for the same
-            // reason as the rest.
-            "src/lib/media/social-image.server.ts",
             // src/lib/guild/delete-member.server.ts -- its createServerFn
             // export, deleteMember, is called directly from
             // src/components/guild/DeleteMemberDialog.tsx's confirm handler;
@@ -385,6 +352,21 @@ export default defineConfig(async ({ command, mode }) => {
             // "**/*.server.*" glob above and excluded here for the same
             // reason as the rest.
             "src/lib/guild/guild-shell.server.ts",
+            // src/lib/drafts/drafts.server.ts (member drafts, phase 2) --
+            // same reasoning as the files above: its createServerFn exports
+            // are the draft's whole client/server RPC boundary.
+            // getMemberDraft is imported straight into the /admin editor
+            // routes' own loaders (admin.basics/media/links/discount/
+            // theme.tsx) and getDraftStatus into src/routes/admin.tsx's;
+            // saveDraftSection is called directly from DraftStatusContext's
+            // useSaveDraftSection hook (every drafted editor's save
+            // handler); publishDraft/discardDraft/unpublishMember from
+            // PublishGateDialog.tsx's own onPublish/onDiscard/onUnpublish
+            // handlers. Its plain helper loadMemberDraftBundle is only ever
+            // called server-side (member-profile.server.ts's preview
+            // loader). Already covered by the "**/*.server.*" glob above
+            // and excluded here for the same reason as the rest.
+            "src/lib/drafts/drafts.server.ts",
           ],
           specifiers: ["server-only"],
         },

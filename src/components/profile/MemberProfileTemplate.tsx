@@ -10,18 +10,20 @@ import { ContactBlock } from "@/components/profile/ContactBlock";
 import { MediaCarousel } from "@/components/profile/MediaCarousel";
 import { CrossLinkCard } from "@/components/profile/CrossLinkCard";
 import { HeaderNav } from "@/components/profile/HeaderNav";
-import type { MemberProfileData } from "@/lib/members/member-profile.server";
+import type { MemberProfileData, ProfileMediaMode } from "@/lib/members/profile-object";
 import type { DirectorySearch } from "@/lib/directory/search-params";
 import { getZonedNow, type SpecialHoursDay, type WeekdayHours } from "@/lib/hours/open-now";
 import type { HoursRow, SpecialHoursRow } from "@/lib/supabase/types";
 import { isHttpUrl } from "@/lib/links/url-safety";
 
+
 type MemberProfileTemplateProps = {
   data: MemberProfileData;
   search: DirectorySearch;
+  mediaMode: ProfileMediaMode;
 };
 
-// getMemberProfileData (Task 10) returns the raw snake_case DB rows;
+// The profile object (buildProfileObject) carries the raw snake_case DB rows;
 // computeOpenNow/StatusBlock/ScheduleChips (Task 7/13/14) were built
 // against the camelCase WeekdayHours/SpecialHoursDay shapes. This
 // template is the one place those two sides meet, so it's the one place
@@ -68,7 +70,7 @@ function toSpecialHoursDay(rows: SpecialHoursRow[]): SpecialHoursDay[] {
  * else stacks beside it (artboard L). `lg`, not `md`: at 768px the 420px
  * column would leave the week chips narrower than on a 390px phone.
  */
-export function MemberProfileTemplate({ data, search }: MemberProfileTemplateProps) {
+export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfileTemplateProps) {
   const { member, hours, specialHours, events, carouselSlides, links, categories, crossLink, headerPrev, headerNext, headerPosition, crossLinkLogoUrl, nextLocation, logoPublicUrl, coverAsset } = data;
   // Reconstructed from the server's one serialized instant (MemberProfileData.now),
   // never read fresh here -- see that field's own doc comment for why.
@@ -147,7 +149,7 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
   const tonightEvent = member.member_type === "mobile" ? nextEvent : nextEventLocalDate === todayLocalDate ? nextEvent : null;
 
   const coverUrl = coverAsset
-    ? `${data.isPreview ? "/api/admin-media" : "/api/member-media"}/${coverAsset.id}`
+    ? `${mediaMode === "preview" ? "/api/admin-media" : "/api/member-media"}/${coverAsset.id}`
     : null;
 
   // With a carousel, every right-column item pins to column 2 at lg.
@@ -202,7 +204,7 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
                 slides={carouselSlides}
                 memberName={member.business_name}
                 theme={member.theme}
-                isPreview={data.isPreview}
+                mediaMode={mediaMode}
               />
             </div>
           )}

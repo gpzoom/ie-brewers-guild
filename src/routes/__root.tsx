@@ -122,10 +122,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 // outside any wrapper -- only an ancestor of <body> reaches them. The
 // public site (including /contact) stays on the dark theme.
 const CANVAS_ROUTE_PREFIXES = ["/admin", "/guild", "/signin", "/send"];
+// ...except the draft preview (src/routes/admin_.preview.tsx), which shows
+// the profile the way the public page does: dark site ground, light card.
+const NON_CANVAS_ROUTES = ["/admin/preview"];
 
 function matchesPrefix(pathname: string, prefixes: string[]) {
   const normalized = pathname.replace(/\/+$/, "") || "/";
   return prefixes.some((prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`));
+}
+
+function isCanvasPathname(pathname: string) {
+  const normalized = pathname.replace(/\/+$/, "") || "/";
+  return !NON_CANVAS_ROUTES.includes(normalized) && matchesPrefix(normalized, CANVAS_ROUTE_PREFIXES);
 }
 
 function RootShell({ children }: { children: React.ReactNode }) {
@@ -134,7 +142,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
   // re-renders on every client-side navigation -- no hydration mismatch,
   // no flash when moving between the public site and the admin.
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isCanvas = !UNDER_CONSTRUCTION && matchesPrefix(pathname, CANVAS_ROUTE_PREFIXES);
+  const isCanvas = !UNDER_CONSTRUCTION && isCanvasPathname(pathname);
   return (
     <html lang="en" className={isCanvas ? "theme-canvas" : undefined}>
       <head><HeadContent /></head>

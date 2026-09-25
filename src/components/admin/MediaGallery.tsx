@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { deleteMemberMedia, uploadMemberMedia } from "@/lib/media/media-gallery.server";
 import { appendMeasuredDimensions } from "@/lib/media/image-dimensions";
-import type { CarouselSlideRow, MediaAssetRow } from "@/lib/supabase/types";
+import type { MediaAssetRow } from "@/lib/supabase/types";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -29,21 +29,18 @@ import { Button } from "@/components/ui/button";
  * used to leave those dropdowns stale -- offering a just-deleted photo
  * (which then failed with "That photo isn't in this member's gallery.")
  * and missing a just-uploaded one.
+ *
+ * The gallery isn't drafted: uploads and deletes happen straight away.
+ * Deleting a photo that the live page or the draft uses (logo, cover,
+ * social sharing image, a slide) is refused on the server with a message
+ * saying where it's used (plan Decision 5; src/lib/media/asset-usage.ts),
+ * which shows here in place of the delete.
  */
 
 type UploadState = { status: "idle" | "uploading" | "error"; message?: string };
 const IDLE_UPLOAD: UploadState = { status: "idle" };
 
-export function MediaGallery({
-  memberId,
-  assets,
-  slides,
-}: {
-  memberId: string;
-  assets: MediaAssetRow[];
-  /** Used only to warn when a photo about to be deleted is in the carousel. */
-  slides: CarouselSlideRow[];
-}) {
+export function MediaGallery({ memberId, assets }: { memberId: string; assets: MediaAssetRow[] }) {
   const router = useRouter();
   const [uploadState, setUploadState] = useState<UploadState>(IDLE_UPLOAD);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -129,8 +126,8 @@ export function MediaGallery({
         );
       }
     } catch (error) {
-      // A real failure (the delete itself didn't go through) -- bring just
-      // this photo back.
+      // A real failure (the delete itself didn't go through, e.g. the photo
+      // is still in use) -- bring just this photo back and say why.
       unhide(asset.id);
       setDeleteError(
         error instanceof Error ? error.message : "Couldn't delete this photo — try again.",
@@ -146,10 +143,6 @@ export function MediaGallery({
       unhide(asset.id);
     }
   }
-
-  const confirmInCarousel = confirmAsset
-    ? slides.some((slide) => slide.asset_id === confirmAsset.id)
-    : false;
 
   return (
     <section aria-labelledby="gallery-heading" className="flex flex-col gap-3">
@@ -255,14 +248,9 @@ export function MediaGallery({
               Delete this photo?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-[14px] leading-[1.5] text-ink-muted">
-              {confirmInCarousel && (
-                <>
-                  <strong className="font-semibold text-ink">
-                    This photo is in your carousel and will be removed from it.
-                  </strong>{" "}
-                </>
-              )}
-              It will be removed from your gallery for good.
+              It will be removed from your gallery for good. A photo your profile is using (as a
+              slide, your cover, logo or sharing image) can't be deleted until you choose a
+              different one there.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

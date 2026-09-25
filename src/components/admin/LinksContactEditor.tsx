@@ -1,14 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import {
-  deleteMemberLink,
-  LINK_KINDS,
-  updateMemberContact,
-  upsertMemberLink,
-} from "@/lib/links/member-links.server";
+import { LINK_KINDS } from "@/lib/links/link-kinds";
 import { isFieldVisibleForMemberType, LOCATION_FIELD_LABEL } from "@/lib/members/type-fields";
-import type { MemberLinkKind, MemberLinkRow, MemberType } from "@/lib/supabase/types";
+import type { DraftLink } from "@/lib/drafts/sections";
+import type { MemberLinkKind, MemberType } from "@/lib/supabase/types";
 import { SaveNoteText } from "@/components/admin/SaveNote";
+import { useSaveDraftSection } from "@/components/admin/DraftStatusContext";
 
 // Friendly names for the link kinds (artboard R's select options).
 const LINK_KIND_LABEL: Partial<Record<MemberLinkKind, string>> = {
@@ -31,10 +28,13 @@ function friendlyMessage(err: unknown, fallback: string) {
   return err instanceof Error ? err.message : fallback;
 }
 
+/** A draft link plus a client-only key (draft links have no ids). */
+type LinkRow = DraftLink & { id: string };
+type LinkPatch = Partial<Pick<DraftLink, "kind" | "label" | "url">>;
+
 /**
- * Picks just the given keys off `obj` -- same shape as EventsEditor.tsx's
- * own pickFields, used here so onFieldChange's rollback snapshot is scoped
- * to only the fields a given patch actually touches, never the whole row.
+ * Picks just the given keys off `obj`, so a rollback is scoped to only the
+ * fields a given patch touched, never the whole row.
  */
 function pickFields<T, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
   const picked = {} as Pick<T, K>;
@@ -42,114 +42,109 @@ function pickFields<T, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
   return picked;
 }
 
+function toDraftLinks(rows: LinkRow[]): DraftLink[] {
+  // Stored in the order shown; publish renumbers them 0..n-1 the same way.
+  return rows.map(({ id: _id, ...link }, index) => ({ ...link, sort_order: index }));
+}
+
+/**
+ * Links & contact (artboard R). The link pills save to the member's DRAFT
+ * (the `links` section, sent whole on every change) and go live when
+ * published. Phone and sales email moved to Basics & hours (plan Decision
+ * 2) -- they belong to the draft's `basics` section -- so the Contact part
+ * here just shows them, with the address, and points there.
+ */
 export function LinksContactEditor({
   memberId,
   initialLinks,
-  phone,
-  contactEmail,
   memberType,
-  address,
+  contact,
 }: {
   memberId: string;
-  initialLinks: MemberLinkRow[];
-  phone: string | null;
-  contactEmail: string | null;
+  initialLinks: DraftLink[];
   memberType: MemberType;
-  /** Read-only here -- the street address is edited on Basics & hours. */
-  address?: { street: string | null; city: string | null; state: string | null };
+  /** Read-only here -- edited on Basics & hours. */
+  contact: {
+    phone: string | null;
+    contactEmail: string | null;
+    street: string | null;
+    city: string | null;
+    state: string | null;
+  };
 }) {
-  const [links, setLinks] = useState(initialLinks);
+  const saveDraft = useSaveDraftSection(memberId);
+  const [links, setLinks] = useState<LinkRow[]>(() =>
+    initialLinks.map((link, index) => ({ ...link, id: `link-${index}` })),
+  );
+  // Updated synchronously with every change, so each save sends the list as
+  // it stands right now (saves are queued in order by useSaveDraftSection).
+  const linksRef = useRef<LinkRow[]>(links);
   const [error, setError] = useState<string | null>(null);
+
+  function updateLinks(update: (prev: LinkRow[]) => LinkRow[]) {
+    linksRef.current = update(linksRef.current);
+    setLinks(linksRef.current);
+  }
+
+  // Built from the ref when the save RUNS (the patch is a function), so a
+  // save queued before another edit still sends the latest list.
+  function saveList() {
+    return saveDraft("links", () => ({ links: toDraftLinks(linksRef.current) }));
+  }
 
   async function onAdd() {
     setError(null);
+    const row: LinkRow = {
+      id: crypto.randomUUID(),
+      kind: "website",
+      label: null,
+      url: "",
+      sort_order: null,
+    };
+    // Shown straight away, so any save from now on includes it; taken back
+    // out if its save fails.
+    updateLinks((prev) => [...prev, row]);
     try {
-      const { id } = await upsertMemberLink({
-        data: { memberId, patch: { kind: "website", url: "", sort_order: links.length } },
-      });
-      // Nothing is optimistically added before this resolves, so there's
-      // no rollback to do on failure here -- just surface the error (same
-      // shape as EventsEditor.tsx's onAdd).
-      setLinks((prev) => [
-        ...prev,
-        { id, member_id: memberId, kind: "website", label: null, url: "", sort_order: prev.length },
-      ]);
+      await saveList();
     } catch (err) {
+      updateLinks((prev) => prev.filter((l) => l.id !== row.id));
       setError(friendlyMessage(err, "Couldn't add a new link — try again."));
     }
   }
 
   /**
-   * Fire-and-forget from the caller's point of view (kept that way so a
-   * Select's onValueChange / an Input's onBlur don't need to be async), but
-   * now rolls back on failure instead of leaving a change the server never
-   * actually saved silently showing in the UI. Rollback is scoped to just
-   * the fields THIS patch touched, on the link's CURRENT id, via a
-   * functional setLinks update read at rollback time -- not a whole-row or
-   * whole-array snapshot captured when the call started. That's the exact
-   * stale-whole-array-snapshot bug this plan has already found and fixed
-   * multiple times (CarouselEditor's crop-autosave, CreatorLinkPanel's
-   * onRevoke, ReviewTray's onApprove/onReject, EventsEditor's
-   * onFieldChange/onOverlayChange/onToggleHidden): restoring an
-   * old snapshot of the WHOLE list/row would silently undo any OTHER
-   * change (to this link's other fields, or to a different link entirely)
-   * that succeeded while this request was still in flight.
+   * Optimistic, and rolls back on failure -- scoped to just the fields THIS
+   * patch touched, on this link, read at rollback time, so a failure never
+   * undoes a different change that succeeded meanwhile.
    */
-  function onFieldChange(
-    link: MemberLinkRow,
-    patch: Parameters<typeof upsertMemberLink>[0]["data"]["patch"],
-  ) {
+  function onFieldChange(link: LinkRow, patch: LinkPatch) {
     setError(null);
-    const previousValues = pickFields(link, Object.keys(patch) as (keyof MemberLinkRow)[]);
-    setLinks((prev) => prev.map((l) => (l.id === link.id ? { ...l, ...patch } : l)));
-    upsertMemberLink({ data: { memberId, id: link.id, patch } }).catch((err: unknown) => {
-      setLinks((prev) => prev.map((l) => (l.id === link.id ? { ...l, ...previousValues } : l)));
+    const previousValues = pickFields(link, Object.keys(patch) as (keyof LinkRow)[]);
+    updateLinks((prev) => prev.map((l) => (l.id === link.id ? { ...l, ...patch } : l)));
+    saveList().catch((err: unknown) => {
+      updateLinks((prev) => prev.map((l) => (l.id === link.id ? { ...l, ...previousValues } : l)));
       setError(friendlyMessage(err, "Couldn't save that change — try again."));
     });
   }
 
   async function onRemove(id: string) {
     setError(null);
-    // Snapshot only the ONE link being removed, off the current `links`
-    // closure at call time (same shape as CreatorLinkPanel.tsx's
-    // onRevoke) -- not a whole-array snapshot restored wholesale on
-    // failure, which could resurrect a DIFFERENT link that was itself
-    // removed (and succeeded) while this one's request was still in
-    // flight.
-    const removed = links.find((l) => l.id === id);
-    setLinks((prev) => prev.filter((l) => l.id !== id));
+    const index = linksRef.current.findIndex((l) => l.id === id);
+    const removed = linksRef.current[index];
+    updateLinks((prev) => prev.filter((l) => l.id !== id));
     try {
-      await deleteMemberLink({ data: { id } });
+      await saveList();
     } catch (err) {
-      // Reinsert by id into the CURRENT list (functional update), not the
-      // stale snapshot from before other things may have changed --
-      // matches EventsEditor.tsx's reinsertEvent for the same reason.
+      // Put back just this one link, where it was, into the CURRENT list.
       if (removed) {
-        setLinks((prev) =>
-          prev.some((l) => l.id === id)
-            ? prev
-            : [...prev, removed].sort((a, b) => a.sort_order - b.sort_order),
-        );
+        updateLinks((prev) => {
+          if (prev.some((l) => l.id === id)) return prev;
+          const next = [...prev];
+          next.splice(Math.min(index, next.length), 0, removed);
+          return next;
+        });
       }
       setError(friendlyMessage(err, "Couldn't remove this link — try again."));
-    }
-  }
-
-  async function onPhoneBlur(value: string) {
-    setError(null);
-    try {
-      await updateMemberContact({ data: { memberId, patch: { phone: value || null } } });
-    } catch (err) {
-      setError(friendlyMessage(err, "Couldn't save that phone number — try again."));
-    }
-  }
-
-  async function onContactEmailBlur(value: string) {
-    setError(null);
-    try {
-      await updateMemberContact({ data: { memberId, patch: { contact_email: value || null } } });
-    } catch (err) {
-      setError(friendlyMessage(err, "Couldn't save that email — try again."));
     }
   }
 
@@ -157,9 +152,15 @@ export function LinksContactEditor({
     memberType === "mobile" ? "Booking phone" : memberType === "allied" ? "Sales phone" : "Phone";
   const showEmail = memberType === "allied";
   const showAddress = isFieldVisibleForMemberType(memberType, "street_address");
-  const addressText = address?.street
-    ? [address.street, address.city, address.state].filter(Boolean).join(", ")
+  const addressText = contact.street
+    ? [contact.street, contact.city, contact.state].filter(Boolean).join(", ")
     : null;
+
+  const contactRows: { label: string; value: string | null }[] = [
+    { label: phoneLabel, value: contact.phone },
+    ...(showEmail ? [{ label: "Sales email", value: contact.contactEmail }] : []),
+    ...(showAddress ? [{ label: LOCATION_FIELD_LABEL[memberType], value: addressText }] : []),
+  ];
 
   return (
     <div className="flex flex-col gap-[26px]">
@@ -196,9 +197,7 @@ export function LinksContactEditor({
                 <select
                   aria-label={`Link type for link ${index + 1}`}
                   value={link.kind}
-                  onChange={(e) =>
-                    onFieldChange(link, { kind: e.target.value as MemberLinkRow["kind"] })
-                  }
+                  onChange={(e) => onFieldChange(link, { kind: e.target.value as MemberLinkKind })}
                   className={`${controlClass} md:w-[170px] md:shrink-0`}
                 >
                   {LINK_KINDS.map((kind) => (
@@ -215,7 +214,9 @@ export function LinksContactEditor({
                     defaultValue={link.url}
                     placeholder="https://…"
                     className={`${controlClass} min-w-0 flex-1`}
-                    onBlur={(e) => onFieldChange(link, { url: e.target.value })}
+                    onBlur={(e) => {
+                      if (e.target.value !== link.url) onFieldChange(link, { url: e.target.value });
+                    }}
                   />
                   <button
                     type="button"
@@ -266,64 +267,29 @@ export function LinksContactEditor({
         <h2 id="links-contact-label" className={`font-sans ${sectionLabelClass}`}>
           Contact
         </h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="flex flex-col gap-[7px]">
-            <label htmlFor="contact-phone" className="text-[13px] font-medium text-ink">
-              {phoneLabel}
-            </label>
-            <input
-              id="contact-phone"
-              type="tel"
-              aria-describedby="contact-phone-help"
-              defaultValue={phone ?? ""}
-              className={controlClass}
-              onBlur={(e) => void onPhoneBlur(e.target.value)}
-            />
-            <p id="contact-phone-help" className="text-xs text-ink-subtle">
-              Shown as a tap-to-call link
-            </p>
-          </div>
-          {showEmail && (
-            <div className="flex flex-col gap-[7px]">
-              <label htmlFor="contact-email" className="text-[13px] font-medium text-ink">
-                Sales email
-              </label>
-              <input
-                id="contact-email"
-                type="email"
-                aria-describedby="contact-email-help"
-                defaultValue={contactEmail ?? ""}
-                className={controlClass}
-                onBlur={(e) => void onContactEmailBlur(e.target.value)}
-              />
-              <p id="contact-email-help" className="text-xs text-ink-subtle">
-                Shown on your profile. Not the address you sign in with
-              </p>
-            </div>
-          )}
+        <div className="flex flex-col gap-2.5 rounded-[11px] border border-canvas-2 bg-[#F2EEE7] px-[15px] py-3">
+          <dl className="m-0 grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-[auto_minmax(0,1fr)]">
+            {contactRows.map((row) => (
+              <div key={row.label} className="contents">
+                <dt className="text-[13px] font-medium text-ink">{row.label}</dt>
+                <dd
+                  className={`m-0 min-w-0 break-words text-sm ${row.value ? "text-ink" : "text-ink-subtle"}`}
+                >
+                  {row.value ?? "Not added yet"}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <Link
+            to="/admin/basics"
+            className="inline-flex min-h-11 items-center self-start text-[13px] font-medium text-brand hover:text-brand-hover"
+          >
+            Edit on Basics &amp; hours
+          </Link>
         </div>
-
-        {showAddress && (
-          <div className="flex flex-col gap-[7px]">
-            <p className="text-[13px] font-medium text-ink">{LOCATION_FIELD_LABEL[memberType]}</p>
-            <div className="flex min-h-[46px] flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[9px] border border-canvas-2 bg-[#F2EEE7] px-[13px] py-2">
-              <span className={`text-sm ${addressText ? "text-ink" : "text-ink-subtle"}`}>
-                {addressText ?? "Not added yet"}
-              </span>
-              <Link
-                to="/admin/basics"
-                hash="street_address"
-                className="inline-flex min-h-11 items-center text-[13px] font-medium text-brand hover:text-brand-hover"
-              >
-                Edit on Basics &amp; hours
-              </Link>
-            </div>
-            <p className="text-xs text-ink-subtle">
-              This is what the Directions button on your profile opens. It's edited with your other
-              basics, so there's only one place to keep it right.
-            </p>
-          </div>
-        )}
+        <p className="text-xs text-ink-subtle">
+          These are edited with your other basics, so there's only one place to keep them right.
+        </p>
       </section>
 
       <div className="flex items-center gap-5 border-t border-[#E6E0D6] pt-[22px]">

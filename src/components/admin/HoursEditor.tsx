@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  deleteHoursRow,
-  deleteSpecialHoursRow,
-  upsertHoursRow,
-  upsertSpecialHoursRow,
-} from "@/lib/hours/hours-editor.server";
-import type { HoursRow, SpecialHoursRow } from "@/lib/supabase/types";
+import type { DraftHours, DraftSpecialHours } from "@/lib/drafts/sections";
+import { useSaveDraftSection } from "@/components/admin/DraftStatusContext";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -30,11 +25,8 @@ const DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 // blurring still gets an autosave attempt fired on this timer.
 const SAVE_DEBOUNCE_MS = 400;
 
-// Mirrors hours-editor.server.ts's TIME_RE/DATE_RE. Kept as separate
-// client-side copies rather than importing values out of the
-// ".server.ts" module -- same precedent as BasicsForm's own duplicated
-// MIN_MEMBER_SINCE_YEAR -- so a malformed value never even gets
-// scheduled for a save, let alone reaches the server unvalidated.
+// Mirrors src/lib/drafts/validate-patch.ts's TIME_RE/DATE_RE, so a
+// malformed value never even gets scheduled for a save.
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -50,6 +42,15 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
  */
 function useRowAutosave<TRow extends { id: string }>(initialRows: TRow[]) {
   const [rows, setRows] = useState<TRow[]>(initialRows);
+  // The same list, updated SYNCHRONOUSLY with every change. Draft saves
+  // send the whole list (hours and special hours are arrays in the draft's
+  // basics section), so a save must read the latest rows at the moment it
+  // fires -- not a render-old copy captured in a closure.
+  const rowsRef = useRef<TRow[]>(initialRows);
+  function updateRows(update: (prev: TRow[]) => TRow[]) {
+    rowsRef.current = update(rowsRef.current);
+    setRows(rowsRef.current);
+  }
   const [status, setStatus] = useState<Record<string, SaveState>>({});
 
   // Last known persisted value per row id -- used to skip no-op saves and
@@ -126,7 +127,7 @@ function useRowAutosave<TRow extends { id: string }>(initialRows: TRow[]) {
     patch: Partial<TRow>,
     save: (patch: Partial<TRow>) => Promise<unknown>,
   ) {
-    setRows((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+    updateRows((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)));
     performSave(id, field, patch, save);
   }
 
@@ -137,7 +138,7 @@ function useRowAutosave<TRow extends { id: string }>(initialRows: TRow[]) {
     patch: Partial<TRow>,
     save: (patch: Partial<TRow>) => Promise<unknown>,
   ) {
-    setRows((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+    updateRows((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)));
     const key = statusKey(id, field);
     if (debounceTimers.current[key]) clearTimeout(debounceTimers.current[key]);
     debounceTimers.current[key] = setTimeout(() => {
@@ -181,23 +182,48 @@ function useRowAutosave<TRow extends { id: string }>(initialRows: TRow[]) {
     return status[statusKey(id, field)] ?? IDLE;
   }
 
-  function addRow(row: TRow) {
-    setRows((prev) => [...prev, row]);
+  /**
+   * Adds a row to the list straight away (so any save that runs from now
+   * on -- this one or another row's -- includes it), then persists; takes
+   * it back out if that save fails. Rethrows so the caller can show why.
+   */
+  async function addRow(row: TRow, persist: () => Promise<unknown>) {
+    updateRows((prev) => [...prev, row]);
     savedRef.current = { ...savedRef.current, [row.id]: row };
+    try {
+      await persist();
+    } catch (error) {
+      updateRows((prev) => prev.filter((r) => r.id !== row.id));
+      const next = { ...savedRef.current };
+      delete next[row.id];
+      savedRef.current = next;
+      throw error;
+    }
   }
 
-  /** Removes a row only once the server confirms the delete -- never optimistically. */
-  function remove(id: string, destroy: () => Promise<unknown>) {
+  /**
+   * Removes a row straight away (so no later save re-sends it), then
+   * persists; puts it back where it was if that save fails.
+   */
+  function remove(id: string, persist: () => Promise<unknown>) {
+    const index = rowsRef.current.findIndex((row) => row.id === id);
+    const removed = rowsRef.current[index];
+    if (!removed) return Promise.resolve();
     const key = statusKey(id, "_row");
-    setStatus((prev) => ({ ...prev, [key]: { status: "saving" } }));
-    return destroy()
+    updateRows((prev) => prev.filter((row) => row.id !== id));
+    return persist()
       .then(() => {
-        setRows((prev) => prev.filter((row) => row.id !== id));
         const next = { ...savedRef.current };
         delete next[id];
         savedRef.current = next;
       })
       .catch((error: unknown) => {
+        updateRows((prev) => {
+          if (prev.some((row) => row.id === id)) return prev;
+          const next = [...prev];
+          next.splice(Math.min(index, next.length), 0, removed);
+          return next;
+        });
         setStatus((prev) => ({
           ...prev,
           [key]: {
@@ -210,6 +236,7 @@ function useRowAutosave<TRow extends { id: string }>(initialRows: TRow[]) {
 
   return {
     rows,
+    rowsRef,
     saveNow,
     scheduleSave,
     flushSave,
@@ -219,6 +246,17 @@ function useRowAutosave<TRow extends { id: string }>(initialRows: TRow[]) {
     addRow,
     remove,
   };
+}
+
+/** Today, or the first day after it that doesn't have an entry yet (one entry per date). */
+function nextFreeDate(taken: string[]): string {
+  const date = new Date();
+  for (let i = 0; i < 366; i++) {
+    const iso = date.toISOString().slice(0, 10);
+    if (!taken.includes(iso)) return iso;
+    date.setUTCDate(date.getUTCDate() + 1);
+  }
+  return date.toISOString().slice(0, 10);
 }
 
 function normalizeTime(value: string): string | null {
@@ -258,37 +296,67 @@ const textLinkButtonClass =
  * Renders two sibling sections (a fragment) so the parent page's own
  * section gap spaces them.
  */
+type HoursRow = DraftHours & { id: string };
+type SpecialHoursRow = DraftSpecialHours & { id: string };
+
+function stripId<T extends { id: string }>({ id: _id, ...rest }: T): Omit<T, "id"> {
+  return rest;
+}
+
 export function HoursEditor({
   memberId,
   hours,
   specialHours,
 }: {
   memberId: string;
-  hours: HoursRow[];
-  specialHours: SpecialHoursRow[];
+  hours: DraftHours[];
+  specialHours: DraftSpecialHours[];
 }) {
-  const hoursAutosave = useRowAutosave<HoursRow>(hours);
-  const specialAutosave = useRowAutosave<SpecialHoursRow>(specialHours);
+  const saveDraft = useSaveDraftSection(memberId);
+  // Rows in the draft have no ids of their own; these are client-only keys
+  // for React and for per-row Saving…/Saved state, made once per mount.
+  const [initialHours] = useState<HoursRow[]>(() =>
+    hours.map((row, index) => ({ ...row, id: `hours-${index}` })),
+  );
+  const [initialSpecial] = useState<SpecialHoursRow[]>(() =>
+    specialHours.map((row, index) => ({ ...row, id: `special-${index}` })),
+  );
+  const hoursAutosave = useRowAutosave<HoursRow>(initialHours);
+  const specialAutosave = useRowAutosave<SpecialHoursRow>(initialSpecial);
 
   // Per-weekday "add row" status has no row id yet to key off of, so it
   // gets its own small state map instead of living in the hook.
   const [addRowStatus, setAddRowStatus] = useState<Record<number, SaveState>>({});
   const [addHolidayStatus, setAddHolidayStatus] = useState<SaveState>(IDLE);
 
+  /**
+   * Phase 2: hours and special hours are two arrays in the draft's
+   * `basics` section. Every change updates the hook's synchronous rowsRef
+   * first, and every save builds its list from that ref WHEN IT RUNS (the
+   * patch is a function), with saves for the section queued in order -- so
+   * two quick adds both land and a removed row is never sent again.
+   */
+  function saveHoursList() {
+    return saveDraft("basics", () => ({ hours: hoursAutosave.rowsRef.current.map(stripId) }));
+  }
+  function saveSpecialList() {
+    return saveDraft("basics", () => ({
+      special_hours: specialAutosave.rowsRef.current.map(stripId),
+    }));
+  }
+
   async function addRowForWeekday(weekday: number) {
     setAddRowStatus((prev) => ({ ...prev, [weekday]: { status: "saving" } }));
+    const row: HoursRow = {
+      id: crypto.randomUUID(),
+      weekday,
+      opens_at: "09:00",
+      closes_at: "17:00",
+      closes_next_day: false,
+      is_closed: false,
+    };
     try {
-      const patch = { weekday, opens_at: "09:00", closes_at: "17:00", is_closed: false };
-      const { id } = await upsertHoursRow({ data: { memberId, patch } });
-      hoursAutosave.addRow({
-        id,
-        member_id: memberId,
-        weekday,
-        opens_at: "09:00",
-        closes_at: "17:00",
-        closes_next_day: false,
-        is_closed: false,
-      });
+      await hoursAutosave.addRow(row, saveHoursList);
       setAddRowStatus((prev) => ({ ...prev, [weekday]: IDLE }));
     } catch (error) {
       setAddRowStatus((prev) => ({
@@ -302,25 +370,22 @@ export function HoursEditor({
   }
 
   function removeRow(id: string) {
-    return hoursAutosave.remove(id, () => deleteHoursRow({ data: { id } }));
+    return hoursAutosave.remove(id, saveHoursList);
   }
 
   async function addHoliday() {
     setAddHolidayStatus({ status: "saving" });
+    const row: SpecialHoursRow = {
+      id: crypto.randomUUID(),
+      date: nextFreeDate(specialAutosave.rowsRef.current.map((r) => r.date)),
+      is_closed: true,
+      opens_at: null,
+      closes_at: null,
+      closes_next_day: false,
+      note: null,
+    };
     try {
-      const today = new Date().toISOString().slice(0, 10);
-      const patch = { date: today, is_closed: true };
-      const { id } = await upsertSpecialHoursRow({ data: { memberId, patch } });
-      specialAutosave.addRow({
-        id,
-        member_id: memberId,
-        date: today,
-        is_closed: true,
-        opens_at: null,
-        closes_at: null,
-        closes_next_day: false,
-        note: null,
-      });
+      await specialAutosave.addRow(row, saveSpecialList);
       setAddHolidayStatus(IDLE);
     } catch (error) {
       setAddHolidayStatus({
@@ -331,21 +396,17 @@ export function HoursEditor({
   }
 
   function removeSpecial(id: string) {
-    return specialAutosave.remove(id, () => deleteSpecialHoursRow({ data: { id } }));
+    return specialAutosave.remove(id, saveSpecialList);
   }
 
-  function saveHoursField(id: string, field: keyof HoursRow, value: HoursRow[keyof HoursRow]) {
-    const patch = { [field]: value } as Partial<HoursRow>;
-    return upsertHoursRow({ data: { memberId, id, patch } });
+  // The field-level saves: the hook has already applied the change to its
+  // rows by the time these run, so they just send the current list.
+  function saveHoursField(_id: string, _field: keyof HoursRow, _value: unknown) {
+    return saveHoursList();
   }
 
-  function saveSpecialField(
-    id: string,
-    field: keyof SpecialHoursRow,
-    value: SpecialHoursRow[keyof SpecialHoursRow],
-  ) {
-    const patch = { [field]: value } as Partial<SpecialHoursRow>;
-    return upsertSpecialHoursRow({ data: { memberId, id, patch } });
+  function saveSpecialField(_id: string, _field: keyof SpecialHoursRow, _value: unknown) {
+    return saveSpecialList();
   }
 
   /**
@@ -389,6 +450,17 @@ export function HoursEditor({
     }
     if (!DATE_RE.test(value)) {
       specialAutosave.markInvalid(row.id, "date", "Enter a valid date.");
+      return;
+    }
+    // One entry per date (the draft refuses a duplicate). Caught here, on
+    // this row only, so the bad date never enters the list -- otherwise
+    // every later special-hours save would carry it and fail too.
+    if (specialAutosave.rowsRef.current.some((other) => other.id !== row.id && other.date === value)) {
+      specialAutosave.markInvalid(
+        row.id,
+        "date",
+        "You already have hours set for this date — edit that entry instead.",
+      );
       return;
     }
     // Debounced on change, not saveNow -- a native date input fires

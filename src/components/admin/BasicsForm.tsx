@@ -1,10 +1,8 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import {
-  type BasicsMember,
-  type BasicsPatch,
-  updateMemberBasics,
-} from "@/lib/members/member-basics.server";
+import { updateMemberType } from "@/lib/members/member-basics.server";
+import type { BasicsDraft } from "@/lib/drafts/sections";
+import { useSaveDraftSection } from "@/components/admin/DraftStatusContext";
 import { updateMemberEmail } from "@/lib/members/member-email.server";
 import { isFieldVisibleForMemberType, LOCATION_FIELD_LABEL } from "@/lib/members/type-fields";
 import { listIanaTimezones } from "@/lib/timezone/timezones";
@@ -152,23 +150,38 @@ function SignInEmailEditor({ memberId, email }: { memberId: string; email: strin
   );
 }
 
+/** A Basics field's saved value: a draft `basics` key, or the (live) member type. */
+type BasicsFormValues = BasicsDraft & { member_type: MemberType };
+type BasicsFormPatch = Partial<BasicsFormValues>;
+
 /**
  * Every field here autosaves via its own small patch -- debounced ~400ms
  * after the last keystroke for text fields (this plan's Decision 6),
  * immediately on change for the radio/select -- never a whole-form submit.
  * That's what keeps a member-type switch from ever clobbering a hidden
- * field's stored value (this plan's Decision 6 and Global Constraint 2);
- * the server-side column allowlist in member-basics.server.ts is what
- * actually enforces it, this is just the client half of the same rule.
+ * field's stored value.
+ *
+ * Phase 2: the patches go to the member's DRAFT (section `basics`,
+ * useSaveDraftSection) and reach the live page only when published. Member
+ * type is the exception -- it isn't drafted, so it still changes live
+ * (updateMemberType), and only until the type is confirmed; after that it
+ * shows read-only ("Your member type is set by the Guild").
  */
 export function BasicsForm({
-  member,
+  memberId,
+  memberType,
+  typeConfirmed,
+  basics,
   email = null,
   isImpersonating = false,
   logo,
   hours,
 }: {
-  member: BasicsMember;
+  memberId: string;
+  memberType: MemberType;
+  /** type_confirmed_at is set: the type is locked for the member. */
+  typeConfirmed: boolean;
+  basics: BasicsDraft;
   email?: string | null;
   isImpersonating?: boolean;
   /** The logo row card (LogoUploader), shown at the end of IDENTITY. */
@@ -176,15 +189,17 @@ export function BasicsForm({
   /** The weekly/special hours editor (HoursEditor), shown after IDENTITY. */
   hours?: ReactNode;
 }) {
-  const [local, setLocal] = useState(member);
+  const saveDraft = useSaveDraftSection(memberId);
+  const initialValues: BasicsFormValues = { ...basics, member_type: memberType };
+  const [local, setLocal] = useState<BasicsFormValues>(initialValues);
   const [status, setStatus] = useState<Record<string, SaveState>>({});
 
-  // The last value this component knows to be persisted, per field --
-  // used both to skip no-op saves (tabbing through the form without
-  // changing anything shouldn't fire a write) and, on a debounced field,
-  // to know what to compare a keystroke against. Deliberately a ref, not
-  // state: updating it must never itself trigger a re-render.
-  const savedRef = useRef<BasicsMember>(member);
+  // The last value this component knows to be saved, per field -- used
+  // both to skip no-op saves (tabbing through the form without changing
+  // anything shouldn't fire a write) and, on a debounced field, to know
+  // what to compare a keystroke against. Deliberately a ref, not state:
+  // updating it must never itself trigger a re-render.
+  const savedRef = useRef<BasicsFormValues>(initialValues);
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const savedStatusTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -197,13 +212,13 @@ export function BasicsForm({
     };
   }, []);
 
-  function isNoOp(patch: BasicsPatch) {
+  function isNoOp(patch: BasicsFormPatch) {
     return Object.entries(patch).every(
-      ([key, value]) => savedRef.current[key as keyof BasicsMember] === value,
+      ([key, value]) => savedRef.current[key as keyof BasicsFormValues] === value,
     );
   }
 
-  function performSave(field: string, patch: BasicsPatch) {
+  function performSave(field: string, patch: BasicsFormPatch) {
     if (isNoOp(patch)) return;
 
     if (savedStatusTimers.current[field]) {
@@ -212,7 +227,12 @@ export function BasicsForm({
     }
     setStatus((prev) => ({ ...prev, [field]: { status: "saving" } }));
 
-    updateMemberBasics({ data: { memberId: member.id, patch } })
+    const { member_type: nextType, ...draftPatch } = patch;
+    const request =
+      nextType !== undefined
+        ? updateMemberType({ data: { memberId, memberType: nextType } })
+        : saveDraft("basics", draftPatch);
+    request
       .then(() => {
         savedRef.current = { ...savedRef.current, ...patch };
         setStatus((prev) => ({ ...prev, [field]: { status: "saved" } }));
@@ -234,13 +254,13 @@ export function BasicsForm({
   }
 
   /** Radio/select fields: no debounce, save fires on the change itself. */
-  function saveNow(field: string, patch: BasicsPatch) {
+  function saveNow(field: string, patch: BasicsFormPatch) {
     setLocal((prev) => ({ ...prev, ...patch }));
     performSave(field, patch);
   }
 
   /** Text fields: debounce while typing... */
-  function scheduleSave(field: string, patch: BasicsPatch) {
+  function scheduleSave(field: string, patch: BasicsFormPatch) {
     setLocal((prev) => ({ ...prev, ...patch }));
     if (debounceTimers.current[field]) clearTimeout(debounceTimers.current[field]);
     debounceTimers.current[field] = setTimeout(() => {
@@ -269,7 +289,7 @@ export function BasicsForm({
   }
 
   /** ...and flush immediately on blur, so leaving the field never waits out the timer. */
-  function flushSave(field: string, patch: BasicsPatch) {
+  function flushSave(field: string, patch: BasicsFormPatch) {
     cancelPendingSave(field);
     performSave(field, patch);
   }
@@ -306,6 +326,8 @@ export function BasicsForm({
   const showStreet = isFieldVisibleForMemberType(local.member_type, "street_address");
   const showServiceArea = isFieldVisibleForMemberType(local.member_type, "service_area");
   const showLeadTime = isFieldVisibleForMemberType(local.member_type, "lead_time");
+  // The profile shows a sales email for Allied Members only (ContactBlock).
+  const showSalesEmail = local.member_type === "allied";
 
   return (
     <div className="flex max-w-[972px] flex-col gap-[22px] md:gap-[30px]">
@@ -313,11 +335,11 @@ export function BasicsForm({
         Basics &amp; hours
       </h1>
 
-      {isImpersonating && <SignInEmailEditor memberId={member.id} email={email} />}
+      {isImpersonating && <SignInEmailEditor memberId={memberId} email={email} />}
 
       <fieldset className="m-0 flex flex-col gap-[9px] border-0 p-0 md:gap-3">
         <legend className={cn(sectionLabelClass, "mb-[9px] p-0 md:mb-3")}>Member type</legend>
-        {MEMBER_TYPE_OPTIONS.map((option) => {
+        {MEMBER_TYPE_OPTIONS.filter((option) => !typeConfirmed || option.value === local.member_type).map((option) => {
           const checked = local.member_type === option.value;
           return (
             <label
@@ -336,6 +358,7 @@ export function BasicsForm({
                 name="member_type"
                 value={option.value}
                 checked={checked}
+                disabled={typeConfirmed}
                 onChange={() => saveNow("member_type", { member_type: option.value })}
                 className="mt-0.5 h-[19px] w-[19px] shrink-0 cursor-pointer accent-ink md:h-[18px] md:w-[18px]"
               />
@@ -359,8 +382,18 @@ export function BasicsForm({
       </fieldset>
 
       <InfoBox>
-        Your type decides which sections appear on your public page. Changing it won't delete
-        anything you've already filled in.
+        {typeConfirmed ? (
+          <>
+            Your member type is set by the Guild. It decides which sections appear on your public
+            page. If it's wrong, contact the Guild to change it.
+          </>
+        ) : (
+          <>
+            Your type decides which sections appear on your public page. Changing it won't delete
+            anything you've already filled in. Unlike your other changes, a new type takes effect
+            right away — it isn't part of what you publish.
+          </>
+        )}
       </InfoBox>
 
       <section className="flex flex-col gap-[14px] md:gap-4" aria-labelledby="identity-heading">
@@ -537,6 +570,50 @@ export function BasicsForm({
               }}
             />
           </Field>
+
+          {/* Phone and sales email moved here from Links & contact (plan
+              Decision 2): they're part of the draft's basics section. */}
+          <Field
+            id="phone"
+            label={
+              local.member_type === "mobile"
+                ? "Booking phone"
+                : local.member_type === "allied"
+                  ? "Sales phone"
+                  : "Phone"
+            }
+            hint="Shown on your profile as a tap-to-call link."
+            state={status.phone ?? IDLE}
+          >
+            <Input
+              id="phone"
+              type="tel"
+              defaultValue={local.phone ?? ""}
+              className={textInputClass}
+              onChange={(e) => scheduleSave("phone", { phone: e.target.value || null })}
+              onBlur={(e) => flushSave("phone", { phone: e.target.value || null })}
+            />
+          </Field>
+
+          {showSalesEmail && (
+            <Field
+              id="contact_email"
+              label="Sales email"
+              hint="Shown on your profile. Not the address you sign in with."
+              state={status.contact_email ?? IDLE}
+            >
+              <Input
+                id="contact_email"
+                type="email"
+                defaultValue={local.contact_email ?? ""}
+                className={textInputClass}
+                onChange={(e) =>
+                  scheduleSave("contact_email", { contact_email: e.target.value || null })
+                }
+                onBlur={(e) => flushSave("contact_email", { contact_email: e.target.value || null })}
+              />
+            </Field>
+          )}
         </div>
 
         {logo}
