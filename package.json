@@ -14,7 +14,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "cf-typegen": "wrangler types",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:db": "node scripts/test-db.mjs"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

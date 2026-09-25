@@ -45,6 +45,22 @@ export const inviteMember = createServerFn({ method: "POST" })
 
     const serviceClient = await getSupabaseServiceRoleClient();
 
+    // One owner per member (20260925200200_member_users_roles.sql). Checked
+    // up front so no auth user is created -- and no "you're invited" email
+    // sent -- for a member that already has one; adding more people to a
+    // claimed member is the owner's People section, not this invite.
+    const { data: existingOwner, error: ownerLookupError } = await serviceClient
+      .from("member_users")
+      .select("user_id")
+      .eq("member_id", data.memberId)
+      .eq("role", "owner")
+      .limit(1)
+      .maybeSingle();
+    if (ownerLookupError) throw new Error(ownerLookupError.message);
+    if (existingOwner) {
+      throw new Error("This member already has an owner. They can add more people from their portal.");
+    }
+
     const { data: inviteData, error: inviteError } = await serviceClient.auth.admin.createUser({
       email: data.email,
       email_confirm: true,
@@ -59,14 +75,23 @@ export const inviteMember = createServerFn({ method: "POST" })
       role: "owner",
     });
     if (memberUserError) {
-      // A 23505 unique-violation on (member_id, user_id) means this exact
-      // link already exists -- e.g. a double-click, or re-inviting an
-      // email that's already linked to this same member -- nothing to
-      // roll back, the user this call wanted linked already is. Any other
-      // error means the write genuinely failed, so roll back the
-      // just-created auth user rather than leaving an orphaned, unlinked
-      // one behind.
-      if (memberUserError.code !== "23505") {
+      // A 23505 is harmless only when it's the (member_id, user_id) link
+      // that already exists -- e.g. a double-click. The one-owner index can
+      // also raise 23505 (another owner was added between the check above
+      // and this insert), and that one is a real failure. So check the
+      // link actually exists; anything else rolls back the just-created
+      // auth user rather than leaving an orphaned, unlinked one behind.
+      let alreadyLinked = false;
+      if (memberUserError.code === "23505") {
+        const { data: link } = await serviceClient
+          .from("member_users")
+          .select("user_id")
+          .eq("member_id", data.memberId)
+          .eq("user_id", inviteData.user.id)
+          .maybeSingle();
+        alreadyLinked = Boolean(link);
+      }
+      if (!alreadyLinked) {
         await serviceClient.auth.admin.deleteUser(inviteData.user.id).catch((cleanupErr) => {
           console.error(
             "inviteMember: failed to roll back orphaned auth user after member_users insert failure",

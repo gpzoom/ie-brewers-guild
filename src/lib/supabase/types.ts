@@ -92,6 +92,14 @@ export type MemberRow = {
   approved_at?: string | null;
   approved_by_user_id?: string | null;
   trail_eligible: boolean;
+  // Setup-wizard state (20260925200100_members_setup_columns.sql). Optional
+  // for the same reason as the three columns above: never granted to anon,
+  // so member-profile.server.ts's anon-safe column list doesn't select them.
+  // Written only by confirm_member_type() / complete_member_setup() (or a
+  // Guild admin) -- the write-limits trigger rejects direct member writes.
+  type_confirmed_at?: string | null;
+  type_confirmed_by_user_id?: string | null;
+  setup_completed_at?: string | null;
 };
 
 export type MediaAssetRow = {
@@ -221,11 +229,15 @@ export type ProfileRow = {
   is_guild_admin: boolean;
 };
 
+// 'editor' is the full editor; 'media_events' is the Photos & events editor
+// (20260925200200_member_users_roles.sql; spec, "People and permissions").
+export type MemberRole = "owner" | "editor" | "media_events";
+
 export type MemberUserRow = {
   id: string;
   member_id: string;
   user_id: string;
-  role: "owner" | "editor";
+  role: MemberRole;
   created_at: string;
 };
 
