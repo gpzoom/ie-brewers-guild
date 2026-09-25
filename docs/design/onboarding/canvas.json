@@ -1,0 +1,100 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "ScreenMap.dc.html": {
+      "h": 1960,
+      "title": "Screen map — wizard, finish, portal",
+      "w": 1920,
+      "x": -557,
+      "y": 0
+    },
+    "StepAnatomy.dc.html": {
+      "h": 844,
+      "title": "Wizard step anatomy (phone, lo-fi)",
+      "w": 390,
+      "x": 2000,
+      "y": 0
+    },
+    "Roles.dc.html": {
+      "x": -557,
+      "y": 2080,
+      "w": 1920,
+      "h": 1040,
+      "title": "People & permissions"
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-09-25T18:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "maptitle": {
+      "kind": "title1",
+      "maxW": 2390,
+      "text": "ISC Brewers Guild — member onboarding wizard & portal",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "q1": {
+      "fill": "green",
+      "size": 24,
+      "text": "DECIDED — Draft layer\nWizard and portal edits save to a draft. Preview shows the draft; Publish pushes it live. Applies to already-published (imported) members too.",
+      "w": 400,
+      "x": 2470,
+      "y": 0
+    },
+    "q2": {
+      "fill": "green",
+      "size": 24,
+      "text": "DECIDED — Member type\nMember confirms the Guild's type, or picks the right one (Guild admin gets an email when they do). Locked after that. Later changes = support request to the Guild admin.",
+      "w": 400,
+      "x": 2470,
+      "y": 420
+    },
+    "q3": {
+      "fill": "green",
+      "size": 24,
+      "text": "DECIDED — Getting in & when the wizard shows\n'Member Portal' link sits under 'Member Sign In' in the footer, same magic link. Old path = fallback while testing.\n\nWizard runs until the member confirms type AND clicks Continue on The Basics. After that: portal only, forever, for everyone on that member.",
+      "w": 400,
+      "x": 2470,
+      "y": 760
+    },
+    "q4": {
+      "fill": "green",
+      "size": 24,
+      "text": "DECIDED — Second editor\nOnce the owner has finished setup, a newly added editor goes straight to the portal. The wizard runs once per member, not once per person.",
+      "w": 400,
+      "x": 2470,
+      "y": 1100
+    },
+    "q5": {
+      "fill": "green",
+      "size": 24,
+      "text": "DECIDED — One set of editors\nEach wizard step IS a portal section in guided order: same form component, same fields, same save. Wizard = step chrome (Back / Skip / Continue) wrapped around it. Nothing built twice.",
+      "w": 400,
+      "x": 2470,
+      "y": 1440
+    },
+    "q6": {
+      "x": 2470,
+      "y": 2080,
+      "w": 400,
+      "fill": "green",
+      "size": 24,
+      "text": "DECIDED — Photos & events editor\nOwner invites/removes from People. This role sees only Photos & video and Events, can't connect a calendar, and publishes (or discards) only Photos & video — the owner's other draft changes stay put."
+    }
+  },
+  "order": [
+    "ScreenMap.dc.html",
+    "StepAnatomy.dc.html",
+    "Roles.dc.html"
+  ],
+  "pages": [],
+  "title": "Member Onboarding Screen Map"
+}

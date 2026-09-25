@@ -5,6 +5,7 @@ The visual reference for every screen in this app. **Before building or changing
 - Live canvas (owner's claude.ai design canvas): https://claude.ai/artifact/9YttpbrWTxgAkc145whpGf
 - Snapshot of every artboard's source: [`artboards/`](artboards/) — plain HTML with inline styles, readable as-is (the `support.js` runtime they reference isn't needed to read them).
 - Canvas index (titles, sizes): [`canvas.json`](canvas.json)
+- **Onboarding wizard & member portal** screen map (lo-fi structure, not a visual reference): [`onboarding/`](onboarding/README.md)
 
 Placeholders like `[MEMBER NAME]` in the artboards are stand-ins for real data. Artboards still say "IE Brewers Guild"; the organization is now **ISC Brewers Guild** (Inland Southern California Brewers Guild) — use the current name.
 

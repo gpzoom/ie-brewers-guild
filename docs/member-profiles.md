@@ -12,7 +12,7 @@ Those are the visual reference. Where this document and an artboard disagree, th
 
 **The artboards live in [`docs/design/`](design/README.md)** (a snapshot of each one's source, plus the link to the live canvas and a map from each artboard to the code that implements it). Every screen must be built against its artboard.
 
-Out of scope: the existing Members page itself — the map and card grid already exist and are not being rebuilt, only the links that open a profile page from them — the Guild's own marketing pages, an onboarding wizard for a member's first sign-in, and anything to do with taking payment, which happens off the site.
+Out of scope: the existing Members page itself — the map and card grid already exist and are not being rebuilt, only the links that open a profile page from them — the Guild's own marketing pages, and anything to do with taking payment, which happens off the site.
 
 ## Member types
 
@@ -99,7 +99,7 @@ Stale hours are the failure mode that makes a directory worthless, so the confir
 
 Persist `hours_confirmed_at` as a datetime on the member. Set it to now whenever the member ticks the confirmation box and publishes. A boolean records nothing useful — what matters is how long ago.
 
-Gate **publish**, not save. Field edits save as the member types; publishing is what requires the tick. Blocking save behind a validation checkbox is how half-finished profiles get abandoned.
+Gate **publish**, not save. Field edits save to the draft as the member types (see Drafts); publishing is what requires the tick. Blocking save behind a validation checkbox is how half-finished profiles get abandoned.
 
 The dialog shows the hours back to the member as a read-only list before asking them to confirm. A checkbox with nothing to check against is theater, and members will tick it blind.
 
@@ -252,7 +252,7 @@ What the import does per member:
 
 Imported members are unclaimed until invited. The roster needs that state alongside "invited, not signed in" — a member nobody has written to yet is a different job from one who was written to and hasn't acted.
 
-An onboarding wizard for a member's first sign-in is the obvious next thing to build and is out of scope here. Worth knowing it is coming: don't make the admin's first screen assume a filled-in profile.
+Imported members start with `type_confirmed_at` and `setup_completed_at` both null, so their first sign-in through Member Portal lands in the setup wizard. See Setup wizard, member portal and drafts. The portal's first screen still must not assume a filled-in profile.
 
 ## Accounts, sign-in and joining
 
@@ -260,7 +260,7 @@ Supabase Auth, magic link only. No passwords — these are small-business owners
 
 ### One sign-in, in the footer
 
-A single **Member sign in** link in the site footer, and a real `/signin` route so it can go in emails. Not in the header: two dozen members against thousands of visitors, and a Sign In button in the header of a public directory tells every visitor they ought to have an account.
+A single **Member sign in** link in the site footer, and a real `/signin` route so it can go in emails. While the new portal is tested, a **Member Portal** link sits directly under it (see Setup wizard, member portal and drafts). Not in the header: two dozen members against thousands of visitors, and a Sign In button in the header of a public directory tells every visitor they ought to have an account.
 
 **The magic link routes by role, not by URL.** One form for everyone; where you land is decided by the account. A member lands in `/admin` on their own profile, a Guild admin in `/guild`. No separate admin login to find, nothing extra to lock down, and no way to probe which addresses are admins. A second admin login is strictly more attack surface for strictly less convenience.
 
@@ -304,6 +304,172 @@ Resend, called from a Worker. Supabase Auth sends the magic link; everything els
 Send from **`mail.iscbrewersguild.org`**, verified in Resend with its SPF, DKIM and DMARC records in place before the first send. A workers.dev sender puts half of this mail in spam.
 
 The contact form is a public endpoint that writes rows and sends mail, so it needs a rate limit per IP and a honeypot field at minimum.
+
+## Setup wizard, member portal and drafts
+
+Decided with the owner on 25 September 2026. The screen map is snapshotted in [`docs/design/onboarding/`](design/onboarding/README.md), taken from its own Design canvas, "Member Onboarding Screen Map". It is a lo-fi map of structure, not a visual reference. The artboards in `docs/design/artboards/` still decide look and layout, and this section wins on behaviour.
+
+### Who uses it
+
+The member's own profile admin, meaning the owner or an editor in `member_users`. There are three roles: owner, full editor, and Photos & events editor (see People and permissions). A Guild admin reaches the same screens only through **Edit as them**, and every impersonation rule above still applies.
+
+### Getting in
+
+- The site footer gets a **Member Portal** link directly under **Member sign in**. Both use the same magic-link sign-in process that exists today.
+- **While this is being tested, both paths exist side by side.** Member sign in keeps landing on the current `/admin`, as the fallback. Member Portal lands on the new `/portal`, which holds the wizard and the portal. Once the owner has tested it, `/portal` replaces `/admin` and the second link goes away. Don't delete or rewire `/admin` until then.
+- Implement Member Portal as the existing sign-in form with a destination (`/signin?next=/portal`), not a second sign-in form. Check `next` against a short allowlist of internal paths so it can't be used as an open redirect.
+- The Guild's invite email links to `/portal` too.
+
+### Wizard or portal: one rule
+
+A member is in **setup** until both of these are true:
+
+1. `type_confirmed_at` is set (step 2), and
+2. `setup_completed_at` is set. That happens when someone clicks **Continue** on step 3, The basics, with its required fields valid.
+
+Until then, `/portal` opens the wizard at the first of steps 1–3 that isn't done. After that, `/portal` always opens the portal. **The wizard is never shown again**, not to the owner and not to any editor added later. Setup belongs to the member, not to each person.
+
+Imported members already have a business name and city, but their setup is still incomplete. `setup_completed_at` records someone actually clicking Continue on step 3, not the fields happening to be filled in. So every imported member's first sign-in goes through steps 1–3.
+
+### Wizard steps
+
+One step per screen. Every step has **Back**, **Skip for now** (except steps 2 and 3) and **Continue**, plus **Save & exit** in the top bar. A progress line reads "Step N of M", where M depends on the member type.
+
+| # | Step | Producer | Mobile | Allied | Required | Reuses |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Welcome: what to have handy, about 10 minutes, what can be skipped | ✓ | ✓ | ✓ | — | new |
+| 2 | Confirm your member type | ✓ | ✓ | ✓ | yes | new |
+| 3 | The basics: name, city, tagline, phone, member since, plus the type's location fields | ✓ | ✓ | ✓ | name and city | F |
+| 4 | Logo and cover | ✓ | ✓ | ✓ | — | G |
+| 5 | When you're open: 7-day hours / 5-day business hours / Where we'll be (calendar or hand entry) | hours | calendar | hours | — | F, M |
+| 6 | Events | ✓ | — (step 5 covered it) | ✓ | — | M |
+| 7 | Photos and video, including the creator upload link | ✓ | ✓ | ✓ | — | G, J |
+| 8 | Links (third pill: Tap list / Press kit / Catalog) | ✓ | ✓ | ✓ | — | R |
+| 9 | Member discount and supplies | — | — | ✓ | — | /admin/discount |
+| 10 | Pick your colour | ✓ | ✓ | ✓ | — | K |
+
+Steps after 3 are optional. A skipped step isn't stored anywhere. Whether a step is done is worked out from whether its data is empty, so the Review checklist and the portal's Finish card can't drift from the real profile.
+
+**Each wizard step is the portal section with the same content, wrapped in step chrome.** Same component, same fields, same save. Nothing is built twice. If a portal section changes, the wizard step changes with it.
+
+After step 10 (or the last step for that type) comes **Review**: a checklist of every step, either done or empty, with a link back to each empty one. Then Preview, the publish check and "You're live".
+
+**Save & exit** before step 3 is finished: the next visit resumes the wizard. After step 3: the next visit goes to the portal, which shows a **Finish your profile** card listing the empty sections, each linking to its portal section. The card disappears once nothing is empty.
+
+### Member type: confirm once, then locked
+
+- Step 2 shows the type the Guild set at import or invite, with **Yes, that's us**.
+- **That's not right** reveals the other two types. If the member picks one, the Guild admin gets an email saying the member changed their type from X to Y during setup, and the change goes in the audit log against the real actor.
+- Either way, confirming sets `type_confirmed_at` and `type_confirmed_by_user_id`, and **the type is locked for the member from then on**.
+- In the portal, type shows read-only in Basics with a **Request a type change** link. That creates a `support_requests` row (kind `type_change`, with the requested type and an optional note) and emails the Guild admin. The Guild admin makes the change from the roster. Only a Guild admin can change a confirmed type, and impersonation doesn't count, because the lock is on the member's side.
+- Changing type still never deletes data from modules the new type doesn't render. That rule from Member types is unchanged.
+
+### Drafts: nothing goes live until Publish
+
+This supersedes the current behaviour, where edits to a published profile go live as you type.
+
+- **Every edit in the wizard or portal saves to the member's draft, never to the live profile.** Saving still happens as you type; only where it saves changes.
+- **Preview** renders the real profile template from the draft. That means the template takes a profile object rather than fetching the live rows itself, so one component renders both live and preview.
+- **Publish changes** runs the publish check (hours read-back and confirm tick, or the mobile past-dates warning), then copies the draft onto the live profile **in one database transaction**. It sets `published_at`, and `hours_confirmed_at` when ticked. Either all of it goes live or none of it.
+- While the draft differs from live, the top bar shows **Unpublished changes** and a **Discard changes** button. Discard asks for confirmation ("Throw away your unpublished changes? Your live page stays as it is."), then resets the draft to a copy of what's live. Both are hidden when there's nothing unpublished. For a member that has never been published, Discard is hidden, since there's nothing live to go back to.
+- Impersonated edits save to the draft like any other edit and are logged against the real actor.
+
+**Storage (recommended):** one `member_drafts` row per member holding the whole editable profile as `jsonb`, in the same shape the profile template takes. It holds the `members` fields, slides, links, hours, special hours, categories and discount. Publishing is a Postgres function, `publish_member_draft(member_id)`, that writes it into the live tables. The alternative, a draft copy of every child table, doubles the schema for no benefit at this scale.
+
+- A draft is created on first edit by copying live. Imported members get theirs on first sign-in.
+- Which sections have unpublished changes is tracked per section (`dirty_sections`, see Publishing by section). That drives the Unpublished changes indicator. No deep comparison.
+
+**What is not drafted:**
+
+- **Events and their status overlays.** They come from the member's calendar, which is already live, and the whole point of an overlay (Canceled, Rescheduled) is to fix the public page *immediately*. The Events section says so in one line: "Event changes show on your page right away."
+- **The media gallery itself.** Uploading or approving a creator upload adds to the gallery, not to the profile. Which gallery items appear as slides, logo or cover, and their crops, *is* drafted. Deleting a gallery file used by either the live profile or the draft is blocked.
+- **The one-click stale-hours email.** It sets `hours_confirmed_at` directly, as specified above.
+- **Member type.** It is locked (above) and changed only by the Guild admin.
+
+### People and permissions
+
+A member's profile can have three kinds of people. The role lives in `member_users.role`.
+
+| Can they… | Owner (`owner`) | Full editor (`editor`) | Photos & events editor (`media_events`) |
+| --- | --- | --- | --- |
+| Go through the setup wizard | yes | yes, if setup isn't done | never |
+| Basics & hours, Logo & cover, Links, Discount, Theme | yes | yes | no, sections hidden |
+| Photos & video: upload, crop, reorder, tap-through links, creator upload links, approve or reject creator uploads | yes | yes | yes |
+| Events: add, edit, hide, set Postponed / Rescheduled / Canceled, Refresh now | yes | yes | yes |
+| Connect or disconnect the Google / Apple calendar | yes | no | no |
+| Preview | whole draft | whole draft | live page plus their Photos & video draft |
+| Publish | everything | everything | Photos & video only |
+| Discard changes | everything | everything | Photos & video only |
+| Request a type change | yes | yes | no |
+| People: invite, resend, cancel invite, remove | yes | no | no |
+
+- **Cover and logo are not part of Photos & video** for this purpose. They stay with the owner and full editors.
+- Only the owner connects the calendar, so sync doesn't break when an editor leaves or used their own Google account.
+- A Photos & events editor never sees the wizard. If the member's setup isn't done yet, they still land on their two sections.
+- One owner per member. Changing who the owner is is a Guild admin job, from the roster. The owner can't remove themselves.
+- **Hiding a section in the UI is not the protection.** Every write is checked on the server against the caller's role (below).
+
+#### The People section
+
+A portal section only the owner sees. It lists everyone on the member with their role, plus pending invites. To invite, the owner enters an email address and picks **Photos & events** or **Full editor**. The invitee gets an email with a Member Portal sign-in link. When they sign in with that address, the invite is accepted and a `member_users` row is created with the invited role. Invites expire after 14 days and can be resent or cancelled. Removing someone deletes their `member_users` row and ends their access on their next request. Changing someone's role is remove-and-reinvite, for now. The Guild admin can do all of this from the roster too.
+
+Invites go through the same server path the Guild admin's create-member invite already uses, not a client-side Supabase call.
+
+#### Publishing by section
+
+This refines Drafts above. The draft is split into sections so a limited editor can publish their part without pushing anyone else's unfinished work.
+
+- `member_drafts.data` is keyed by section: `basics` (member fields, hours, special hours, cover, logo), `media` (carousel slides and crops), `links`, `discount` (discount fields and categories), `theme`.
+- `member_drafts.dirty_sections text[]` replaces the single `is_dirty` flag. Saving a section adds its key; publishing or discarding a section removes it.
+- `publish_member_draft(member_id, sections text[])` publishes only the sections named, in one transaction. The owner's and full editor's **Publish changes** passes every dirty section. The Photos & events editor's **Publish photos** passes only `media`.
+- **Discard** works the same way: a Photos & events editor's Discard resets only `media` to live.
+- The hours publish check runs only when `basics` is being published, so a photos-only publish never asks about hours.
+- The Unpublished changes label reflects the sections the viewer can publish. For the owner it also names who made the pending photo changes when that wasn't them ("Photo changes from [name] waiting to publish").
+- Their **Preview** shows the live page with only the `media` draft applied, because that's exactly what their Publish would put live.
+
+#### Enforcement
+
+- Draft writes go through a Postgres function, `save_member_draft_section(member_id, section, data)`, which checks the caller's `member_users.role` against the section. `media_events` may write only `media`. Clients have no direct update on `member_drafts`.
+- `publish_member_draft` checks the same way: `media_events` may publish only `media`.
+- `events` writes and `media_assets` / `upload_tokens` writes allow all three roles. `calendar_connections` writes allow `owner` only. **Refresh now** runs in a Worker that allows all three roles.
+- People actions (invite, cancel, remove) are owner-only, checked in the Worker.
+- Impersonation still logs against the real actor. A Guild admin impersonating acts with owner rights, but still can't change sign-in settings.
+
+### Routes
+
+- `/portal`: decides wizard or portal by the rule above.
+- `/portal/setup/[step]`: wizard steps, by name, not number (`type`, `basics`, `hours`…), so type-specific steps don't renumber URLs.
+- `/portal/[section]`: portal sections, reusing the `/admin` components.
+- `/portal/preview`: the draft rendered in the profile template, behind a "Preview · not live yet" band.
+- `/portal/people`: owner only.
+- `/admin/*` stays as the fallback until testing is done.
+
+### Data model additions
+
+On `members`:
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| type\_confirmed\_at | timestamptz | set by wizard step 2 |
+| type\_confirmed\_by\_user\_id | uuid | fk auth.users |
+| setup\_completed\_at | timestamptz | set by Continue on wizard step 3; non-null means the wizard is never shown again |
+
+`member_drafts`: `member_id uuid primary key` (fk members), `data jsonb not null` (keyed by section), `dirty_sections text[] not null default '{}'`, `media_updated_by_user_id` (who last changed photos, for the owner's notice), `updated_at`, `updated_by_user_id` (the real actor when impersonating). RLS: select only where `member_users` links the caller, plus Guild admins while impersonating. No direct client writes: writes go through `save_member_draft_section` and `publish_member_draft`. Never public.
+
+`member_users.role`: the check becomes `in (owner, editor, media_events)`.
+
+`member_invites`: `member_id`, `email text not null`, `role text not null` (check in `editor`, `media_events`), `invited_by_user_id`, `expires_at timestamptz not null` (default now() + 14 days), `accepted_at`, `accepted_user_id`, `cancelled_at`. Unique on (member_id, lower(email)) where not accepted and not cancelled. RLS: no client access; the Worker reads and writes it.
+
+`support_requests`: `member_id`, `requested_by_user_id`, `kind text` (check in `type_change`; more kinds later), `requested_member_type text`, `note text`, `status text not null default 'open'` (check in `open`, `handled`), `handled_by_user_id`, `handled_at`. RLS: members insert and read their own; the Guild admin reads and updates all.
+
+### New email
+
+| Trigger | To | Content |
+| --- | --- | --- |
+| Member picks a different type in wizard step 2 | the Guild | "[Member] changed their type from X to Y during setup," with a link to the roster row |
+| Member requests a type change in the portal | the Guild | The request, requested type and note, with a link to the roster row |
+| Owner invites someone | the invitee | Who invited them, to which member, what they'll be able to edit, and a Member Portal sign-in link |
+
 
 ## Brand system
 
@@ -668,5 +834,10 @@ The general principle: a member who has filled in almost nothing should still ge
 - [x] Events — all member types, calendar sync with member status overlays
 - [x] Trail — deferred, hooks only, nothing about visitors stored
 - [x] Naming — Allied Member, and no "brewery" in member-facing copy
+- [x] Setup wizard — steps 1–3 required (welcome, confirm type, basics), the rest skippable; never shown again once setup completes
+- [x] Member type — confirmed once in the wizard, then locked; changes by request to the Guild admin
+- [x] Drafts — all edits save to a draft; Publish pushes live in one transaction; Discard resets to live; events and overlays stay live
+- [x] Portal entry — Member Portal link under Member sign in; `/admin` kept as fallback until tested
+- [x] Photos & events editor — owner-invited role; edits Photos & video and Events only; publishes and discards Photos & video only; can't connect a calendar
 
 Nothing is open. This is ready to hand to Claude Code.

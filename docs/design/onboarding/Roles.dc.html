@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Who can do what</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Chivo',system-ui,sans-serif;color:#241F1A;background:#F9F6F0}
+a{color:#B3591F}a:hover{color:#8F4517}
+.h{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;margin:0}
+.lbl{font-size:12px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#6B6156;margin:0}
+.t{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:19px;margin:0}
+.m{font-size:13px;line-height:1.45;color:#6B6156;margin:0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{text-align:left;font-weight:600;padding:12px 14px;border-bottom:2px solid #DED7CB;font-size:13px}
+td{padding:11px 14px;border-bottom:1px solid #EFEAE1;vertical-align:top;line-height:1.4}
+td.y{color:#2F6B33;font-weight:600}td.n{color:#8C8275}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #EFEAE1}
+.pill{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border-radius:999px}
+</style>
+</helmet>
+<div style="width: 1920px; height: 1040px; box-sizing: border-box; padding: 56px 64px; display: flex; flex-direction: column; gap: 32px; background: #F9F6F0">
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<p class="lbl">5 · People on a member's profile</p>
+<h2 class="h" style="font-size: 40px">Who can do what</h2>
+<p class="m" style="font-size: 16px; max-width: 1100px">Three roles. The owner invites and removes people from a People section only they can see. A Photos &amp; events editor sees two sections and publishes only their own changes.</p>
+</div>
+
+<div style="display: flex; gap: 32px; align-items: flex-start">
+
+<div style="width: 820px; background: #FFFFFF; border: 1px solid #DED7CB; border-radius: 14px; padding: 8px 8px 12px">
+<table>
+<thead><tr><th style="width: 46%">Can they…</th><th>Owner</th><th>Full editor</th><th style="color: #17605F">Photos &amp; events</th></tr></thead>
+<tbody>
+<tr><td>Go through the setup wizard</td><td class="y">Yes</td><td class="y">Yes, if setup isn't done</td><td class="n">Never</td></tr>
+<tr><td>Basics &amp; hours, Logo &amp; cover, Links, Discount, Theme</td><td class="y">Yes</td><td class="y">Yes</td><td class="n">No, hidden</td></tr>
+<tr><td>Photos &amp; video: upload, crop, reorder, creator links, approve creator uploads</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+<tr><td>Events: add, edit, hide, Postponed / Rescheduled / Canceled, Refresh now</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+<tr><td>Connect or disconnect the Google / Apple calendar</td><td class="y">Yes</td><td class="n">No</td><td class="n">No</td></tr>
+<tr><td>Preview</td><td class="y">Whole draft</td><td class="y">Whole draft</td><td class="y">Live page + their photo changes</td></tr>
+<tr><td>Publish</td><td class="y">Everything</td><td class="y">Everything</td><td class="y">Photos &amp; video only</td></tr>
+<tr><td>Discard changes</td><td class="y">Everything</td><td class="y">Everything</td><td class="y">Photos &amp; video only</td></tr>
+<tr><td>Request a type change</td><td class="y">Yes</td><td class="y">Yes</td><td class="n">No</td></tr>
+<tr><td>People: invite, resend, remove</td><td class="y">Yes</td><td class="n">No</td><td class="n">No</td></tr>
+</tbody>
+</table>
+</div>
+
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 24px">
+
+<div style="border: 1px solid #DED7CB; border-radius: 16px; overflow: hidden; background: #FFFFFF">
+<div style="height: 52px; background: #171410; display: flex; align-items: center; padding: 0 20px"><span style="font-size: 12px; font-weight: 600; letter-spacing: .15em; color: #B6AC9D">MEMBER ADMIN · PEOPLE (OWNER ONLY)</span></div>
+<div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 4px">
+<div class="row"><div><strong>[OWNER NAME]</strong> <span class="m">· you</span></div><span class="pill" style="background: #241F1A; color: #F7F3EC">Owner</span></div>
+<div class="row"><div><strong>[NAME]</strong> <span class="m">· [EMAIL]</span></div><div style="display: flex; gap: 12px; align-items: center"><span class="pill" style="background: #EFEAE1; color: #6B6156">Full editor</span><a href="#">Remove</a></div></div>
+<div class="row"><div><strong>[EMAIL]</strong> <span class="m">· invited, hasn't signed in yet</span></div><div style="display: flex; gap: 12px; align-items: center"><span class="pill" style="background: #17605F; color: #FFFFFF">Photos &amp; events</span><a href="#">Resend</a><a href="#">Cancel invite</a></div></div>
+<div style="display: flex; gap: 12px; align-items: flex-end; padding-top: 16px">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 600">Email</span><div style="height: 46px; border: 1px solid #DED7CB; border-radius: 9px; display: flex; align-items: center; padding: 0 14px; font-size: 14px; color: #6B6156">name@example.com</div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 600">Access</span><div style="height: 46px; border: 1px solid #DED7CB; border-radius: 9px; display: flex; align-items: center; padding: 0 14px; font-size: 14px; gap: 16px"><span>◉ Photos &amp; events</span><span style="color: #6B6156">○ Full editor</span></div></div>
+<span style="height: 46px; background: #B3591F; color: #FFFFFF; border-radius: 9px; padding: 0 18px; display: flex; align-items: center; font-weight: 600; font-size: 14px">Send invite</span>
+</div>
+</div>
+</div>
+
+<div style="border: 1px solid #DED7CB; border-radius: 16px; overflow: hidden; background: #FFFFFF">
+<div style="height: 52px; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 20px">
+<span style="font-size: 12px; font-weight: 600; letter-spacing: .15em; color: #B6AC9D">PHOTOS &amp; EVENTS EDITOR'S VIEW</span>
+<div style="display: flex; gap: 10px; align-items: center">
+<span style="border: 1px solid #C98A2E; color: #E0A85A; border-radius: 999px; padding: 5px 10px; font-size: 12px">Unpublished photo changes</span>
+<span style="color: #B6AC9D; font-size: 13px; text-decoration: underline">Discard</span>
+<span style="border: 1px solid #B6AC9D; color: #F7F3EC; border-radius: 8px; padding: 7px 12px; font-size: 13px">Preview</span>
+<span style="background: #B3591F; color: #FFFFFF; border-radius: 8px; padding: 7px 12px; font-size: 13px; font-weight: 600">Publish photos</span>
+</div>
+</div>
+<div style="display: flex">
+<div style="width: 200px; background: #F9F6F0; border-right: 1px solid #EFEAE1; padding: 16px 12px; display: flex; flex-direction: column; gap: 6px">
+<span style="background: #241F1A; color: #F7F3EC; border-radius: 999px; padding: 10px 14px; font-size: 14px">Photos &amp; video</span>
+<span style="padding: 10px 14px; font-size: 14px">Events</span>
+</div>
+<div style="flex-grow: 1; padding: 20px 24px">
+<div style="background: #EFEAE1; border-radius: 12px; padding: 14px 16px; font-size: 14px; line-height: 1.5">You can edit Photos &amp; video and Events for <strong>[MEMBER NAME]</strong>. Photo changes go live when you publish. Event changes show on the page right away.</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1040}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

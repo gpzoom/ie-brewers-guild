@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Onboarding screen map</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Chivo',system-ui,sans-serif;color:#241F1A;background:#F9F6F0}
+a{color:#B3591F}a:hover{color:#8F4517}
+.h{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;margin:0}
+.lbl{font-size:12px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#6B6156;margin:0}
+.card{background:#FFFFFF;border:1px solid #DED7CB;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;box-sizing:border-box}
+.num{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:14px;width:30px;height:30px;border-radius:999px;background:#241F1A;color:#F7F3EC;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.t{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:19px;margin:0}
+.b{font-size:14px;line-height:1.45;color:#241F1A;margin:0}
+.m{font-size:13px;line-height:1.45;color:#6B6156;margin:0}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border-radius:999px}
+.p{background:#B45309;color:#FFFFFF}.mo{background:#17605F;color:#FFFFFF}.al{background:#3B4B9A;color:#FFFFFF}
+.req{background:#241F1A;color:#F7F3EC}.skip{background:#EFEAE1;color:#6B6156;border:1px solid #DED7CB}
+.arrow{font-size:26px;color:#6B6156;align-self:center}
+.ul{margin:0;padding-left:18px;font-size:14px;line-height:1.5}
+.branch{background:#EFEAE1;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.art{font-size:12px;color:#6B6156;border-top:1px solid #EFEAE1;padding-top:8px;margin-top:auto}
+</style>
+</helmet>
+<div style="width: 1920px; height: 1960px; box-sizing: border-box; padding: 56px 64px; display: flex; flex-direction: column; gap: 44px; background: #F9F6F0">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 40px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<p class="lbl">Screen map · lo-fi · for discussion, not final</p>
+<h1 class="h" style="font-size: 44px">Member profile: setup wizard &amp; editing portal</h1>
+<p class="m" style="font-size: 16px; max-width: 980px">The person using these screens is the member's own profile admin. The wizard is a guided first pass; the portal edits a profile that already exists. Both end in Preview, then Publish.</p>
+</div>
+<div class="card" style="flex-direction: row; gap: 18px; align-items: center; padding: 14px 18px">
+<span class="lbl">Key</span>
+<span class="tag p">Producer</span><span class="tag mo">Mobile</span><span class="tag al">Allied</span>
+<span class="tag req">Required</span><span class="tag skip">Skippable</span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<p class="lbl">1 · Getting in</p>
+<div style="display: flex; gap: 14px; align-items: stretch">
+<div class="card" style="width: 300px"><p class="t">"Member Portal" link</p><p class="m">In the site footer, directly under "Member Sign In". The invite email from the Guild admin links to the same place.</p></div>
+<span class="arrow">→</span>
+<div class="card" style="width: 300px"><p class="t">Magic link sign in</p><p class="m">Same process as today's Member Sign In (artboard T). While testing, both paths exist: Member Sign In → current admin (fallback), Member Portal → new wizard/portal.</p></div>
+<span class="arrow">→</span>
+<div class="card" style="width: 360px; background: #EFEAE1"><p class="t">Type confirmed and Basics done?</p><p class="m">Checked per member, not per person. Once yes, it is yes for good: the wizard never shows again, for the owner or any editor.</p></div>
+<span class="arrow">→</span>
+<div style="display: flex; flex-direction: column; gap: 10px; width: 520px">
+<div class="card" style="flex-direction: row; align-items: center; gap: 12px; padding: 12px 16px"><span class="tag req">No</span><p class="b"><strong>Setup wizard</strong>, back at step 1, 2 or 3 where they left off</p></div>
+<div class="card" style="flex-direction: row; align-items: center; gap: 12px; padding: 12px 16px"><span class="tag skip">Yes</span><p class="b"><strong>Portal</strong> (section 4), from now on</p></div>
+<div class="card" style="flex-direction: row; align-items: center; gap: 12px; padding: 12px 16px"><span class="tag skip">Left after step 3</span><p class="b"><strong>Portal</strong> with a "Finish your profile" card</p></div>
+</div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<p class="lbl">2 · Setup wizard: one step per screen · Back, Skip for now, Continue on every step · Save &amp; exit any time</p>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px">
+
+<div class="card">
+<div style="display: flex; gap: 10px; align-items: center"><span class="num">1</span><p class="t">Welcome</p></div>
+<p class="b">What you'll want handy: logo (PNG or SVG), a few photos, your hours or calendar link.</p>
+<p class="m">About 10 minutes. Anything after step 3 can be skipped and finished later.</p>
+<div class="tags"><span class="tag p">P</span><span class="tag mo">M</span><span class="tag al">A</span></div>
+<p class="art">New screen</p>
+</div>
+
+<div class="card">
+<div style="display: flex; gap: 10px; align-items: center"><span class="num">2</span><p class="t">Confirm your member type</p></div>
+<p class="b">Shows the type the Guild set, with <strong>Yes, that's us</strong>. "That's not right" opens the other two types to choose from.</p>
+<p class="m">If they choose a different type, the Guild admin gets an email: "[Member] changed their type from X to Y during setup."</p>
+<p class="m"><strong>Locks after this step.</strong> Later changes go through a request to the Guild admin.</p>
+<div class="tags"><span class="tag req">Required</span></div>
+<p class="art">New screen · one-time only</p>
+</div>
+
+<div class="card">
+<div style="display: flex; gap: 10px; align-items: center"><span class="num">3</span><p class="t">The basics</p></div>
+<ul class="ul"><li>Business name, city (required)</li><li>Tagline, 70 characters</li><li>Phone, member since</li></ul>
+<div class="branch">
+<p class="m"><span class="tag p">P</span> street address</p>
+<p class="m"><span class="tag mo">M</span> service area</p>
+<p class="m"><span class="tag al">A</span> warehouse address, service area, lead time, sales email</p>
+</div>
+<p class="m"><strong>Continue here completes setup.</strong> Everything after this is optional, and the next sign-in goes to the portal.</p>
+<div class="tags"><span class="tag req">Name + city required</span></div>
+<p class="art">Basics half of F</p>
+</div>
+
+<div class="card">
+<div style="display: flex; gap: 10px; align-items: center"><span class="num">4</span><p class="t">Logo &amp; cover</p></div>
+<ul class="ul"><li>Logo: PNG or SVG, transparent, 400px+ tall. JPG refused with the reason.</li><li>Cover photo, then crop (Portrait band)</li></ul>
+<p class="m">Skip the cover and your theme colour fills the band.</p>
+<div class="tags"><span class="tag skip">Skippable</span></div>
+<p class="art">Cover + logo editors from G</p>
+</div>
+
+<div class="card">
+<div style="display: flex; gap: 10px; align-items: center"><span class="num">5</span><p class="t">When you're open</p></div>
+<div class="branch">
+<p class="m"><span class="tag p">P</span> 7-day hours, split hours, past-midnight close, holidays</p>
+<p class="m"><span class="tag al">A</span> 5-day business hours</p>
+<p class="m"><span class="tag mo">M</span> "Where you'll be": connect Google, paste Apple link + tag, or add dates by hand</p>
+</div>
+<p class="m">Skip: profile shows "Hours not listed" with your phone number.</p>
+<div class="tags"><span class="tag skip">Skippable</span></div>
+<p class="art">Hours half of F · M for mobile</p>
+</div>
+
+<div class="card">
+<div style="display: flex; gap: 10px; align-items: center"><span class="num">6</span><p class="t">Events</p></div>
+<p class="b">Trivia nights, releases, open houses. Connect a calendar (only tagged events come in) or add by hand.</p>
+<p class="m">Mobile members skip this automatically: step 5 already did it. Events and their Canceled / Rescheduled marks update the live page right away (not drafted).</p>
+<div class="tags"><span class="tag p">P</span><span class="tag al">A</span><span class="tag skip">Skippable</span></div>
+<p class="art">M</p>
+</div>
+
+<div class="card">
+<div style="display: flex; gap: 10px; align-items: center"><span class="num">7</span><p class="t">Photos &amp; video</p></div>
+<ul class="ul"><li>Up to 4 portrait slides, crop each</li><li>Optional tap-through link per slide</li><li>"Ask your photographer": make a creator upload link</li></ul>
+<div class="tags"><span class="tag skip">Skippable</span></div>
+<p class="art">G (+ J for the creator)</p>
+</div>
+
+<div class="card">
+<div style="display: flex; gap: 10px; align-items: center"><span class="num">8</span><p class="t">Links</p></div>
+<p class="b">Website, Instagram, Facebook, TikTok, plus one more pill:</p>
+<div class="branch">
+<p class="m"><span class="tag p">P</span> Tap list · <span class="tag mo">M</span> Press kit · <span class="tag al">A</span> Catalog</p>
+</div>
+<div class="tags"><span class="tag skip">Skippable</span></div>
+<p class="art">R</p>
+</div>
+
+<div class="card" style="border: 2px solid #3B4B9A">
+<div style="display: flex; gap: 10px; align-items: center"><span class="num" style="background: #3B4B9A">9</span><p class="t">Member discount &amp; supplies</p></div>
+<ul class="ul"><li>% off, or "no fixed percentage"</li><li>How members redeem it</li><li>What you supply (categories)</li></ul>
+<p class="m">Only shown to Allied Members. Hidden for everyone else.</p>
+<div class="tags"><span class="tag al">Allied only</span><span class="tag skip">Skippable</span></div>
+<p class="art">/admin/discount (no artboard yet)</p>
+</div>
+
+<div class="card">
+<div style="display: flex; gap: 10px; align-items: center"><span class="num">10</span><p class="t">Pick your colour</p></div>
+<p class="b">Eight theme swatches with a small live preview of your header.</p>
+<p class="m">Skip keeps Amber.</p>
+<div class="tags"><span class="tag skip">Skippable</span></div>
+<p class="art">K</p>
+</div>
+
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<p class="lbl">3 · Finish: shared by wizard and portal</p>
+<div style="display: flex; gap: 14px; align-items: stretch">
+<div class="card" style="width: 390px">
+<p class="t">Review</p>
+<p class="b">A checklist of every step: done, or skipped with a "Do it now" link that jumps straight back to that step.</p>
+<p class="m">Wizard only. The portal shows the same list as a "Finish your profile" card.</p>
+</div>
+<span class="arrow">→</span>
+<div class="card" style="width: 390px">
+<p class="t">Preview</p>
+<p class="b">The real profile page, phone and desktop toggle, with a "Preview · not live yet" band across the top.</p>
+<p class="m">Buttons: Keep editing · Publish</p>
+</div>
+<span class="arrow">→</span>
+<div class="card" style="width: 390px">
+<p class="t">Publish check</p>
+<p class="b">Shows your hours back to you, read-only, and asks you to confirm they're right.</p>
+<p class="m">Mobile: warns if every date listed is in the past. (Artboard H)</p>
+</div>
+<span class="arrow">→</span>
+<div class="card" style="width: 390px; background: #241F1A; border-color: #241F1A">
+<p class="t" style="color: #F7F3EC">You're live</p>
+<p class="b" style="color: #F7F3EC">Link to your page, Copy link and Share buttons, then "Go to your portal".</p>
+</div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<p class="lbl">4 · Portal: editing an existing profile · every section opens showing everything already saved</p>
+<div style="display: flex; gap: 24px; align-items: stretch">
+<div style="width: 1180px; border: 1px solid #DED7CB; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; background: #FFFFFF">
+<div style="height: 56px; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 22px">
+<span style="font-size: 12px; font-weight: 600; letter-spacing: .15em; color: #B6AC9D">ISC BREWERS GUILD · MEMBER ADMIN</span>
+<div style="display: flex; gap: 10px; align-items: center">
+<span style="color: #F7F3EC; font-size: 14px">[MEMBER NAME]</span>
+<span style="border: 1px solid #C98A2E; color: #E0A85A; border-radius: 999px; padding: 6px 12px; font-size: 12px">Unpublished changes</span>
+<span style="color: #B6AC9D; padding: 8px 10px; font-size: 13px; text-decoration: underline">Discard changes</span>
+<span style="border: 1px solid #B6AC9D; color: #F7F3EC; border-radius: 8px; padding: 8px 14px; font-size: 13px">Preview</span>
+<span style="background: #B3591F; color: #FFFFFF; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600">Publish changes</span>
+</div>
+</div>
+<div style="display: flex; flex-grow: 1">
+<div style="width: 236px; border-right: 1px solid #EFEAE1; padding: 18px 14px; display: flex; flex-direction: column; gap: 6px; background: #F9F6F0">
+<p class="lbl" style="font-size: 10px; padding: 0 10px 6px">Your profile</p>
+<span style="background: #241F1A; color: #F7F3EC; border-radius: 999px; padding: 11px 14px; font-size: 14px">Basics &amp; hours</span>
+<span style="padding: 11px 14px; font-size: 14px">Logo &amp; cover</span>
+<span style="padding: 11px 14px; font-size: 14px">Photos &amp; video</span>
+<span style="padding: 11px 14px; font-size: 14px">Events</span>
+<span style="padding: 11px 14px; font-size: 14px">Links &amp; contact</span>
+<span style="padding: 11px 14px; font-size: 14px; color: #3B4B9A">Discount &amp; supplies (Allied)</span>
+<span style="padding: 11px 14px; font-size: 14px">Theme</span>
+</div>
+<div style="flex-grow: 1; padding: 26px 30px; display: flex; flex-direction: column; gap: 16px">
+<div style="background: #EFEAE1; border-radius: 12px; padding: 16px 18px; display: flex; justify-content: space-between; align-items: center; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px"><p class="t" style="font-size: 17px">Finish your profile · 3 sections empty</p><p class="m">Links straight to each portal section. Disappears once all are filled.</p></div>
+<div style="display: flex; gap: 8px"><span style="border: 1px solid #DED7CB; background: #FFFFFF; border-radius: 8px; padding: 10px 12px; font-size: 13px">Photos &amp; video →</span><span style="border: 1px solid #DED7CB; background: #FFFFFF; border-radius: 8px; padding: 10px 12px; font-size: 13px">Events →</span><span style="border: 1px solid #DED7CB; background: #FFFFFF; border-radius: 8px; padding: 10px 12px; font-size: 13px">Theme →</span></div>
+</div>
+<h2 class="h" style="font-size: 27px; font-weight: 700">Basics &amp; hours</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div style="height: 46px; border: 1px solid #DED7CB; border-radius: 9px; display: flex; align-items: center; padding: 0 14px; font-size: 14px; color: #6B6156">Business name · [SAVED VALUE]</div>
+<div style="height: 46px; border: 1px solid #DED7CB; border-radius: 9px; display: flex; align-items: center; padding: 0 14px; font-size: 14px; color: #6B6156">City · [SAVED VALUE]</div>
+<div style="height: 46px; border: 1px solid #DED7CB; border-radius: 9px; display: flex; align-items: center; padding: 0 14px; font-size: 14px; color: #6B6156">Tagline · [SAVED VALUE]</div>
+<div style="height: 46px; border: 1px solid #DED7CB; border-radius: 9px; display: flex; align-items: center; padding: 0 14px; font-size: 14px; color: #6B6156">Phone · [SAVED VALUE]</div>
+</div>
+<p class="m" style="margin-top: auto; border-top: 1px solid #EFEAE1; padding-top: 12px">Footer: "Changes save as you type. Publishing needs one more step."  ·  Phone: rail becomes a tab strip, Publish pins to the bottom (artboard I).</p>
+</div>
+</div>
+</div>
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 14px">
+<div class="card">
+<p class="t">Same sections, same editors</p>
+<p class="b">Each portal section is the wizard step with the same number, in the same order. The wizard just adds Back / Skip / Continue around it.</p>
+</div>
+<div class="card">
+<p class="t">Member type is read-only here</p>
+<p class="b">Shown in Basics as a locked label with a <strong>Request a type change</strong> link. That sends a support request to the Guild admin, who changes it from the roster.</p>
+</div>
+<div class="card">
+<p class="t">What exists today</p>
+<p class="b">The portal screens are already built (F, G, I, K, M, R, H). New work is the wizard chrome, Welcome, Review, the "Finish your profile" card and the You're live screen.</p>
+</div>
+<div class="card" style="border: 2px solid #4E9A4A">
+<p class="t">Decided: edits save to a draft</p>
+<p class="b">Typing saves to a draft, never the live page. Preview shows the draft. Publish changes copies it live. While they differ the top bar shows "Unpublished changes" and <strong>Discard changes</strong>, which (after a confirm) resets the draft to what is live.</p>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1960}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
