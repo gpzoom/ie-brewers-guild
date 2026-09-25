@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Member admin — theme picker</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#F9F6F0}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+
+<div style="width: 1280px; height: 1020px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column;">
+
+  <div style="height: 64px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 28px;">
+    <div style="display: flex; align-items: center; gap: 11px;">
+      <div style="width: 24px; height: 24px; border-radius: 5px; background: #38322A;"></div>
+      <div style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">IE BREWERS GUILD · MEMBER ADMIN</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="font-size: 13px; color: #A89D8E;">[MEMBER NAME]</div>
+      <a href="TaproomProfile.dc.html" style="height: 40px; padding: 0 16px; border-radius: 9px; border: 1px solid #4A4238; color: #F9F6F0; display: flex; align-items: center; font-size: 13px; font-weight: 500; text-decoration: none;">Preview</a>
+      <a href="AdminPublish.dc.html" style="height: 40px; padding: 0 18px; border-radius: 9px; background: #B3591F; color: #FFFFFF; display: flex; align-items: center; font-size: 13px; font-weight: 600; text-decoration: none;">Publish changes</a>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; display: flex;">
+
+    <div style="width: 236px; flex-shrink: 0; border-right: 1px solid #EFEAE1; padding: 26px 16px; display: flex; flex-direction: column; gap: 3px;">
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #8C8275; padding: 0 12px 10px;">YOUR PROFILE</div>
+      <a href="AdminBasics.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Basics &amp; hours</a>
+      <a href="AdminMedia.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Photos &amp; video<span style="font-size: 11px; color: #8C8275;">3 / 4</span></a>
+      <a href="#theme" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; background: #241F1A; color: #F9F6F0; font-size: 14px; font-weight: 600; text-decoration: none;">Theme</a>
+      <a href="#links" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Links &amp; contact</a>
+      <a href="AdminEvents.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Events</a>
+    </div>
+
+    <div style="flex-grow: 1; padding: 30px 36px; display: flex; gap: 32px;">
+
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 24px;">
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 27px; font-weight: 700; color: #241F1A;">Theme</div>
+          <div style="font-size: 13px; color: #6B6156; text-wrap: pretty;">Pick the colour that carries your buttons, highlights and cover fallback. Every option is checked for legibility, so none of them can make your page hard to read.</div>
+        </div>
+
+        <fieldset style="margin: 0; padding: 0; border: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px;">
+          <legend style="padding: 0; font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">EIGHT THEMES</legend>
+
+          <label for="th-amber" style="display: flex; flex-direction: column; border-radius: 12px; border: 2px solid #241F1A; background: #FFFFFF; overflow: hidden; cursor: pointer;">
+            <div style="height: 54px; background: #B3591F; display: flex; align-items: flex-start; justify-content: flex-end; padding: 7px;">
+              <span style="width: 20px; height: 20px; border-radius: 99px; background: #FFFFFF; display: flex; align-items: center; justify-content: center;">
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6.2 5 8.6l4.5-5" stroke="#B3591F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 9px; padding: 10px 12px;">
+              <input type="radio" id="th-amber" name="theme" checked="checked" style="width: 16px; height: 16px; accent-color: #241F1A;">
+              <span style="font-size: 13px; font-weight: 600; color: #241F1A;">Amber</span>
+            </div>
+          </label>
+
+          <label for="th-rust" style="display: flex; flex-direction: column; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; overflow: hidden; cursor: pointer;">
+            <div style="height: 54px; background: #9A3412;"></div>
+            <div style="display: flex; align-items: center; gap: 9px; padding: 10px 12px;">
+              <input type="radio" id="th-rust" name="theme" style="width: 16px; height: 16px; accent-color: #241F1A;">
+              <span style="font-size: 13px; color: #241F1A;">Rust</span>
+            </div>
+          </label>
+
+          <label for="th-garnet" style="display: flex; flex-direction: column; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; overflow: hidden; cursor: pointer;">
+            <div style="height: 54px; background: #9B2242;"></div>
+            <div style="display: flex; align-items: center; gap: 9px; padding: 10px 12px;">
+              <input type="radio" id="th-garnet" name="theme" style="width: 16px; height: 16px; accent-color: #241F1A;">
+              <span style="font-size: 13px; color: #241F1A;">Garnet</span>
+            </div>
+          </label>
+
+          <label for="th-plum" style="display: flex; flex-direction: column; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; overflow: hidden; cursor: pointer;">
+            <div style="height: 54px; background: #6B2D6B;"></div>
+            <div style="display: flex; align-items: center; gap: 9px; padding: 10px 12px;">
+              <input type="radio" id="th-plum" name="theme" style="width: 16px; height: 16px; accent-color: #241F1A;">
+              <span style="font-size: 13px; color: #241F1A;">Plum</span>
+            </div>
+          </label>
+
+          <label for="th-indigo" style="display: flex; flex-direction: column; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; overflow: hidden; cursor: pointer;">
+            <div style="height: 54px; background: #3B4B9A;"></div>
+            <div style="display: flex; align-items: center; gap: 9px; padding: 10px 12px;">
+              <input type="radio" id="th-indigo" name="theme" style="width: 16px; height: 16px; accent-color: #241F1A;">
+              <span style="font-size: 13px; color: #241F1A;">Indigo</span>
+            </div>
+          </label>
+
+          <label for="th-teal" style="display: flex; flex-direction: column; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; overflow: hidden; cursor: pointer;">
+            <div style="height: 54px; background: #17605F;"></div>
+            <div style="display: flex; align-items: center; gap: 9px; padding: 10px 12px;">
+              <input type="radio" id="th-teal" name="theme" style="width: 16px; height: 16px; accent-color: #241F1A;">
+              <span style="font-size: 13px; color: #241F1A;">Teal</span>
+            </div>
+          </label>
+
+          <label for="th-forest" style="display: flex; flex-direction: column; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; overflow: hidden; cursor: pointer;">
+            <div style="height: 54px; background: #2F6B33;"></div>
+            <div style="display: flex; align-items: center; gap: 9px; padding: 10px 12px;">
+              <input type="radio" id="th-forest" name="theme" style="width: 16px; height: 16px; accent-color: #241F1A;">
+              <span style="font-size: 13px; color: #241F1A;">Forest</span>
+            </div>
+          </label>
+
+          <label for="th-olive" style="display: flex; flex-direction: column; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; overflow: hidden; cursor: pointer;">
+            <div style="height: 54px; background: #55621C;"></div>
+            <div style="display: flex; align-items: center; gap: 9px; padding: 10px 12px;">
+              <input type="radio" id="th-olive" name="theme" style="width: 16px; height: 16px; accent-color: #241F1A;">
+              <span style="font-size: 13px; color: #241F1A;">Olive</span>
+            </div>
+          </label>
+
+        </fieldset>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: 13px; background: #EFEAE1;">
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <div style="font-size: 14px; font-weight: 600; color: #241F1A;">No cover photo yet?</div>
+            <div style="font-size: 12px; color: #6B6156; line-height: 1.5;">Your theme fills the cover band instead, so your page still looks finished. Add a photo whenever you have one.</div>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <div style="flex-grow: 1; height: 62px; border-radius: 9px; background: #B3591F;"></div>
+            <div style="flex-grow: 1; height: 62px; border-radius: 9px; background: #17605F;"></div>
+            <div style="flex-grow: 1; height: 62px; border-radius: 9px; background: #6B2D6B;"></div>
+            <div style="flex-grow: 1; height: 62px; border-radius: 9px; background: #2F6B33;"></div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 15px 17px; border-radius: 11px; border: 1px solid #DED7CB;">
+          <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0; margin-top: 1px;" aria-hidden="true"><circle cx="8" cy="8" r="6.4" stroke="#6B6156" stroke-width="1.4"/><path d="M8 7.2v4M8 4.9v.9" stroke="#6B6156" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <div style="font-size: 12px; color: #3A332C; line-height: 1.5; text-wrap: pretty;">The Guild's own dark frame stays the same on every profile. Your theme colours what sits inside it, so the directory still reads as one site.</div>
+        </div>
+
+      </div>
+
+      <div style="width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">LIVE PREVIEW</div>
+
+        <div style="width: 320px; box-sizing: border-box; border-radius: 16px; background: #171410; padding: 0 0 14px; overflow: hidden;">
+          <div style="height: 38px; display: flex; align-items: center; padding: 0 14px;">
+            <div style="font-size: 8px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">IE BREWERS GUILD</div>
+          </div>
+          <div style="margin: 0 8px; background: #F9F6F0; border-radius: 16px; display: flex; flex-direction: column;">
+            <div style="height: 110px; border-radius: 16px 16px 0 0; background: #B3591F;"></div>
+            <div style="padding: 0 14px 16px; display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; align-items: flex-end; gap: 10px; margin-top: -24px;">
+                <div style="width: 56px; height: 56px; flex-shrink: 0; box-sizing: border-box; border-radius: 13px; background: #FFFFFF; border: 3px solid #F9F6F0; display: flex; align-items: center; justify-content: center; font-size: 7px; letter-spacing: 0.1em; color: #8C8275;">LOGO</div>
+                <div style="display: flex; flex-direction: column; gap: 3px; padding-bottom: 2px;">
+                  <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 700; color: #241F1A; line-height: 1.1;">[MEMBER NAME]</div>
+                  <div style="font-size: 11px; color: #6B6156;">[CITY], CA</div>
+                </div>
+              </div>
+              <div style="font-size: 12px; color: #3A332C; line-height: 1.45;">[YOUR ONE LINE]</div>
+              <div style="display: flex; flex-direction: column; gap: 8px; padding: 13px 14px; border-radius: 12px; background: #241F1A;">
+                <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 700; color: #F9F6F0; line-height: 1;">Open now</div>
+                <div style="display: flex; gap: 8px;">
+                  <div style="flex-grow: 1; height: 36px; border-radius: 9px; background: #B3591F; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #FFFFFF;">Directions</div>
+                  <div style="flex-grow: 1; height: 36px; border-radius: 9px; border: 1px solid #4A4238; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #F9F6F0;">Call</div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 7px;">
+                <span style="padding: 6px 11px; border-radius: 99px; border: 1px solid #DED7CB; font-size: 10px; color: #241F1A;">Instagram</span>
+                <span style="padding: 6px 11px; border-radius: 99px; border: 1px solid #DED7CB; font-size: 10px; color: #241F1A;">Website</span>
+                <span style="padding: 6px 11px; border-radius: 99px; border: 1px solid #DED7CB; font-size: 10px; color: #241F1A;">Tap list</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size: 11px; color: #8C8275; line-height: 1.5;">Updates as you pick. Nothing changes on your live page until you publish.</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1020}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

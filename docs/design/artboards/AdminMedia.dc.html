@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Member admin — photos and 9:16 crop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#F9F6F0}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+
+<div style="width: 1280px; height: 1080px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column;">
+
+  <div style="height: 64px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 28px;">
+    <div style="display: flex; align-items: center; gap: 11px;">
+      <div style="width: 24px; height: 24px; border-radius: 5px; background: #38322A;"></div>
+      <div style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">IE BREWERS GUILD · MEMBER ADMIN</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="font-size: 13px; color: #A89D8E;">[MEMBER NAME]</div>
+      <a href="TaproomProfile.dc.html" style="height: 40px; padding: 0 16px; border-radius: 9px; border: 1px solid #4A4238; color: #F9F6F0; display: flex; align-items: center; font-size: 13px; font-weight: 500; text-decoration: none;">Preview</a>
+      <a href="AdminPublish.dc.html" style="height: 40px; padding: 0 18px; border-radius: 9px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; font-size: 13px; font-weight: 600; text-decoration: none;">Publish changes</a>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; display: flex;">
+
+    <div style="width: 236px; flex-shrink: 0; border-right: 1px solid #EFEAE1; padding: 26px 16px; display: flex; flex-direction: column; gap: 3px;">
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #8C8275; padding: 0 12px 10px;">YOUR PROFILE</div>
+      <a href="AdminBasics.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Basics &amp; hours</a>
+      <a href="#media" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; background: #241F1A; color: #F9F6F0; font-size: 14px; font-weight: 600; text-decoration: none;">Photos &amp; video<span style="font-size: 11px; color: #A89D8E;">3 / 4</span></a>
+      <a href="AdminTheme.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Theme</a>
+      <a href="#links" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Links &amp; contact</a>
+      <a href="AdminEvents.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Events</a>
+    </div>
+
+    <div style="flex-grow: 1; padding: 30px 36px; display: flex; flex-direction: column; gap: 24px;">
+
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 27px; font-weight: 700; color: #241F1A;">Photos &amp; video</div>
+        <div style="font-size: 13px; color: #6B6156;">Up to four. Visitors swipe through them on your profile, so lead with your best one.</div>
+      </div>
+
+      <div style="display: flex; gap: 30px; flex-grow: 1;">
+
+        <div style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 13px;">
+          <div style="display: flex; align-items: baseline; gap: 8px;">
+            <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">CROP TO PORTRAIT</div>
+            <div style="font-size: 10px; color: #A89D8E;">4:5</div>
+          </div>
+          <div style="width: 300px; height: 420px; border-radius: 13px; background: #221E18; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+            <div style="width: 258px; height: 322px; border-radius: 4px; border: 2px solid #F9F6F0; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: 8px;">
+              <div style="display: flex; justify-content: space-between;">
+                <span style="display: block; width: 14px; height: 14px; border-top: 3px solid #F9F6F0; border-left: 3px solid #F9F6F0;"></span>
+                <span style="display: block; width: 14px; height: 14px; border-top: 3px solid #F9F6F0; border-right: 3px solid #F9F6F0;"></span>
+              </div>
+              <div style="text-align: center; font-size: 11px; letter-spacing: 0.1em; color: #EFEAE1;">DRAG TO REPOSITION</div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="display: block; width: 14px; height: 14px; border-bottom: 3px solid #F9F6F0; border-left: 3px solid #F9F6F0;"></span>
+                <span style="display: block; width: 14px; height: 14px; border-bottom: 3px solid #F9F6F0; border-right: 3px solid #F9F6F0;"></span>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <label for="zoom" style="font-size: 12px; font-weight: 500; color: #241F1A;">Zoom</label>
+            <input type="range" id="zoom" min="100" max="300" value="145" style="width: 100%; accent-color: #241F1A;">
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" style="flex-grow: 1; height: 44px; border-radius: 9px; border: 1px solid #D3CBBD; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Cancel</button>
+            <button type="button" style="flex-grow: 1; height: 44px; border-radius: 9px; border: 0; background: #241F1A; font-family: inherit; font-size: 13px; font-weight: 600; color: #F9F6F0;">Use this frame</button>
+          </div>
+        </div>
+
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 24px;">
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">YOUR SLIDES — DRAG TO REORDER</div>
+            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;">
+              <div style="display: flex; flex-direction: column; gap: 7px;">
+                <div style="height: 188px; border-radius: 11px; background: #EFEAE1; border: 2px solid #241F1A; display: flex; align-items: flex-end; padding: 9px; box-sizing: border-box;">
+                  <span style="padding: 3px 8px; border-radius: 99px; background: #241F1A; font-size: 9px; letter-spacing: 0.08em; color: #F9F6F0;">EDITING</span>
+                </div>
+                <div style="font-size: 11px; color: #6B6156;">Uploaded photo</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 7px;">
+                <div style="height: 188px; border-radius: 11px; background: #EFEAE1; border: 1px solid #DED7CB;"></div>
+                <div style="font-size: 11px; color: #6B6156;">Uploaded photo</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 7px;">
+                <div style="height: 188px; border-radius: 11px; background: #EFEAE1; border: 1px solid #DED7CB; display: flex; align-items: flex-start; justify-content: flex-end; padding: 9px; box-sizing: border-box;">
+                  <span style="padding: 3px 8px; border-radius: 99px; background: #F9F6F0; border: 1px solid #D3CBBD; font-size: 9px; letter-spacing: 0.08em; color: #3A332C;">CREDITED</span>
+                </div>
+                <div style="font-size: 11px; color: #6B6156;">From [CREATOR]</div>
+              </div>
+              <button type="button" style="height: 188px; border-radius: 11px; border: 2px dashed #D3CBBD; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; font-family: inherit; cursor: pointer;">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true"><path d="M11 4.5v13M4.5 11h13" stroke="#8C8275" stroke-width="1.8" stroke-linecap="round"/></svg>
+                <span style="font-size: 12px; font-weight: 500; color: #6B6156;">Add slide</span>
+              </button>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 11px; padding: 20px; border-radius: 13px; border: 2px dashed #D3CBBD;">
+            <div style="font-size: 14px; font-weight: 600; color: #241F1A;">Drop a photo or video here</div>
+            <div style="font-size: 12px; color: #6B6156; line-height: 1.5;">JPG, PNG, HEIC or MP4, up to 25 MB. Anything that isn't already portrait goes through the cropper — you choose what stays in frame.</div>
+            <button type="button" style="align-self: flex-start; height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #D3CBBD; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Choose a file</button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 11px; padding: 20px; border-radius: 13px; background: #EFEAE1;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+              <div style="font-size: 14px; font-weight: 600; color: #241F1A;">Didn't shoot it yourself?</div>
+              <a href="#pending" style="font-size: 12px; font-weight: 500;">2 waiting for review →</a>
+            </div>
+            <div style="font-size: 12px; color: #6B6156; line-height: 1.5;">Send the person who made it an upload link. They add the original file and their credit, it lands in your gallery, and nothing appears on your profile until you approve it.</div>
+            <div style="display: flex; gap: 10px;">
+              <input type="text" aria-label="Upload link to share" value="iebg.org/send/[TOKEN]" readonly="readonly" style="flex-grow: 1; height: 46px; padding: 0 13px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 13px; color: #3A332C; box-sizing: border-box;">
+              <button type="button" style="height: 46px; padding: 0 17px; border-radius: 9px; border: 1px solid #D3CBBD; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Copy</button>
+              <a href="CreatorUpload.dc.html" style="height: 46px; padding: 0 19px; border-radius: 9px; background: #241F1A; display: flex; align-items: center; font-size: 13px; font-weight: 600; color: #F9F6F0; text-decoration: none;">Preview</a>
+            </div>
+            <div style="font-size: 11px; color: #8C8275;">Expires in 7 days · works for up to 5 files · revoke it any time</div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 18px 20px; border-radius: 13px; border: 1px solid #DED7CB;">
+            <label for="slide-link" style="font-size: 13px; font-weight: 600; color: #241F1A;">Where this slide goes when tapped</label>
+            <input type="url" id="slide-link" value="[PASTE YOUR POST LINK — OPTIONAL]" style="height: 46px; padding: 0 13px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 13px; color: #241F1A; box-sizing: border-box;">
+            <div style="font-size: 11px; color: #8C8275;">Leave it blank and the slide just sits in the carousel.</div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#B3591F","options":["#B3591F","#4E9A4A","#8C2F1B","#1F5F6B"]},"$preview":{"width":1280,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#B3591F' };
+  }
+}
+</script>
+</body>
+</html>

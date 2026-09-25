@@ -10,6 +10,8 @@ The canvas has eighteen artboards, all current — nothing on it is superseded. 
 
 Those are the visual reference. Where this document and an artboard disagree, this document wins.
 
+**The artboards live in [`docs/design/`](design/README.md)** (a snapshot of each one's source, plus the link to the live canvas and a map from each artboard to the code that implements it). Every screen must be built against its artboard.
+
 Out of scope: the existing Members page itself — the map and card grid already exist and are not being rebuilt, only the links that open a profile page from them — the Guild's own marketing pages, an onboarding wizard for a member's first sign-in, and anything to do with taking payment, which happens off the site.
 
 ## Member types

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Guild admin — inquiries</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#F9F6F0}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+
+<div style="width: 1280px; height: 1120px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column;">
+
+  <div style="height: 64px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 28px;">
+    <div style="display: flex; align-items: center; gap: 11px;">
+      <div style="width: 24px; height: 24px; border-radius: 5px; background: #38322A;"></div>
+      <div style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">IE BREWERS GUILD · GUILD ADMIN</div>
+    </div>
+    <div style="font-size: 13px; color: #9A9384;">[GUILD ADMIN NAME]</div>
+  </div>
+
+  <div style="flex-grow: 1; display: flex;">
+
+    <div style="width: 236px; flex-shrink: 0; border-right: 1px solid #E6E0D6; padding: 26px 16px; display: flex; flex-direction: column; gap: 3px;">
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #8C8275; padding: 0 12px 10px;">GUILD</div>
+      <a href="#inquiries" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; background: #241F1A; color: #F9F6F0; font-size: 14px; font-weight: 600; text-decoration: none;">Inquiries<span style="min-width: 22px; height: 22px; padding: 0 6px; border-radius: 99px; background: #B3591F; font-size: 11px; font-weight: 600; color: #FFFFFF; display: flex; align-items: center; justify-content: center;">3</span></a>
+      <a href="GuildMembers.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Members<span style="font-size: 11px; color: #8C8275;">24</span></a>
+      <a href="#applications" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; color: #8C8275; font-size: 14px; text-decoration: none;">Applications<span style="font-size: 10px; letter-spacing: 0.08em; color: #A89D8E;">SOON</span></a>
+      <a href="#brand" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Brand &amp; theme</a>
+      <a href="#categories" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Categories</a>
+    </div>
+
+    <div style="flex-grow: 1; padding: 30px 36px; display: flex; flex-direction: column; gap: 22px;">
+
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 24px;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 28px; font-weight: 700; color: #241F1A; letter-spacing: -0.01em;">Inquiries</div>
+          <div style="font-size: 13px; color: #564E45; text-wrap: pretty;">Everything sent through the contact form. Membership interest is flagged so it doesn't get lost among general questions.</div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-shrink: 0;">
+          <button type="button" style="height: 42px; padding: 0 15px; border-radius: 9px; border: 1px solid #241F1A; background: #241F1A; font-family: inherit; font-size: 13px; font-weight: 600; color: #F9F6F0;">Open</button>
+          <button type="button" style="height: 42px; padding: 0 15px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 13px; color: #241F1A;">Handled</button>
+          <button type="button" style="height: 42px; padding: 0 15px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 13px; color: #241F1A;">All</button>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px; padding: 22px 24px; border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF;">
+        <div style="display: flex; align-items: flex-start; gap: 16px;">
+          <div style="display: flex; flex-direction: column; gap: 7px; flex-grow: 1;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 20px; font-weight: 700; color: #241F1A;">[NAME]</span>
+              <span style="padding: 3px 10px; border-radius: 99px; background: #F5E2D0; font-size: 9px; letter-spacing: 0.1em; font-weight: 600; color: #7A4413;">WANTS TO JOIN</span>
+            </div>
+            <div style="font-size: 13px; color: #6B6156;">[EMAIL] · [PHONE] · 21 Sep 2026, 4:12 pm</div>
+            <div style="font-size: 14px; color: #3A332C; line-height: 1.55; text-wrap: pretty;">[WHAT THEY WROTE]</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 4px;">
+          <div style="font-size: 12px; color: #8C8275;">Confirmation email sent automatically at 4:12 pm</div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <a href="mailto:someone@example.com" style="height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #DED7CB; background: #F9F6F0; display: flex; align-items: center; font-size: 13px; font-weight: 500; color: #241F1A; text-decoration: none;">Reply by email</a>
+            <button type="button" style="height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #DED7CB; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Mark handled</button>
+            <button type="button" style="height: 44px; padding: 0 20px; border-radius: 9px; border: 0; background: #B3591F; font-family: inherit; font-size: 14px; font-weight: 600; color: #FFFFFF;">Set them up as a member</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 18px; padding: 18px 24px; border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF;">
+        <div style="display: flex; flex-direction: column; gap: 5px; flex-grow: 1;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 16px; font-weight: 600; color: #241F1A;">[NAME]</span>
+            <span style="padding: 3px 10px; border-radius: 99px; background: #F5E2D0; font-size: 9px; letter-spacing: 0.1em; font-weight: 600; color: #7A4413;">WANTS TO JOIN</span>
+          </div>
+          <div style="font-size: 13px; color: #6B6156;">[EMAIL] · 20 Sep 2026</div>
+        </div>
+        <button type="button" style="height: 44px; flex-shrink: 0; padding: 0 17px; border-radius: 9px; border: 1px solid #DED7CB; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Read</button>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 18px; padding: 18px 24px; border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF;">
+        <div style="display: flex; flex-direction: column; gap: 5px; flex-grow: 1;">
+          <div style="font-size: 16px; font-weight: 600; color: #241F1A;">[NAME]</div>
+          <div style="font-size: 13px; color: #6B6156;">[EMAIL] · 19 Sep 2026 · general question</div>
+        </div>
+        <button type="button" style="height: 44px; flex-shrink: 0; padding: 0 17px; border-radius: 9px; border: 1px solid #DED7CB; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Read</button>
+      </div>
+
+      <div style="display: flex; align-items: flex-start; gap: 12px; padding: 16px 18px; border-radius: 11px; background: #EFEAE1;">
+        <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0; margin-top: 1px;" aria-hidden="true"><circle cx="8" cy="8" r="6.4" stroke="#6B6156" stroke-width="1.4"/><path d="M8 7.2v4M8 4.9v.9" stroke="#6B6156" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <div style="font-size: 13px; color: #3A332C; line-height: 1.55; text-wrap: pretty;"><strong style="font-weight: 600;">Applications are not switched on yet.</strong> Joining is arranged off the site for now — you set a member up from here and they get a sign-in link. When the Guild is ready to take applications online, that queue turns on beside this one and members apply for themselves.</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

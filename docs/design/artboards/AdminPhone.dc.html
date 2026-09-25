@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Member admin on a phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#F9F6F0}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+
+<div style="width: 390px; height: 1560px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column;">
+
+  <div style="height: 56px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 14px;">
+    <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #B6AC9D;">MEMBER ADMIN</div>
+    <a href="VendorProfile.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 10px; font-size: 13px; font-weight: 500; color: #B6AC9D; text-decoration: none;">Preview</a>
+  </div>
+
+  <div style="flex-shrink: 0; border-bottom: 1px solid #EFEAE1; background: #F9F6F0; display: flex; gap: 4px; padding: 0 14px; overflow: hidden;">
+    <a href="#basics" style="min-height: 48px; display: flex; align-items: center; padding: 0 10px; border-bottom: 2px solid #241F1A; font-size: 13px; font-weight: 600; color: #241F1A; text-decoration: none;">Basics</a>
+    <a href="#media" style="min-height: 48px; display: flex; align-items: center; padding: 0 10px; border-bottom: 2px solid transparent; font-size: 13px; color: #6B6156; text-decoration: none;">Photos</a>
+    <a href="AdminTheme.dc.html" style="min-height: 48px; display: flex; align-items: center; padding: 0 10px; border-bottom: 2px solid transparent; font-size: 13px; color: #6B6156; text-decoration: none;">Theme</a>
+    <a href="#links" style="min-height: 48px; display: flex; align-items: center; padding: 0 10px; border-bottom: 2px solid transparent; font-size: 13px; color: #6B6156; text-decoration: none;">Links</a>
+    <a href="#hours" style="min-height: 48px; display: flex; align-items: center; padding: 0 10px; border-bottom: 2px solid transparent; font-size: 13px; color: #6B6156; text-decoration: none;">Hours</a>
+  </div>
+
+  <div style="flex-grow: 1; padding: 20px 16px 16px; display: flex; flex-direction: column; gap: 22px;">
+
+    <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 24px; font-weight: 700; color: #241F1A;">Basics</div>
+
+    <fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 9px;">
+      <legend style="padding: 0; font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">MEMBER TYPE</legend>
+      <label for="p-producer" style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 12px 14px; border-radius: 11px; border: 1px solid #DED7CB; background: #FFFFFF;">
+        <input type="radio" id="p-producer" name="p-type" style="width: 19px; height: 19px; flex-shrink: 0; accent-color: #241F1A;">
+        <span style="font-size: 14px; color: #241F1A;">Producer with a taproom</span>
+      </label>
+      <label for="p-mobile" style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 12px 14px; border-radius: 11px; border: 1px solid #DED7CB; background: #FFFFFF;">
+        <input type="radio" id="p-mobile" name="p-type" style="width: 19px; height: 19px; flex-shrink: 0; accent-color: #241F1A;">
+        <span style="font-size: 14px; color: #241F1A;">Mobile member</span>
+      </label>
+      <label for="p-vendor" style="display: flex; align-items: flex-start; gap: 12px; padding: 13px 14px; border-radius: 11px; border: 2px solid #241F1A; background: #FFFFFF;">
+        <input type="radio" id="p-vendor" name="p-type" checked="checked" style="width: 19px; height: 19px; flex-shrink: 0; margin-top: 2px; accent-color: #241F1A;">
+        <span style="display: flex; flex-direction: column; gap: 3px;">
+          <span style="font-size: 14px; font-weight: 600; color: #241F1A;">Allied Member</span>
+          <span style="font-size: 12px; color: #6B6156;">Unlocks the member discount block.</span>
+        </span>
+      </label>
+    </fieldset>
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; flex-direction: column; gap: 7px;">
+        <label for="p-name" style="font-size: 13px; font-weight: 500; color: #241F1A;">Business name</label>
+        <input type="text" id="p-name" value="[MEMBER NAME]" style="height: 48px; padding: 0 13px; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 15px; color: #241F1A; box-sizing: border-box;">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 7px;">
+        <label for="p-city" style="font-size: 13px; font-weight: 500; color: #241F1A;">City</label>
+        <input type="text" id="p-city" value="[CITY]" style="height: 48px; padding: 0 13px; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 15px; color: #241F1A; box-sizing: border-box;">
+      </div>
+      <div style="display: flex; align-items: center; gap: 13px; padding: 13px 14px; border-radius: 11px; border: 1px solid #DED7CB; background: #FFFFFF;">
+        <div style="width: 52px; height: 52px; flex-shrink: 0; border-radius: 11px; background: #F2EEE7; border: 1px solid #EFEAE1; display: flex; align-items: center; justify-content: center; font-size: 8px; letter-spacing: 0.1em; color: #8C8275;">LOGO</div>
+        <div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1;">
+          <div style="font-size: 13px; font-weight: 600; color: #241F1A;">Your logo</div>
+          <div style="font-size: 11px; color: #6B6156; line-height: 1.4;">PNG or SVG, transparent, 400px+ tall</div>
+        </div>
+        <button type="button" style="min-height: 44px; padding: 0 13px; border-radius: 9px; border: 1px solid #D3CBBD; background: #F9F6F0; font-family: inherit; font-size: 12px; font-weight: 500; color: #241F1A;">Change</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px 15px; border-radius: 13px; border: 2px solid #B3591F; background: #FCF3EA;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #7A4413;">GUILD MEMBER DISCOUNT</div>
+        <div style="font-size: 12px; color: #6B6156; line-height: 1.45;">Shown large and in colour near the top of your profile. Leave the percentage blank to use the general wording instead.</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 7px;">
+        <label for="p-discount" style="font-size: 13px; font-weight: 500; color: #241F1A;">Discount percentage</label>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <input type="text" id="p-discount" value="15" inputmode="numeric" style="width: 96px; height: 48px; padding: 0 13px; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 15px; color: #241F1A; box-sizing: border-box;">
+          <span style="font-size: 15px; color: #6B6156;">% off</span>
+        </div>
+      </div>
+      <label for="p-no-pct" style="display: flex; align-items: flex-start; gap: 11px; min-height: 44px; padding-top: 2px;">
+        <input type="checkbox" id="p-no-pct" style="width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; accent-color: #B3591F;">
+        <span style="display: flex; flex-direction: column; gap: 3px;">
+          <span style="font-size: 13px; color: #241F1A;">No fixed percentage</span>
+          <span style="font-size: 12px; color: #6B6156; line-height: 1.45;">Your profile will read “Discounts available to members in good standing”.</span>
+        </span>
+      </label>
+      <div style="display: flex; flex-direction: column; gap: 7px;">
+        <label for="p-redeem" style="font-size: 13px; font-weight: 500; color: #241F1A;">How members redeem it</label>
+        <input type="text" id="p-redeem" value="[YOUR WORDING]" style="height: 48px; padding: 0 13px; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 15px; color: #241F1A; box-sizing: border-box;">
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">BUSINESS HOURS</div>
+      <div style="display: flex; align-items: center; gap: 9px;">
+        <div style="width: 42px; flex-shrink: 0; font-size: 13px; font-weight: 500; color: #241F1A;">Mon</div>
+        <input type="text" aria-label="Monday opening time" value="8:00 am" style="flex-grow: 1; min-width: 0; height: 46px; padding: 0 11px; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+        <input type="text" aria-label="Monday closing time" value="5:00 pm" style="flex-grow: 1; min-width: 0; height: 46px; padding: 0 11px; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+      </div>
+      <div style="display: flex; align-items: center; gap: 9px;">
+        <div style="width: 42px; flex-shrink: 0; font-size: 13px; font-weight: 500; color: #241F1A;">Tue</div>
+        <input type="text" aria-label="Tuesday opening time" value="8:00 am" style="flex-grow: 1; min-width: 0; height: 46px; padding: 0 11px; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+        <input type="text" aria-label="Tuesday closing time" value="5:00 pm" style="flex-grow: 1; min-width: 0; height: 46px; padding: 0 11px; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+      </div>
+      <div style="display: flex; align-items: center; gap: 9px;">
+        <div style="width: 42px; flex-shrink: 0; font-size: 13px; color: #8C8275;">Sat</div>
+        <div style="flex-grow: 1; height: 46px; border-radius: 10px; border: 1px solid #EFEAE1; background: #F2EEE7; display: flex; align-items: center; padding: 0 11px; font-size: 14px; color: #8C8275;">Closed</div>
+        <label for="p-closed-sat" style="display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 12px; font-weight: 500; color: #241F1A;"><input type="checkbox" id="p-closed-sat" checked="checked" style="width: 18px; height: 18px; accent-color: #241F1A;">Closed</label>
+      </div>
+      <a href="#all-hours" style="font-size: 13px; font-weight: 500; min-height: 44px; display: flex; align-items: center;">Show all seven days →</a>
+    </div>
+
+  </div>
+
+  <div style="flex-shrink: 0; border-top: 1px solid #EFEAE1; background: #F9F6F0; padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 8px;">
+    <div style="font-size: 11px; color: #6B6156;">Saved as you type · hours confirmed 14 Jun 2026</div>
+    <a href="AdminPublish.dc.html" style="height: 50px; border-radius: 11px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; text-decoration: none;">Publish changes</a>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#B3591F","options":["#B3591F","#4E9A4A","#8C2F1B","#1F5F6B"]},"$preview":{"width":390,"height":1560}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#B3591F' };
+  }
+}
+</script>
+</body>
+</html>

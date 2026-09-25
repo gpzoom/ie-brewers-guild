@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Member admin — basics and hours</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#F9F6F0}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+
+<div style="width: 1280px; height: 1500px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column;">
+
+  <div style="height: 64px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 28px;">
+    <div style="display: flex; align-items: center; gap: 11px;">
+      <div style="width: 24px; height: 24px; border-radius: 5px; background: #38322A;"></div>
+      <div style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">IE BREWERS GUILD · MEMBER ADMIN</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="font-size: 13px; color: #A89D8E;">[MEMBER NAME]</div>
+      <a href="TaproomProfile.dc.html" style="height: 40px; padding: 0 16px; border-radius: 9px; border: 1px solid #4A4238; color: #F9F6F0; display: flex; align-items: center; font-size: 13px; font-weight: 500; text-decoration: none;">Preview</a>
+      <a href="AdminPublish.dc.html" style="height: 40px; padding: 0 18px; border-radius: 9px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; font-size: 13px; font-weight: 600; text-decoration: none;">Publish changes</a>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; display: flex;">
+
+    <div style="width: 236px; flex-shrink: 0; border-right: 1px solid #EFEAE1; padding: 26px 16px; display: flex; flex-direction: column; gap: 3px;">
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #8C8275; padding: 0 12px 10px;">YOUR PROFILE</div>
+      <a href="#basics" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; background: #241F1A; color: #F9F6F0; font-size: 14px; font-weight: 600; text-decoration: none;">Basics &amp; hours</a>
+      <a href="AdminMedia.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Photos &amp; video<span style="font-size: 11px; color: #8C8275;">3 / 4</span></a>
+      <a href="AdminTheme.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Theme</a>
+      <a href="#links" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Links &amp; contact</a>
+      <a href="AdminEvents.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Events</a>
+      <div style="margin-top: 18px; padding: 14px; border-radius: 11px; background: #EFEAE1;">
+        <div style="font-size: 12px; font-weight: 600; color: #241F1A; margin-bottom: 5px;">Profile is live</div>
+        <div style="font-size: 11px; color: #6B6156; line-height: 1.45;">Hours last confirmed 14 Jun 2026 — over 90 days ago.</div>
+      </div>
+    </div>
+
+    <div style="flex-grow: 1; padding: 30px 36px; display: flex; flex-direction: column; gap: 30px;">
+
+      <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 27px; font-weight: 700; color: #241F1A;">Basics &amp; hours</div>
+
+      <fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 12px;">
+        <legend style="padding: 0; font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">MEMBER TYPE</legend>
+        <label for="type-producer" style="display: flex; align-items: flex-start; gap: 13px; padding: 16px 18px; border-radius: 12px; border: 2px solid #241F1A; background: #FFFFFF; cursor: pointer;">
+          <input type="radio" id="type-producer" name="member-type" checked="checked" style="width: 18px; height: 18px; margin: 2px 0 0; accent-color: #241F1A;">
+          <span style="display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 15px; font-weight: 600; color: #241F1A;">Producer with a taproom</span>
+            <span style="font-size: 13px; color: #6B6156;">Brewery, meadery, cidery or distillery the public can visit. Shows weekly hours, an open-now status and directions.</span>
+          </span>
+        </label>
+        <label for="type-mobile" style="display: flex; align-items: flex-start; gap: 13px; padding: 16px 18px; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; cursor: pointer;">
+          <input type="radio" id="type-mobile" name="member-type" style="width: 18px; height: 18px; margin: 2px 0 0; accent-color: #241F1A;">
+          <span style="display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 15px; font-weight: 600; color: #241F1A;">Mobile member</span>
+            <span style="font-size: 13px; color: #6B6156;">Entertainment, food truck or pop-up. Shows an appearance calendar and a booking button instead of hours.</span>
+          </span>
+        </label>
+        <label for="type-vendor" style="display: flex; align-items: flex-start; gap: 13px; padding: 16px 18px; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; cursor: pointer;">
+          <input type="radio" id="type-vendor" name="member-type" style="width: 18px; height: 18px; margin: 2px 0 0; accent-color: #241F1A;">
+          <span style="display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 15px; font-weight: 600; color: #241F1A;">Allied Member</span>
+            <span style="font-size: 13px; color: #6B6156;">Supply house, ingredients, equipment or services. Same layout as a producer, with business hours and a trade contact.</span>
+          </span>
+        </label>
+      </fieldset>
+
+      <div style="display: flex; gap: 12px; align-items: flex-start; padding: 15px 17px; border-radius: 11px; background: #EFEAE1;">
+        <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0; margin-top: 1px;" aria-hidden="true"><circle cx="8" cy="8" r="6.4" stroke="#6B6156" stroke-width="1.4"/><path d="M8 7.2v4M8 4.9v.9" stroke="#6B6156" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <div style="font-size: 13px; color: #3A332C; line-height: 1.5; text-wrap: pretty;">Your type decides which sections appear on your public page. Changing it won't delete anything you've already filled in.</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">IDENTITY</div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <label for="biz-name" style="font-size: 13px; font-weight: 500; color: #241F1A;">Business name</label>
+            <input type="text" id="biz-name" value="[MEMBER NAME]" style="height: 46px; padding: 0 13px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <label for="biz-city" style="font-size: 13px; font-weight: 500; color: #241F1A;">City</label>
+            <input type="text" id="biz-city" value="[CITY]" style="height: 46px; padding: 0 13px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px; padding: 15px 17px; border-radius: 11px; border: 1px solid #DED7CB; background: #FFFFFF;">
+          <div style="width: 64px; height: 64px; flex-shrink: 0; border-radius: 12px; background: #F2EEE7; border: 1px solid #EFEAE1; display: flex; align-items: center; justify-content: center; font-size: 8px; letter-spacing: 0.1em; color: #8C8275;">LOGO</div>
+          <div style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1;">
+            <div style="font-size: 14px; font-weight: 600; color: #241F1A;">Your logo</div>
+            <div style="font-size: 12px; color: #6B6156;">PNG or SVG only, transparent background, at least 400px tall. JPGs are rejected.</div>
+          </div>
+          <button type="button" style="height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #D3CBBD; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Replace</button>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">WEEKLY HOURS</div>
+          <div style="font-size: 12px; color: #8C8275;">Shown on your page as day chips</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 84px; flex-shrink: 0; font-size: 14px; font-weight: 500; color: #241F1A;">Monday</div>
+            <input type="text" aria-label="Monday opening time" value="3:00 pm" style="width: 124px; height: 44px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+            <span style="font-size: 14px; color: #8C8275;">to</span>
+            <input type="text" aria-label="Monday closing time" value="9:00 pm" style="width: 124px; height: 44px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+            <label for="closed-mon" style="display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; color: #6B6156;"><input type="checkbox" id="closed-mon" style="width: 17px; height: 17px; accent-color: #241F1A;">Closed</label>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 84px; flex-shrink: 0; font-size: 14px; font-weight: 500; color: #241F1A;">Tuesday</div>
+            <input type="text" aria-label="Tuesday opening time" value="—" disabled="disabled" style="width: 124px; height: 44px; padding: 0 12px; border-radius: 9px; border: 1px solid #EFEAE1; background: #F2EEE7; font-family: inherit; font-size: 14px; color: #8C8275; box-sizing: border-box;">
+            <span style="font-size: 14px; color: #D3CBBD;">to</span>
+            <input type="text" aria-label="Tuesday closing time" value="—" disabled="disabled" style="width: 124px; height: 44px; padding: 0 12px; border-radius: 9px; border: 1px solid #EFEAE1; background: #F2EEE7; font-family: inherit; font-size: 14px; color: #8C8275; box-sizing: border-box;">
+            <label for="closed-tue" style="display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; font-weight: 500; color: #241F1A;"><input type="checkbox" id="closed-tue" checked="checked" style="width: 17px; height: 17px; accent-color: #241F1A;">Closed</label>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 84px; flex-shrink: 0; font-size: 14px; font-weight: 500; color: #241F1A;">Wednesday</div>
+            <input type="text" aria-label="Wednesday opening time" value="3:00 pm" style="width: 124px; height: 44px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+            <span style="font-size: 14px; color: #8C8275;">to</span>
+            <input type="text" aria-label="Wednesday closing time" value="9:00 pm" style="width: 124px; height: 44px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+            <label for="closed-wed" style="display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; color: #6B6156;"><input type="checkbox" id="closed-wed" style="width: 17px; height: 17px; accent-color: #241F1A;">Closed</label>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 84px; flex-shrink: 0; font-size: 14px; font-weight: 500; color: #241F1A;">Thursday</div>
+            <input type="text" aria-label="Thursday opening time" value="3:00 pm" style="width: 124px; height: 44px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+            <span style="font-size: 14px; color: #8C8275;">to</span>
+            <input type="text" aria-label="Thursday closing time" value="10:00 pm" style="width: 124px; height: 44px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+            <label for="closed-thu" style="display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; color: #6B6156;"><input type="checkbox" id="closed-thu" style="width: 17px; height: 17px; accent-color: #241F1A;">Closed</label>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 84px; flex-shrink: 0; font-size: 14px; font-weight: 500; color: #241F1A;">Friday</div>
+            <input type="text" aria-label="Friday opening time" value="12:00 pm" style="width: 124px; height: 44px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+            <span style="font-size: 14px; color: #8C8275;">to</span>
+            <input type="text" aria-label="Friday closing time" value="11:00 pm" style="width: 124px; height: 44px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+            <label for="closed-fri" style="display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; color: #6B6156;"><input type="checkbox" id="closed-fri" style="width: 17px; height: 17px; accent-color: #241F1A;">Closed</label>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 84px; flex-shrink: 0; font-size: 14px; font-weight: 500; color: #241F1A;">Saturday</div>
+            <input type="text" aria-label="Saturday opening time" value="12:00 pm" style="width: 124px; height: 44px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+            <span style="font-size: 14px; color: #8C8275;">to</span>
+            <input type="text" aria-label="Saturday closing time" value="11:00 pm" style="width: 124px; height: 44px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+            <label for="closed-sat" style="display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; color: #6B6156;"><input type="checkbox" id="closed-sat" style="width: 17px; height: 17px; accent-color: #241F1A;">Closed</label>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 84px; flex-shrink: 0; font-size: 14px; font-weight: 500; color: #241F1A;">Sunday</div>
+            <input type="text" aria-label="Sunday opening time" value="12:00 pm" style="width: 124px; height: 44px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+            <span style="font-size: 14px; color: #8C8275;">to</span>
+            <input type="text" aria-label="Sunday closing time" value="7:00 pm" style="width: 124px; height: 44px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+            <label for="closed-sun" style="display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; color: #6B6156;"><input type="checkbox" id="closed-sun" style="width: 17px; height: 17px; accent-color: #241F1A;">Closed</label>
+          </div>
+
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: auto; padding-top: 22px; border-top: 1px solid #EFEAE1;">
+        <div style="font-size: 13px; color: #6B6156;">Changes save as you type. Publishing needs one more step.</div>
+        <a href="AdminPublish.dc.html" style="height: 46px; padding: 0 22px; border-radius: 9px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none;">Publish changes</a>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#B3591F","options":["#B3591F","#4E9A4A","#8C2F1B","#1F5F6B"]},"$preview":{"width":1280,"height":1500}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#B3591F' };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "AdminBasics.dc.html": {
+      "h": 1500,
+      "title": "F · Admin desktop — basics, type & hours",
+      "w": 1280,
+      "x": 0,
+      "y": 2300
+    },
+    "AdminEvents.dc.html": {
+      "h": 1100,
+      "title": "M · Admin — events & calendar (all member types)",
+      "w": 1280,
+      "x": 5860,
+      "y": 2300
+    },
+    "AdminLinks.dc.html": {
+      "h": 1160,
+      "title": "R · Admin — links & contact",
+      "w": 1280,
+      "x": 11300,
+      "y": 2300
+    },
+    "AdminMedia.dc.html": {
+      "h": 1080,
+      "title": "G · Admin desktop — media & portrait crop",
+      "w": 1280,
+      "x": 1360,
+      "y": 2300
+    },
+    "AdminPhone.dc.html": {
+      "h": 1560,
+      "title": "I · Admin phone — Allied Member, with discount",
+      "w": 390,
+      "x": 3560,
+      "y": 2300
+    },
+    "AdminPublish.dc.html": {
+      "h": 720,
+      "title": "H · Admin — publish gate",
+      "w": 760,
+      "x": 2720,
+      "y": 2300
+    },
+    "AdminTheme.dc.html": {
+      "h": 1020,
+      "title": "K · Admin — theme picker",
+      "w": 1280,
+      "x": 4500,
+      "y": 2300
+    },
+    "ContactForm.dc.html": {
+      "h": 1320,
+      "title": "O · Contact & membership inquiry",
+      "w": 390,
+      "x": 2930,
+      "y": 0
+    },
+    "CreatorUpload.dc.html": {
+      "h": 1240,
+      "title": "J · Creator upload link",
+      "w": 390,
+      "x": 4030,
+      "y": 2300
+    },
+    "DesktopProfile.dc.html": {
+      "h": 1600,
+      "title": "L · Desktop profile page",
+      "w": 1440,
+      "x": 1410,
+      "y": 0
+    },
+    "GuildApprovals.dc.html": {
+      "h": 1120,
+      "title": "N · Guild admin — inquiries",
+      "w": 1280,
+      "x": 7220,
+      "y": 2300
+    },
+    "GuildBrand.dc.html": {
+      "h": 1180,
+      "title": "Q · Guild admin — brand & theme",
+      "w": 1280,
+      "x": 9940,
+      "y": 2300
+    },
+    "GuildCategories.dc.html": {
+      "h": 1000,
+      "title": "S · Guild admin — categories",
+      "w": 1280,
+      "x": 12660,
+      "y": 2300
+    },
+    "GuildMembers.dc.html": {
+      "h": 1140,
+      "title": "P · Guild admin — members & impersonation",
+      "w": 1280,
+      "x": 8580,
+      "y": 2300
+    },
+    "MobileProfile.dc.html": {
+      "h": 1555,
+      "title": "E · Mobile member",
+      "w": 390,
+      "x": 470,
+      "y": 0
+    },
+    "SignIn.dc.html": {
+      "h": 1180,
+      "title": "T · Member sign in",
+      "w": 390,
+      "x": 3400,
+      "y": 0
+    },
+    "TaproomProfile.dc.html": {
+      "h": 1645,
+      "title": "D · Taproom profile",
+      "w": 390,
+      "x": 0,
+      "y": 0
+    },
+    "VendorProfile.dc.html": {
+      "h": 1830,
+      "title": "V · Allied Member",
+      "w": 390,
+      "x": 940,
+      "y": 0
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-09-21T17:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "hdr": {
+      "kind": "title1",
+      "maxW": 3790,
+      "text": "Public — profiles and contact",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "hdr3": {
+      "kind": "title1",
+      "maxW": 8000,
+      "text": "Admin — member panel, then Guild admin",
+      "w": 240,
+      "x": 0,
+      "y": 2000
+    }
+  },
+  "order": [
+    "TaproomProfile.dc.html",
+    "MobileProfile.dc.html",
+    "VendorProfile.dc.html",
+    "DesktopProfile.dc.html",
+    "ContactForm.dc.html",
+    "AdminBasics.dc.html",
+    "AdminMedia.dc.html",
+    "AdminPublish.dc.html",
+    "AdminPhone.dc.html",
+    "CreatorUpload.dc.html",
+    "AdminTheme.dc.html",
+    "AdminEvents.dc.html",
+    "GuildApprovals.dc.html",
+    "GuildMembers.dc.html",
+    "GuildBrand.dc.html",
+    "SignIn.dc.html",
+    "AdminLinks.dc.html",
+    "GuildCategories.dc.html"
+  ],
+  "pages": [],
+  "title": "IE Brewers Guild — Member Profile"
+}

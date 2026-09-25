@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mobile member profile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#171410}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+
+<div style="width: 390px; height: 1555px; box-sizing: border-box; background: #171410; display: flex; flex-direction: column;">
+
+  <div style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 12px;">
+    <a href="#members" style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding-right: 8px; text-decoration: none;">
+      <span style="font-size: 16px; color: #B6AC9D; line-height: 1;">←</span>
+      <span style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #B6AC9D;">MEMBERS</span>
+    </a>
+    <div style="display: flex; align-items: center; gap: 4px;">
+      <span style="font-size: 10px; letter-spacing: 0.12em; color: #9A9184; padding-right: 4px;">12 / 24</span>
+      <a href="#previous-member" aria-label="Previous member" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+        <svg width="15" height="15" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M11 3.5 5.5 9l5.5 5.5" stroke="#B6AC9D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="#next-member" aria-label="Next member" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+        <svg width="15" height="15" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M7 3.5 12.5 9 7 14.5" stroke="#B6AC9D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div style="margin: 0 10px; box-sizing: border-box; background: #F9F6F0; border-radius: 22px; display: flex; flex-direction: column;">
+
+    <div style="width: 370px; height: 148px; box-sizing: border-box; border-radius: 22px 22px 0 0; background: #EFEAE1; border-bottom: 1px solid #DED7CB; display: flex; align-items: flex-start; justify-content: flex-end; padding: 12px;">
+      <div style="padding: 4px 10px; border-radius: 99px; background: #F9F6F0; font-size: 9px; letter-spacing: 0.1em; color: #3A332C;">COVER</div>
+    </div>
+
+    <div style="padding: 0 16px 22px; display: flex; flex-direction: column; gap: 18px;">
+
+    <div style="display: flex; flex-direction: column; gap: 11px; margin-top: -30px;">
+      <div style="display: flex; align-items: flex-end; gap: 12px;">
+        <div style="width: 68px; height: 68px; flex-shrink: 0; box-sizing: border-box; border-radius: 16px; background: #FFFFFF; border: 3px solid #F9F6F0; display: flex; align-items: center; justify-content: center; font-size: 8px; letter-spacing: 0.1em; color: #8C8275;">LOGO</div>
+        <div style="display: flex; flex-direction: column; gap: 5px; flex-grow: 1; padding-bottom: 3px;">
+          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 23px; font-weight: 700; color: #241F1A; line-height: 1.08; letter-spacing: -0.01em;">[MEMBER NAME]</div>
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <span style="padding: 2px 8px; border-radius: 99px; background: #241F1A; font-size: 9px; letter-spacing: 0.1em; font-weight: 600; color: #F9F6F0;">MOBILE</span>
+            <span style="font-size: 12px; color: #6B6156;">Member since [YEAR]</span>
+          </div>
+        </div>
+        <button type="button" aria-label="Save this member" style="width: 44px; height: 44px; flex-shrink: 0; margin-bottom: 3px; border-radius: 11px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 0; display: flex; align-items: center; justify-content: center;">
+          <svg width="15" height="19" viewBox="0 0 15 19" fill="none" aria-hidden="true"><path d="M1.5 1.5h12v16l-6-4.4-6 4.4z" stroke="#6B6156" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div style="font-size: 14px; color: #3A332C; line-height: 1.5; text-wrap: pretty;">[ONE LINE IN YOUR OWN WORDS — UP TO 70 CHARACTERS]</div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 11px; padding: 17px 16px; border-radius: 16px; background: #241F1A;">
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #A89D8E;">NEXT APPEARANCE</div>
+      <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 25px; font-weight: 700; color: #F9F6F0; line-height: 1.05;">Thu, Sep 24 · 6 pm</div>
+      <div style="font-size: 13px; color: #CFC6B6; text-wrap: pretty;">[VENUE NAME] — [CITY], CA</div>
+      <div style="display: flex; gap: 9px; padding-top: 5px;">
+        <a href="#book" style="flex-grow: 1; height: 46px; border-radius: 11px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; text-decoration: none;">Book us</a>
+        <a href="tel:+10000000000" style="flex-grow: 1; height: 46px; border-radius: 11px; border: 1px solid #4A4238; color: #F9F6F0; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 14px; font-weight: 500; text-decoration: none;">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5.2 2.4 6.7 5 5.4 6.6c.7 1.6 1.9 2.8 3.5 3.5L10.5 8.8 13 10.3v2.4c0 .6-.5 1.1-1.1 1C6.2 13.3 2.4 9.5 1.8 3.9a1 1 0 0 1 1-1.1h2.4z" stroke="#F9F6F0" stroke-width="1.4" stroke-linejoin="round"/></svg>
+          Call
+        </a>
+      </div>
+    </div>
+
+    <div style="width: 338px; height: 422px; box-sizing: border-box; border-radius: 16px; background: #EFEAE1; border: 1px dashed #D3CBBD; display: flex; flex-direction: column; justify-content: space-between; padding: 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="padding: 4px 10px; border-radius: 99px; background: #E0D9CC; font-size: 10px; letter-spacing: 0.08em; color: #3A332C;">1 / 4</div>
+        <div style="padding: 4px 10px; border-radius: 99px; background: #E0D9CC; font-size: 10px; letter-spacing: 0.08em; color: #3A332C;">PORTRAIT</div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.12em; color: #3A332C;">MEDIA CAROUSEL</div>
+        <div style="font-size: 12px; color: #6B6156; text-align: center; max-width: 230px; text-wrap: pretty;">Member uploads and crops to portrait, or a creator sends the original.</div>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="padding: 8px 13px; border-radius: 99px; background: #F9F6F0; border: 1px solid #D3CBBD; font-size: 11px; font-weight: 500; color: #241F1A;">View on Instagram →</div>
+        <div style="display: flex; gap: 5px;">
+          <span style="display: block; width: 7px; height: 7px; border-radius: 99px; background: #3A332C;"></span>
+          <span style="display: block; width: 7px; height: 7px; border-radius: 99px; background: #D3CBBD;"></span>
+          <span style="display: block; width: 7px; height: 7px; border-radius: 99px; background: #D3CBBD;"></span>
+          <span style="display: block; width: 7px; height: 7px; border-radius: 99px; background: #D3CBBD;"></span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 9px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;">
+        <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">WHERE WE'LL BE</div>
+        <div style="font-size: 10px; color: #8C8275;">Synced from Google Calendar</div>
+      </div>
+      <a href="#appearance-1" style="display: flex; gap: 13px; align-items: center; min-height: 64px; padding: 11px 13px; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; text-decoration: none;">
+        <div style="width: 40px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
+          <div style="font-size: 9px; letter-spacing: 0.1em; color: #6B6156;">THU</div>
+          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 19px; font-weight: 700; color: #241F1A; line-height: 1.05;">24</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1;">
+          <div style="font-size: 13px; font-weight: 600; color: #241F1A;">[VENUE NAME]</div>
+          <div style="font-size: 12px; color: #6B6156;">[CITY] · 6:00 – 9:00 pm</div>
+        </div>
+      </a>
+      <a href="#appearance-2" style="display: flex; gap: 13px; align-items: center; min-height: 64px; padding: 11px 13px; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; text-decoration: none;">
+        <div style="width: 40px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
+          <div style="font-size: 9px; letter-spacing: 0.1em; color: #6B6156;">SAT</div>
+          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 19px; font-weight: 700; color: #241F1A; line-height: 1.05;">26</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1;">
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <span style="font-size: 13px; font-weight: 600; color: #241F1A;">[VENUE NAME]</span>
+            <span style="padding: 2px 7px; border-radius: 99px; background: #F5E2D0; font-size: 9px; letter-spacing: 0.08em; font-weight: 600; color: #7A4413;">RESCHEDULED</span>
+          </div>
+          <div style="font-size: 12px; color: #6B6156;">[CITY] · now 2:00 – 6:00 pm</div>
+        </div>
+      </a>
+      <a href="#appearance-3" style="display: flex; gap: 13px; align-items: center; min-height: 64px; padding: 11px 13px; border-radius: 12px; border: 1px solid #EFEAE1; background: #F2EEE7; text-decoration: none;">
+        <div style="width: 40px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
+          <div style="font-size: 9px; letter-spacing: 0.1em; color: #8C8275;">SUN</div>
+          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 19px; font-weight: 700; color: #8C8275; line-height: 1.05;">27</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1;">
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <span style="font-size: 13px; font-weight: 600; color: #6B6156;">[VENUE NAME]</span>
+            <span style="padding: 2px 7px; border-radius: 99px; background: #F0DBD4; font-size: 9px; letter-spacing: 0.08em; font-weight: 600; color: #7A2E1C;">CANCELED</span>
+          </div>
+          <div style="font-size: 12px; color: #8C8275;"><s>[CITY] · 1:00 – 5:00 pm</s></div>
+        </div>
+      </a>
+      <a href="#full-calendar" style="font-size: 12px; font-weight: 500; min-height: 44px; display: flex; align-items: center;">See the full calendar →</a>
+    </div>
+
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <a href="#instagram" style="height: 44px; padding: 0 15px; border-radius: 99px; border: 1px solid #DED7CB; background: #FFFFFF; display: flex; align-items: center; font-size: 12px; font-weight: 500; color: #241F1A; text-decoration: none;">Instagram</a>
+      <a href="#website" style="height: 44px; padding: 0 15px; border-radius: 99px; border: 1px solid #DED7CB; background: #FFFFFF; display: flex; align-items: center; font-size: 12px; font-weight: 500; color: #241F1A; text-decoration: none;">Website</a>
+      <a href="#press-kit" style="height: 44px; padding: 0 15px; border-radius: 99px; border: 1px solid #DED7CB; background: #FFFFFF; display: flex; align-items: center; font-size: 12px; font-weight: 500; color: #241F1A; text-decoration: none;">Press kit</a>
+      <span style="font-size: 13px; color: #8C8275;">›</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 14px; border-top: 1px solid #EFEAE1;">
+      <a href="tel:+10000000000" style="display: flex; align-items: center; gap: 11px; min-height: 44px; text-decoration: none; color: #241F1A; font-size: 14px;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5.2 2.4 6.7 5 5.4 6.6c.7 1.6 1.9 2.8 3.5 3.5L10.5 8.8 13 10.3v2.4c0 .6-.5 1.1-1.1 1C6.2 13.3 2.4 9.5 1.8 3.9a1 1 0 0 1 1-1.1h2.4z" stroke="#6B6156" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        [PHONE] · booking
+      </a>
+      <div style="display: flex; align-items: center; gap: 11px; min-height: 44px; color: #241F1A; font-size: 14px;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.2" stroke="#6B6156" stroke-width="1.4"/><path d="M1.8 8h12.4M8 1.8c3.2 3.4 3.2 9 0 12.4-3.2-3.4-3.2-9 0-12.4z" stroke="#6B6156" stroke-width="1.4"/></svg>
+        Serves [SERVICE AREA]
+      </div>
+    </div>
+
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 20px 16px 0;">
+    <a href="#next-member" style="display: flex; align-items: center; gap: 13px; padding: 15px; margin: 0 -6px; border-radius: 18px; background: #221E18; text-decoration: none;">
+      <div style="width: 54px; height: 54px; flex-shrink: 0; border-radius: 12px; background: #F9F6F0; display: flex; align-items: center; justify-content: center; font-size: 8px; letter-spacing: 0.1em; color: #8C8275;">LOGO</div>
+      <div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1;">
+        <div style="font-size: 10px; letter-spacing: 0.15em; color: #A89D8E;">NEXT IN THE DIRECTORY</div>
+        <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 17px; font-weight: 700; color: #F9F6F0;">[NEARBY MEMBER]</div>
+        <div style="font-size: 12px; color: #A89D8E;">[CITY] · Sat 26th</div>
+      </div>
+      <span style="font-size: 17px; color: #A89D8E;">→</span>
+    </a>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#B3591F","options":["#B3591F","#4E9A4A","#8C2F1B","#1F5F6B"]},"$preview":{"width":390,"height":1555}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#B3591F' };
+  }
+}
+</script>
+</body>
+</html>

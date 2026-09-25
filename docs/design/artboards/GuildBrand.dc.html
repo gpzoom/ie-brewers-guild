@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Guild admin — brand and theme</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;family=Archivo:wght@700&amp;family=Newsreader:wght@600&amp;family=Oswald:wght@600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#F9F6F0}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+
+<div style="width: 1280px; height: 1180px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column;">
+
+  <div style="height: 64px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 28px;">
+    <div style="display: flex; align-items: center; gap: 11px;">
+      <div style="width: 24px; height: 24px; border-radius: 5px; background: #38322A;"></div>
+      <div style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">IE BREWERS GUILD · GUILD ADMIN</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <button type="button" style="height: 40px; padding: 0 16px; border-radius: 9px; border: 1px solid #4A4238; background: transparent; font-family: inherit; font-size: 13px; font-weight: 500; color: #F9F6F0;">Reset to defaults</button>
+      <button type="button" style="height: 40px; padding: 0 18px; border-radius: 9px; border: 0; background: #B3591F; font-family: inherit; font-size: 13px; font-weight: 600; color: #FFFFFF;">Save brand</button>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; display: flex;">
+
+    <div style="width: 236px; flex-shrink: 0; border-right: 1px solid #E6E0D6; padding: 26px 16px; display: flex; flex-direction: column; gap: 3px;">
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #8C8275; padding: 0 12px 10px;">GUILD</div>
+      <a href="GuildApprovals.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Inquiries<span style="min-width: 22px; height: 22px; padding: 0 6px; border-radius: 99px; background: #B3591F; font-size: 11px; font-weight: 600; color: #FFFFFF; display: flex; align-items: center; justify-content: center;">3</span></a>
+      <a href="GuildMembers.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Members<span style="font-size: 11px; color: #8C8275;">24</span></a>
+      <a href="#applications" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; color: #8C8275; font-size: 14px; text-decoration: none;">Applications<span style="font-size: 10px; letter-spacing: 0.08em; color: #A89D8E;">SOON</span></a>
+      <a href="#brand" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; background: #241F1A; color: #F9F6F0; font-size: 14px; font-weight: 600; text-decoration: none;">Brand &amp; theme</a>
+      <a href="#categories" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Categories</a>
+    </div>
+
+    <div style="flex-grow: 1; padding: 30px 36px; display: flex; gap: 30px;">
+
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 24px;">
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 28px; font-weight: 700; color: #241F1A; letter-spacing: -0.01em;">Brand &amp; theme</div>
+          <div style="font-size: 13px; color: #564E45; text-wrap: pretty;">Sets the type and colour for the whole site. Member themes sit inside this — they colour a member's own page, not the Guild's frame.</div>
+        </div>
+
+        <fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 10px;">
+          <legend style="padding: 0 0 4px; font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">TYPEFACES</legend>
+
+          <label for="tp-1" style="display: flex; align-items: center; gap: 15px; padding: 15px 18px; border-radius: 12px; border: 2px solid #241F1A; background: #FFFFFF; cursor: pointer;">
+            <input type="radio" id="tp-1" name="pairing" checked="checked" style="width: 18px; height: 18px; flex-shrink: 0; accent-color: #241F1A;">
+            <span style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1;">
+              <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 23px; font-weight: 700; color: #241F1A; line-height: 1.1;">Independent craft</span>
+              <span style="font-size: 13px; color: #564E45;">Bricolage Grotesque over Chivo — characterful, warm, holds up small</span>
+            </span>
+            <span style="padding: 4px 10px; border-radius: 99px; background: #241F1A; font-size: 9px; letter-spacing: 0.1em; font-weight: 600; color: #F9F6F0; flex-shrink: 0;">IN USE</span>
+          </label>
+
+          <label for="tp-2" style="display: flex; align-items: center; gap: 15px; padding: 15px 18px; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; cursor: pointer;">
+            <input type="radio" id="tp-2" name="pairing" style="width: 18px; height: 18px; flex-shrink: 0; accent-color: #241F1A;">
+            <span style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1;">
+              <span style="font-family: Archivo, system-ui, sans-serif; font-size: 23px; font-weight: 700; color: #241F1A; line-height: 1.1;">Independent craft</span>
+              <span style="font-size: 13px; color: #564E45;">Archivo over Chivo — sturdier, more industrial</span>
+            </span>
+          </label>
+
+          <label for="tp-3" style="display: flex; align-items: center; gap: 15px; padding: 15px 18px; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; cursor: pointer;">
+            <input type="radio" id="tp-3" name="pairing" style="width: 18px; height: 18px; flex-shrink: 0; accent-color: #241F1A;">
+            <span style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1;">
+              <span style="font-family: Newsreader, Georgia, serif; font-size: 24px; font-weight: 600; color: #241F1A; line-height: 1.1;">Independent craft</span>
+              <span style="font-size: 13px; color: #564E45;">Newsreader over Chivo — older, more institutional</span>
+            </span>
+          </label>
+
+          <label for="tp-4" style="display: flex; align-items: center; gap: 15px; padding: 15px 18px; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; cursor: pointer;">
+            <input type="radio" id="tp-4" name="pairing" style="width: 18px; height: 18px; flex-shrink: 0; accent-color: #241F1A;">
+            <span style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1;">
+              <span style="font-family: Oswald, Impact, sans-serif; font-size: 23px; font-weight: 600; color: #241F1A; line-height: 1.1; text-transform: uppercase;">Independent craft</span>
+              <span style="font-size: 13px; color: #564E45;">Oswald over Inter — what the site used before</span>
+            </span>
+          </label>
+
+          <div style="font-size: 12px; color: #8C8275; padding-top: 2px;">Four tested pairings rather than a font list. Every one is checked for legibility at 13px and for loading weight.</div>
+        </fieldset>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; padding: 22px 24px; border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF;">
+          <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">BRAND COLOUR</div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <label for="hue" style="font-size: 13px; font-weight: 500; color: #241F1A;">Hue</label>
+              <span style="font-size: 12px; color: #6B6156;">50° · amber</span>
+            </div>
+            <input type="range" id="hue" min="0" max="360" value="50" style="width: 100%; accent-color: #B3591F;">
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <label for="light" style="font-size: 13px; font-weight: 500; color: #241F1A;">Depth</label>
+              <span style="font-size: 12px; color: #6B6156;">58% lightness</span>
+            </div>
+            <input type="range" id="light" min="30" max="85" value="58" style="width: 100%; accent-color: #B3591F;">
+          </div>
+
+          <div style="display: flex; gap: 14px; padding-top: 4px;">
+            <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 9px;">
+              <div style="height: 62px; border-radius: 10px; background: #B3591F; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: #FFFFFF;">White text</div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="padding: 3px 9px; border-radius: 99px; background: #DCEBD8; font-size: 10px; letter-spacing: 0.06em; font-weight: 600; color: #2F5E2B;">PASSES 5.0:1</span>
+                <span style="font-size: 12px; color: #6B6156;">buttons, the discount block</span>
+              </div>
+            </div>
+            <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 9px;">
+              <div style="height: 62px; border-radius: 10px; background: #E08440; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: #241F1A;">Dark text</div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="padding: 3px 9px; border-radius: 99px; background: #DCEBD8; font-size: 10px; letter-spacing: 0.06em; font-weight: 600; color: #2F5E2B;">PASSES 7.4:1</span>
+                <span style="font-size: 12px; color: #6B6156;">links and icons on dark</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: flex-start; gap: 11px; padding: 14px 16px; border-radius: 11px; background: #EFEAE1;">
+            <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0; margin-top: 1px;" aria-hidden="true"><circle cx="8" cy="8" r="6.4" stroke="#6B6156" stroke-width="1.4"/><path d="M8 7.2v4M8 4.9v.9" stroke="#6B6156" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <div style="font-size: 12px; color: #3A332C; line-height: 1.55; text-wrap: pretty;">Two shades are derived from your choice — a deeper one for filled buttons and a brighter one for links on the dark frame. Save is blocked while either falls below 4.5:1, which is why there is no hex field here.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">LIVE PREVIEW</div>
+
+        <div style="width: 300px; box-sizing: border-box; border-radius: 16px; background: #171410; padding: 0 0 14px; overflow: hidden;">
+          <div style="height: 40px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px;">
+            <div style="font-size: 8px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">IE BREWERS GUILD</div>
+            <div style="font-size: 9px; color: #E08440;">Members</div>
+          </div>
+          <div style="margin: 0 8px; background: #F9F6F0; border-radius: 14px; display: flex; flex-direction: column;">
+            <div style="height: 96px; border-radius: 14px 14px 0 0; background: #EFEAE1;"></div>
+            <div style="padding: 0 14px 16px; display: flex; flex-direction: column; gap: 11px;">
+              <div style="display: flex; align-items: flex-end; gap: 10px; margin-top: -22px;">
+                <div style="width: 52px; height: 52px; flex-shrink: 0; box-sizing: border-box; border-radius: 12px; background: #FFFFFF; border: 3px solid #F9F6F0; display: flex; align-items: center; justify-content: center; font-size: 7px; letter-spacing: 0.1em; color: #8C8275;">LOGO</div>
+                <div style="display: flex; flex-direction: column; gap: 2px; padding-bottom: 2px;">
+                  <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 17px; font-weight: 700; color: #241F1A; line-height: 1.1;">[MEMBER NAME]</div>
+                  <div style="font-size: 11px; color: #6B6156;">[CITY], CA</div>
+                </div>
+              </div>
+              <div style="font-size: 12px; color: #3A332C; line-height: 1.45;">[Their one line, in their own words]</div>
+              <div style="display: flex; flex-direction: column; gap: 8px; padding: 13px 14px; border-radius: 12px; background: #241F1A;">
+                <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 700; color: #F9F6F0; line-height: 1;">Open now</div>
+                <div style="display: flex; gap: 8px;">
+                  <div style="flex-grow: 1; height: 36px; border-radius: 9px; background: #B3591F; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #FFFFFF;">Directions</div>
+                  <div style="flex-grow: 1; height: 36px; border-radius: 9px; border: 1px solid #4A4238; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #F9F6F0;">Call</div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 7px;">
+                <span style="padding: 6px 11px; border-radius: 99px; border: 1px solid #DED7CB; font-size: 10px; color: #241F1A;">Instagram</span>
+                <span style="padding: 6px 11px; border-radius: 99px; border: 1px solid #DED7CB; font-size: 10px; color: #241F1A;">Website</span>
+                <span style="padding: 6px 11px; border-radius: 99px; border: 1px solid #DED7CB; font-size: 10px; color: #241F1A;">Tap list</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size: 11px; color: #8C8275; line-height: 1.5;">Updates as you choose. Nothing changes on the live site until you save.</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
