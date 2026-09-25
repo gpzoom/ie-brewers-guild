@@ -105,8 +105,8 @@ export const Route = createFileRoute("/members_/$slug")({
   ),
 });
 
-// The root loader already resolves whether the viewer is a Guild admin (for
-// GuildAdminBar) -- reused here so the preview banner can say who can see
+// The root loader already resolves whether the viewer is a Guild admin --
+// reused here so the preview banner can say who can see
 // a draft without another server round trip.
 const rootRoute = getRouteApi("__root__");
 
@@ -122,6 +122,7 @@ function MemberProfilePage() {
           isImpersonating={data.isImpersonatingThisMember}
           viewerIsEditor={data.viewerIsEditor}
           viewerIsGuildAdmin={isGuildAdmin}
+          memberName={data.member.business_name}
         />
       )}
       <MemberProfileTemplate data={data} search={search} />

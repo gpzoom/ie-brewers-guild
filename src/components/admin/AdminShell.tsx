@@ -1,57 +1,84 @@
-import { Link, useRouter } from "@tanstack/react-router";
+import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { stopImpersonation } from "@/lib/guild/impersonation.server";
 import { signOutEverything } from "@/lib/auth/sign-out.server";
+import {
+  AppTopBar,
+  SidebarGroupLabel,
+  SidebarSignOut,
+  StatusBand,
+  bandButtonClass,
+  sidebarItemClass,
+  sidebarNavClass,
+  topBarOutlineClass,
+} from "@/components/shell/AppChrome";
 
+// Order follows artboard AdminBasics's sidebar; Discount has no artboard
+// and keeps its place at the end. `short` is the phone tab-strip label
+// (artboard AdminPhone). "Basics & hours" is one item for both
+// /admin/basics and /admin/hours -- the pages themselves merge in a later
+// stage; until then /admin/hours still works and still lights this item.
 const NAV_ITEMS = [
-  { to: "/admin/basics", label: "Basics" },
-  { to: "/admin/hours", label: "Hours" },
-  { to: "/admin/media", label: "Media" },
-  { to: "/admin/events", label: "Events" },
-  { to: "/admin/links", label: "Links & contact" },
-  { to: "/admin/theme", label: "Theme" },
-  { to: "/admin/discount", label: "Discount" },
+  { to: "/admin/basics", label: "Basics & hours", short: "Basics", match: ["/admin/basics", "/admin/hours"] },
+  { to: "/admin/media", label: "Photos & video", short: "Photos", match: ["/admin/media"] },
+  { to: "/admin/theme", label: "Theme", short: "Theme", match: ["/admin/theme"] },
+  { to: "/admin/links", label: "Links & contact", short: "Links", match: ["/admin/links"] },
+  { to: "/admin/events", label: "Events", short: "Events", match: ["/admin/events"] },
+  { to: "/admin/discount", label: "Discount", short: "Discount", match: ["/admin/discount"] },
 ] as const;
 
+function isActivePath(pathname: string, prefixes: readonly string[]) {
+  const normalized = pathname.replace(/\/+$/, "");
+  return prefixes.some((prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`));
+}
+
 /**
- * Admin shell (spec, "Layout and breakpoints": "the admin panel ships
- * with phone and desktop layouts together, not desktop first... on a
- * phone the left rail becomes a horizontal tab strip... and Publish pins
- * to the bottom of the screen"). At `md:` and above, the horizontal tab
- * strip becomes a left vertical rail and the Publish control moves from a
- * bottom-pinned bar into a top bar above the section content.
+ * Member admin shell (artboards AdminBasics = desktop, AdminPhone = phone;
+ * spec, "Layout and breakpoints": the admin ships phone and desktop
+ * layouts together). A near-black top bar -- label, the member's name,
+ * Preview, Publish -- over a 236px left sidebar ("YOUR PROFILE") and the
+ * section content. On a phone the sidebar becomes a horizontal tab strip
+ * under the top bar, Preview stays in the top bar as a text link, and the
+ * Publish control pins to the bottom of the screen.
  *
- * The Publish button itself is rendered by PublishGateDialog (Task 23),
- * passed in as `publishSlot` so this shell doesn't need to know about
- * publish-gate logic. It is rendered exactly ONCE below: PublishGateDialog
- * renders a Radix <Dialog>, whose <DialogContent> portals to
- * document.body (see src/components/ui/dialog.tsx's DialogPortal), so the
+ * The Publish control itself is rendered by PublishGateDialog, passed in
+ * as `publishSlot` so this shell doesn't need to know about publish-gate
+ * logic. It is rendered exactly ONCE below: PublishGateDialog renders a
+ * Radix <Dialog>, whose <DialogContent> portals to document.body, so the
  * dialog's visible content is unaffected by CSS hidden/md:hidden on
  * whatever container it's nested in. Rendering `{publishSlot}` twice would
  * create two independent component instances with their own, unsynced
  * `open`/`confirmed`/`currentStatus` useState -- e.g. resizing across the
- * `md` breakpoint while the mobile instance's dialog is open would leave
- * it open (portaled, so untouched by md:hidden) while also exposing the
- * desktop instance's own, separate Publish button/dialog. Instead, a
- * single instance's WRAPPING element repositions itself responsively:
- * `fixed inset-x-0 bottom-0` (pinned bottom bar, viewport-relative
- * regardless of DOM nesting) at phone widths, `md:static` (back into
- * normal document flow, right-justified, above <main>) at `md:` and up.
+ * `md` breakpoint while the phone instance's dialog is open would leave it
+ * open while also exposing the desktop instance's own, separate Publish
+ * button/dialog. Instead, a single instance's WRAPPING element repositions
+ * itself responsively: `fixed inset-x-0 bottom-0` (pinned bottom bar,
+ * viewport-relative -- nothing above it sets a transform/filter) at phone
+ * widths, `md:static` (back into the top bar's flow) at `md:` and up. The
+ * Preview link is a plain stateless link, so it lives here instead and is
+ * free to change shape per breakpoint.
  */
 export function AdminShell({
   memberId,
+  memberName = null,
   isImpersonating = false,
   impersonatedMemberName = null,
+  previewHref,
+  isPublished = false,
   publishSlot,
   children,
 }: {
   memberId: string;
+  memberName?: string | null;
   isImpersonating?: boolean;
   impersonatedMemberName?: string | null;
+  previewHref?: string;
+  isPublished?: boolean;
   publishSlot?: ReactNode;
   children: ReactNode;
 }) {
   const router = useRouter();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   async function handleStop() {
     await stopImpersonation();
@@ -63,66 +90,76 @@ export function AdminShell({
     await router.navigate({ to: "/" });
   }
 
+  const previewLabel = isPublished ? "View profile" : "Preview";
+
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-canvas text-ink">
       {isImpersonating && (
-        <div
-          role="alert"
-          className="flex min-h-11 flex-wrap items-center justify-between gap-2 bg-danger px-4 py-2 text-sm font-medium text-white"
-        >
-          <span>
-            Editing as {impersonatedMemberName ?? "this member"}. Every change here is logged against your own
-            Guild admin account.
-          </span>
-          <button
-            type="button"
-            onClick={handleStop}
-            className="min-h-11 rounded-md border border-white/60 px-3 py-1 font-semibold hover:bg-white/10"
-          >
-            Stop
-          </button>
-        </div>
+        <StatusBand
+          message={
+            <>
+              You are editing as {impersonatedMemberName ?? "this member"}. Changes are saved to their
+              profile.
+            </>
+          }
+          actions={
+            <button type="button" onClick={handleStop} className={bandButtonClass}>
+              Stop
+            </button>
+          }
+        />
       )}
 
-      <div className="flex flex-1 flex-col pb-24 md:flex-row md:pb-0">
-        <nav
-          aria-label="Admin sections"
-          className="flex gap-1 overflow-x-auto border-b border-border bg-card px-2 py-2 md:w-56 md:flex-col md:overflow-visible md:border-b-0 md:border-r md:px-3 md:py-6"
-        >
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className="min-h-11 shrink-0 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted [&.active]:bg-primary/10 [&.active]:text-primary md:w-full"
-              activeProps={{ className: "active" }}
-            >
-              {item.label}
-            </Link>
-          ))}
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="ml-auto min-h-11 shrink-0 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+      <AppTopBar label="ISC Brewers Guild · Member admin" shortLabel="Member admin">
+        {memberName && (
+          <span className="hidden max-w-[16rem] truncate text-[13px] text-text-muted md:inline">
+            {memberName}
+          </span>
+        )}
+        {previewHref && (
+          <a
+            href={previewHref}
+            target="_blank"
+            rel="noopener"
+            className={`${topBarOutlineClass} max-md:h-11 max-md:border-0 max-md:px-2.5 max-md:text-text-muted`}
           >
-            Sign out
-          </button>
+            {previewLabel}
+          </a>
+        )}
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-canvas-2 bg-canvas px-4 pb-4 pt-3 md:static md:inset-auto md:z-auto md:border-0 md:bg-transparent md:p-0">
+          {publishSlot}
+        </div>
+      </AppTopBar>
+
+      <div className="flex flex-1 flex-col md:flex-row">
+        <nav aria-label="Admin sections" className={sidebarNavClass}>
+          <SidebarGroupLabel>Your profile</SidebarGroupLabel>
+          {NAV_ITEMS.map((item) => {
+            const active = isActivePath(pathname, item.match);
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                aria-current={active ? "page" : undefined}
+                className={sidebarItemClass(active)}
+              >
+                <span className="md:hidden">{item.short}</span>
+                <span className="hidden md:inline">{item.label}</span>
+              </Link>
+            );
+          })}
+          <SidebarSignOut onClick={handleSignOut} />
         </nav>
 
-        <div className="flex flex-1 flex-col">
-          <div className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-card p-3 md:static md:inset-auto md:z-auto md:flex md:justify-end md:border-b md:border-t-0 md:px-6 md:py-3">
-            {publishSlot}
-          </div>
-
-          {/*
-            Not a <main> -- the root layout (src/routes/__root.tsx) already
-            renders one <main> around the whole route Outlet, /admin
-            included. A second <main> here would be a duplicate landmark
-            (invalid HTML, and two competing "main" regions for screen
-            reader users).
-          */}
-          <div className="flex-1 px-4 py-6 md:px-8" data-member-id={memberId}>
-            {children}
-          </div>
+        {/*
+          Not a <main> -- the root layout (src/routes/__root.tsx) already
+          renders one <main> around the whole route Outlet, /admin
+          included. A second <main> here would be a duplicate landmark.
+          pb-36 on a phone keeps the last field clear of the pinned
+          Publish bar.
+        */}
+        <div className="min-w-0 flex-1 px-4 pb-36 pt-5 md:px-9 md:py-[30px]" data-member-id={memberId}>
+          {children}
         </div>
       </div>
     </div>

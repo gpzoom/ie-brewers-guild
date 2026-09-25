@@ -51,7 +51,9 @@
   --color-canvas-border: var(--canvas-border);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
   --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
   --color-brand-bright: var(--brand-bright);
   --color-open: var(--open);
   --color-warn: var(--warn);
@@ -82,6 +84,18 @@
   --open: oklch(0.62 0.15 145);
   --warn: oklch(0.68 0.13 75);
   --danger: oklch(0.55 0.17 27);
+
+  /* Derived tokens (design canvas, docs/design/README.md): tertiary text
+     #8C8275 and accent hover #8F4517. Deliberately NOT part of the Guild's
+     runtime brand row (src/lib/brand/default-tokens.ts's BRAND_TOKEN_NAMES)
+     -- older stored rows wouldn't have them, and buildBrandTokenCss would
+     then emit an invalid value. Deriving them from --ink-muted/--canvas and
+     --brand instead means they follow whatever brand the Guild saves, and
+     still resolve when the brand row overrides only the base tokens
+     (custom properties referencing var() compute at :root, after the
+     injected brand <style> has replaced the base values). */
+  --ink-subtle: color-mix(in srgb, var(--ink-muted) 78%, var(--canvas));
+  --brand-hover: color-mix(in srgb, var(--brand) 78%, black);
 
   /* shadcn-style aliases, redefined in terms of the brand tokens above so
      every existing component keeps working with no per-component edits.
@@ -143,12 +157,97 @@
   --ring: var(--brand-bright);
 }
 
+/* Light "canvas" theme for the app screens (member admin, Guild admin,
+   sign in, creator upload) -- docs/design/README.md's design language.
+   Applied to <html> by __root.tsx's RootShell (see CANVAS_ROUTE_PREFIXES
+   there), not to a wrapper div: Radix dialogs/popovers/selects portal to
+   <body>, so only an ancestor of <body> reaches them too. Remaps every
+   shadcn alias, so existing components (Button, Input, Card, Dialog...)
+   render light with no per-component edits. */
+.theme-canvas {
+  color-scheme: light;
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--ink);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--ink);
+  --primary: var(--brand);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: var(--canvas-2);
+  --secondary-foreground: var(--ink);
+  --muted: var(--canvas-2);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--canvas-2);
+  --accent-foreground: var(--ink);
+  --destructive: var(--danger);
+  --destructive-foreground: oklch(1 0 0);
+  --border: var(--canvas-border);
+  --input: var(--canvas-border);
+  --ring: var(--brand);
+  --surface-foreground: var(--ink);
+  --sidebar: var(--canvas);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: var(--canvas-2);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--canvas-border);
+  --sidebar-ring: var(--brand);
+}
+
+/* The public site's dark mapping, re-applied to the public header/footer
+   when they render on a canvas route (/signin, /send/...) so the site
+   chrome stays dark while the page body goes light. */
+.theme-site {
+  color-scheme: dark;
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface-2);
+  --popover-foreground: var(--text);
+  --primary: var(--brand-bright);
+  --primary-foreground: var(--ink);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--brand);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--text);
+  --border: var(--border-dark);
+  --input: var(--border-dark);
+  --ring: var(--brand-bright);
+  --surface-foreground: var(--text);
+  /* @theme's --color-* aliases compute once, on <html>; re-point the ones
+     the base layer reads directly (border-color, background, text). */
+  --color-border: var(--border);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  color: var(--foreground);
+}
+
 @layer base {
   * { border-color: var(--color-border); }
   html, body { background-color: var(--color-background); color: var(--color-foreground); }
   body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
   h1, h2, h3, h4, .font-display {
     font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+  /* The admin design uses sentence-case Bricolage 700 headings
+     ("Basics & hours"), not the public site's uppercase 800. */
+  .theme-canvas :is(h1, h2, h3, h4, .font-display) {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-transform: none;
+  }
+  /* ...but the public header/footer keep the site's own treatment. */
+  .theme-site :is(h1, h2, h3, h4, .font-display) {
     font-weight: 800;
     letter-spacing: 0.01em;
     text-transform: uppercase;

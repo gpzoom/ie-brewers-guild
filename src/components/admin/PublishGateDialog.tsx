@@ -45,10 +45,10 @@ type FreshState =
  * so on every open the dialog re-reads getPublishGateData and only lets
  * the member confirm once that fresh read has landed.
  *
- * Also renders a Preview / View profile link to /members/<slug> in a new
- * tab beside the Publish control -- here rather than in AdminShell so it
- * lives in the same single responsive container (phone bottom bar /
- * desktop top bar) and always reflects the current status.
+ * The Preview / View profile link lives in AdminShell's top bar instead
+ * (it's stateless, so unlike this component it can render wherever each
+ * breakpoint's design puts it); it follows the loader's status, which
+ * router.invalidate() refreshes right after a publish/unpublish here.
  */
 export function PublishGateDialog({
   memberId,
@@ -145,37 +145,28 @@ export function PublishGateDialog({
     }
   }
 
-  const previewLink = (
-    <Button asChild variant="outline" className="h-11 shrink-0">
-      <a href={`/members/${initial.slug}`} target="_blank" rel="noopener">
-        {currentStatus === "published" ? "View profile" : "Preview"}
-      </a>
-    </Button>
-  );
-
+  // Everything outside the dialog sits in AdminShell's single responsive
+  // container: the light bottom bar on a phone (artboard AdminPhone), the
+  // near-black top bar at md and up (artboard AdminBasics) -- hence the
+  // paired phone / md: colours on each control below.
   if (currentStatus === "published") {
     return (
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
         {badge.kind === "stale" && (
-          <p role="alert" className="text-sm text-warn">
+          <p role="alert" className="text-xs text-ink-muted md:max-w-[16rem] md:text-warn">
             Hours confirmed {badge.daysAgo} days ago — worth a check.
           </p>
         )}
-        <div className="ml-auto flex items-center gap-2">
-          {previewLink}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-11"
-            disabled={submitting}
-            onClick={onUnpublish}
-          >
-            Move back to draft
-          </Button>
-        </div>
+        <button
+          type="button"
+          disabled={submitting}
+          onClick={onUnpublish}
+          className="inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[10px] border border-canvas-border bg-white px-4 text-sm font-medium text-ink transition-colors hover:bg-canvas-2 disabled:opacity-50 md:h-10 md:w-auto md:rounded-[9px] md:border-border-dark md:bg-transparent md:text-[13px] md:text-canvas md:hover:bg-white/10"
+        >
+          Move back to draft
+        </button>
         {error && (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-sm text-danger md:text-xs md:text-[oklch(0.75_0.14_27)]">
             {error}
           </p>
         )}
@@ -184,13 +175,18 @@ export function PublishGateDialog({
   }
 
   return (
-    <div className="flex items-center gap-2">
-      {previewLink}
+    <div className="flex flex-col gap-2 md:flex-row md:items-center">
+      <p className="text-[11px] text-ink-muted md:hidden">
+        Changes save as you type. Publishing needs one more step.
+      </p>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button type="button" className="h-11 flex-1 md:flex-none md:px-8">
-            Publish
-          </Button>
+          <button
+            type="button"
+            className="inline-flex h-[50px] w-full shrink-0 items-center justify-center rounded-[11px] bg-brand px-[18px] text-[15px] font-semibold text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-bright md:h-10 md:w-auto md:rounded-[9px] md:text-[13px]"
+          >
+            Publish changes
+          </button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
@@ -223,7 +219,10 @@ export function PublishGateDialog({
           {freshData &&
             (isMobile ? (
               allPast ? (
-                <p role="alert" className="text-sm text-warn">
+                <p
+                  role="alert"
+                  className="text-sm text-[color-mix(in_oklch,var(--warn),black_45%)]"
+                >
                   Every listed appearance is in the past — visitors won't see anything upcoming. You
                   can still publish, but consider adding a date first.
                 </p>

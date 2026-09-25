@@ -1,5 +1,6 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { stopImpersonation } from "@/lib/guild/impersonation.server";
+import { StatusBand, bandButtonClass } from "@/components/shell/AppChrome";
 
 /**
  * The same non-dismissable treatment as AdminShell's impersonation banner
@@ -20,11 +21,13 @@ export function ProfilePreviewBanner({
   isImpersonating,
   viewerIsEditor,
   viewerIsGuildAdmin = false,
+  memberName = null,
 }: {
   isPreview: boolean;
   isImpersonating: boolean;
   viewerIsEditor: boolean;
   viewerIsGuildAdmin?: boolean;
+  memberName?: string | null;
 }) {
   const router = useRouter();
 
@@ -37,9 +40,11 @@ export function ProfilePreviewBanner({
 
   let message: string;
   if (isImpersonating) {
+    // Artboard GuildMembers's band wording, plus which version is showing.
+    const who = memberName ?? "this member";
     message = isPreview
-      ? "You're previewing this member's profile while editing as them. Every change is logged against your own Guild admin account."
-      : "You're viewing this member's live profile while editing as them.";
+      ? `You are editing as ${who}. Changes are saved to their profile. This is their unpublished draft.`
+      : `You are editing as ${who}. Changes are saved to their profile. This is their live page.`;
   } else if (viewerIsEditor) {
     message = isPreview
       ? "This is a preview of your profile. It isn't published yet — only you can see this page."
@@ -50,34 +55,34 @@ export function ProfilePreviewBanner({
     message = "This is a preview of your profile. It isn't published yet — only you can see this page.";
   }
 
-  const buttonClass =
-    "inline-flex min-h-11 items-center rounded-md border border-current/60 px-3 py-1 font-semibold hover:bg-white/10";
+  // Impersonation and unpublished drafts get the accent band (artboard
+  // GuildMembers); an editor looking at their own live page -- nothing to
+  // warn about -- gets the calmer dark ink band. White text on both.
+  const tone = isImpersonating || isPreview ? "accent" : "ink";
 
   return (
-    <div
-      role="alert"
-      className={`flex min-h-11 flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm font-medium ${
-        isPreview || isImpersonating ? "bg-danger text-white" : "bg-primary text-primary-foreground"
-      }`}
-    >
-      <span>{message}</span>
-      <div className="flex flex-wrap gap-2">
-        {canEdit && (
-          <Link to="/admin/basics" className={buttonClass}>
-            Back to editing
-          </Link>
-        )}
-        {!canEdit && viewerIsGuildAdmin && (
-          <Link to="/guild/roster" className={buttonClass}>
-            Back to roster
-          </Link>
-        )}
-        {isImpersonating && (
-          <button type="button" onClick={handleStop} className={buttonClass}>
-            Stop
-          </button>
-        )}
-      </div>
-    </div>
+    <StatusBand
+      tone={tone}
+      message={message}
+      actions={
+        <>
+          {canEdit && (
+            <Link to="/admin/basics" className={bandButtonClass}>
+              Back to editing
+            </Link>
+          )}
+          {!canEdit && viewerIsGuildAdmin && (
+            <Link to="/guild/roster" className={bandButtonClass}>
+              Back to roster
+            </Link>
+          )}
+          {isImpersonating && (
+            <button type="button" onClick={handleStop} className={bandButtonClass}>
+              Stop
+            </button>
+          )}
+        </>
+      }
+    />
   );
 }

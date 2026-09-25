@@ -15,13 +15,13 @@ export const Route = createFileRoute("/admin")({
     };
   },
   loader: async ({ context }) => {
-    const [publishGateData, impersonatedMemberName] = await Promise.all([
+    // The member's name shows in the top bar for everyone (artboard
+    // AdminBasics) and names who's being edited in the impersonation band.
+    const [publishGateData, memberName] = await Promise.all([
       getPublishGateData({ data: { memberId: context.memberId } }),
-      context.isImpersonating
-        ? getMemberDisplayName({ data: { memberId: context.memberId } })
-        : Promise.resolve(null),
+      getMemberDisplayName({ data: { memberId: context.memberId } }),
     ]);
-    return { publishGateData, impersonatedMemberName };
+    return { publishGateData, memberName };
   },
   head: () => ({ meta: [{ title: "Member admin — Inland Southern California Brewers Guild" }] }),
   component: AdminLayout,
@@ -29,12 +29,15 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   const { memberId, isImpersonating } = Route.useRouteContext();
-  const { publishGateData, impersonatedMemberName } = Route.useLoaderData();
+  const { publishGateData, memberName } = Route.useLoaderData();
   return (
     <AdminShell
       memberId={memberId}
+      memberName={memberName}
       isImpersonating={isImpersonating}
-      impersonatedMemberName={impersonatedMemberName}
+      impersonatedMemberName={isImpersonating ? memberName : null}
+      previewHref={`/members/${publishGateData.slug}`}
+      isPublished={publishGateData.status === "published"}
       publishSlot={<PublishGateDialog memberId={memberId} initial={publishGateData} />}
     >
       <Outlet />

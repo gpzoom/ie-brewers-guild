@@ -16,7 +16,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { UnderConstruction } from "@/components/site/UnderConstruction";
 import { getActiveBrandTokens } from "@/lib/brand/active-brand.server";
 import { getGuildAdminStatus } from "@/lib/guild/guild-admin-status.server";
-import { GuildAdminBar } from "@/components/guild/GuildAdminBar";
 
 const UNDER_CONSTRUCTION = import.meta.env.VITE_UNDER_CONSTRUCTION === "true";
 
@@ -71,7 +70,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   loader: async () => {
     // Run in parallel -- these are two unrelated concerns (theme tokens,
-    // Guild-admin-bar visibility) that both need to be known before the
+    // whether the viewer is a Guild admin -- read by members_.$slug.tsx's
+    // ProfilePreviewBanner) that both need to be known before the
     // page renders, and there's no reason to pay for them sequentially.
     // getGuildAdminStatus is cheap for the vast majority of anonymous
     // visitors (it short-circuits on cookie presence before doing any
@@ -116,9 +116,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+// Route subtrees drawn in the light "canvas" app theme (styles.css's
+// .theme-canvas, docs/design/README.md). Set on <html> rather than a
+// wrapper div because Radix dialogs/popovers/selects portal to <body>,
+// outside any wrapper -- only an ancestor of <body> reaches them. The
+// public site (including /contact) stays on the dark theme.
+const CANVAS_ROUTE_PREFIXES = ["/admin", "/guild", "/signin", "/send"];
+
+function matchesPrefix(pathname: string, prefixes: string[]) {
+  const normalized = pathname.replace(/\/+$/, "") || "/";
+  return prefixes.some((prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`));
+}
+
 function RootShell({ children }: { children: React.ReactNode }) {
+  // The shell renders inside the router (Match.js wraps the root match in
+  // it), so this reads the same location during SSR and on the client, and
+  // re-renders on every client-side navigation -- no hydration mismatch,
+  // no flash when moving between the public site and the admin.
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isCanvas = !UNDER_CONSTRUCTION && matchesPrefix(pathname, CANVAS_ROUTE_PREFIXES);
   return (
-    <html lang="en">
+    <html lang="en" className={isCanvas ? "theme-canvas" : undefined}>
       <head><HeadContent /></head>
       <body>
         {children}
@@ -138,19 +156,18 @@ const BARE_ROUTES = ["/survey-results"];
 // mobile tab strip + pinned Publish bar) is the chrome for every
 // /admin/<section> route, and the marketing header/footer would otherwise
 // wrap it on every one of those child paths too, not just /admin itself.
-const BARE_ROUTE_PREFIXES = ["/admin"];
+// /guild is here for the same reason: GuildShell (src/routes/guild.tsx) is
+// the chrome for every /guild/<section> route.
+const BARE_ROUTE_PREFIXES = ["/admin", "/guild"];
 
 function isBarePathname(pathname: string) {
   const normalized = pathname.replace(/\/+$/, "") || "/";
   if (BARE_ROUTES.includes(normalized)) return true;
-  return BARE_ROUTE_PREFIXES.some(
-    (prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`),
-  );
+  return matchesPrefix(normalized, BARE_ROUTE_PREFIXES);
 }
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const { isGuildAdmin } = Route.useLoaderData();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isBare = isBarePathname(pathname);
 
@@ -162,9 +179,6 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <div className="flex min-h-screen flex-col">
         {!isBare && <Header />}
-        {/* Persistent across every non-bare page, not just /guild -- see
-            GuildAdminBar's own doc comment for the bug this fixes. */}
-        {!isBare && isGuildAdmin && <GuildAdminBar />}
         <main className="flex-1">
           <Outlet />
         </main>

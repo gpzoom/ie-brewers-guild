@@ -39,8 +39,9 @@ export async function checkGuildAdminStatus(
 }
 
 /**
- * Powers the persistent Guild-admin nav bar rendered under the public
- * header on every page (__root.tsx) -- NOT itself a security boundary:
+ * Tells every page (via __root.tsx's loader) whether the viewer is a Guild
+ * admin -- today read by the public profile's ProfilePreviewBanner to word
+ * its draft notice and offer "Back to roster". NOT itself a security boundary:
  * requireGuildAdminSession (require-guild-admin-session.server.ts) still
  * independently gates every real /guild route. A false positive here
  * would only show a dead-end link, never grant real access, so this

@@ -374,6 +374,17 @@ export default defineConfig(async ({ command, mode }) => {
             // "**/*.server.*" glob above and excluded here for the same
             // reason as the rest.
             "src/lib/guild/guild-admin-status.server.ts",
+            // src/lib/guild/guild-shell.server.ts (Guild admin shell,
+            // design stage 2) -- same reasoning as the files above: its one
+            // createServerFn export, getGuildShellSummary (sidebar counts +
+            // the admin's email), is called directly from
+            // src/routes/guild.tsx's own loader, which runs on both server
+            // and client (every /guild navigation and router.invalidate())
+            // -- the same safe client/server RPC boundary this deny rule
+            // exists to push people toward, already covered by the
+            // "**/*.server.*" glob above and excluded here for the same
+            // reason as the rest.
+            "src/lib/guild/guild-shell.server.ts",
           ],
           specifiers: ["server-only"],
         },

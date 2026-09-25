@@ -17,7 +17,11 @@ export function Footer() {
   };
 
   return (
-    <footer className="mt-24 border-t border-border/60 bg-card/40">
+    // theme-site keeps the footer dark on the light "canvas" routes
+    // (/signin, /send/...); the background is the same 40% card-over-
+    // background tint as before, just mixed opaquely so a light page
+    // body behind it can't show through.
+    <footer className="theme-site mt-24 border-t border-border/60 bg-[color-mix(in_oklab,var(--card)_40%,var(--background))]">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-4 md:px-6">
         <div className="md:col-span-2">
           <Link to="/" className="flex items-center gap-2 font-display text-xl tracking-wider">
