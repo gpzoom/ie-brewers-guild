@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SaveNoteText } from "@/components/admin/SaveNote";
 import {
   Field,
   IDLE,
@@ -576,7 +577,7 @@ export function BasicsForm({
       )}
 
       <p className="border-t border-canvas-2 pt-[22px] text-[13px] text-ink-muted">
-        Changes save as you type. Publishing needs one more step.
+        <SaveNoteText />
       </p>
     </div>
   );

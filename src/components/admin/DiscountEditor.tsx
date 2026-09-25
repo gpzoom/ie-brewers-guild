@@ -2,6 +2,7 @@ import { useState } from "react";
 import { applyDiscountXor, updateMemberDiscount } from "@/lib/members/discount.server";
 import { isFieldVisibleForMemberType } from "@/lib/members/type-fields";
 import type { BasicsMember } from "@/lib/members/member-basics.server";
+import { SaveNoteText } from "@/components/admin/SaveNote";
 
 const controlClass =
   "h-[46px] w-full rounded-[9px] border border-canvas-border bg-white px-[13px] text-sm text-ink placeholder:text-ink-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30";
@@ -224,7 +225,7 @@ export function DiscountEditor({ member }: { member: BasicsMember }) {
 
       <div className="flex items-center gap-5 border-t border-[#E6E0D6] pt-[22px]">
         <p className="text-[13px] text-ink-muted">
-          Changes save as you go. Publishing needs one more step.
+          <SaveNoteText />
         </p>
       </div>
     </div>

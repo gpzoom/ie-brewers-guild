@@ -8,6 +8,7 @@ import {
 } from "@/lib/links/member-links.server";
 import { isFieldVisibleForMemberType, LOCATION_FIELD_LABEL } from "@/lib/members/type-fields";
 import type { MemberLinkKind, MemberLinkRow, MemberType } from "@/lib/supabase/types";
+import { SaveNoteText } from "@/components/admin/SaveNote";
 
 // Friendly names for the link kinds (artboard R's select options).
 const LINK_KIND_LABEL: Partial<Record<MemberLinkKind, string>> = {
@@ -327,7 +328,7 @@ export function LinksContactEditor({
 
       <div className="flex items-center gap-5 border-t border-[#E6E0D6] pt-[22px]">
         <p className="text-[13px] text-ink-muted">
-          Changes save as you go. Publishing needs one more step.
+          <SaveNoteText />
         </p>
       </div>
     </div>

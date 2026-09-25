@@ -14,6 +14,7 @@ import {
 } from "@/lib/hours/publish-gate";
 import type { MemberStatus } from "@/lib/supabase/types";
 import { Checkbox } from "@/components/ui/checkbox";
+import { saveNoteText } from "@/components/admin/SaveNote";
 import {
   Dialog,
   DialogClose,
@@ -169,6 +170,7 @@ export function PublishGateDialog({
   if (currentStatus === "published") {
     return (
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
+        <p className="text-[11px] text-ink-muted md:hidden">{saveNoteText(true)}</p>
         {badge.kind === "stale" && (
           <p role="alert" className="text-xs text-ink-muted md:max-w-[16rem] md:text-warn">
             Hours confirmed {badge.daysAgo} days ago — worth a check.
@@ -193,16 +195,14 @@ export function PublishGateDialog({
 
   return (
     <div className="flex flex-col gap-2 md:flex-row md:items-center">
-      <p className="text-[11px] text-ink-muted md:hidden">
-        Changes save as you type. Publishing needs one more step.
-      </p>
+      <p className="text-[11px] text-ink-muted md:hidden">{saveNoteText(false)}</p>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <button
             type="button"
             className="inline-flex h-[50px] w-full shrink-0 items-center justify-center rounded-[11px] bg-brand px-[18px] text-[15px] font-semibold text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-bright md:h-10 md:w-auto md:rounded-[9px] md:text-[13px]"
           >
-            Publish changes
+            Publish
           </button>
         </DialogTrigger>
         <DialogContent className="max-h-[calc(100dvh-32px)] w-[calc(100%-32px)] max-w-[600px] gap-[22px] overflow-y-auto rounded-[18px] border-0 bg-canvas p-6 text-ink sm:rounded-[18px] sm:p-[30px]">
