@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { clearCoverAsset, updateCoverAsset, updateCoverCrop } from "@/lib/media/cover.server";
 import { CropEditor } from "@/components/admin/CropEditor";
-import { COVER_ASPECT } from "@/lib/media/crop-interaction";
+import { COVER_ASPECT, DESKTOP_COVER_ASPECT } from "@/lib/media/crop-interaction";
 import type { CropRect } from "@/lib/media/crop";
 import type { MediaAssetRow } from "@/lib/supabase/types";
 
@@ -256,6 +256,7 @@ export function CoverEditor({
               aspect={COVER_ASPECT}
               aspectClassName="aspect-[5/2]"
               onChange={onCropChange}
+              wideGuideAspect={DESKTOP_COVER_ASPECT}
             />
           </div>
         ) : (

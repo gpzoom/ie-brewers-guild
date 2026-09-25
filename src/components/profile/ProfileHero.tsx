@@ -2,6 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { MemberImage } from "@/components/profile/MemberImage";
 import { LogoChip } from "@/components/profile/LogoChip";
+import { cropForWiderFrame } from "@/lib/media/crop";
+import { COVER_ASPECT, DESKTOP_COVER_ASPECT } from "@/lib/media/crop-interaction";
 import type { MemberRow } from "@/lib/supabase/types";
 import type { DirectoryEntry } from "@/lib/directory/list-position";
 import type { DirectorySearch } from "@/lib/directory/search-params";
@@ -50,13 +52,26 @@ export function ProfileHero({ member, coverUrl, logoUrl, nextLocation, search }:
 
   return (
     <div className="relative">
+      {/* Two renders, one per breakpoint (only the visible one loads -- the
+          hidden <img> is display:none and lazy). The desktop band is wider
+          than the 2.5:1 the member positioned in the editor, so it gets a
+          derived crop that keeps their positioning instead of the stored
+          one stretched and re-centered by object-cover. */}
       <MemberImage
         src={coverUrl}
         crop={member.cover_crop}
         alt={`${member.business_name} cover photo`}
         theme={member.theme}
-        aspectClassName="aspect-[2.5/1] md:aspect-[4/1]"
-        className="rounded-none md:rounded-card"
+        aspectClassName="aspect-[2.5/1]"
+        className="rounded-none md:hidden"
+      />
+      <MemberImage
+        src={coverUrl}
+        crop={member.cover_crop ? cropForWiderFrame(member.cover_crop, COVER_ASPECT, DESKTOP_COVER_ASPECT) : null}
+        alt={`${member.business_name} cover photo`}
+        theme={member.theme}
+        aspectClassName="aspect-[4/1]"
+        className="hidden md:block md:rounded-card"
       />
       <div className={heroRowClassName}>
         <LogoChip src={logoUrl} alt={`${member.business_name} logo`} size={72} className="md:hidden" />

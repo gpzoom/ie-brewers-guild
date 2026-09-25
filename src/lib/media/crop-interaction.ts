@@ -4,9 +4,12 @@ import type { CropRect } from "@/lib/media/crop";
 export const CAROUSEL_ASPECT = 4 / 5;
 /**
  * Cover band: 2.5:1 on phone (spec, "Profile hero and theme"). Desktop's
- * 4:1 reuses this same rectangle (Phase 3's stated v1 limitation).
+ * 4:1 band is derived from this same stored rectangle with
+ * cropForWiderFrame (src/lib/media/crop.ts) -- reusing it as-is made the
+ * browser re-center the photo and lose the member's positioning.
  */
 export const COVER_ASPECT = 2.5;
+export const DESKTOP_COVER_ASPECT = 4;
 
 /**
  * The 4:5 slot is fixed (spec, "The slot") -- what the member actually

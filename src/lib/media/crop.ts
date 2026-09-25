@@ -16,6 +16,26 @@ export type CropRect = { x: number; y: number; w: number; h: number };
  * This is the v1, CSS-only rendering path the spec explicitly allows
  * ("real server-side pixel resizing is a future optimization").
  */
+/**
+ * Derives the crop for a WIDER frame (e.g. the 4:1 desktop cover band) from
+ * a crop composed for a narrower one (the 5:2 cover editor), without
+ * stretching: same horizontal span, height cut by fromAspect/toAspect, and
+ * the vertical position kept proportional -- a crop the member pushed to
+ * the top stays top-anchored, a centered one stays centered, a bottom one
+ * stays bottom. Returns the crop unchanged when toAspect isn't wider.
+ */
+export function cropForWiderFrame(crop: CropRect, fromAspect: number, toAspect: number): CropRect {
+  if (toAspect <= fromAspect || crop.h <= 0) return crop;
+  const h = crop.h * (fromAspect / toAspect);
+  const slack = 1 - crop.h;
+  const position = slack > 1e-6 ? Math.min(Math.max(crop.y / slack, 0), 1) : 0.5;
+  const y = position * (1 - h);
+  // When the stored crop already spans the image's full height, the narrower
+  // slice is centered on it instead of on the whole image.
+  const centeredY = crop.y + (crop.h - h) / 2;
+  return { x: crop.x, y: slack > 1e-6 ? y : centeredY, w: crop.w, h };
+}
+
 export function computeCropStyle(crop: CropRect): CSSProperties {
   const { x, y, w, h } = crop;
 

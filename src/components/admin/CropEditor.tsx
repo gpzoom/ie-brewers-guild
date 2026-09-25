@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { computeCropStyle, type CropRect } from "@/lib/media/crop";
+import { computeCropStyle, cropForWiderFrame, type CropRect } from "@/lib/media/crop";
 import {
   fitCropToAspect,
   initialCropForAspect,
@@ -38,6 +38,7 @@ export function CropEditor({
   aspect,
   aspectClassName,
   onChange,
+  wideGuideAspect,
 }: {
   imageUrl: string;
   crop: CropRect;
@@ -45,6 +46,12 @@ export function CropEditor({
   aspect: number;
   aspectClassName: string; // e.g. "aspect-[4/5]"
   onChange: (crop: CropRect) => void;
+  /**
+   * When the same crop is also shown in a WIDER frame elsewhere (the 4:1
+   * desktop cover band), shades the parts of this frame that the wider one
+   * cuts off -- computed with the same cropForWiderFrame the public page uses.
+   */
+  wideGuideAspect?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -55,6 +62,13 @@ export function CropEditor({
   // the previous photo's size to the new one.
   const size = natural && natural.url === imageUrl ? natural : null;
   const displayCrop = size ? fitCropToAspect(crop, size.width, size.height, aspect) : crop;
+
+  // Visible band of the wider frame, as fractions of THIS frame's height.
+  let wideBand: { top: number; height: number } | null = null;
+  if (wideGuideAspect && wideGuideAspect > aspect && displayCrop.h > 0) {
+    const wide = cropForWiderFrame(displayCrop, aspect, wideGuideAspect);
+    wideBand = { top: (wide.y - displayCrop.y) / displayCrop.h, height: wide.h / displayCrop.h };
+  }
 
   // Persist a display-only correction exactly once per loaded image.
   // fitCropToAspect returns the SAME object when the crop already fits, so
@@ -136,8 +150,25 @@ export function CropEditor({
           className="pointer-events-none select-none"
           onLoad={(e) => recordNaturalSize(e.currentTarget)}
         />
+        {wideBand && (
+          <>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 bg-black/45"
+              style={{ height: `${(wideBand.top * 100).toFixed(2)}%` }}
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 bg-black/45"
+              style={{ height: `${((1 - wideBand.top - wideBand.height) * 100).toFixed(2)}%` }}
+            />
+          </>
+        )}
       </div>
-      <p className="text-center text-xs text-muted-foreground">Drag to reposition</p>
+      <p className="text-center text-xs text-muted-foreground">
+        Drag to reposition
+        {wideBand && " · the shaded strips are hidden on wide screens"}
+      </p>
       <div className="flex justify-center gap-2">
         <Button
           type="button"
