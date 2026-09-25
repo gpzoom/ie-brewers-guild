@@ -4,7 +4,6 @@ import { stopImpersonation } from "@/lib/guild/impersonation.server";
 import { signOutEverything } from "@/lib/auth/sign-out.server";
 import {
   AppTopBar,
-  SidebarGroupLabel,
   SidebarSignOut,
   StatusBand,
   bandButtonClass,
@@ -110,7 +109,7 @@ export function AdminShell({
         />
       )}
 
-      <AppTopBar label="ISC Brewers Guild · Member admin" shortLabel="Member admin">
+      <AppTopBar label="ISC Brewers Guild · Member admin" shortLabel={memberName ?? "Member admin"}>
         {memberName && (
           <span className="hidden max-w-[16rem] truncate text-[13px] text-text-muted xl:inline">
             {memberName}
@@ -144,7 +143,11 @@ export function AdminShell({
 
       <div className="flex flex-1 flex-col md:flex-row">
         <nav aria-label="Admin sections" className={sidebarNavClass}>
-          <SidebarGroupLabel>Your profile</SidebarGroupLabel>
+          {/* Whose profile this is, always in view -- especially while a Guild
+              admin is editing as a member. Phones show the name in the top bar. */}
+          <div className="hidden px-3 pb-3 font-display text-[19px] font-bold leading-tight tracking-[-0.01em] text-ink normal-case [overflow-wrap:anywhere] md:block">
+            {memberName ? `${memberName} Profile` : "Your profile"}
+          </div>
           {NAV_ITEMS.map((item) => {
             const active = isActivePath(pathname, item.match);
             return (
