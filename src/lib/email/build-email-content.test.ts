@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildEmailContent, GUILD_NOTIFICATION_EMAIL, SITE_URL } from "./build-email-content";
+import { buildEmailContent, GUILD_NOTIFICATION_EMAIL, ORG_NAME, ORG_SHORT_NAME, SITE_URL } from "./build-email-content";
 
 describe("named constants", () => {
   it("GUILD_NOTIFICATION_EMAIL is the Guild's real, currently-used contact inbox", () => {
@@ -53,6 +53,15 @@ describe("buildEmailContent: member_invited", () => {
     const content = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" });
     expect(content.text).toContain(`${SITE_URL}/signin`);
     expect(content.html).toContain(`${SITE_URL}/signin`);
+  });
+
+  it("uses the Guild's current name, never the outdated IE Brewers Guild", () => {
+    const content = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" });
+    expect(content.text).toContain(ORG_NAME);
+    expect(content.subject).toContain(ORG_SHORT_NAME);
+    for (const part of [content.subject, content.text, content.html]) {
+      expect(part).not.toContain("IE Brewers Guild");
+    }
   });
 });
 

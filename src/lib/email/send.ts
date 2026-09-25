@@ -21,7 +21,7 @@
  * made in this build (see this plan's Decision 1).
  */
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { buildEmailContent } from "@/lib/email/build-email-content";
+import { buildEmailContent, ORG_SHORT_NAME } from "@/lib/email/build-email-content";
 import { resolveRecipient } from "@/lib/email/resolve-recipient.server";
 
 export type { TransactionalEmailPayload } from "@/lib/email/build-email-content";
@@ -32,7 +32,7 @@ const RESEND_API_URL = "https://api.resend.com/emails";
 // mail.iscbrewersguild.org is already verified in Resend (SPF/DKIM/DMARC in
 // place before the first send) -- spec, "Transactional email"; task brief's
 // "Known facts." No further domain-verification work belongs in this file.
-const TRANSACTIONAL_FROM_ADDRESS = "IE Brewers Guild <notifications@mail.iscbrewersguild.org>";
+const TRANSACTIONAL_FROM_ADDRESS = `${ORG_SHORT_NAME} <notifications@mail.iscbrewersguild.org>`;
 
 type EmailWorkerEnv = { RESEND_API_KEY?: string };
 

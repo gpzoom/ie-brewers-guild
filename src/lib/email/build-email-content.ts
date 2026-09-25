@@ -41,6 +41,10 @@ export const GUILD_NOTIFICATION_EMAIL = "iscbrewersguild@gmail.com";
 /** The Guild's real domain, confirmed against the spec and this session's own research. */
 export const SITE_URL = "https://iscbrewersguild.org";
 
+/** The Guild's full name, and the short form the site header/footer use. */
+export const ORG_NAME = "Inland Southern California Brewers Guild";
+export const ORG_SHORT_NAME = "ISC Brewers Guild";
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -92,13 +96,13 @@ export function buildEmailContent(payload: TransactionalEmailPayload): EmailCont
     case "member_invited": {
       const signInUrl = `${SITE_URL}/signin`;
       const text =
-        "Welcome to the IE Brewers Guild! The Guild has created a profile for your business on the " +
+        `Welcome to the ${ORG_NAME}! The Guild has created a profile for your business on the ` +
         `member directory. Sign in anytime with this email address to start filling it in:\n\n${signInUrl}`;
       return {
-        subject: "You're invited to the IE Brewers Guild member directory",
+        subject: `You're invited to the ${ORG_SHORT_NAME} member directory`,
         text,
         html: wrapHtml([
-          "Welcome to the IE Brewers Guild! The Guild has created a profile for your business on the " +
+          `Welcome to the ${ORG_NAME}! The Guild has created a profile for your business on the ` +
             "member directory.",
           `Sign in anytime with this email address to start filling it in: <a href="${signInUrl}">${signInUrl}</a>`,
         ]),
@@ -111,7 +115,7 @@ export function buildEmailContent(payload: TransactionalEmailPayload): EmailCont
         : "";
       const text = `Thank you for reaching out. We have received your submission.${membershipLine}`;
       return {
-        subject: "We've received your message — IE Brewers Guild",
+        subject: `We've received your message — ${ORG_SHORT_NAME}`,
         text,
         html: wrapHtml([`Thank you for reaching out. We have received your submission.${membershipLine}`]),
       };

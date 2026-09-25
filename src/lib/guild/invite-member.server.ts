@@ -3,16 +3,20 @@ import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from 
 import { sendTransactionalEmail } from "@/lib/email/send";
 
 /**
- * "Invite" (task brief): supabase.auth.admin.inviteUserByEmail() creates
- * the auth.users row immediately, unconfirmed (the decision already made
- * about roster state -- "invited, not signed in" is read from that user's
- * last_sign_in_at, not a new column). Once the invited user's id comes
- * back, a member_users row is inserted with role = 'owner'. The "Member
- * invited" email fires right after, wrapped in try/catch so its current
- * throw (src/lib/email/send.ts isn't implemented until the Contact Form +
- * Resend phase) never blocks the invite/DB-write from succeeding -- same
- * pattern as every other sendTransactionalEmail call site in this
- * codebase.
+ * "Invite": supabase.auth.admin.createUser() creates the auth.users row
+ * immediately WITHOUT Supabase sending any email of its own. (It used to
+ * be inviteUserByEmail(), which sent Supabase's generic invite email on
+ * top of our own "Member invited" email below -- two emails for one
+ * invite. Ours is the only one needed: it points to /signin, where the
+ * member gets a magic link like any other sign-in.) Roster state is
+ * unaffected -- "invited, not signed in" is read from that user's
+ * last_sign_in_at, which stays null until their first real sign-in.
+ * email_confirm: true because the Guild admin is vouching for the address,
+ * matching scripts/seed-guild-admin.ts. Once the user's id comes back, a
+ * member_users row is inserted with role = 'owner'. The "Member invited"
+ * email fires right after, wrapped in try/catch so a send failure never
+ * blocks the invite/DB-write from succeeding -- same pattern as every
+ * other sendTransactionalEmail call site in this codebase.
  *
  * The is_guild_admin check below MUST run before the service-role client
  * is ever touched: this createServerFn is a real, independently
@@ -41,7 +45,10 @@ export const inviteMember = createServerFn({ method: "POST" })
 
     const serviceClient = await getSupabaseServiceRoleClient();
 
-    const { data: inviteData, error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(data.email);
+    const { data: inviteData, error: inviteError } = await serviceClient.auth.admin.createUser({
+      email: data.email,
+      email_confirm: true,
+    });
     if (inviteError || !inviteData.user) {
       throw new Error(inviteError?.message ?? "Could not send the invite.");
     }
