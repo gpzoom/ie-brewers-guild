@@ -6,7 +6,7 @@ import { meetsWcagAA } from "@/lib/brand/contrast";
 import type { BrandSettingsRow } from "@/lib/supabase/types";
 
 /**
- * The editor exposes exactly three colour controls -- a shared hue plus
+ * The editor exposes exactly three color controls -- a shared hue plus
  * --brand's and --brand-bright's independent lightness values (this
  * plan's Decision 11) -- and a font-pairing id from the curated catalog.
  * Chroma stays fixed at the spec's approved values.

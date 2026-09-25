@@ -1,6 +1,6 @@
 import type { MemberLinkRow } from "@/lib/supabase/types";
 import { isHttpUrl } from "@/lib/links/url-safety";
-import { ExternalLink } from "lucide-react";
+import { SectionLabel } from "@/components/profile/SectionLabel";
 
 type LinkPillsProps = {
   links: MemberLinkRow[];
@@ -24,6 +24,10 @@ const LABELS: Record<MemberLinkRow["kind"], string> = {
  * out (Tap list / Press kit / Catalog) is just whichever of those three
  * kinds happens to be present -- no special-casing needed here, the
  * member only sets links relevant to their own type.
+ *
+ * Look: artboards D/E/V (44px white pills, no heading on the phone) and
+ * L (46px pills under a "Find them" label on desktop). Pills wrap rather
+ * than scroll sideways.
  */
 export function LinkPills({ links }: LinkPillsProps) {
   // Render-boundary guard -- this is what actually protects every visitor,
@@ -41,19 +45,22 @@ export function LinkPills({ links }: LinkPillsProps) {
   if (safeLinks.length === 0) return null;
 
   return (
-    <ul className="flex flex-wrap gap-2">
-      {safeLinks.map((link) => (
-        <li key={link.id}>
-          <a
-            href={link.url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-pill border border-canvas-border bg-canvas px-4 text-sm font-medium text-ink hover:border-brand-bright"
-          >
-            {link.label ?? LABELS[link.kind]} <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        </li>
-      ))}
-    </ul>
+    <section className="flex flex-col gap-[11px]" aria-label="Links">
+      <SectionLabel className="hidden lg:flex">Find them</SectionLabel>
+      <ul className="flex flex-wrap gap-2 lg:gap-[9px]">
+        {safeLinks.map((link) => (
+          <li key={link.id}>
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex h-11 items-center rounded-pill border border-canvas-border bg-white px-[15px] text-xs font-medium text-ink hover:border-ink-subtle lg:h-[46px] lg:px-[17px] lg:text-[13px]"
+            >
+              {link.label ?? LABELS[link.kind]}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

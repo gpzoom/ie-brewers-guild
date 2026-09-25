@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  * Shared pieces for the public-facing form pages -- sign in (artboard T),
  * contact (artboard O) and the creator upload link (artboard J), see
  * docs/design/README.md. All three draw a light "canvas" card on the dark
- * site ground. Every colour here is an explicit canvas token (text-ink,
+ * site ground. Every color here is an explicit canvas token (text-ink,
  * bg-canvas, border-canvas-border...) rather than a shadcn alias, so the
  * card looks the same whether the page sits under html.theme-canvas
  * (/signin, /send) or the public dark theme (/contact).
@@ -99,7 +99,7 @@ export const primaryButtonClass =
   "inline-flex h-[54px] w-full items-center justify-center rounded-[11px] border-0 bg-brand px-5 font-sans text-base font-semibold text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:bg-canvas-border disabled:text-ink-subtle";
 export const secondaryButtonClass =
   "inline-flex h-12 w-full items-center justify-center rounded-[10px] border border-canvas-border bg-white px-5 font-sans text-sm font-medium text-ink transition-colors hover:bg-canvas-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-60";
-/** In-card links: the accent colour, underlined (the artboards' light orange fails contrast on the light card). */
+/** In-card links: the accent color, underlined (the artboards' light orange fails contrast on the light card). */
 export const cardLinkClass = "font-medium text-brand underline underline-offset-2 hover:text-brand-hover";
 
 /** A whole-card checkbox label (artboard O's membership box, artboard J's credit/permission boxes). */

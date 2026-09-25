@@ -50,6 +50,9 @@ export type MemberRow = {
   timezone: string;
   theme: ThemeName;
   logo_asset_id: string | null;
+  // Tile behind the logo on the public profile
+  // (20260925190000_members_logo_background.sql); see src/lib/members/logo-background.ts.
+  logo_background: "light" | "dark" | "theme";
   cover_asset_id: string | null;
   cover_crop: CropRect | null;
   og_image_asset_id: string | null;

@@ -22,7 +22,7 @@ const FULL_IMAGE_CROP: CropRect = { x: 0, y: 0, w: 1, h: 1 };
 // dragged position is always what gets persisted.
 const CROP_SAVE_DEBOUNCE_MS = 400;
 
-/** "Theme colour fills the band" is the empty state everywhere a member has no cover photo set (spec, "Profile hero and theme"). */
+/** "Theme color fills the band" is the empty state everywhere a member has no cover photo set (spec, "Profile hero and theme"). */
 export function CoverEditor({
   memberId,
   coverAssetId,
@@ -138,7 +138,7 @@ export function CoverEditor({
     }
   }
 
-  /** Back to the theme-colour band -- same shape as SocialImageEditor's onRemove. */
+  /** Back to the theme-color band -- same shape as SocialImageEditor's onRemove. */
   async function onRemove() {
     setError(undefined);
     cancelPendingCropSave();
@@ -241,7 +241,7 @@ export function CoverEditor({
           <span className="text-[10px] text-[#A89D8E]">Wide band · 5:2</span>
         </div>
         <p className="text-[12px] leading-[1.5] text-ink-muted">
-          The wide band across the top of your profile. No cover photo? Your theme colour fills the
+          The wide band across the top of your profile. No cover photo? Your theme color fills the
           band instead.
         </p>
       </div>
@@ -274,7 +274,7 @@ export function CoverEditor({
           </div>
         ) : (
           <div className="flex aspect-[5/2] w-full items-center justify-center rounded-[13px] border-2 border-dashed border-[#D3CBBD] p-4 text-center text-[12px] text-ink-muted">
-            No cover photo set — your theme colour fills the band.
+            No cover photo set — your theme color fills the band.
           </div>
         )}
         <label htmlFor="cover-choose" className="text-[12px] font-medium text-ink">
@@ -309,7 +309,7 @@ export function CoverEditor({
             disabled={busy}
             onClick={() => void onRemove()}
           >
-            Remove cover — use your theme colour instead
+            Remove cover — use your theme color instead
           </button>
         )}
         {error && (

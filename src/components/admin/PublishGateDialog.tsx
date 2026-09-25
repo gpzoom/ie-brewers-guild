@@ -165,7 +165,7 @@ export function PublishGateDialog({
   // Everything outside the dialog sits in AdminShell's single responsive
   // container: the light bottom bar on a phone (artboard AdminPhone), the
   // near-black top bar at md and up (artboard AdminBasics) -- hence the
-  // paired phone / md: colours on each control below.
+  // paired phone / md: colors on each control below.
   if (currentStatus === "published") {
     return (
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
@@ -345,7 +345,7 @@ export function PublishGateDialog({
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3.5">
               {showTickHint && (
                 <p className="text-center text-[12px] text-ink-subtle sm:text-left">
-                  Tick the box to continue
+                  Check the box to continue
                 </p>
               )}
               <button

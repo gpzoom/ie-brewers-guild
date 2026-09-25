@@ -6,6 +6,7 @@ import { readImpersonationState } from "@/lib/guild/impersonation.server";
 import { getOgPlaceholderPath } from "@/lib/media/og-placeholder";
 import { getAdjacentInList, type DirectoryEntry } from "@/lib/directory/list-position";
 import type { DirectorySort } from "@/lib/directory/search-params";
+import { logoBackgroundColor } from "@/lib/members/logo-background";
 import type {
   CarouselSlideRow,
   CategoryRow,
@@ -16,6 +17,7 @@ import type {
   MemberRow,
   MemberType,
   SpecialHoursRow,
+  ThemeName,
 } from "@/lib/supabase/types";
 
 export type MemberProfileData = {
@@ -32,6 +34,14 @@ export type MemberProfileData = {
   crossLink: DirectoryEntry | null;
   headerPrev: DirectoryEntry | null;
   headerNext: DirectoryEntry | null;
+  // This member's 1-based place in the same browsing order headerPrev/
+  // headerNext walk ("7 / 24" in the header, artboards D/L). Null when the
+  // member isn't in that list (e.g. an unpublished preview).
+  headerPosition: { index: number; total: number } | null;
+  // The cross-link card's own logo (public member-logos URL), or null.
+  crossLinkLogoUrl: string | null;
+  // The cross-link member's own logo tile color (their logo_background).
+  crossLinkLogoBackground: string | null;
   // The next of this SAME business's other published locations (by
   // business_name), not the next member in the visitor's browsing order
   // -- see getAdjacentInList's doc comment on headerPrev/headerNext for
@@ -113,7 +123,7 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
       // everything this function (and its preview/impersonation checks)
       // need.
       .select(
-        "id, slug, member_type, business_name, tagline, city, state, street_address, postal_code, latitude, longitude, service_area, lead_time, phone, contact_email, timezone, theme, logo_asset_id, cover_asset_id, cover_crop, og_image_asset_id, member_since_year, discount_percent, discount_no_fixed_percent, discount_redeem_text, status, hours_confirmed_at, published_at, trail_eligible, created_at, updated_at",
+        "id, slug, member_type, business_name, tagline, city, state, street_address, postal_code, latitude, longitude, service_area, lead_time, phone, contact_email, timezone, theme, logo_asset_id, logo_background, cover_asset_id, cover_crop, og_image_asset_id, member_since_year, discount_percent, discount_no_fixed_percent, discount_redeem_text, status, hours_confirmed_at, published_at, trail_eligible, created_at, updated_at",
       )
       .eq("slug", data.slug)
       .maybeSingle();
@@ -262,6 +272,9 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
       memberType: row.member_type as MemberType,
     }));
     const { prev: headerPrev, next: headerNext } = getAdjacentInList(directoryEntries, typedMember.id);
+    const positionIndex = directoryEntries.findIndex((entry) => entry.id === typedMember.id);
+    const headerPosition =
+      positionIndex === -1 ? null : { index: positionIndex + 1, total: directoryEntries.length };
 
     // Cross-link card: always scoped to this member's own type, regardless
     // of how the visitor arrived (spec: producers point at another
@@ -269,7 +282,7 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
     // at another Allied Member).
     const { data: sameTypeRows } = await supabase
       .from("members")
-      .select("id, slug, business_name, city, member_type")
+      .select("id, slug, business_name, city, member_type, logo_asset_id, logo_background, theme")
       .eq("status", "published")
       .eq("member_type", typedMember.member_type)
       .order("business_name");
@@ -281,6 +294,27 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
       memberType: row.member_type as MemberType,
     }));
     const crossLink = getAdjacentInList(sameTypeEntries, typedMember.id).next;
+
+    // The cross-link card's logo (always on a light chip -- spec, "Logos
+    // and assets"). One extra lookup for one asset; media_assets' own RLS
+    // still decides whether it's readable (approved only, for anon).
+    const crossLinkRow = crossLink ? (sameTypeRows ?? []).find((row) => row.id === crossLink.id) : undefined;
+    const crossLinkLogoAssetId = crossLinkRow?.logo_asset_id as string | null | undefined;
+    // That member's own logo tile color, so their logo reads the same here as on their page.
+    const crossLinkLogoBackground = crossLinkRow
+      ? logoBackgroundColor(crossLinkRow.logo_background as string | null, crossLinkRow.theme as ThemeName)
+      : null;
+    let crossLinkLogoUrl: string | null = null;
+    if (crossLinkLogoAssetId) {
+      const { data: crossLinkLogo } = await supabase
+        .from("media_assets")
+        .select("storage_path")
+        .eq("id", crossLinkLogoAssetId)
+        .maybeSingle();
+      if (crossLinkLogo?.storage_path) {
+        crossLinkLogoUrl = supabase.storage.from("member-logos").getPublicUrl(crossLinkLogo.storage_path as string).data.publicUrl;
+      }
+    }
 
     // Next location: this business's other published rows, imported one
     // per location (see docs/superpowers/plans/2026-09-21-import-existing-members.md,
@@ -333,6 +367,9 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
       crossLink,
       headerPrev,
       headerNext,
+      headerPosition,
+      crossLinkLogoUrl,
+      crossLinkLogoBackground,
       nextLocation,
       ogImageUrl,
       siteOrigin,

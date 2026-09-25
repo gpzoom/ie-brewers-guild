@@ -46,7 +46,15 @@ function BasicsRoute() {
       member={member}
       email={email}
       isImpersonating={isImpersonating}
-      logo={<LogoUploader memberId={memberId} initialLogoUrl={logoUrl} />}
+      logo={
+        <LogoUploader
+          memberId={memberId}
+          initialLogoUrl={logoUrl}
+          initialBackground={member.logo_background ?? "light"}
+          theme={member.theme}
+          businessName={member.business_name}
+        />
+      }
       hours={<HoursEditor memberId={memberId} hours={hours} specialHours={specialHours} />}
     />
   );

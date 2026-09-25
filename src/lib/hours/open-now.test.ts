@@ -28,7 +28,7 @@ describe("computeOpenNow", () => {
       hours: [{ weekday: 2, opensAt: "09:00", closesAt: "17:00", closesNextDay: false, isClosed: false }],
       specialHours: [],
     });
-    expect(result).toEqual({ status: "open", closesInLabel: "Closes in 4 hr 0 min", note: null });
+    expect(result).toEqual({ status: "open", closesInLabel: "Closes in 4 hr 0 min", closesAtLabel: "5:00 pm", remainingLabel: "4 hr 0 min", note: null });
   });
 
   it("is closed before opening, and reports the next opening later the same day", () => {
@@ -50,7 +50,7 @@ describe("computeOpenNow", () => {
       hours: [{ weekday: 5, opensAt: "18:00", closesAt: "01:00", closesNextDay: true, isClosed: false }],
       specialHours: [],
     });
-    expect(result).toEqual({ status: "open", closesInLabel: "Closes in 0 hr 30 min", note: null });
+    expect(result).toEqual({ status: "open", closesInLabel: "Closes in 0 hr 30 min", closesAtLabel: "1:00 am", remainingLabel: "0 hr 30 min", note: null });
   });
 
   it("a special_hours closure for today wins outright, even over normally-open weekly hours", () => {
@@ -86,6 +86,8 @@ describe("computeOpenNow", () => {
     expect(result).toEqual({
       status: "open",
       closesInLabel: "Closes in 1 hr 0 min",
+      closesAtLabel: "2:00 pm",
+      remainingLabel: "1 hr 0 min",
       note: "Christmas Eve — early close",
     });
   });
@@ -135,7 +137,7 @@ describe("computeOpenNow", () => {
         },
       ],
     });
-    expect(result).toEqual({ status: "open", closesInLabel: "Closes in 0 hr 30 min", note: null });
+    expect(result).toEqual({ status: "open", closesInLabel: "Closes in 0 hr 30 min", closesAtLabel: "1:00 am", remainingLabel: "0 hr 30 min", note: null });
   });
 
   it("surfaces the note from yesterday's own special_hours row when that row is the one bleeding over, not today's unrelated special", () => {
@@ -169,6 +171,8 @@ describe("computeOpenNow", () => {
     expect(result).toEqual({
       status: "open",
       closesInLabel: "Closes in 0 hr 30 min",
+      closesAtLabel: "1:00 am",
+      remainingLabel: "0 hr 30 min",
       note: "New Year's Eve — open late",
     });
   });

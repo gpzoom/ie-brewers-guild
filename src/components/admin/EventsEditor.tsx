@@ -16,7 +16,7 @@ const OVERLAY_OPTIONS: { value: EventOverlayStatus; label: string }[] = [
   { value: "canceled", label: "Canceled" },
 ];
 
-// Status pills (artboard M). Postponed has no artboard colour; it takes a
+// Status pills (artboard M). Postponed has no artboard color; it takes a
 // neutral pill in the same shape.
 const OVERLAY_PILL: Record<EventOverlayStatus, string> = {
   rescheduled: "bg-[#F5E2D0] text-[#7A4413]",
@@ -89,10 +89,10 @@ function reinsertEvent(prev: EventRow[], event: EventRow): EventRow[] {
  * the ENTIRE EventRow before their update and roll back to that whole
  * snapshot on failure. Concrete failure this caused: a member blurs the
  * Starts field (update in flight, snapshot has is_hidden: false), then
- * ticks "Hide from profile" (succeeds -- server now has it hidden), then
+ * checks "Hide from profile" (succeeds -- server now has it hidden), then
  * the date update fails -> a whole-row rollback would silently replace
  * the row with the stale snapshot, un-hiding an event the server has
- * actually hidden, with the checkbox visibly un-ticking itself and no
+ * actually hidden, with the checkbox visibly unchecking itself and no
  * indication anything is wrong with the hide state. Same root-cause class
  * as the ThemePicker finding from Task 24 (rolling back with a
  * stale/wrong-scope value), just per-field here instead of per-item.

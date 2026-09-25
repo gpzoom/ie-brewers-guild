@@ -65,11 +65,11 @@ function InfoIcon() {
 
 /**
  * Guild brand & theme (artboard Q, GuildBrand). Typefaces are one of the
- * curated pairings, never a free font field; colour is edited as a brand
+ * curated pairings, never a free font field; color is edited as a brand
  * hue and lightness with live contrast readouts, not raw hex (spec,
  * "Editing the brand from the admin"). Only --brand and --brand-bright are
  * exposed (this plan's Decision 11) -- a shared hue, and one lightness
- * slider per tier, each paired with the fixed text colour it actually
+ * slider per tier, each paired with the fixed text color it actually
  * carries in production (white on --brand, --ink on --brand-bright). Save is
  * blocked while either falls below 4.5:1. A live preview on the right shows
  * the choice on a sample member page before anything is saved.
@@ -157,7 +157,7 @@ export function BrandEditor({
             Brand &amp; theme
           </h1>
           <p className="text-pretty text-[13px] text-[#564E45]">
-            Sets the type and colour for the whole site. Member themes sit inside this — they colour
+            Sets the type and color for the whole site. Member themes sit inside this — they color
             a member's own page, not the Guild's frame.
           </p>
         </div>
@@ -245,7 +245,7 @@ export function BrandEditor({
           </fieldset>
 
           <div className="flex flex-col gap-3.5 rounded-[14px] border border-canvas-border bg-white px-5 py-[22px] md:px-6">
-            <div className={sectionLabelClass}>Brand colour</div>
+            <div className={sectionLabelClass}>Brand color</div>
 
             <div className="flex flex-col gap-2">
               <div className="flex items-baseline justify-between gap-3">

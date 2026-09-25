@@ -25,7 +25,15 @@ export type SpecialHoursDay = {
 };
 
 export type OpenNowResult =
-  | { status: "open"; closesInLabel: string; note: string | null }
+  | {
+      status: "open";
+      closesInLabel: string;
+      // The profile's status block reads "Closes 9:00 pm · 2 hr 40 min left"
+      // (artboards D/L): the local closing clock and the bare duration.
+      closesAtLabel: string;
+      remainingLabel: string;
+      note: string | null;
+    }
   | { status: "closed"; nextOpenLabel: string | null; note: string | null }
   | { status: "unknown" };
 
@@ -44,6 +52,16 @@ function formatClockLabel(minutesSinceMidnight: number): string {
   const period = hour24 >= 12 ? "pm" : "am";
   const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
   return minute === 0 ? `${hour12}${period}` : `${hour12}:${String(minute).padStart(2, "0")}${period}`;
+}
+
+/** "9:00 pm" / "12:30 am" -- the status block's closing-time style. */
+function formatClockWithMinutes(minutesSinceMidnight: number): string {
+  const wrapped = ((minutesSinceMidnight % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+  const hour24 = Math.floor(wrapped / 60);
+  const minute = wrapped % 60;
+  const period = hour24 >= 12 ? "pm" : "am";
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  return `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
 }
 
 export function formatDurationLabel(totalMinutes: number): string {
@@ -169,9 +187,12 @@ export function computeOpenNow(params: {
     // special override), or yesterday's bleed-over (and *that* row's own
     // special note, if it has one) -- never blindly "today's special,"
     // which may be an unrelated override that doesn't even apply yet.
+    const remainingLabel = formatDurationLabel(openInterval.endMinutes - zoned.minutes);
     return {
       status: "open",
-      closesInLabel: `Closes in ${formatDurationLabel(openInterval.endMinutes - zoned.minutes)}`,
+      closesInLabel: `Closes in ${remainingLabel}`,
+      closesAtLabel: formatClockWithMinutes(openInterval.endMinutes),
+      remainingLabel,
       note: openInterval.note,
     };
   }

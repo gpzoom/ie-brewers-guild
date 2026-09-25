@@ -17,7 +17,7 @@ export type PublishGateData = {
 
 /**
  * Sets status AND hours_confirmed_at together, in one update (spec: "Set it
- * to now whenever the member ticks the confirmation box and publishes").
+ * to now whenever the member checks the confirmation box and publishes").
  * The members_enforce_owner_write_limits trigger permits draft<->published
  * for a non-guild-admin, so this needs no special privilege.
  *

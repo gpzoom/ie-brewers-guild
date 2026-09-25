@@ -136,7 +136,7 @@ export function CategoriesEditor({ categories }: { categories: CategoryRow[] }) 
             Supply categories
           </h1>
           <p className="text-pretty text-[13px] text-[#564E45]">
-            What Allied Members can tick to say what they supply. The Guild owns this list — members
+            What Allied Members can check to say what they supply. The Guild owns this list — members
             pick from it rather than typing their own, so the directory stays filterable.
           </p>
         </div>

@@ -170,7 +170,7 @@ function SendPage() {
     : !creatorName.trim()
       ? "Add your name or handle to send"
       : !permissionAccepted
-        ? "Tick the permission box to send"
+        ? "Check the permission box to send"
         : null;
 
   let body;

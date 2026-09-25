@@ -138,7 +138,7 @@ export function DiscountEditor({ member }: { member: BasicsMember }) {
             Guild member discount
           </h2>
           <p className="text-xs leading-[1.45] text-ink-muted">
-            Shown large and in colour near the top of your profile. If your discount varies, tick
+            Shown large and in color near the top of your profile. If your discount varies, check
             “No fixed percentage” instead of entering a number.
           </p>
         </div>

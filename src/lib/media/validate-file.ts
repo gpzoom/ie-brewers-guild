@@ -52,7 +52,7 @@ import { fileTypeFromBuffer } from "file-type";
  * reasoning in this module depends on.
  *
  * **Setting the `contentType` upload OPTION is NOT by itself enough** --
- * whether supabase-js honours it depends on what you pass as the upload
+ * whether supabase-js honors it depends on what you pass as the upload
  * BODY. Confirmed in `@supabase/storage-js@2.117.0`'s own source
  * (`src/packages/StorageFileApi.ts`, `uploadOrUpdate`): the body is
  * branched on first, and only the final `else` branch -- raw bytes, i.e. a

@@ -66,7 +66,7 @@
 :root {
   --radius: 0.5rem;
 
-  /* Brand system tokens (spec, "Colour tokens"). Two grounds: dark site
+  /* Brand system tokens (spec, "Color tokens"). Two grounds: dark site
      chrome, light profile card. */
   --bg: oklch(0.17 0.012 60);
   --surface: oklch(0.21 0.014 60);

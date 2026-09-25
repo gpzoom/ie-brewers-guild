@@ -17,9 +17,9 @@ type MemberImageProps = {
  * public URL) and the private member-media streaming route
  * (/api/member-media/$assetId) -- both are plain <img src> URLs from
  * this component's point of view. On load failure, or when there's no
- * image at all, renders a theme-coloured block instead of a broken-image
+ * image at all, renders a theme-colored block instead of a broken-image
  * icon (spec, "Empty and error states": "An image fails to load ->
- * Theme-coloured block in its place, never a broken-image icon or alt
+ * Theme-colored block in its place, never a broken-image icon or alt
  * text alone").
  */
 export function MemberImage({ src, crop, alt, theme, aspectClassName, className }: MemberImageProps) {

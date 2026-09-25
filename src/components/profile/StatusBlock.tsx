@@ -1,6 +1,7 @@
+import type { ReactNode } from "react";
 import { computeOpenNow, type OpenNowResult, type SpecialHoursDay, type WeekdayHours } from "@/lib/hours/open-now";
 import type { EventRow, MemberRow } from "@/lib/supabase/types";
-import { Phone } from "lucide-react";
+import { getMemberThemeHex } from "@/lib/theme/member-themes";
 
 type StatusBlockProps = {
   member: MemberRow;
@@ -18,94 +19,181 @@ type StatusBlockProps = {
   now: Date;
 };
 
-function formatHoursConfirmedLabel(hoursConfirmedAt: string | null, now: Date, timezone: string): string | null {
-  if (!hoursConfirmedAt) return null;
-  const confirmedDate = new Date(hoursConfirmedAt);
-  const ninetyDaysAgo = now.getTime() - 90 * 24 * 60 * 60 * 1000;
-  if (confirmedDate.getTime() > ninetyDaysAgo) return null;
-  return `Hours confirmed ${confirmedDate.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: timezone })}`;
+function PinIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true" className="lg:h-4 lg:w-4">
+      <path d="M8 14.5S13 10 13 6.5a5 5 0 1 0-10 0C3 10 8 14.5 8 14.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <circle cx="8" cy="6.4" r="1.9" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
 }
 
+export function PhoneIcon({ className }: { className?: string }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true" className={className}>
+      <path
+        d="M5.2 2.4 6.7 5 5.4 6.6c.7 1.6 1.9 2.8 3.5 3.5L10.5 8.8 13 10.3v2.4c0 .6-.5 1.1-1.1 1C6.2 13.3 2.4 9.5 1.8 3.9a1 1 0 0 1 1-1.1h2.4z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function mapsDirectionsUrl(member: MemberRow): string | null {
+  if (!member.street_address) return null;
+  const query = `${member.street_address}, ${member.city}, ${member.state}`;
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}`;
+}
+
+function formatAppearance(iso: string, timezone: string): string {
+  const date = new Date(iso);
+  const day = date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: timezone });
+  const time = date
+    .toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: timezone })
+    .replace(":00", "")
+    .toLowerCase();
+  return `${day} · ${time}`;
+}
+
+type Action = { href: string; label: ReactNode; external?: boolean };
+
 /**
- * The status line + second line + primary action, switched per the
- * "Member types" comparison table. Producer and Allied Member both show
- * open/closed with a phone-number fallback when there are no hours at
- * all (spec, "Empty and error states": "Hours not listed"); mobile shows
- * the next-appearance line instead, since mobile members have no weekly
- * hours (spec, "Events": "for a mobile member, events *are* the
- * schedule").
+ * The dark status card (artboards D/E/V/L): a big status line, one or two
+ * quiet lines, then the primary action in the member's theme color and a
+ * Call button. Switched per the spec's "Member types" table -- producer
+ * and Allied Member show open/closed ("Hours not listed", with the phone
+ * as the action, when there are no hours at all); mobile shows the next
+ * appearance instead, since mobile members have no weekly hours.
+ *
+ * Primary actions (spec): Directions (producer, to maps), Book us (mobile,
+ * the booking phone -- so no second Call button), Request a quote (Allied
+ * Member, by email to their sales address when they list one).
  */
 export function StatusBlock({ member, hours, specialHours, tonightEvent, now }: StatusBlockProps) {
   const hasHours = hours.length > 0 || specialHours.length > 0;
   const openNow: OpenNowResult = hasHours
     ? computeOpenNow({ now, timezone: member.timezone, hours, specialHours })
     : { status: "unknown" };
-  const staleLabel = formatHoursConfirmedLabel(member.hours_confirmed_at, now, member.timezone);
+  const themeHex = getMemberThemeHex(member.theme);
+  const tel = member.phone ? `tel:${member.phone}` : null;
+
+  let label: string | null = null;
+  let heading: ReactNode;
+  const lines: ReactNode[] = [];
+  let primary: Action | null = null;
+  let secondary: Action | null = null;
 
   if (member.member_type === "mobile") {
-    return (
-      <div className="rounded-inset bg-canvas-2 p-4">
-        {tonightEvent ? (
+    label = "Next appearance";
+    if (tonightEvent) {
+      heading = formatAppearance(tonightEvent.overlay_starts_at ?? tonightEvent.starts_at, member.timezone);
+      const place = [tonightEvent.venue_name ?? member.service_area, tonightEvent.city].filter(Boolean).join(" — ");
+      if (place) lines.push(place);
+    } else {
+      heading = "No dates announced yet";
+    }
+    if (tel) primary = { href: tel, label: "Book us" };
+  } else {
+    if (openNow.status === "unknown") {
+      heading = "Hours not listed";
+    } else if (openNow.status === "open") {
+      heading = (
+        <span className="flex items-center gap-[9px] lg:gap-[11px]">
+          <span className="block h-[9px] w-[9px] shrink-0 rounded-full bg-[#6FAE45] lg:h-[11px] lg:w-[11px]" aria-hidden="true" />
+          Open now
+        </span>
+      );
+      lines.push(`Closes ${openNow.closesAtLabel} · ${openNow.remainingLabel} left`);
+    } else {
+      heading = "Closed";
+      if (openNow.nextOpenLabel) lines.push(openNow.nextOpenLabel);
+    }
+    // A special_hours note (holiday, one-off change) renders beside the
+    // status (spec, "Computing 'open now'", rule 2).
+    if (openNow.status !== "unknown" && openNow.note) lines.push(openNow.note);
+
+    // Second line, per the spec's "Member types" table: producers get
+    // tonight's event; Allied Members get service area and lead time.
+    if (member.member_type === "allied") {
+      const parts = [
+        member.service_area ? `Serves ${member.service_area}` : null,
+        member.lead_time ? `${member.lead_time} typical lead time` : null,
+      ].filter(Boolean);
+      if (parts.length) lines.push(parts.join(" · "));
+      if (member.contact_email) {
+        primary = {
+          href: `mailto:${member.contact_email}?subject=${encodeURIComponent("Quote request")}`,
+          label: "Request a quote",
+        };
+      }
+    } else {
+      if (tonightEvent) lines.push(`Tonight — ${tonightEvent.title ?? tonightEvent.venue_name ?? "on tap"}`);
+      const directions = mapsDirectionsUrl(member);
+      if (directions) {
+        primary = {
+          href: directions,
+          external: true,
+          label: (
+            <>
+              <PinIcon />
+              <span className="lg:hidden">Directions</span>
+              <span className="hidden lg:inline">Get directions</span>
+            </>
+          ),
+        };
+      }
+    }
+    if (tel) {
+      secondary = {
+        href: tel,
+        label: (
           <>
-            <p className="font-display text-lg text-ink">Next appearance: {new Date(tonightEvent.overlay_starts_at ?? tonightEvent.starts_at).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: member.timezone })}</p>
-            <p className="text-sm text-ink-muted">{tonightEvent.venue_name ?? member.service_area}{tonightEvent.city ? `, ${tonightEvent.city}` : ""}</p>
+            <PhoneIcon className="lg:h-4 lg:w-4" />
+            {/* "Hours not listed": the phone number itself is the action (spec). */}
+            {openNow.status === "unknown" ? member.phone : "Call"}
           </>
-        ) : (
-          <p className="font-display text-lg text-ink">No dates announced yet</p>
-        )}
-        {member.phone && (
-          <a
-            href={`tel:${member.phone}`}
-            className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
-          >
-            <Phone className="h-4 w-4" /> Book us
-          </a>
-        )}
-      </div>
-    );
+        ),
+      };
+    }
   }
 
+  const buttonBase =
+    "flex h-[46px] flex-1 items-center justify-center gap-[7px] rounded-[11px] px-3 text-sm lg:h-[50px] lg:flex-none lg:gap-[9px] lg:px-6 lg:text-[15px]";
+
   return (
-    <div className="rounded-inset bg-canvas-2 p-4">
-      {openNow.status === "unknown" ? (
-        <>
-          <p className="font-display text-lg text-ink">Hours not listed</p>
-          {member.phone && (
-            <a href={`tel:${member.phone}`} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
-              <Phone className="h-4 w-4" /> {member.phone}
+    <div className="flex flex-col gap-[11px] rounded-2xl bg-ink px-4 py-[17px] lg:gap-[13px] lg:rounded-[18px] lg:px-6 lg:py-[22px]">
+      {label && (
+        <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#A89D8E] lg:text-[11px]">{label}</p>
+      )}
+      <p className="font-display text-[25px] leading-[1.05] text-canvas lg:text-[30px]">{heading}</p>
+      {lines.map((line, index) => (
+        <p key={index} className="text-pretty text-[13px] text-[#CFC6B6] lg:text-[15px]">
+          {line}
+        </p>
+      ))}
+      {(primary || secondary) && (
+        <div className="flex gap-[9px] pt-[5px] lg:gap-[11px] lg:pt-1.5">
+          {primary && (
+            <a
+              href={primary.href}
+              {...(primary.external ? { target: "_blank", rel: "noreferrer" } : {})}
+              className={`${buttonBase} font-semibold text-white hover:brightness-110`}
+              style={{ backgroundColor: themeHex }}
+            >
+              {primary.label}
             </a>
           )}
-        </>
-      ) : (
-        <>
-          <p className="font-display text-lg text-ink">
-            {openNow.status === "open" ? (
-              <>
-                <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-open align-middle" aria-hidden="true" />
-                Open now &middot; {openNow.closesInLabel}
-              </>
-            ) : (
-              <>Closed{openNow.nextOpenLabel ? ` — ${openNow.nextOpenLabel}` : ""}</>
-            )}
-          </p>
-          {/* Second line, per the spec's "Member types" comparison table:
-              producers get tonight's event/pour; Allied Members get
-              service area and typical lead time instead. */}
-          {member.member_type === "allied" ? (
-            (member.service_area || member.lead_time) && (
-              <p className="text-sm text-ink-muted">
-                {member.service_area}
-                {member.service_area && member.lead_time ? " · " : ""}
-                {member.lead_time && `Typical lead time: ${member.lead_time}`}
-              </p>
-            )
-          ) : (
-            tonightEvent && (
-              <p className="text-sm text-ink-muted">Tonight: {tonightEvent.venue_name ?? "on tap"}</p>
-            )
+          {secondary && (
+            <a
+              href={secondary.href}
+              className={`${buttonBase} border border-[#4A4238] font-medium text-canvas hover:border-[#6B6156]`}
+            >
+              {secondary.label}
+            </a>
           )}
-          {staleLabel && <p className="mt-1 text-xs text-warn">{staleLabel}</p>}
-        </>
+        </div>
       )}
     </div>
   );

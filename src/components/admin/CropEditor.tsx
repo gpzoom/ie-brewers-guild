@@ -27,7 +27,7 @@ function Corner({ className }: { className: string }) {
  * CoverEditor) is responsible for persisting it via its own autosaving
  * mutation -- this component holds no server state itself.
  *
- * Zoom goes through zoomCropRect (aspect-preserving, centre-anchored), with
+ * Zoom goes through zoomCropRect (aspect-preserving, center-anchored), with
  * the slider's value expressed relative to the widest crop the frame allows
  * (initialCropForAspect) -- so 1x is "whole photo fits" for every photo.
  *

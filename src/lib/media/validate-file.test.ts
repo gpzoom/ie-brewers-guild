@@ -716,7 +716,7 @@ describe("validateUploadedImage", () => {
     it('rejects an entity-encoded attributeName target (attributeName="&#104;ref") -- per-value decoding still applies after tokenizing', async () => {
       // Tokenizing raw must not mean the check now reads raw VALUES: the
       // attributeName value is decoded once its boundaries are known, so an
-      // encoded spelling of "href" is still recognised as targeting href.
+      // encoded spelling of "href" is still recognized as targeting href.
       const result = await validateUploadedImage({
         bytes: wrap('<animate attributeName="&#104;ref" values="javascript:alert(1)" dur="2s"/>'),
         claimedMimeType: "image/svg+xml",

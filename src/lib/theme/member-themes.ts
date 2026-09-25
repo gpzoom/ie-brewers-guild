@@ -5,7 +5,7 @@
  * than redefining the table, per this plan's own Decisions section.
  *
  * Member themes are a separate system from the Guild's own brand tokens
- * (src/styles.css's --brand/--brand-bright/etc.) -- a member theme colours
+ * (src/styles.css's --brand/--brand-bright/etc.) -- a member theme colors
  * only what sits inside the Guild's dark frame on that member's own page.
  */
 export type MemberThemeName =

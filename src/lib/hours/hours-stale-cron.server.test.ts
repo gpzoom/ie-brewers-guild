@@ -70,6 +70,7 @@ function makeMember(overrides: Partial<MemberRow> = {}): MemberRow {
     timezone: "America/Los_Angeles",
     theme: "amber",
     logo_asset_id: null,
+    logo_background: "light",
     cover_asset_id: null,
     cover_crop: null,
     og_image_asset_id: null,

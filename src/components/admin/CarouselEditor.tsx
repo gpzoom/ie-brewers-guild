@@ -30,7 +30,7 @@ const sectionLabelClass =
 // debounce timer's last snapshot happened to be mid-drag.
 const CROP_SAVE_DEBOUNCE_MS = 400;
 
-/** "Portrait" everywhere a member can see it -- "4:5" appears once, as small grey supporting text (spec, "The slot"). */
+/** "Portrait" everywhere a member can see it -- "4:5" appears once, as small gray supporting text (spec, "The slot"). */
 export function CarouselEditor({
   memberId,
   initialSlides,

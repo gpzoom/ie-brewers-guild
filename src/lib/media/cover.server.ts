@@ -81,7 +81,7 @@ export const updateCoverAsset = createServerFn({ method: "POST" })
   });
 
 /**
- * "Remove cover" -- back to the theme-colour band. Clears the crop too, so
+ * "Remove cover" -- back to the theme-color band. Clears the crop too, so
  * a stale rectangle can't be applied to whatever cover is chosen next.
  * Same shape as social-image.server.ts's clearSocialImageAsset.
  */

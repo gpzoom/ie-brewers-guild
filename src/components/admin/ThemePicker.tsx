@@ -137,7 +137,7 @@ export function ThemePicker({
         <div className="flex flex-col gap-1.5">
           <h1 className="font-display text-[27px] font-bold leading-tight text-ink">Theme</h1>
           <p className="text-pretty text-[13px] text-ink-muted">
-            Pick the colour that carries your buttons, highlights and cover fallback. Every option
+            Pick the color that carries your buttons, highlights and cover fallback. Every option
             is checked for legibility, so none of them can make your page hard to read.
           </p>
         </div>
@@ -210,7 +210,7 @@ export function ThemePicker({
         <div className="flex items-start gap-3 rounded-[11px] border border-canvas-border px-[17px] py-[15px] text-ink-muted">
           <InfoIcon />
           <p className="text-pretty text-xs leading-normal text-ink">
-            The Guild's own dark frame stays the same on every profile. Your theme colours what sits
+            The Guild's own dark frame stays the same on every profile. Your theme colors what sits
             inside it, so the directory still reads as one site.
           </p>
         </div>

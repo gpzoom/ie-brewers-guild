@@ -121,7 +121,7 @@ describe("buildEmailContent: contact_confirmation", () => {
     expect(content.text).toContain("Thank you for reaching out. We have received your submission.");
   });
 
-  it("adds the membership follow-up line only when the checkbox was ticked", () => {
+  it("adds the membership follow-up line only when the checkbox was checked", () => {
     const withMembership = buildEmailContent({
       trigger: "contact_confirmation",
       inquiryId: "i1",

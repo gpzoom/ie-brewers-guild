@@ -14,6 +14,7 @@ import type { MemberProfileData } from "@/lib/members/member-profile.server";
 import type { DirectorySearch } from "@/lib/directory/search-params";
 import { getZonedNow, type SpecialHoursDay, type WeekdayHours } from "@/lib/hours/open-now";
 import type { HoursRow, SpecialHoursRow } from "@/lib/supabase/types";
+import { isHttpUrl } from "@/lib/links/url-safety";
 
 type MemberProfileTemplateProps = {
   data: MemberProfileData;
@@ -51,25 +52,24 @@ function toSpecialHoursDay(rows: SpecialHoursRow[]): SpecialHoursDay[] {
  * forked into three templates (spec, "Member types": "Build it that way
  * from the start -- forking the template per type is the failure mode").
  *
- * Mobile-first, genuinely (spec, "Layout and breakpoints": "the phone
- * layout is the design and the wide layout is the adaptation"): below the
- * hero, a single CSS Grid column stacks in the spec's own stated phone
- * order -- status block, media carousel, schedule, link pills, contact --
- * simply by DOM order at the default (single-column) breakpoint. `lg:`
- * utilities on each grid item are what pin the media carousel to a fixed
- * 420px left column and the rest to the column beside it -- this
- * component's own desktop split, not something
- * src/routes/members_.$slug.tsx (Task 18) adds around it.
+ * Visual reference: artboards D (producer), E (mobile) and V (Allied
+ * Member) on the phone, L on desktop (docs/design/). The dark site ground
+ * holds the edges -- the directory bar above, the cross-link card below --
+ * and the light profile card owns the middle. The card carries
+ * `theme-canvas` (src/styles.css) so its headings take the canvas's
+ * sentence-case Bricolage treatment rather than the public site's
+ * uppercase one.
  *
- * The split is `lg:` (1024px), not `md:` (768px): at exactly 768px the
- * fixed 420px carousel column plus padding/gap leaves column 2 only
- * ~276px wide -- narrower than the ~358px column 2 gets on a 390px phone,
- * which breaks ScheduleChips' 7-day chip row. At 1024px the same
- * arithmetic (1024 - 48px padding - 420px column 1 - 24px gap) leaves
- * column 2 ~532px, comfortably wider than the phone case.
+ * Mobile-first, genuinely (spec, "Layout and breakpoints"): below the
+ * hero, a single column stacks in the phone order -- status block
+ * (+ discount and categories for an Allied Member), media carousel,
+ * schedule, events, link pills, contact -- simply by DOM order. From `lg`
+ * (1024px) the carousel takes a fixed 420px left column and everything
+ * else stacks beside it (artboard L). `lg`, not `md`: at 768px the 420px
+ * column would leave the week chips narrower than on a 390px phone.
  */
 export function MemberProfileTemplate({ data, search }: MemberProfileTemplateProps) {
-  const { member, hours, specialHours, events, carouselSlides, links, categories, crossLink, headerPrev, headerNext, nextLocation, logoPublicUrl, coverAsset } = data;
+  const { member, hours, specialHours, events, carouselSlides, links, categories, crossLink, headerPrev, headerNext, headerPosition, crossLinkLogoUrl, nextLocation, logoPublicUrl, coverAsset } = data;
   // Reconstructed from the server's one serialized instant (MemberProfileData.now),
   // never read fresh here -- see that field's own doc comment for why.
   const now = new Date(data.now);
@@ -78,29 +78,26 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
   const specialHoursDays = toSpecialHoursDay(specialHours);
   const hasCarousel = carouselSlides.length > 0;
 
-  // Mirrors each component's own null condition so its grid-row wrapper
-  // is never rendered empty -- an empty grid item still occupies a row
-  // and still gets `gap-6` on both sides, which is real, visible dead
-  // space (unlike the old flex-col-with-gap layout, where an empty child
-  // just collapsed to nothing).
+  // Mirrors each component's own null condition so no grid row is ever
+  // rendered empty -- an empty grid item still occupies a row and gets
+  // the row gap on both sides, which is real, visible dead space.
   const scheduleVisible = member.member_type !== "mobile" && weekdayHours.length > 0;
   const visibleEventsCount = events.filter((event) => !event.is_hidden).length;
   const eventsVisible = member.member_type === "mobile" || visibleEventsCount > 0;
-  const showScheduleGroup = scheduleVisible || eventsVisible;
-  const linksVisible = links.length > 0;
+  const linksVisible = links.some((link) => isHttpUrl(link.url));
   const contactLocationText = member.member_type === "mobile" ? member.service_area : member.street_address;
   const contactHasEmail = member.member_type === "allied" && Boolean(member.contact_email);
   const contactVisible = Boolean(contactLocationText) || Boolean(member.phone) || contactHasEmail;
 
-  // The carousel (420px wide, aspect-[4/5] slides plus a dot row) is
-  // almost always taller than the status group alone, so without an
-  // explicit span it just occupies row 1 by itself and pushes every
-  // column-2 row below it down by the difference -- a big dead gap under
-  // the status group, not a small one. Spanning it across the actual
-  // number of visible column-2 rows (not a fixed 4) lets CSS Grid's row
-  // sizing distribute that slack across the real rows instead of parking
-  // it all in one gap, and keeps the span correct when a row is hidden.
-  const contentRows = 1 + Number(showScheduleGroup) + Number(linksVisible) + Number(contactVisible);
+  // Desktop two-column grid: the right column's items each take one
+  // auto-sized row; the carousel spans ALL of them plus one trailing 1fr
+  // row. A spanning item that crosses a flexible track leaves the auto
+  // rows at their content height and pushes its extra height into that
+  // fr row -- so a carousel taller than the right column never opens gaps
+  // between the right column's own modules. Set as a CSS custom property
+  // read by an `lg:`-scoped utility (the count is only known at render
+  // time), so it's inert below lg, where the grid is one plain column.
+  const contentRows = 1 + Number(scheduleVisible) + Number(eventsVisible) + Number(linksVisible) + Number(contactVisible);
 
   // Candidates for "next"/"tonight": excludes postponed and canceled (a
   // postponed event has no new date to show, and a canceled one is never
@@ -137,12 +134,12 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
     .sort((a, b) => effectiveStart(a) - effectiveStart(b));
   const nextEvent = nextEventCandidates[0] ?? null;
 
-  // StatusBlock's "Tonight: {venue}" line (producer/Allied Member) is only
-  // ever correct for an event actually happening today, in the member's
-  // own local day (member.timezone) -- not just "the next upcoming event,
-  // whenever that is." Mobile's "Next appearance" line is a separate,
-  // deliberately unbounded concern (any future date is fine there), so it
-  // keeps using `nextEvent` directly rather than this narrowed value.
+  // StatusBlock's "Tonight —" line (producer) is only ever correct for an
+  // event actually happening today, in the member's own local day
+  // (member.timezone) -- not just "the next upcoming event, whenever that
+  // is." Mobile's "Next appearance" is a separate, deliberately unbounded
+  // concern (any future date is fine there), so it keeps using
+  // `nextEvent` directly rather than this narrowed value.
   const todayLocalDate = getZonedNow(now, member.timezone).date;
   const nextEventLocalDate = nextEvent
     ? getZonedNow(new Date(nextEvent.overlay_starts_at ?? nextEvent.starts_at), member.timezone).date
@@ -153,39 +150,33 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
     ? `${data.isPreview ? "/api/admin-media" : "/api/member-media"}/${coverAsset.id}`
     : null;
 
-  return (
-    <article className="mx-auto max-w-[1120px]">
-      {/* HeaderNav sits on the dark site chrome, not the light canvas --
-          it uses --text/--text-muted-on-dark tokens (text-text,
-          hover:text-brand-bright), which would be near-invisible on
-          bg-canvas the same way finding #1 made the hero's text-ink
-          near-invisible on dark. It stays outside the canvas wrapper
-          below for that reason. */}
-      <div className="px-4 pt-4 md:px-6">
-        <HeaderNav prev={headerPrev} next={headerNext} search={search} />
-      </div>
+  // With a carousel, every right-column item pins to column 2 at lg.
+  const col2 = hasCarousel ? "lg:col-start-2" : undefined;
 
-      {/* The light profile card (spec, "Colour tokens": "the site chrome
+  return (
+    // 10px of dark ground either side of the card on a phone (artboards
+    // D/E/V); 24px on a tablet; at 1168px and up the card reaches its
+    // 1120px cap (artboard L) and centers.
+    <article className="mx-auto w-full max-w-[1168px] px-2.5 pb-10 md:px-6 md:pb-14">
+      <HeaderNav prev={headerPrev} next={headerNext} position={headerPosition} search={search} />
+
+      {/* The light profile card (spec, "Color tokens": "the site chrome
           is dark; the profile card is a light canvas, so a member's logo
           and photos sit on neutral ground instead of fighting the
-          Guild's brown"). Every text-ink/text-ink-muted element inside
-          ProfileHero and the module grid below depends on this ancestor
-          actually establishing bg-canvas -- none of them set their own
-          background. Rounded only at md+ to match the cover photo's own
-          rounded-none (mobile, full-bleed) / md:rounded-card (desktop,
-          inset) geometry; overflow-hidden only at md+ so nothing on
-          mobile risks an unintended clip. */}
-      <div className="bg-canvas md:overflow-hidden md:rounded-card">
+          Guild's brown"). Every text-ink element inside depends on this
+          ancestor establishing bg-canvas. */}
+      <div className="theme-canvas overflow-hidden rounded-[22px] bg-canvas text-ink md:rounded-3xl">
         <ProfileHero member={member} coverUrl={coverUrl} logoUrl={logoPublicUrl} nextLocation={nextLocation} search={search} />
 
         <div
           className={
             hasCarousel
-              ? "grid grid-cols-1 gap-6 px-4 pb-6 pt-6 md:px-6 md:pb-8 lg:grid-cols-[420px_1fr]"
-              : "grid grid-cols-1 gap-6 px-4 pb-6 pt-6 md:px-6 md:pb-8"
+              ? "grid grid-cols-1 gap-[18px] px-4 pb-[22px] pt-[18px] md:px-10 md:pb-10 md:pt-7 lg:pb-4 lg:grid-cols-[420px_minmax(0,1fr)] lg:gap-x-10 lg:gap-y-6 lg:[grid-template-rows:var(--profile-rows)]"
+              : "grid grid-cols-1 gap-[18px] px-4 pb-[22px] pt-[18px] md:px-10 md:pb-10 md:pt-7 lg:gap-y-6"
           }
+          style={{ "--profile-rows": `repeat(${contentRows}, auto) 1fr` } as CSSProperties}
         >
-          <div className={hasCarousel ? "flex flex-col gap-6 lg:col-start-2" : "flex flex-col gap-6"}>
+          <div className={`flex flex-col gap-[18px] lg:gap-6 ${col2 ?? ""}`}>
             <StatusBlock
               member={member}
               hours={weekdayHours}
@@ -198,32 +189,15 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
           </div>
 
           {hasCarousel && (
-            // lg:order-first (rather than an explicit lg:row-start) makes this
-            // item the FIRST one the grid's auto-placement algorithm places at
-            // the lg breakpoint -- order-modified document order, not visual
-            // order -- so it lands in row 1 of column 1 regardless of coming
-            // after the status group in the DOM (required for the phone
-            // order). The other column-2 items then auto-place into
-            // successive rows with no explicit row numbers at all, so
-            // whichever of schedule/links/contact happen to be hidden simply
-            // compacts the rest upward -- no manual row bookkeeping, no gaps.
-            //
-            // The row span itself is a CSS custom property set inline (its
-            // value, `contentRows`, is only known at render time, and a
-            // dynamically-built class like `lg:row-span-${contentRows}`
-            // can't be picked up by Tailwind's build-time JIT scan) that a
-            // `lg:`-scoped arbitrary-property utility reads. Scoping the
-            // *utility* to `lg:` -- rather than setting `grid-row-end`
-            // directly via inline style -- is what keeps this inert below
-            // that breakpoint: no rule reads the custom property there, so
-            // the item stays a normal single-row grid item (an unscoped
-            // inline `grid-row-end` would apply at every width and, in the
-            // single-column layout, push every sibling below it down by
-            // the same number of rows).
-            <div
-              className="lg:order-first lg:col-start-1 lg:[grid-row-end:var(--carousel-row-span)]"
-              style={{ "--carousel-row-span": `span ${contentRows}` } as CSSProperties}
-            >
+            // lg:order-first makes this the FIRST item the grid's
+            // auto-placement places at lg (order-modified document order),
+            // so it lands in column 1 from row 1 despite following the
+            // status group in the DOM (required for the phone order).
+            // `lg:[grid-row:1/-1]` spans every explicit row, including the
+            // trailing 1fr one described above. Between md and lg (one
+            // column, but tablet-wide) it keeps the desktop's 420px slot,
+            // centered, rather than a 4:5 photo taller than the screen.
+            <div className="w-full md:mx-auto md:max-w-[420px] lg:order-first lg:col-start-1 lg:[grid-row:1/-1]">
               <MediaCarousel
                 slides={carouselSlides}
                 memberName={member.business_name}
@@ -233,21 +207,32 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
             </div>
           )}
 
-          {showScheduleGroup && (
-            <div className={hasCarousel ? "flex flex-col gap-6 lg:col-start-2" : "flex flex-col gap-6"}>
-              <ScheduleChips hours={weekdayHours} memberType={member.member_type} />
+          {scheduleVisible && (
+            <div className={col2}>
+              <ScheduleChips
+                hours={weekdayHours}
+                memberType={member.member_type}
+                hoursConfirmedAt={member.hours_confirmed_at}
+                timezone={member.timezone}
+                now={now}
+              />
+            </div>
+          )}
+
+          {eventsVisible && (
+            <div className={col2}>
               <EventsModule events={events} memberType={member.member_type} timezone={member.timezone} />
             </div>
           )}
 
           {linksVisible && (
-            <div className={hasCarousel ? "lg:col-start-2" : undefined}>
+            <div className={col2}>
               <LinkPills links={links} />
             </div>
           )}
 
           {contactVisible && (
-            <div className={hasCarousel ? "lg:col-start-2" : undefined}>
+            <div className={col2}>
               <ContactBlock member={member} />
             </div>
           )}
@@ -255,8 +240,13 @@ export function MemberProfileTemplate({ data, search }: MemberProfileTemplatePro
       </div>
 
       {crossLink && (
-        <div className="mt-8 px-4 md:px-6">
-          <CrossLinkCard entry={crossLink} memberType={member.member_type} />
+        <div className="pt-5 md:pt-7">
+          <CrossLinkCard
+            entry={crossLink}
+            memberType={member.member_type}
+            logoUrl={crossLinkLogoUrl}
+            logoBackground={data.crossLinkLogoBackground}
+          />
         </div>
       )}
     </article>
