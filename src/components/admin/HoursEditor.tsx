@@ -6,12 +6,24 @@ import {
   upsertSpecialHoursRow,
 } from "@/lib/hours/hours-editor.server";
 import type { HoursRow, SpecialHoursRow } from "@/lib/supabase/types";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  IDLE,
+  type SaveState,
+  SaveIndicator,
+  fieldLabelClass,
+  secondaryButtonClass,
+  sectionLabelClass,
+  textInputClass,
+} from "@/components/admin/basics/ui";
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+// Display order only (artboard AdminBasics lists Monday first); the stored
+// weekday numbers are unchanged (0 = Sunday).
+const DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
 // Same ~400ms debounce as BasicsForm (this plan's Decision 6) -- an editor
 // who types a time then backgrounds the tab or navigates away without
@@ -25,24 +37,6 @@ const SAVE_DEBOUNCE_MS = 400;
 // scheduled for a save, let alone reaches the server unvalidated.
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-type SaveState = { status: "idle" | "saving" | "saved" | "error"; message?: string };
-const IDLE: SaveState = { status: "idle" };
-
-function SaveIndicator({ state }: { state: SaveState }) {
-  if (state.status === "idle") return null;
-  if (state.status === "saving") {
-    return <p className="mt-1 text-xs text-muted-foreground">Saving…</p>;
-  }
-  if (state.status === "saved") {
-    return <p className="mt-1 text-xs text-open">Saved</p>;
-  }
-  return (
-    <p role="alert" className="mt-1 text-xs text-danger">
-      {state.message ?? "Couldn't save — try again."}
-    </p>
-  );
-}
 
 /**
  * Shared autosave plumbing for both the weekly-hours rows and the
@@ -231,12 +225,38 @@ function normalizeTime(value: string): string | null {
   return value === "" ? null : value;
 }
 
+type TimeField = "opens_at" | "closes_at";
+
 /**
- * Phone layout (spec, "Layout and breakpoints"): the two time fields sit
- * side by side, and the Closed control is on its own line below them --
- * not squeezed into the same row, since a 44px checkbox target next to two
- * time inputs is where phone hour-editors usually get too cramped to tap
- * reliably.
+ * Time input look from artboard AdminBasics: 124px x 44px on desktop,
+ * filling the row on a phone (artboard AdminPhone). A closed row's inputs
+ * go to the artboard's muted "closed" fill.
+ */
+const timeInputClass =
+  "h-[46px] min-w-0 flex-1 rounded-[10px] border-canvas-border bg-white px-[11px] text-[14px] text-ink shadow-none md:h-11 md:w-[124px] md:flex-none md:rounded-[9px] md:px-3 md:text-[14px] disabled:cursor-not-allowed disabled:border-canvas-2 disabled:bg-[#F2EEE7] disabled:text-ink-subtle disabled:opacity-100";
+
+const checkboxClass = "h-[17px] w-[17px] shrink-0 cursor-pointer accent-ink";
+
+const iconButtonClass =
+  "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[9px] text-ink-muted transition-colors hover:bg-canvas-2 hover:text-ink disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
+
+const textLinkButtonClass =
+  "inline-flex min-h-11 items-center self-start text-[13px] font-medium text-brand underline-offset-2 hover:text-brand-hover hover:underline disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
+
+/**
+ * Weekly hours laid out like artboard AdminBasics: one line per day --
+ * 84px day label, opening time, "to", closing time, Closed checkbox --
+ * with any additional shifts for that day stacked under the first and an
+ * "Add another shift" link under them. On a phone (artboard AdminPhone)
+ * the label shrinks to a 42px short name, the two times fill the row, and
+ * Closed + remove wrap onto their own line below the times rather than
+ * squeezing a 44px target beside two time inputs.
+ *
+ * Holidays and one-off changes (special hours) follow as their own
+ * section, each a white card in the same language.
+ *
+ * Renders two sibling sections (a fragment) so the parent page's own
+ * section gap spaces them.
  */
 export function HoursEditor({
   memberId,
@@ -328,242 +348,265 @@ export function HoursEditor({
     return upsertSpecialHoursRow({ data: { memberId, id, patch } });
   }
 
+  /**
+   * One handler for a weekly row's time field, on change (debounced) or
+   * on blur (flushed) -- identical validation and save path to before,
+   * just written once instead of four times.
+   */
+  function onHoursTime(row: HoursRow, field: TimeField, value: string, mode: "schedule" | "flush") {
+    if (value !== "" && !TIME_RE.test(value)) {
+      hoursAutosave.markInvalid(row.id, field, "Enter a valid time.");
+      return;
+    }
+    const patch = { [field]: normalizeTime(value) } as Partial<HoursRow>;
+    const save = (p: Partial<HoursRow>) =>
+      saveHoursField(row.id, field, p[field] as HoursRow[TimeField]);
+    if (mode === "schedule") hoursAutosave.scheduleSave(row.id, field, patch, save);
+    else hoursAutosave.flushSave(row.id, field, patch, save);
+  }
+
+  function onSpecialTime(
+    row: SpecialHoursRow,
+    field: TimeField,
+    value: string,
+    mode: "schedule" | "flush",
+  ) {
+    if (value !== "" && !TIME_RE.test(value)) {
+      specialAutosave.markInvalid(row.id, field, "Enter a valid time.");
+      return;
+    }
+    const patch = { [field]: normalizeTime(value) } as Partial<SpecialHoursRow>;
+    const save = (p: Partial<SpecialHoursRow>) =>
+      saveSpecialField(row.id, field, p[field] as SpecialHoursRow[TimeField]);
+    if (mode === "schedule") specialAutosave.scheduleSave(row.id, field, patch, save);
+    else specialAutosave.flushSave(row.id, field, patch, save);
+  }
+
+  function onSpecialDate(row: SpecialHoursRow, value: string, mode: "schedule" | "flush") {
+    if (value === "") {
+      specialAutosave.markInvalid(row.id, "date", "Date can't be empty.");
+      return;
+    }
+    if (!DATE_RE.test(value)) {
+      specialAutosave.markInvalid(row.id, "date", "Enter a valid date.");
+      return;
+    }
+    // Debounced on change, not saveNow -- a native date input fires
+    // onChange per keystroke while a segment (e.g. the year) is still
+    // mid-edit, and each of those intermediate values is a syntactically
+    // well-formed ISO date (e.g. "0002-12-25" while typing "2026").
+    // saveNow would have persisted every one of those on its way to the
+    // real value; scheduleSave + blur-flush is the same pattern the time
+    // fields use for exactly this reason.
+    const save = (patch: Partial<SpecialHoursRow>) =>
+      saveSpecialField(row.id, "date", patch.date as SpecialHoursRow["date"]);
+    if (mode === "schedule") specialAutosave.scheduleSave(row.id, "date", { date: value }, save);
+    else specialAutosave.flushSave(row.id, "date", { date: value }, save);
+  }
+
   return (
-    <div className="max-w-2xl space-y-8">
-      <section>
-        <h2 className="text-lg font-medium text-foreground">Weekly hours</h2>
-        <div className="mt-3 space-y-4">
-          {WEEKDAYS.map((label, weekday) => (
-            <div key={weekday} className="rounded-md border border-border p-3">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{label}</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-9"
-                  disabled={addRowStatus[weekday]?.status === "saving"}
-                  onClick={() => addRowForWeekday(weekday)}
+    <>
+      <section className="flex flex-col gap-[10px] md:gap-3" aria-labelledby="weekly-hours-heading">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <h2 id="weekly-hours-heading" className={cn(sectionLabelClass, "font-sans")}>
+            Weekly hours
+          </h2>
+          <p className="text-[12px] text-ink-subtle">Shown on your page as day chips</p>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          {DISPLAY_ORDER.map((weekday) => {
+            const label = WEEKDAYS[weekday];
+            const dayRows = hoursAutosave.rows.filter((row) => row.weekday === weekday);
+            const adding = addRowStatus[weekday]?.status === "saving";
+            return (
+              <div
+                key={weekday}
+                role="group"
+                aria-label={label}
+                className="flex items-start gap-[9px] md:gap-[14px]"
+              >
+                <div
+                  className={cn(
+                    "flex min-h-[46px] w-[42px] shrink-0 items-center text-[13px] font-medium md:min-h-11 md:w-[84px] md:text-[14px]",
+                    dayRows.length > 0 && dayRows.every((row) => row.is_closed)
+                      ? "text-ink-subtle md:text-ink"
+                      : "text-ink",
+                  )}
                 >
-                  {addRowStatus[weekday]?.status === "saving" ? "Adding…" : "Add row"}
-                </Button>
-              </div>
-              <SaveIndicator state={addRowStatus[weekday] ?? IDLE} />
-              <div className="mt-2 space-y-3">
-                {hoursAutosave.rows
-                  .filter((row) => row.weekday === weekday)
-                  .map((row) => (
-                    <div key={row.id} className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="time"
-                          defaultValue={row.opens_at ?? ""}
-                          disabled={row.is_closed}
-                          className="h-11"
-                          aria-label={`${label} opening time`}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value !== "" && !TIME_RE.test(value)) {
-                              hoursAutosave.markInvalid(row.id, "opens_at", "Enter a valid time.");
-                              return;
+                  <span className="md:hidden" aria-hidden="true">
+                    {WEEKDAYS_SHORT[weekday]}
+                  </span>
+                  <span className="max-md:sr-only">{label}</span>
+                </div>
+
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                  {dayRows.length === 0 && (
+                    <div className="flex flex-wrap items-center gap-x-[14px] gap-y-1">
+                      <span className="flex min-h-[46px] items-center text-[13px] text-ink-muted md:min-h-11">
+                        No hours set
+                      </span>
+                      <button
+                        type="button"
+                        className={textLinkButtonClass}
+                        disabled={adding}
+                        onClick={() => addRowForWeekday(weekday)}
+                      >
+                        {adding ? "Adding…" : "Add hours"}
+                      </button>
+                    </div>
+                  )}
+
+                  {dayRows.map((row, index) => (
+                    <div key={row.id} className="flex flex-col gap-1">
+                      <div className="flex flex-wrap items-center gap-x-[9px] gap-y-1 md:flex-nowrap md:gap-[14px]">
+                        <div className="flex min-w-0 basis-full items-center gap-[9px] md:basis-auto md:gap-[14px]">
+                          <Input
+                            type="time"
+                            defaultValue={row.opens_at ?? ""}
+                            disabled={row.is_closed}
+                            className={timeInputClass}
+                            aria-label={`${label} opening time${index > 0 ? `, shift ${index + 1}` : ""}`}
+                            onChange={(e) =>
+                              onHoursTime(row, "opens_at", e.target.value, "schedule")
                             }
-                            hoursAutosave.scheduleSave(
-                              row.id,
-                              "opens_at",
-                              { opens_at: normalizeTime(value) },
-                              (patch) =>
-                                saveHoursField(
-                                  row.id,
-                                  "opens_at",
-                                  patch.opens_at as HoursRow["opens_at"],
-                                ),
-                            );
-                          }}
-                          onBlur={(e) => {
-                            const value = e.target.value;
-                            if (value !== "" && !TIME_RE.test(value)) {
-                              hoursAutosave.markInvalid(row.id, "opens_at", "Enter a valid time.");
-                              return;
+                            onBlur={(e) => onHoursTime(row, "opens_at", e.target.value, "flush")}
+                          />
+                          <span
+                            aria-hidden="true"
+                            className={cn(
+                              "hidden text-[14px] md:inline",
+                              row.is_closed ? "text-[#D3CBBD]" : "text-ink-subtle",
+                            )}
+                          >
+                            to
+                          </span>
+                          <Input
+                            type="time"
+                            defaultValue={row.closes_at ?? ""}
+                            disabled={row.is_closed}
+                            className={timeInputClass}
+                            aria-label={`${label} closing time${index > 0 ? `, shift ${index + 1}` : ""}`}
+                            onChange={(e) =>
+                              onHoursTime(row, "closes_at", e.target.value, "schedule")
                             }
-                            hoursAutosave.flushSave(
-                              row.id,
-                              "opens_at",
-                              { opens_at: normalizeTime(value) },
-                              (patch) =>
-                                saveHoursField(
-                                  row.id,
-                                  "opens_at",
-                                  patch.opens_at as HoursRow["opens_at"],
-                                ),
-                            );
-                          }}
-                        />
-                        <span aria-hidden="true">–</span>
-                        <Input
-                          type="time"
-                          defaultValue={row.closes_at ?? ""}
-                          disabled={row.is_closed}
-                          className="h-11"
-                          aria-label={`${label} closing time`}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value !== "" && !TIME_RE.test(value)) {
-                              hoursAutosave.markInvalid(row.id, "closes_at", "Enter a valid time.");
-                              return;
+                            onBlur={(e) => onHoursTime(row, "closes_at", e.target.value, "flush")}
+                          />
+                        </div>
+                        <label
+                          className={cn(
+                            "flex min-h-11 cursor-pointer items-center gap-2 text-[13px]",
+                            row.is_closed ? "font-medium text-ink" : "text-ink-muted",
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={row.is_closed}
+                            className={checkboxClass}
+                            onChange={(e) =>
+                              hoursAutosave.saveNow(
+                                row.id,
+                                "is_closed",
+                                { is_closed: e.target.checked },
+                                (patch) =>
+                                  saveHoursField(
+                                    row.id,
+                                    "is_closed",
+                                    patch.is_closed as HoursRow["is_closed"],
+                                  ),
+                              )
                             }
-                            hoursAutosave.scheduleSave(
-                              row.id,
-                              "closes_at",
-                              { closes_at: normalizeTime(value) },
-                              (patch) =>
-                                saveHoursField(
-                                  row.id,
-                                  "closes_at",
-                                  patch.closes_at as HoursRow["closes_at"],
-                                ),
-                            );
-                          }}
-                          onBlur={(e) => {
-                            const value = e.target.value;
-                            if (value !== "" && !TIME_RE.test(value)) {
-                              hoursAutosave.markInvalid(row.id, "closes_at", "Enter a valid time.");
-                              return;
-                            }
-                            hoursAutosave.flushSave(
-                              row.id,
-                              "closes_at",
-                              { closes_at: normalizeTime(value) },
-                              (patch) =>
-                                saveHoursField(
-                                  row.id,
-                                  "closes_at",
-                                  patch.closes_at as HoursRow["closes_at"],
-                                ),
-                            );
-                          }}
-                        />
-                        <Button
+                          />
+                          Closed
+                          {index > 0 && (
+                            <span className="sr-only">{`(${label}, shift ${index + 1})`}</span>
+                          )}
+                        </label>
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="sm"
+                          className={cn(iconButtonClass, "max-md:ml-auto")}
                           aria-label={`Remove this ${label} row`}
+                          title="Remove"
                           onClick={() => removeRow(row.id)}
                         >
-                          Remove
-                        </Button>
+                          <X aria-hidden="true" className="h-4 w-4" />
+                        </button>
                       </div>
                       <SaveIndicator state={hoursAutosave.statusFor(row.id, "opens_at")} />
                       <SaveIndicator state={hoursAutosave.statusFor(row.id, "closes_at")} />
-                      <label className="flex min-h-11 items-center gap-2">
-                        <Checkbox
-                          checked={row.is_closed}
-                          onCheckedChange={(checked) =>
-                            hoursAutosave.saveNow(
-                              row.id,
-                              "is_closed",
-                              { is_closed: checked === true },
-                              (patch) =>
-                                saveHoursField(
-                                  row.id,
-                                  "is_closed",
-                                  patch.is_closed as HoursRow["is_closed"],
-                                ),
-                            )
-                          }
-                        />
-                        <span>Closed</span>
-                      </label>
                       <SaveIndicator state={hoursAutosave.statusFor(row.id, "is_closed")} />
                       <SaveIndicator state={hoursAutosave.statusFor(row.id, "_row")} />
                     </div>
                   ))}
+
+                  {dayRows.length > 0 && (
+                    <button
+                      type="button"
+                      className={cn(textLinkButtonClass, "-mt-1")}
+                      disabled={adding}
+                      onClick={() => addRowForWeekday(weekday)}
+                    >
+                      {adding ? "Adding…" : "Add another shift"}
+                      <span className="sr-only">{` for ${label}`}</span>
+                    </button>
+                  )}
+                  <SaveIndicator state={addRowStatus[weekday] ?? IDLE} />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
-      <section>
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium text-foreground">Holidays &amp; one-off changes</h2>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-9"
-            disabled={addHolidayStatus.status === "saving"}
-            onClick={addHoliday}
-          >
-            {addHolidayStatus.status === "saving" ? "Adding…" : "Add a holiday or one-off change"}
-          </Button>
+      <section
+        className="flex flex-col gap-[10px] md:gap-3"
+        aria-labelledby="special-hours-heading"
+      >
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <h2 id="special-hours-heading" className={cn(sectionLabelClass, "font-sans")}>
+            Holidays &amp; one-off changes
+          </h2>
+          <p className="text-[12px] text-ink-subtle">Replaces your weekly hours for that date</p>
         </div>
-        <SaveIndicator state={addHolidayStatus} />
-        <div className="mt-3 space-y-3">
-          {specialAutosave.rows.map((row) => (
-            <div key={row.id} className="rounded-md border border-border p-3">
-              <div className="flex items-center gap-2">
+
+        {specialAutosave.rows.length === 0 && (
+          <p className="text-[13px] text-ink-muted">No holidays or one-off changes yet.</p>
+        )}
+
+        {specialAutosave.rows.map((row) => (
+          <div
+            key={row.id}
+            className="flex flex-col gap-3 rounded-[12px] border border-canvas-border bg-white px-[14px] py-[13px] md:px-[17px] md:py-[15px]"
+          >
+            <div className="flex flex-wrap items-end gap-x-[14px] gap-y-2">
+              <div className="flex flex-col gap-[7px]">
+                <label htmlFor={`date-${row.id}`} className={fieldLabelClass}>
+                  Date
+                </label>
                 <Input
+                  id={`date-${row.id}`}
                   type="date"
                   defaultValue={row.date}
-                  className="h-11"
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === "") {
-                      specialAutosave.markInvalid(row.id, "date", "Date can't be empty.");
-                      return;
-                    }
-                    if (!DATE_RE.test(value)) {
-                      specialAutosave.markInvalid(row.id, "date", "Enter a valid date.");
-                      return;
-                    }
-                    // Debounced, not saveNow -- a native date input fires
-                    // onChange per keystroke while a segment (e.g. the
-                    // year) is still mid-edit, and each of those
-                    // intermediate values is a syntactically well-formed
-                    // ISO date (e.g. "0002-12-25" while typing "2026").
-                    // saveNow would have persisted every one of those on
-                    // its way to the real value; scheduleSave + blur-flush
-                    // (below) is the same pattern the time fields in this
-                    // file already use for exactly this reason.
-                    specialAutosave.scheduleSave(row.id, "date", { date: value }, (patch) =>
-                      saveSpecialField(row.id, "date", patch.date as SpecialHoursRow["date"]),
-                    );
-                  }}
-                  onBlur={(e) => {
-                    const value = e.target.value;
-                    if (value === "") {
-                      specialAutosave.markInvalid(row.id, "date", "Date can't be empty.");
-                      return;
-                    }
-                    if (!DATE_RE.test(value)) {
-                      specialAutosave.markInvalid(row.id, "date", "Enter a valid date.");
-                      return;
-                    }
-                    specialAutosave.flushSave(row.id, "date", { date: value }, (patch) =>
-                      saveSpecialField(row.id, "date", patch.date as SpecialHoursRow["date"]),
-                    );
-                  }}
+                  className={cn(timeInputClass, "flex-none md:w-[164px]")}
+                  onChange={(e) => onSpecialDate(row, e.target.value, "schedule")}
+                  onBlur={(e) => onSpecialDate(row, e.target.value, "flush")}
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeSpecial(row.id)}
-                >
-                  Remove
-                </Button>
               </div>
-              <SaveIndicator state={specialAutosave.statusFor(row.id, "date")} />
-              <SaveIndicator state={specialAutosave.statusFor(row.id, "_row")} />
-
-              <label className="mt-2 flex min-h-11 items-center gap-2">
-                <Checkbox
+              <label
+                className={cn(
+                  "flex min-h-11 cursor-pointer items-center gap-2 text-[13px]",
+                  row.is_closed ? "font-medium text-ink" : "text-ink-muted",
+                )}
+              >
+                <input
+                  type="checkbox"
                   checked={row.is_closed}
-                  onCheckedChange={(checked) =>
+                  className={checkboxClass}
+                  onChange={(e) =>
                     specialAutosave.saveNow(
                       row.id,
                       "is_closed",
-                      { is_closed: checked === true },
+                      { is_closed: e.target.checked },
                       (patch) =>
                         saveSpecialField(
                           row.id,
@@ -573,134 +616,91 @@ export function HoursEditor({
                     )
                   }
                 />
-                <span>Closed</span>
+                Closed all day
               </label>
-              <SaveIndicator state={specialAutosave.statusFor(row.id, "is_closed")} />
+              <button
+                type="button"
+                className={cn(secondaryButtonClass, "ml-auto")}
+                onClick={() => removeSpecial(row.id)}
+              >
+                Remove
+              </button>
+            </div>
+            <SaveIndicator state={specialAutosave.statusFor(row.id, "date")} />
+            <SaveIndicator state={specialAutosave.statusFor(row.id, "is_closed")} />
+            <SaveIndicator state={specialAutosave.statusFor(row.id, "_row")} />
 
-              {!row.is_closed && (
-                <div className="mt-2 flex items-center gap-2">
+            {!row.is_closed && (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-[9px] md:gap-[14px]">
                   <Input
                     type="time"
                     defaultValue={row.opens_at ?? ""}
-                    className="h-11"
+                    className={timeInputClass}
                     aria-label="Opening time"
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value !== "" && !TIME_RE.test(value)) {
-                        specialAutosave.markInvalid(row.id, "opens_at", "Enter a valid time.");
-                        return;
-                      }
-                      specialAutosave.scheduleSave(
-                        row.id,
-                        "opens_at",
-                        { opens_at: normalizeTime(value) },
-                        (patch) =>
-                          saveSpecialField(
-                            row.id,
-                            "opens_at",
-                            patch.opens_at as SpecialHoursRow["opens_at"],
-                          ),
-                      );
-                    }}
-                    onBlur={(e) => {
-                      const value = e.target.value;
-                      if (value !== "" && !TIME_RE.test(value)) {
-                        specialAutosave.markInvalid(row.id, "opens_at", "Enter a valid time.");
-                        return;
-                      }
-                      specialAutosave.flushSave(
-                        row.id,
-                        "opens_at",
-                        { opens_at: normalizeTime(value) },
-                        (patch) =>
-                          saveSpecialField(
-                            row.id,
-                            "opens_at",
-                            patch.opens_at as SpecialHoursRow["opens_at"],
-                          ),
-                      );
-                    }}
+                    onChange={(e) => onSpecialTime(row, "opens_at", e.target.value, "schedule")}
+                    onBlur={(e) => onSpecialTime(row, "opens_at", e.target.value, "flush")}
                   />
-                  <span aria-hidden="true">–</span>
+                  <span aria-hidden="true" className="text-[14px] text-ink-subtle">
+                    to
+                  </span>
                   <Input
                     type="time"
                     defaultValue={row.closes_at ?? ""}
-                    className="h-11"
+                    className={timeInputClass}
                     aria-label="Closing time"
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value !== "" && !TIME_RE.test(value)) {
-                        specialAutosave.markInvalid(row.id, "closes_at", "Enter a valid time.");
-                        return;
-                      }
-                      specialAutosave.scheduleSave(
-                        row.id,
-                        "closes_at",
-                        { closes_at: normalizeTime(value) },
-                        (patch) =>
-                          saveSpecialField(
-                            row.id,
-                            "closes_at",
-                            patch.closes_at as SpecialHoursRow["closes_at"],
-                          ),
-                      );
-                    }}
-                    onBlur={(e) => {
-                      const value = e.target.value;
-                      if (value !== "" && !TIME_RE.test(value)) {
-                        specialAutosave.markInvalid(row.id, "closes_at", "Enter a valid time.");
-                        return;
-                      }
-                      specialAutosave.flushSave(
-                        row.id,
-                        "closes_at",
-                        { closes_at: normalizeTime(value) },
-                        (patch) =>
-                          saveSpecialField(
-                            row.id,
-                            "closes_at",
-                            patch.closes_at as SpecialHoursRow["closes_at"],
-                          ),
-                      );
-                    }}
+                    onChange={(e) => onSpecialTime(row, "closes_at", e.target.value, "schedule")}
+                    onBlur={(e) => onSpecialTime(row, "closes_at", e.target.value, "flush")}
                   />
                 </div>
-              )}
-              <SaveIndicator state={specialAutosave.statusFor(row.id, "opens_at")} />
-              <SaveIndicator state={specialAutosave.statusFor(row.id, "closes_at")} />
-
-              <div className="mt-2">
-                <Label htmlFor={`note-${row.id}`}>Note (shown on the profile)</Label>
-                <Input
-                  id={`note-${row.id}`}
-                  defaultValue={row.note ?? ""}
-                  className="mt-1 h-11"
-                  placeholder="e.g. Thanksgiving"
-                  onChange={(e) =>
-                    specialAutosave.scheduleSave(
-                      row.id,
-                      "note",
-                      { note: e.target.value || null },
-                      (patch) =>
-                        saveSpecialField(row.id, "note", patch.note as SpecialHoursRow["note"]),
-                    )
-                  }
-                  onBlur={(e) =>
-                    specialAutosave.flushSave(
-                      row.id,
-                      "note",
-                      { note: e.target.value || null },
-                      (patch) =>
-                        saveSpecialField(row.id, "note", patch.note as SpecialHoursRow["note"]),
-                    )
-                  }
-                />
-                <SaveIndicator state={specialAutosave.statusFor(row.id, "note")} />
               </div>
+            )}
+            <SaveIndicator state={specialAutosave.statusFor(row.id, "opens_at")} />
+            <SaveIndicator state={specialAutosave.statusFor(row.id, "closes_at")} />
+
+            <div className="flex flex-col gap-[7px]">
+              <label htmlFor={`note-${row.id}`} className={fieldLabelClass}>
+                Note (shown on the profile)
+              </label>
+              <Input
+                id={`note-${row.id}`}
+                defaultValue={row.note ?? ""}
+                className={textInputClass}
+                placeholder="e.g. Thanksgiving"
+                onChange={(e) =>
+                  specialAutosave.scheduleSave(
+                    row.id,
+                    "note",
+                    { note: e.target.value || null },
+                    (patch) =>
+                      saveSpecialField(row.id, "note", patch.note as SpecialHoursRow["note"]),
+                  )
+                }
+                onBlur={(e) =>
+                  specialAutosave.flushSave(
+                    row.id,
+                    "note",
+                    { note: e.target.value || null },
+                    (patch) =>
+                      saveSpecialField(row.id, "note", patch.note as SpecialHoursRow["note"]),
+                  )
+                }
+              />
+              <SaveIndicator state={specialAutosave.statusFor(row.id, "note")} />
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
+
+        <button
+          type="button"
+          className={cn(secondaryButtonClass, "self-start")}
+          disabled={addHolidayStatus.status === "saving"}
+          onClick={addHoliday}
+        >
+          {addHolidayStatus.status === "saving" ? "Adding…" : "Add a holiday or one-off change"}
+        </button>
+        <SaveIndicator state={addHolidayStatus} />
       </section>
-    </div>
+    </>
   );
 }

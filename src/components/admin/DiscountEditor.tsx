@@ -2,10 +2,9 @@ import { useState } from "react";
 import { applyDiscountXor, updateMemberDiscount } from "@/lib/members/discount.server";
 import { isFieldVisibleForMemberType } from "@/lib/members/type-fields";
 import type { BasicsMember } from "@/lib/members/member-basics.server";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+
+const controlClass =
+  "h-[46px] w-full rounded-[9px] border border-canvas-border bg-white px-[13px] text-sm text-ink placeholder:text-ink-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30";
 
 function friendlyMessage(err: unknown, fallback: string) {
   return err instanceof Error ? err.message : fallback;
@@ -50,7 +49,30 @@ export function DiscountEditor({ member }: { member: BasicsMember }) {
 
   if (!isFieldVisibleForMemberType(local.member_type, "discount")) {
     return (
-      <p className="text-sm text-muted-foreground">This section is only for Allied Members.</p>
+      <div className="flex max-w-[640px] flex-col gap-[26px]">
+        <PageHeading />
+        <div className="flex items-start gap-3 rounded-[11px] bg-canvas-2 px-[17px] py-[15px] text-ink-muted">
+          <svg
+            width="17"
+            height="17"
+            viewBox="0 0 16 16"
+            fill="none"
+            className="mt-px shrink-0"
+            aria-hidden="true"
+          >
+            <circle cx="8" cy="8" r="6.4" stroke="currentColor" strokeWidth="1.4" />
+            <path
+              d="M8 7.2v4M8 4.9v.9"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+          <p className="text-[13px] leading-normal text-ink">
+            This section is only for Allied Members.
+          </p>
+        </div>
+      </div>
     );
   }
 
@@ -95,69 +117,128 @@ export function DiscountEditor({ member }: { member: BasicsMember }) {
   }
 
   return (
-    <div className="max-w-md space-y-4">
-      <h2 className="text-lg font-medium text-foreground">Member discount</h2>
-      <p className="text-xs text-muted-foreground">
-        The most concrete answer this site has to "what does Guild membership get me" — renders
-        large, right under your status block.
-      </p>
+    <div className="flex max-w-[640px] flex-col gap-[26px]">
+      <PageHeading />
 
       {error && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-[13px] text-danger">
           {error}
         </p>
       )}
 
-      <div>
-        <Label htmlFor="discount-percent">Discount percentage</Label>
-        <Input
-          // Remount whenever discount_no_fixed_percent flips -- this
-          // Input is uncontrolled (defaultValue, not value), so its
-          // displayed DOM value otherwise never updates from React state
-          // after the initial mount, even once `local.discount_percent`
-          // changes underneath it. Concretely: check "No fixed
-          // percentage" (server nulls discount_percent via the XOR logic
-          // in discount.server.ts) -> uncheck it again (field re-enables
-          // but, without this key, would still show the STALE
-          // pre-toggle number, not the fresh null) -> an ordinary
-          // tab-through blur with no retyping would then call
-          // save({ discount_percent: <stale value> }), which the
-          // server's own XOR logic would use to silently flip
-          // discount_no_fixed_percent back to false -- reverting the
-          // member's just-completed choice on a completely ordinary
-          // interaction, not an edge case. Changing `key` forces React to
-          // discard the old DOM node and mount a fresh one, which reads
-          // `defaultValue` from the CURRENT `local.discount_percent`
-          // (null -> "") rather than keeping the stale one around.
-          key={String(local.discount_no_fixed_percent)}
-          id="discount-percent"
-          type="number"
-          min={0}
-          max={100}
-          disabled={local.discount_no_fixed_percent}
-          defaultValue={local.discount_percent ?? ""}
-          className="mt-1 h-11"
-          onBlur={(e) => save({ discount_percent: e.target.value ? Number(e.target.value) : null })}
-        />
-      </div>
+      <section
+        aria-labelledby="discount-block-label"
+        className="flex flex-col gap-4 rounded-[13px] border-2 border-brand bg-[#FCF3EA] px-5 py-[18px] max-md:px-[15px] max-md:py-4"
+      >
+        <div className="flex flex-col gap-1">
+          <h2
+            id="discount-block-label"
+            className="font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-[#7A4413]"
+          >
+            Guild member discount
+          </h2>
+          <p className="text-xs leading-[1.45] text-ink-muted">
+            Shown large and in colour near the top of your profile. If your discount varies, tick
+            “No fixed percentage” instead of entering a number.
+          </p>
+        </div>
 
-      <label className="flex min-h-11 items-center gap-2">
-        <Checkbox
-          checked={local.discount_no_fixed_percent}
-          onCheckedChange={(checked) => save({ discount_no_fixed_percent: checked === true })}
-        />
-        <span>No fixed percentage — discounts vary</span>
-      </label>
+        <div className="flex flex-col gap-[7px]">
+          <label htmlFor="discount-percent" className="text-[13px] font-medium text-ink">
+            Discount percentage
+          </label>
+          <div className="flex items-center gap-2.5">
+            <input
+              // Remount whenever discount_no_fixed_percent flips -- this
+              // input is uncontrolled (defaultValue, not value), so its
+              // displayed DOM value otherwise never updates from React state
+              // after the initial mount, even once `local.discount_percent`
+              // changes underneath it. Concretely: check "No fixed
+              // percentage" (server nulls discount_percent via the XOR logic
+              // in discount.server.ts) -> uncheck it again (field re-enables
+              // but, without this key, would still show the STALE
+              // pre-toggle number, not the fresh null) -> an ordinary
+              // tab-through blur with no retyping would then call
+              // save({ discount_percent: <stale value> }), which the
+              // server's own XOR logic would use to silently flip
+              // discount_no_fixed_percent back to false -- reverting the
+              // member's just-completed choice on a completely ordinary
+              // interaction, not an edge case. Changing `key` forces React to
+              // discard the old DOM node and mount a fresh one, which reads
+              // `defaultValue` from the CURRENT `local.discount_percent`
+              // (null -> "") rather than keeping the stale one around.
+              key={String(local.discount_no_fixed_percent)}
+              id="discount-percent"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={100}
+              disabled={local.discount_no_fixed_percent}
+              defaultValue={local.discount_percent ?? ""}
+              className={`${controlClass} w-24 disabled:cursor-not-allowed disabled:border-canvas-2 disabled:bg-[#F2EEE7] disabled:text-ink-subtle`}
+              onBlur={(e) =>
+                save({ discount_percent: e.target.value ? Number(e.target.value) : null })
+              }
+            />
+            <span
+              className={`text-[15px] ${local.discount_no_fixed_percent ? "text-ink-subtle" : "text-ink-muted"}`}
+            >
+              % off
+            </span>
+          </div>
+        </div>
 
-      <div>
-        <Label htmlFor="discount-redeem">How members redeem it</Label>
-        <Textarea
-          id="discount-redeem"
-          defaultValue={local.discount_redeem_text ?? ""}
-          className="mt-1"
-          onBlur={(e) => save({ discount_redeem_text: e.target.value || null })}
-        />
+        <label
+          htmlFor="discount-no-fixed"
+          className="flex min-h-11 cursor-pointer items-start gap-[11px] pt-0.5"
+        >
+          <input
+            id="discount-no-fixed"
+            type="checkbox"
+            checked={local.discount_no_fixed_percent}
+            onChange={(e) => save({ discount_no_fixed_percent: e.target.checked })}
+            className="mt-0.5 size-[18px] shrink-0 accent-brand"
+          />
+          <span className="flex flex-col gap-[3px]">
+            <span className="text-[13px] text-ink">No fixed percentage — discounts vary</span>
+            <span className="text-xs leading-[1.45] text-ink-muted">
+              Your profile will read “Discounts available to members in good standing”.
+            </span>
+          </span>
+        </label>
+
+        <div className="flex flex-col gap-[7px]">
+          <label htmlFor="discount-redeem" className="text-[13px] font-medium text-ink">
+            How members redeem it
+          </label>
+          <textarea
+            id="discount-redeem"
+            rows={2}
+            defaultValue={local.discount_redeem_text ?? ""}
+            placeholder="e.g. Show your Guild card at checkout"
+            className={`${controlClass} h-auto min-h-[46px] resize-y py-3 leading-normal`}
+            onBlur={(e) => save({ discount_redeem_text: e.target.value || null })}
+          />
+        </div>
+      </section>
+
+      <div className="flex items-center gap-5 border-t border-[#E6E0D6] pt-[22px]">
+        <p className="text-[13px] text-ink-muted">
+          Changes save as you go. Publishing needs one more step.
+        </p>
       </div>
+    </div>
+  );
+}
+
+function PageHeading() {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <h1 className="font-display text-[27px] font-bold leading-tight text-ink">Member discount</h1>
+      <p className="text-pretty text-[13px] text-ink-muted">
+        The most concrete answer this site has to “what does Guild membership get me” — renders
+        large, right under your status block.
+      </p>
     </div>
   );
 }

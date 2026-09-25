@@ -72,23 +72,33 @@ export function SocialImageEditor({
   const previewUrl = asset ? `/api/admin-media/${asset.id}` : getOgPlaceholderPath(memberType);
 
   return (
-    <section>
-      <h2 className="text-lg font-medium text-foreground">Social sharing image</h2>
-      <p className="text-xs text-muted-foreground">
-        The image people see when your profile link is shared on Facebook, Slack, iMessage, and
-        similar apps. Works best around 1200×630px. If you don't set one, we show a default Guild
-        graphic instead.
-      </p>
-      <div className="mt-3 max-w-md">
+    <section aria-labelledby="social-image-heading" className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <h2
+          id="social-image-heading"
+          className="font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted"
+        >
+          Social sharing image
+        </h2>
+        <p className="max-w-[640px] text-[12px] leading-[1.5] text-ink-muted">
+          The image people see when your profile link is shared on Facebook, Slack, iMessage, and
+          similar apps. Works best around 1200×630px. If you don't set one, we show a default Guild
+          graphic instead.
+        </p>
+      </div>
+      <div className="flex w-full max-w-[560px] flex-col gap-3">
         <img
           src={previewUrl}
           alt=""
-          className="aspect-[40/21] w-full rounded-md border border-border object-cover"
+          className="aspect-[40/21] w-full rounded-[13px] border border-canvas-border bg-canvas-2 object-cover"
         />
+        <label htmlFor="social-image-choose" className="text-[12px] font-medium text-ink">
+          {asset ? "Use a different image" : "Choose a sharing image"}
+        </label>
         <select
+          id="social-image-choose"
           ref={selectRef}
-          className="mt-2 h-11 w-full rounded-md border border-border bg-background text-sm"
-          aria-label="Choose a social sharing image"
+          className="h-[46px] w-full rounded-[9px] border border-canvas-border bg-white px-[13px] text-[13px] text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50"
           defaultValue=""
           disabled={busy}
           onChange={(e) => {
@@ -110,7 +120,7 @@ export function SocialImageEditor({
         {asset && (
           <button
             type="button"
-            className="mt-2 h-11 text-sm text-muted-foreground underline"
+            className="inline-flex h-11 items-center self-start text-[13px] font-medium text-ink-muted underline underline-offset-2 hover:text-ink disabled:opacity-50"
             disabled={busy}
             onClick={() => void onRemove()}
           >
@@ -118,7 +128,7 @@ export function SocialImageEditor({
           </button>
         )}
         {error && (
-          <p role="alert" className="mt-2 text-xs text-danger">
+          <p role="alert" className="text-[12px] text-danger">
             {error}
           </p>
         )}

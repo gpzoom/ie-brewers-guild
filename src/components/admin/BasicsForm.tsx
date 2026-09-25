@@ -1,15 +1,35 @@
-import { useEffect, useRef, useState } from "react";
-import { type BasicsMember, type BasicsPatch, updateMemberBasics } from "@/lib/members/member-basics.server";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import {
+  type BasicsMember,
+  type BasicsPatch,
+  updateMemberBasics,
+} from "@/lib/members/member-basics.server";
 import { updateMemberEmail } from "@/lib/members/member-email.server";
 import { isFieldVisibleForMemberType, LOCATION_FIELD_LABEL } from "@/lib/members/type-fields";
 import { listIanaTimezones } from "@/lib/timezone/timezones";
 import type { MemberType } from "@/lib/supabase/types";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Field,
+  IDLE,
+  InfoBox,
+  type SaveState,
+  SaveIndicator,
+  fieldLabelClass,
+  primaryButtonClass,
+  sectionLabelClass,
+  textInputClass,
+} from "@/components/admin/basics/ui";
 
 const TIMEZONES = listIanaTimezones();
 
@@ -21,23 +41,27 @@ const SAVE_DEBOUNCE_MS = 400;
 const MIN_MEMBER_SINCE_YEAR = 1800;
 const MAX_MEMBER_SINCE_YEAR = new Date().getFullYear() + 1;
 
-type SaveState = { status: "idle" | "saving" | "saved" | "error"; message?: string };
-const IDLE: SaveState = { status: "idle" };
-
-function SaveIndicator({ state }: { state: SaveState }) {
-  if (state.status === "idle") return null;
-  if (state.status === "saving") {
-    return <p className="mt-1 text-xs text-muted-foreground">Saving…</p>;
-  }
-  if (state.status === "saved") {
-    return <p className="mt-1 text-xs text-open">Saved</p>;
-  }
-  return (
-    <p role="alert" className="mt-1 text-xs text-danger">
-      {state.message ?? "Couldn't save — try again."}
-    </p>
-  );
-}
+// Copy from artboard AdminBasics's MEMBER TYPE cards.
+const MEMBER_TYPE_OPTIONS: { value: MemberType; title: string; description: string }[] = [
+  {
+    value: "producer",
+    title: "Producer with a taproom",
+    description:
+      "Brewery, meadery, cidery or distillery the public can visit. Shows weekly hours, an open-now status and directions.",
+  },
+  {
+    value: "mobile",
+    title: "Mobile member",
+    description:
+      "Entertainment, food truck or pop-up. Shows an appearance calendar and a booking button instead of hours.",
+  },
+  {
+    value: "allied",
+    title: "Allied Member",
+    description:
+      "Supply house, ingredients, equipment or services. Same layout as a producer, with business hours and a trade contact.",
+  },
+];
 
 /**
  * The sign-in email tied to this member's account, shown and editable
@@ -66,6 +90,15 @@ function SignInEmailEditor({ memberId, email }: { memberId: string; email: strin
     }
   }
 
+  const heading = (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className={sectionLabelClass}>Sign-in email</span>
+      <span className="rounded-full bg-canvas-2 px-2 py-0.5 text-[11px] font-medium text-ink-muted">
+        Guild admin only
+      </span>
+    </div>
+  );
+
   // No member_users row yet -- this member has never been invited/claimed,
   // so there is no account to change an email ON. changeMemberEmail's own
   // server-side check would reject this the same way, but surfacing it
@@ -74,36 +107,47 @@ function SignInEmailEditor({ memberId, email }: { memberId: string; email: strin
   // is the flow that actually creates the first account+email.
   if (email === null) {
     return (
-      <div className="rounded-md border border-border bg-muted/40 p-4">
-        <p className="text-sm text-foreground">
-          This member hasn't been invited yet, so there's no sign-in email to show or change here. Use{" "}
-          <strong>Invite</strong> from the Guild roster to give them their first one.
+      <section className="flex flex-col gap-3 rounded-[12px] border border-canvas-border bg-white px-[17px] py-[15px]">
+        {heading}
+        <p className="text-[13px] leading-[1.5] text-ink">
+          This member hasn't been invited yet, so there's no sign-in email to show or change here.
+          Use <strong>Invite</strong> from the Guild roster to give them their first one.
         </p>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="rounded-md border border-warn/40 bg-warn/10 p-4">
-      <Label htmlFor="member_email">Sign-in email</Label>
-      <p className="mt-1 text-xs text-muted-foreground">
-        The email this member uses to sign in. Changing it takes effect immediately — the member will need to
-        sign in with the new address from then on.
-      </p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        <Input
-          id="member_email"
-          type="email"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          className="h-11 max-w-sm"
-        />
-        <Button type="button" onClick={handleUpdate} disabled={status.status === "saving"} className="h-11">
-          {status.status === "saving" ? "Updating…" : "Update email"}
-        </Button>
+    <section className="flex flex-col gap-3 rounded-[12px] border border-canvas-border bg-white px-[17px] py-[15px]">
+      {heading}
+      <div className="flex flex-col gap-[7px]">
+        <label htmlFor="member_email" className={fieldLabelClass}>
+          Email this member signs in with
+        </label>
+        <p className="text-[12px] leading-[1.45] text-ink-muted">
+          Changing it takes effect immediately — the member will need to sign in with the new
+          address from then on.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Input
+            id="member_email"
+            type="email"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className={cn(textInputClass, "min-w-0 flex-1 basis-60 md:h-11 md:max-w-sm")}
+          />
+          <button
+            type="button"
+            onClick={handleUpdate}
+            disabled={status.status === "saving"}
+            className={primaryButtonClass}
+          >
+            {status.status === "saving" ? "Updating…" : "Update email"}
+          </button>
+        </div>
+        <SaveIndicator state={status} />
       </div>
-      <SaveIndicator state={status} />
-    </div>
+    </section>
   );
 }
 
@@ -120,10 +164,16 @@ export function BasicsForm({
   member,
   email = null,
   isImpersonating = false,
+  logo,
+  hours,
 }: {
   member: BasicsMember;
   email?: string | null;
   isImpersonating?: boolean;
+  /** The logo row card (LogoUploader), shown at the end of IDENTITY. */
+  logo?: ReactNode;
+  /** The weekly/special hours editor (HoursEditor), shown after IDENTITY. */
+  hours?: ReactNode;
 }) {
   const [local, setLocal] = useState(member);
   const [status, setStatus] = useState<Record<string, SaveState>>({});
@@ -147,7 +197,9 @@ export function BasicsForm({
   }, []);
 
   function isNoOp(patch: BasicsPatch) {
-    return Object.entries(patch).every(([key, value]) => savedRef.current[key as keyof BasicsMember] === value);
+    return Object.entries(patch).every(
+      ([key, value]) => savedRef.current[key as keyof BasicsMember] === value,
+    );
   }
 
   function performSave(field: string, patch: BasicsPatch) {
@@ -164,13 +216,18 @@ export function BasicsForm({
         savedRef.current = { ...savedRef.current, ...patch };
         setStatus((prev) => ({ ...prev, [field]: { status: "saved" } }));
         savedStatusTimers.current[field] = setTimeout(() => {
-          setStatus((prev) => (prev[field]?.status === "saved" ? { ...prev, [field]: IDLE } : prev));
+          setStatus((prev) =>
+            prev[field]?.status === "saved" ? { ...prev, [field]: IDLE } : prev,
+          );
         }, 2000);
       })
       .catch((error: unknown) => {
         setStatus((prev) => ({
           ...prev,
-          [field]: { status: "error", message: error instanceof Error ? error.message : "Couldn't save — try again." },
+          [field]: {
+            status: "error",
+            message: error instanceof Error ? error.message : "Couldn't save — try again.",
+          },
         }));
       });
   }
@@ -231,7 +288,8 @@ export function BasicsForm({
 
   /** member_since_year's client-side range guard -- see cancelPendingSave's doc comment. */
   function requireValidYear(value: number | null): boolean {
-    if (value === null || (value >= MIN_MEMBER_SINCE_YEAR && value <= MAX_MEMBER_SINCE_YEAR)) return true;
+    if (value === null || (value >= MIN_MEMBER_SINCE_YEAR && value <= MAX_MEMBER_SINCE_YEAR))
+      return true;
     cancelPendingSave("member_since_year");
     setStatus((prev) => ({
       ...prev,
@@ -243,191 +301,283 @@ export function BasicsForm({
     return false;
   }
 
+  const isMobile = local.member_type === "mobile";
+  const showStreet = isFieldVisibleForMemberType(local.member_type, "street_address");
+  const showServiceArea = isFieldVisibleForMemberType(local.member_type, "service_area");
+  const showLeadTime = isFieldVisibleForMemberType(local.member_type, "lead_time");
+
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="flex max-w-[972px] flex-col gap-[22px] md:gap-[30px]">
+      <h1 className="font-display text-[24px] leading-tight text-ink md:text-[27px]">
+        Basics &amp; hours
+      </h1>
+
       {isImpersonating && <SignInEmailEditor memberId={member.id} email={email} />}
 
-      <div>
-        <Label htmlFor="business_name">Business name</Label>
-        <Input
-          id="business_name"
-          defaultValue={local.business_name}
-          className="mt-1 h-11"
-          required
-          onChange={(e) => {
-            if (requireNonEmpty("business_name", e.target.value)) {
-              scheduleSave("business_name", { business_name: e.target.value });
-            }
-          }}
-          onBlur={(e) => {
-            if (requireNonEmpty("business_name", e.target.value)) {
-              flushSave("business_name", { business_name: e.target.value });
-            }
-          }}
-        />
-        <SaveIndicator state={status.business_name ?? IDLE} />
-      </div>
-
-      <div>
-        <Label htmlFor="tagline">Tagline</Label>
-        <Textarea
-          id="tagline"
-          defaultValue={local.tagline ?? ""}
-          maxLength={70}
-          className="mt-1"
-          onChange={(e) => scheduleSave("tagline", { tagline: e.target.value || null })}
-          onBlur={(e) => flushSave("tagline", { tagline: e.target.value || null })}
-        />
-        <p className="mt-1 text-xs text-muted-foreground">Up to 70 characters — the one place you speak in your own words.</p>
-        <SaveIndicator state={status.tagline ?? IDLE} />
-      </div>
-
-      <fieldset>
-        <legend className="text-sm font-medium text-foreground">Member type</legend>
-        <RadioGroup
-          defaultValue={local.member_type}
-          className="mt-2 flex flex-col gap-2"
-          onValueChange={(value) => saveNow("member_type", { member_type: value as MemberType })}
-        >
-          {(["producer", "mobile", "allied"] as MemberType[]).map((type) => (
-            <label key={type} className="flex min-h-11 items-center gap-2 rounded-md border border-border p-3">
-              <RadioGroupItem value={type} id={`member_type_${type}`} />
-              <span className="capitalize">{type}</span>
+      <fieldset className="m-0 flex flex-col gap-[9px] border-0 p-0 md:gap-3">
+        <legend className={cn(sectionLabelClass, "mb-[9px] p-0 md:mb-3")}>Member type</legend>
+        {MEMBER_TYPE_OPTIONS.map((option) => {
+          const checked = local.member_type === option.value;
+          return (
+            <label
+              key={option.value}
+              htmlFor={`member_type_${option.value}`}
+              className={cn(
+                "flex min-h-[52px] cursor-pointer items-start gap-3 rounded-[11px] bg-white md:gap-[13px] md:rounded-[12px]",
+                checked
+                  ? "border-2 border-ink px-[13px] py-[12px] md:px-[17px] md:py-[15px]"
+                  : "border border-canvas-border px-[14px] py-[13px] md:px-[18px] md:py-4",
+              )}
+            >
+              <input
+                type="radio"
+                id={`member_type_${option.value}`}
+                name="member_type"
+                value={option.value}
+                checked={checked}
+                onChange={() => saveNow("member_type", { member_type: option.value })}
+                className="mt-0.5 h-[19px] w-[19px] shrink-0 cursor-pointer accent-ink md:h-[18px] md:w-[18px]"
+              />
+              <span className="flex flex-col gap-[3px] md:gap-1">
+                <span className="text-[14px] font-semibold text-ink md:text-[15px]">
+                  {option.title}
+                </span>
+                <span
+                  className={cn(
+                    "text-[12px] text-ink-muted md:block md:text-[13px]",
+                    !checked && "hidden",
+                  )}
+                >
+                  {option.description}
+                </span>
+              </span>
             </label>
-          ))}
-        </RadioGroup>
+          );
+        })}
         <SaveIndicator state={status.member_type ?? IDLE} />
       </fieldset>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="city">City</Label>
-          <Input
-            id="city"
-            defaultValue={local.city}
-            className="mt-1 h-11"
-            required
-            onChange={(e) => {
-              if (requireNonEmpty("city", e.target.value)) {
-                scheduleSave("city", { city: e.target.value });
-              }
-            }}
-            onBlur={(e) => {
-              if (requireNonEmpty("city", e.target.value)) {
-                flushSave("city", { city: e.target.value });
-              }
-            }}
-          />
-          <SaveIndicator state={status.city ?? IDLE} />
-        </div>
-        <div>
-          <Label htmlFor="state">State</Label>
-          <Input
-            id="state"
-            defaultValue={local.state}
-            className="mt-1 h-11"
-            required
-            onChange={(e) => {
-              if (requireNonEmpty("state", e.target.value)) {
-                scheduleSave("state", { state: e.target.value });
-              }
-            }}
-            onBlur={(e) => {
-              if (requireNonEmpty("state", e.target.value)) {
-                flushSave("state", { state: e.target.value });
-              }
-            }}
-          />
-          <SaveIndicator state={status.state ?? IDLE} />
-        </div>
-      </div>
+      <InfoBox>
+        Your type decides which sections appear on your public page. Changing it won't delete
+        anything you've already filled in.
+      </InfoBox>
 
-      {isFieldVisibleForMemberType(local.member_type, "street_address") && (
-        <div>
-          <Label htmlFor="street_address">{LOCATION_FIELD_LABEL[local.member_type]}</Label>
-          <Input
-            id="street_address"
-            defaultValue={local.street_address ?? ""}
-            className="mt-1 h-11"
-            onChange={(e) => scheduleSave("street_address", { street_address: e.target.value || null })}
-            onBlur={(e) => flushSave("street_address", { street_address: e.target.value || null })}
-          />
-          <SaveIndicator state={status.street_address ?? IDLE} />
-        </div>
-      )}
+      <section className="flex flex-col gap-[14px] md:gap-4" aria-labelledby="identity-heading">
+        <h2 id="identity-heading" className={cn(sectionLabelClass, "font-sans")}>
+          Identity
+        </h2>
+        <div className="grid grid-cols-1 gap-[14px] md:grid-cols-2 md:gap-4">
+          <Field id="business_name" label="Business name" state={status.business_name ?? IDLE}>
+            <Input
+              id="business_name"
+              defaultValue={local.business_name}
+              className={textInputClass}
+              required
+              onChange={(e) => {
+                if (requireNonEmpty("business_name", e.target.value)) {
+                  scheduleSave("business_name", { business_name: e.target.value });
+                }
+              }}
+              onBlur={(e) => {
+                if (requireNonEmpty("business_name", e.target.value)) {
+                  flushSave("business_name", { business_name: e.target.value });
+                }
+              }}
+            />
+          </Field>
 
-      {isFieldVisibleForMemberType(local.member_type, "service_area") && (
-        <div>
-          <Label htmlFor="service_area">Service area</Label>
-          <Input
-            id="service_area"
-            defaultValue={local.service_area ?? ""}
-            className="mt-1 h-11"
-            placeholder="e.g. Inland Empire and Coachella Valley"
-            onChange={(e) => scheduleSave("service_area", { service_area: e.target.value || null })}
-            onBlur={(e) => flushSave("service_area", { service_area: e.target.value || null })}
-          />
-          <SaveIndicator state={status.service_area ?? IDLE} />
-        </div>
-      )}
+          <Field id="city" label="City" state={status.city ?? IDLE}>
+            <Input
+              id="city"
+              defaultValue={local.city}
+              className={textInputClass}
+              required
+              onChange={(e) => {
+                if (requireNonEmpty("city", e.target.value)) {
+                  scheduleSave("city", { city: e.target.value });
+                }
+              }}
+              onBlur={(e) => {
+                if (requireNonEmpty("city", e.target.value)) {
+                  flushSave("city", { city: e.target.value });
+                }
+              }}
+            />
+          </Field>
 
-      {isFieldVisibleForMemberType(local.member_type, "lead_time") && (
-        <div>
-          <Label htmlFor="lead_time">Typical lead time</Label>
-          <Input
-            id="lead_time"
-            defaultValue={local.lead_time ?? ""}
-            className="mt-1 h-11"
-            placeholder="e.g. 2–3 business days"
-            onChange={(e) => scheduleSave("lead_time", { lead_time: e.target.value || null })}
-            onBlur={(e) => flushSave("lead_time", { lead_time: e.target.value || null })}
-          />
-          <SaveIndicator state={status.lead_time ?? IDLE} />
-        </div>
-      )}
+          <Field id="state" label="State" state={status.state ?? IDLE}>
+            <Input
+              id="state"
+              defaultValue={local.state}
+              className={textInputClass}
+              required
+              onChange={(e) => {
+                if (requireNonEmpty("state", e.target.value)) {
+                  scheduleSave("state", { state: e.target.value });
+                }
+              }}
+              onBlur={(e) => {
+                if (requireNonEmpty("state", e.target.value)) {
+                  flushSave("state", { state: e.target.value });
+                }
+              }}
+            />
+          </Field>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="member_since_year">Member since</Label>
-          <Input
+          <Field id="timezone" label="Timezone" state={status.timezone ?? IDLE}>
+            <Select
+              defaultValue={local.timezone}
+              onValueChange={(value) => saveNow("timezone", { timezone: value })}
+            >
+              <SelectTrigger id="timezone" className={cn(textInputClass, "w-full")}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIMEZONES.map((tz) => (
+                  <SelectItem key={tz} value={tz}>
+                    {tz}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field
+            id="tagline"
+            label="Tagline"
+            hint="Up to 70 characters — the one place you speak in your own words."
+            state={status.tagline ?? IDLE}
+            className="md:col-span-2"
+          >
+            <Textarea
+              id="tagline"
+              defaultValue={local.tagline ?? ""}
+              maxLength={70}
+              rows={2}
+              className="min-h-[72px] rounded-[10px] border-canvas-border bg-white px-[13px] py-3 text-[15px] text-ink shadow-none md:rounded-[9px] md:text-[14px]"
+              onChange={(e) => scheduleSave("tagline", { tagline: e.target.value || null })}
+              onBlur={(e) => flushSave("tagline", { tagline: e.target.value || null })}
+            />
+          </Field>
+
+          {showStreet && (
+            <Field
+              id="street_address"
+              label={LOCATION_FIELD_LABEL[local.member_type]}
+              state={status.street_address ?? IDLE}
+              className="md:col-span-2"
+            >
+              <Input
+                id="street_address"
+                defaultValue={local.street_address ?? ""}
+                className={textInputClass}
+                onChange={(e) =>
+                  scheduleSave("street_address", { street_address: e.target.value || null })
+                }
+                onBlur={(e) =>
+                  flushSave("street_address", { street_address: e.target.value || null })
+                }
+              />
+            </Field>
+          )}
+
+          {showServiceArea && (
+            <Field id="service_area" label="Service area" state={status.service_area ?? IDLE}>
+              <Input
+                id="service_area"
+                defaultValue={local.service_area ?? ""}
+                className={textInputClass}
+                placeholder="e.g. Inland Empire and Coachella Valley"
+                onChange={(e) =>
+                  scheduleSave("service_area", { service_area: e.target.value || null })
+                }
+                onBlur={(e) => flushSave("service_area", { service_area: e.target.value || null })}
+              />
+            </Field>
+          )}
+
+          {showLeadTime && (
+            <Field id="lead_time" label="Typical lead time" state={status.lead_time ?? IDLE}>
+              <Input
+                id="lead_time"
+                defaultValue={local.lead_time ?? ""}
+                className={textInputClass}
+                placeholder="e.g. 2–3 business days"
+                onChange={(e) => scheduleSave("lead_time", { lead_time: e.target.value || null })}
+                onBlur={(e) => flushSave("lead_time", { lead_time: e.target.value || null })}
+              />
+            </Field>
+          )}
+
+          <Field
             id="member_since_year"
-            type="number"
-            min={MIN_MEMBER_SINCE_YEAR}
-            max={MAX_MEMBER_SINCE_YEAR}
-            defaultValue={local.member_since_year ?? ""}
-            className="mt-1 h-11"
-            onChange={(e) => {
-              const value = e.target.value ? Number(e.target.value) : null;
-              if (requireValidYear(value)) {
-                scheduleSave("member_since_year", { member_since_year: value });
-              }
-            }}
-            onBlur={(e) => {
-              const value = e.target.value ? Number(e.target.value) : null;
-              if (requireValidYear(value)) {
-                flushSave("member_since_year", { member_since_year: value });
-              }
-            }}
-          />
-          <SaveIndicator state={status.member_since_year ?? IDLE} />
+            label="Member since"
+            state={status.member_since_year ?? IDLE}
+          >
+            <Input
+              id="member_since_year"
+              type="number"
+              inputMode="numeric"
+              min={MIN_MEMBER_SINCE_YEAR}
+              max={MAX_MEMBER_SINCE_YEAR}
+              defaultValue={local.member_since_year ?? ""}
+              className={textInputClass}
+              onChange={(e) => {
+                const value = e.target.value ? Number(e.target.value) : null;
+                if (requireValidYear(value)) {
+                  scheduleSave("member_since_year", { member_since_year: value });
+                }
+              }}
+              onBlur={(e) => {
+                const value = e.target.value ? Number(e.target.value) : null;
+                if (requireValidYear(value)) {
+                  flushSave("member_since_year", { member_since_year: value });
+                }
+              }}
+            />
+          </Field>
         </div>
-        <div>
-          <Label htmlFor="timezone">Timezone</Label>
-          <Select defaultValue={local.timezone} onValueChange={(value) => saveNow("timezone", { timezone: value })}>
-            <SelectTrigger id="timezone" className="mt-1 h-11">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TIMEZONES.map((tz) => (
-                <SelectItem key={tz} value={tz}>
-                  {tz}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <SaveIndicator state={status.timezone ?? IDLE} />
+
+        {logo}
+      </section>
+
+      {hours !== undefined && (
+        <div id="hours" className="flex scroll-mt-6 flex-col gap-[22px] md:gap-[30px]">
+          {isMobile && (
+            <section className="flex flex-col gap-3" aria-labelledby="hours-mobile-heading">
+              <h2 id="hours-mobile-heading" className={cn(sectionLabelClass, "font-sans")}>
+                Weekly hours
+              </h2>
+              <InfoBox>
+                Mobile members don't show weekly hours — your{" "}
+                <Link
+                  to="/admin/events"
+                  className="font-medium text-brand underline-offset-2 hover:text-brand-hover hover:underline"
+                >
+                  events calendar
+                </Link>{" "}
+                is your schedule. Any hours you entered before are kept in case you switch back.
+              </InfoBox>
+            </section>
+          )}
+          {/*
+            Hidden, not unmounted, for a mobile member: HoursEditor keeps
+            its own row state, so remounting it after a type switch would
+            reset it to the page-load rows (dropping rows added/removed
+            since) while the database already has the newer ones.
+          */}
+          <div
+            hidden={isMobile}
+            className={cn("flex-col gap-[22px] md:gap-[30px]", isMobile ? "hidden" : "flex")}
+          >
+            {hours}
+          </div>
         </div>
-      </div>
+      )}
+
+      <p className="border-t border-canvas-2 pt-[22px] text-[13px] text-ink-muted">
+        Changes save as you type. Publishing needs one more step.
+      </p>
     </div>
   );
 }

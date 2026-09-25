@@ -158,7 +158,9 @@ const BARE_ROUTES = ["/survey-results"];
 // wrap it on every one of those child paths too, not just /admin itself.
 // /guild is here for the same reason: GuildShell (src/routes/guild.tsx) is
 // the chrome for every /guild/<section> route.
-const BARE_ROUTE_PREFIXES = ["/admin", "/guild"];
+// /signin and /send are standalone per their artboards (T, J): just a small
+// Guild mark above a light card, no site menu.
+const BARE_ROUTE_PREFIXES = ["/admin", "/guild", "/signin", "/send"];
 
 function isBarePathname(pathname: string) {
   const normalized = pathname.replace(/\/+$/, "") || "/";

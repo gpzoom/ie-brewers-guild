@@ -54,6 +54,7 @@ export function MediaGallery({
   const [hiddenIds, setHiddenIds] = useState<ReadonlySet<string>>(new Set());
   const [confirmAsset, setConfirmAsset] = useState<MediaAssetRow | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
 
   function unhide(id: string) {
     setHiddenIds((prev) => {
@@ -66,7 +67,19 @@ export function MediaGallery({
   async function onFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+    await uploadFile(file);
+  }
 
+  /** Drop target for the dashed upload box -- same upload path as "Choose a file". */
+  function onDrop(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDragOver(false);
+    if (uploadState.status === "uploading") return;
+    const file = event.dataTransfer.files?.[0];
+    if (file) void uploadFile(file);
+  }
+
+  async function uploadFile(file: File) {
     setUploadState({ status: "uploading" });
     const formData = new FormData();
     formData.append("memberId", memberId);
@@ -139,9 +152,36 @@ export function MediaGallery({
     : false;
 
   return (
-    <section>
-      <h2 className="text-lg font-medium text-foreground">Gallery</h2>
-      <div className="mt-3">
+    <section aria-labelledby="gallery-heading" className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <h2
+          id="gallery-heading"
+          className="font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted"
+        >
+          Your gallery
+        </h2>
+        <p className="max-w-[640px] text-[12px] leading-[1.5] text-ink-muted">
+          Everything you upload lands here first. Pick from it for your slides, your cover and your
+          sharing image.
+        </p>
+      </div>
+
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (!dragOver) setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={onDrop}
+        className={`flex flex-col gap-[11px] rounded-[13px] border-2 border-dashed p-5 transition-colors ${
+          dragOver ? "border-brand bg-[#FCF3EA]" : "border-[#D3CBBD]"
+        }`}
+      >
+        <p className="text-[14px] font-semibold text-ink">Drop a photo here</p>
+        <p className="text-[12px] leading-[1.5] text-ink-muted">
+          JPG or PNG, up to 25 MB. Once it's in your gallery, add it as a slide and choose what
+          stays in the portrait frame.
+        </p>
         <label htmlFor="gallery-upload" className="sr-only">
           Upload a photo
         </label>
@@ -154,32 +194,32 @@ export function MediaGallery({
           onChange={onFileSelected}
           disabled={uploadState.status === "uploading"}
         />
-        <Button
+        <button
           type="button"
-          className="h-11"
+          className="inline-flex h-11 items-center self-start rounded-[9px] border border-[#D3CBBD] bg-canvas px-[17px] text-[13px] font-medium text-ink transition-colors hover:bg-canvas-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploadState.status === "uploading"}
         >
-          {uploadState.status === "uploading" ? "Uploading…" : "Upload a photo"}
-        </Button>
+          {uploadState.status === "uploading" ? "Uploading…" : "Choose a file"}
+        </button>
         {uploadState.status === "error" && (
-          <p role="alert" className="mt-2 text-xs text-danger">
+          <p role="alert" className="text-[12px] text-danger">
             {uploadState.message}
           </p>
         )}
       </div>
       {deleteError && (
-        <p role="alert" className="mt-2 text-xs text-danger">
+        <p role="alert" className="text-[12px] text-danger">
           {deleteError}
         </p>
       )}
-      <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <ul className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 xl:grid-cols-5">
         {assets
           .filter((asset) => asset.review_status === "approved" && !hiddenIds.has(asset.id))
           .map((asset) => (
             <li
               key={asset.id}
-              className="relative aspect-square overflow-hidden rounded-md bg-canvas-2"
+              className="relative aspect-square overflow-hidden rounded-[11px] border border-canvas-border bg-canvas-2"
             >
               {/* Served through /api/admin-media, NOT /api/member-media -- that other
                   route only serves an asset once it's approved AND assigned to a
@@ -193,16 +233,14 @@ export function MediaGallery({
                 alt=""
                 className="h-full w-full object-cover"
               />
-              <Button
+              <button
                 type="button"
-                variant="destructive"
-                size="sm"
-                className="absolute right-1 top-1 h-9"
-                aria-label="Delete this photo"
+                className="absolute right-1.5 top-1.5 inline-flex h-11 items-center rounded-[9px] border border-[#D3CBBD] bg-[#F9F6F0]/95 px-3 text-[12px] font-medium text-ink transition-colors hover:border-danger hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                aria-label={`Delete ${asset.original_filename ?? "this photo"}`}
                 onClick={() => setConfirmAsset(asset)}
               >
                 Delete
-              </Button>
+              </button>
             </li>
           ))}
       </ul>
@@ -211,13 +249,15 @@ export function MediaGallery({
         open={confirmAsset !== null}
         onOpenChange={(open) => !open && setConfirmAsset(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-[18px] border-0 bg-canvas p-[30px] sm:rounded-[18px]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this photo?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="font-display text-[25px] font-bold leading-[1.1] text-ink">
+              Delete this photo?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[14px] leading-[1.5] text-ink-muted">
               {confirmInCarousel && (
                 <>
-                  <strong className="font-semibold text-foreground">
+                  <strong className="font-semibold text-ink">
                     This photo is in your carousel and will be removed from it.
                   </strong>{" "}
                 </>
@@ -226,11 +266,13 @@ export function MediaGallery({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="h-11">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="h-[46px] rounded-[9px] border-[#D3CBBD] bg-transparent px-[19px] text-[14px] font-medium text-ink hover:bg-canvas-2">
+              Cancel
+            </AlertDialogCancel>
             <Button
               type="button"
               variant="destructive"
-              className="h-11 text-white"
+              className="h-[46px] rounded-[9px] px-6 text-[14px] font-semibold text-white"
               onClick={() => {
                 const asset = confirmAsset;
                 setConfirmAsset(null);

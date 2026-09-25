@@ -7,13 +7,14 @@ import {
   updateCarouselSlideCrop,
   updateCarouselSlideLink,
 } from "@/lib/media/carousel.server";
-import { CropEditor } from "@/components/admin/CropEditor";
+import { CropEditor, cropActionButtonClass } from "@/components/admin/CropEditor";
+import { computeCropStyle } from "@/lib/media/crop";
 import type { CarouselSlideRow, MediaAssetRow } from "@/lib/supabase/types";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 const SLOTS = [0, 1, 2, 3];
+
+const sectionLabelClass =
+  "font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted";
 
 // Same ~400ms debounce as BasicsForm/HoursEditor's own autosave (this
 // plan's established convention, see BasicsForm.tsx's SAVE_DEBOUNCE_MS).
@@ -45,6 +46,10 @@ export function CarouselEditor({
   // failures all render into the same spot, since only one of those
   // actions can realistically be in flight for a given slot at a time.
   const [errors, setErrors] = useState<Record<number, string | undefined>>({});
+  // Which slot's slide is open in the crop panel (artboard AdminMedia shows
+  // one crop editor for the selected tile). Falls back to the first filled
+  // slot whenever this one is empty -- see `selected` below.
+  const [selectedSlot, setSelectedSlot] = useState(0);
 
   // Last known PERSISTED crop per slide id. A failed debounced crop save
   // rolls the visual crop back to this rather than leaving it showing a
@@ -155,6 +160,7 @@ export function CarouselEditor({
         ...prev.filter((slide) => slide.sort_order !== slot),
         { id, member_id: memberId, asset_id: asset.id, crop, outbound_url: null, sort_order: slot },
       ]);
+      setSelectedSlot(slot);
       // Keeps the loader's `slides` current for MediaGallery's "this photo
       // is in your carousel" delete warning. Not awaited: the assign itself
       // already succeeded, so a refresh hiccup mustn't hit the catch below.
@@ -272,104 +278,229 @@ export function CarouselEditor({
    * error handling at all. The onBlur-only save trigger itself (no
    * beforeunload guard) is unchanged/out of scope here, matching this
    * app's existing autosave convention elsewhere (BasicsForm, HoursEditor).
+   *
+   * On success the local slide copy picks up the new link too: there's one
+   * link field for whichever slide is selected, keyed by slide id, so
+   * switching away and back remounts it from `slides` -- which would
+   * otherwise still hold the pre-save value.
    */
   async function onLinkBlur(slide: CarouselSlideRow, outboundUrl: string | null) {
     setSlotError(slide.sort_order, undefined);
     try {
       await updateCarouselSlideLink({ data: { id: slide.id, outboundUrl } });
+      setSlides((prev) =>
+        prev.map((s) => (s.id === slide.id ? { ...s, outbound_url: outboundUrl } : s)),
+      );
     } catch (error) {
       setSlotError(slide.sort_order, friendlyMessage(error, "Couldn't save this link — try again."));
     }
   }
 
+  const approvedAssets = galleryAssets.filter((a) => a.review_status === "approved");
+  const filledSlots = SLOTS.filter((slot) => {
+    const slide = slideForSlot(slot);
+    return slide !== undefined && galleryAssets.some((a) => a.id === slide.asset_id);
+  });
+  const activeSlot: number | undefined = filledSlots.includes(selectedSlot)
+    ? selectedSlot
+    : filledSlots[0];
+  const selected = activeSlot === undefined ? undefined : slideForSlot(activeSlot);
+  const selectedAsset = selected
+    ? galleryAssets.find((a) => a.id === selected.asset_id)
+    : undefined;
+
   return (
-    <section>
-      <h2 className="text-lg font-medium text-foreground">Portrait carousel</h2>
-      <p className="text-xs text-muted-foreground">4:5 — up to four slides.</p>
-      <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {SLOTS.map((slot) => {
-          const slide = slideForSlot(slot);
-          const asset = slide ? galleryAssets.find((a) => a.id === slide.asset_id) : undefined;
-          return (
-            <div key={slot} className="space-y-2">
-              {slide && asset ? (
-                <>
-                  {/* Served through /api/admin-media, NOT /api/member-media --
-                      that other route only serves an asset once it's already
-                      referenced by a PUBLISHED member's own logo/cover/
-                      carousel slide, which this member's own admin panel
-                      can't rely on while they're still assigning/editing
-                      slots (and possibly still draft/pending themselves).
-                      /api/admin-media instead checks OWNERSHIP via
-                      requireMemberSession(), which is the right rule here.
-                      See src/routes/api.admin-media.$assetId.ts and
-                      MediaGallery.tsx's identical choice. */}
-                  {/* onPointerUp/onPointerCancel here catch the same
-                      pointer events CropEditor's own internal handlers
-                      respond to (it doesn't stop their propagation) --
-                      this is how the debounced crop save gets flushed the
-                      moment a drag ends, without CropEditor itself needing
-                      to know anything about debouncing. */}
-                  <div
-                    onPointerUp={() => flushCropSave(slide.id, slot)}
-                    onPointerCancel={() => flushCropSave(slide.id, slot)}
-                  >
-                    <CropEditor
-                      imageUrl={`/api/admin-media/${asset.id}`}
-                      crop={slide.crop}
-                      aspect={CAROUSEL_ASPECT}
-                      aspectClassName="aspect-[4/5]"
-                      onChange={(crop) => onCropChange(slide, crop)}
-                    />
-                  </div>
-                  <Label htmlFor={`slide-link-${slide.id}`}>Tap-through link (optional)</Label>
-                  <Input
-                    id={`slide-link-${slide.id}`}
-                    defaultValue={slide.outbound_url ?? ""}
-                    className="h-11"
-                    onBlur={(e) => void onLinkBlur(slide, e.target.value || null)}
-                  />
-                  <Button type="button" variant="outline" size="sm" className="h-9 w-full" onClick={() => onUnassign(slide)}>
-                    Remove from carousel
-                  </Button>
-                </>
-              ) : (
-                <div className="flex aspect-[4/5] flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border p-2">
-                  <span className="text-xs text-muted-foreground">Slot {slot + 1}</span>
-                  <select
-                    ref={(el) => {
-                      selectRefs.current[slot] = el;
-                    }}
-                    className="h-11 w-full rounded-md border border-border bg-background text-sm"
-                    aria-label={`Choose a photo for slot ${slot + 1}`}
-                    defaultValue=""
-                    onChange={(e) => {
-                      const asset = galleryAssets.find((a) => a.id === e.target.value);
-                      if (asset) void onAssign(slot, asset);
-                    }}
-                  >
-                    <option value="" disabled>
-                      Choose from gallery…
-                    </option>
-                    {galleryAssets
-                      .filter((a) => a.review_status === "approved")
-                      .map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.original_filename ?? a.id}
+    <section
+      aria-labelledby="carousel-heading"
+      className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-x-[30px]"
+    >
+      {/* Slides grid -- right column on desktop, first on a phone. */}
+      <div className="flex min-w-0 flex-col gap-3 lg:col-start-2 lg:row-start-1">
+        <div className="flex items-baseline gap-2">
+          <h2 id="carousel-heading" className={sectionLabelClass}>
+            Your slides
+          </h2>
+          <span className="text-[10px] text-[#A89D8E]">Portrait · 4:5</span>
+        </div>
+        <ul className="grid grid-cols-2 gap-3.5 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+          {SLOTS.map((slot) => {
+            const slide = slideForSlot(slot);
+            const asset = slide ? galleryAssets.find((a) => a.id === slide.asset_id) : undefined;
+            const isEditing = slide !== undefined && slot === activeSlot;
+            const credited = asset?.source === "creator_upload" && asset.creator_credit;
+            return (
+              <li key={slot} className="flex min-w-0 flex-col gap-[7px]">
+                {slide && asset ? (
+                  <>
+                    {/* Served through /api/admin-media, NOT /api/member-media --
+                        that other route only serves an asset once it's already
+                        referenced by a PUBLISHED member's own logo/cover/
+                        carousel slide, which this member's own admin panel
+                        can't rely on while they're still assigning/editing
+                        slots (and possibly still draft/pending themselves).
+                        /api/admin-media instead checks OWNERSHIP via
+                        requireMemberSession(), which is the right rule here.
+                        See src/routes/api.admin-media.$assetId.ts and
+                        MediaGallery.tsx's identical choice. */}
+                    <button
+                      type="button"
+                      aria-pressed={isEditing}
+                      aria-label={`Slide ${slot + 1}${isEditing ? ", open in the cropper" : " — crop this slide"}`}
+                      onClick={() => setSelectedSlot(slot)}
+                      className={`relative aspect-[4/5] w-full overflow-hidden rounded-[11px] bg-canvas-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ${
+                        isEditing ? "border-2 border-ink" : "border border-canvas-border"
+                      }`}
+                    >
+                      <img
+                        src={`/api/admin-media/${asset.id}`}
+                        alt=""
+                        draggable={false}
+                        style={computeCropStyle(slide.crop)}
+                        className="pointer-events-none select-none"
+                      />
+                      {isEditing && (
+                        <span className="absolute bottom-[9px] left-[9px] rounded-full bg-ink px-2 py-[3px] text-[9px] tracking-[0.08em] text-[#F9F6F0]">
+                          EDITING
+                        </span>
+                      )}
+                      {credited && (
+                        <span className="absolute right-[9px] top-[9px] rounded-full border border-[#D3CBBD] bg-[#F9F6F0] px-2 py-[3px] text-[9px] tracking-[0.08em] text-[#3A332C]">
+                          CREDITED
+                        </span>
+                      )}
+                    </button>
+                    <span className="truncate text-[11px] text-ink-muted">
+                      {asset.source === "creator_upload"
+                        ? `From ${asset.creator_name ?? "a creator"}`
+                        : "Uploaded photo"}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {/* The "Add slide" tile IS the gallery picker: a native
+                        <select> stretched invisibly over the dashed tile, so
+                        a tap opens the platform's own picker. */}
+                    <div className="relative flex aspect-[4/5] w-full flex-col items-center justify-center gap-[9px] rounded-[11px] border-2 border-dashed border-[#D3CBBD] p-2 text-center focus-within:border-brand hover:bg-canvas-2">
+                      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                        <path
+                          d="M11 4.5v13M4.5 11h13"
+                          stroke="#8C8275"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <span className="text-[12px] font-medium text-ink-muted">Add slide</span>
+                      {approvedAssets.length === 0 && (
+                        <span className="text-[11px] leading-[1.4] text-ink-subtle">
+                          Upload a photo below first
+                        </span>
+                      )}
+                      <select
+                        ref={(el) => {
+                          selectRefs.current[slot] = el;
+                        }}
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-default"
+                        aria-label={`Add a slide in position ${slot + 1}: choose a photo from your gallery`}
+                        defaultValue=""
+                        disabled={approvedAssets.length === 0}
+                        onChange={(e) => {
+                          const picked = galleryAssets.find((a) => a.id === e.target.value);
+                          if (picked) void onAssign(slot, picked);
+                        }}
+                      >
+                        <option value="" disabled>
+                          Choose from gallery…
                         </option>
-                      ))}
-                  </select>
-                </div>
-              )}
-              {errors[slot] && (
-                <p role="alert" className="text-xs text-danger">
-                  {errors[slot]}
-                </p>
-              )}
-            </div>
-          );
-        })}
+                        {approvedAssets.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.original_filename ?? a.id}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <span className="text-[11px] text-ink-subtle">Position {slot + 1}</span>
+                  </>
+                )}
+                {errors[slot] && (
+                  <p role="alert" className="text-[11px] text-danger">
+                    {errors[slot]}
+                  </p>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </div>
+
+      {/* Crop panel for the selected slide -- left column on desktop. */}
+      <div className="flex flex-col gap-[13px] lg:col-start-1 lg:row-span-2 lg:row-start-1">
+        <div className="flex items-baseline gap-2">
+          <h3 className={sectionLabelClass}>Crop to portrait</h3>
+          <span className="text-[10px] text-[#A89D8E]">4:5</span>
+        </div>
+        {selected && selectedAsset && activeSlot !== undefined ? (
+          // onPointerUp/onPointerCancel here catch the same pointer events
+          // CropEditor's own internal handlers respond to (it doesn't stop
+          // their propagation) -- this is how the debounced crop save gets
+          // flushed the moment a drag (or a zoom-slider drag) ends, without
+          // CropEditor itself needing to know anything about debouncing.
+          <div
+            className="w-full max-w-[300px]"
+            onPointerUp={() => flushCropSave(selected.id, activeSlot)}
+            onPointerCancel={() => flushCropSave(selected.id, activeSlot)}
+          >
+            <CropEditor
+              imageUrl={`/api/admin-media/${selectedAsset.id}`}
+              crop={selected.crop}
+              aspect={CAROUSEL_ASPECT}
+              aspectClassName="aspect-[4/5]"
+              onChange={(crop) => onCropChange(selected, crop)}
+              actions={
+                <button
+                  type="button"
+                  className={cropActionButtonClass}
+                  // Not a crop edit: keep this tap from flushing a pending
+                  // crop save for a slide that's about to be removed.
+                  onPointerUp={(e) => e.stopPropagation()}
+                  onClick={() => onUnassign(selected)}
+                >
+                  Remove slide
+                </button>
+              }
+            />
+          </div>
+        ) : (
+          <div className="flex aspect-[4/5] w-full max-w-[300px] items-center justify-center rounded-[13px] bg-canvas-2 p-6 text-center text-[12px] leading-[1.5] text-ink-muted">
+            Add a slide and you'll crop it here.
+          </div>
+        )}
+      </div>
+
+      {/* Tap-through link for the selected slide. */}
+      {selected && (
+        <div className="flex flex-col gap-2 self-start rounded-[13px] border border-canvas-border px-5 py-[18px] lg:col-start-2 lg:row-start-2">
+          <label
+            htmlFor={`slide-link-${selected.id}`}
+            className="text-[13px] font-semibold text-ink"
+          >
+            Where this slide goes when tapped
+          </label>
+          <input
+            key={selected.id}
+            id={`slide-link-${selected.id}`}
+            type="url"
+            inputMode="url"
+            placeholder="Paste your post link (optional)"
+            defaultValue={selected.outbound_url ?? ""}
+            onBlur={(e) => void onLinkBlur(selected, e.target.value || null)}
+            className="h-[46px] w-full rounded-[9px] border border-canvas-border bg-white px-[13px] text-[13px] text-ink placeholder:text-ink-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          />
+          <p className="text-[11px] text-ink-subtle">
+            Leave it blank and the slide just sits in the carousel.
+          </p>
+        </div>
+      )}
     </section>
   );
 }
+

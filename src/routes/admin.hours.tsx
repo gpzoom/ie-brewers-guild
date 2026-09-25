@@ -1,14 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { listHours } from "@/lib/hours/hours-editor.server";
-import { HoursEditor } from "@/components/admin/HoursEditor";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
+/**
+ * Hours now live on the one "Basics & hours" page (artboard AdminBasics;
+ * owner decision 2026-09-25). This route stays only so old links and
+ * bookmarks to /admin/hours land on that page's hours section. The parent
+ * /admin route's beforeLoad (the member-session check) still runs first.
+ */
 export const Route = createFileRoute("/admin/hours")({
-  loader: async ({ context }) => listHours({ data: { memberId: context.memberId } }),
-  component: HoursRoute,
+  beforeLoad: () => {
+    throw redirect({ to: "/admin/basics", hash: "hours" });
+  },
 });
-
-function HoursRoute() {
-  const { hours, specialHours } = Route.useLoaderData();
-  const { memberId } = Route.useRouteContext();
-  return <HoursEditor memberId={memberId} hours={hours} specialHours={specialHours} />;
-}

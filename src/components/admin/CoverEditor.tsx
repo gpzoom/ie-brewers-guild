@@ -229,10 +229,23 @@ export function CoverEditor({
   const asset = galleryAssets.find((a) => a.id === assetId);
 
   return (
-    <section>
-      <h2 className="text-lg font-medium text-foreground">Cover photo</h2>
-      <p className="text-xs text-muted-foreground">No cover photo? Your theme colour fills the band instead.</p>
-      <div className="mt-3 max-w-md">
+    <section aria-labelledby="cover-heading" className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <div className="flex items-baseline gap-2">
+          <h2
+            id="cover-heading"
+            className="font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted"
+          >
+            Cover photo
+          </h2>
+          <span className="text-[10px] text-[#A89D8E]">Wide band · 5:2</span>
+        </div>
+        <p className="text-[12px] leading-[1.5] text-ink-muted">
+          The wide band across the top of your profile. No cover photo? Your theme colour fills the
+          band instead.
+        </p>
+      </div>
+      <div className="flex w-full max-w-[560px] flex-col gap-3">
         {asset ? (
           // Served through /api/admin-media, NOT /api/member-media -- that
           // other route only serves an asset once it's already referenced
@@ -260,12 +273,17 @@ export function CoverEditor({
             />
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">No cover photo set.</p>
+          <div className="flex aspect-[5/2] w-full items-center justify-center rounded-[13px] border-2 border-dashed border-[#D3CBBD] p-4 text-center text-[12px] text-ink-muted">
+            No cover photo set — your theme colour fills the band.
+          </div>
         )}
+        <label htmlFor="cover-choose" className="text-[12px] font-medium text-ink">
+          {asset ? "Use a different photo" : "Choose a cover photo"}
+        </label>
         <select
+          id="cover-choose"
           ref={selectRef}
-          className="mt-2 h-11 w-full rounded-md border border-border bg-background text-sm"
-          aria-label="Choose a cover photo"
+          className="h-[46px] w-full rounded-[9px] border border-canvas-border bg-white px-[13px] text-[13px] text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50"
           defaultValue=""
           disabled={busy}
           onChange={(e) => {
@@ -287,7 +305,7 @@ export function CoverEditor({
         {assetId && (
           <button
             type="button"
-            className="mt-2 h-11 text-sm text-muted-foreground underline"
+            className="inline-flex h-11 items-center self-start text-[13px] font-medium text-ink-muted underline underline-offset-2 hover:text-ink disabled:opacity-50"
             disabled={busy}
             onClick={() => void onRemove()}
           >
@@ -295,7 +313,7 @@ export function CoverEditor({
           </button>
         )}
         {error && (
-          <p role="alert" className="mt-2 text-xs text-danger">
+          <p role="alert" className="text-[12px] text-danger">
             {error}
           </p>
         )}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import {
   getPublishGateData,
   publishMemberProfile,
@@ -13,18 +13,33 @@ import {
   isEveryAppearanceInThePast,
 } from "@/lib/hours/publish-gate";
 import type { MemberStatus } from "@/lib/supabase/types";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogFooter,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+/** The table reads Monday first, as in artboard AdminPublish (indexes are 0 = Sunday). */
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+/** "June 14, 2026" in the Guild's own time zone, or null when never confirmed. */
+function formatConfirmedOn(iso: string | null): string | null {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "America/Los_Angeles",
+  });
+}
 
 type FreshState =
   | { kind: "loading" }
@@ -115,6 +130,8 @@ export function PublishGateDialog({
     ? isMobile && isEveryAppearanceInThePast(freshData.appearanceStartTimes)
     : false;
   const canPublish = canSubmitPublish({ freshDataLoaded: freshData !== null, isMobile, confirmed });
+  const confirmedOn = formatConfirmedOn(freshData?.hoursConfirmedAt ?? initial.hoursConfirmedAt);
+  const showTickHint = !isMobile && freshData !== null && !confirmed;
 
   async function onPublish() {
     setError(null);
@@ -188,31 +205,48 @@ export function PublishGateDialog({
             Publish changes
           </button>
         </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{isMobile ? "Review your appearances" : "Review your hours"}</DialogTitle>
+        <DialogContent className="max-h-[calc(100dvh-32px)] w-[calc(100%-32px)] max-w-[600px] gap-[22px] overflow-y-auto rounded-[18px] border-0 bg-canvas p-6 text-ink sm:rounded-[18px] sm:p-[30px]">
+          <DialogHeader className="gap-2 space-y-0 pr-6 text-left">
+            <DialogTitle className="font-display text-[25px] font-bold leading-[1.1] text-ink">
+              One last check
+            </DialogTitle>
+            <DialogDescription className="text-[14px] leading-[1.5] text-ink-muted [text-wrap:pretty]">
+              {isMobile ? (
+                "Visitors look for where to find you next — make sure your upcoming appearances are listed."
+              ) : (
+                <>
+                  Wrong hours are the fastest way to lose a visitor.{" "}
+                  {confirmedOn ? (
+                    <>
+                      You last confirmed these on{" "}
+                      <strong className="font-semibold text-ink">{confirmedOn}</strong>.
+                    </>
+                  ) : (
+                    "You haven't confirmed these yet."
+                  )}
+                </>
+              )}
+            </DialogDescription>
           </DialogHeader>
 
           {fresh.kind === "loading" && (
-            <p role="status" className="text-sm text-muted-foreground">
+            <p role="status" className="text-[13px] text-ink-muted">
               Loading your latest {isMobile ? "appearances" : "hours"}…
             </p>
           )}
 
           {fresh.kind === "error" && (
-            <div role="alert" className="space-y-2 text-sm text-danger">
+            <div role="alert" className="flex flex-col items-start gap-2 text-[13px] text-danger">
               <p>
                 Couldn't load your latest {isMobile ? "appearances" : "hours"}: {fresh.message}
               </p>
-              <Button
+              <button
                 type="button"
-                variant="outline"
-                size="sm"
-                className="h-11"
+                className="inline-flex h-11 items-center rounded-[9px] border border-[#D3CBBD] bg-transparent px-4 text-[13px] font-medium text-ink transition-colors hover:bg-canvas-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 onClick={() => void loadFresh()}
               >
                 Try again
-              </Button>
+              </button>
             </div>
           )}
 
@@ -221,59 +255,109 @@ export function PublishGateDialog({
               allPast ? (
                 <p
                   role="alert"
-                  className="text-sm text-[color-mix(in_oklch,var(--warn),black_45%)]"
+                  className="rounded-[12px] border border-canvas-border bg-white px-4 py-3 text-[13px] leading-[1.5] text-[color-mix(in_oklch,var(--warn),black_45%)]"
                 >
                   Every listed appearance is in the past — visitors won't see anything upcoming. You
                   can still publish, but consider adding a date first.
                 </p>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="rounded-[12px] border border-canvas-border bg-white px-4 py-3 text-[13px] text-ink-muted">
                   You have at least one upcoming appearance listed.
                 </p>
               )
             ) : (
-              <ul className="space-y-1 text-sm">
-                {WEEKDAYS.map((label, weekday) => (
-                  <li key={weekday} className="flex justify-between border-b border-border py-1">
-                    <span>{label}</span>
-                    <span>{formatWeekdayHours(freshData.hours, weekday)}</span>
-                  </li>
-                ))}
+              <div className="overflow-hidden rounded-[12px] border border-canvas-border bg-white">
+                <div className="flex items-center justify-between gap-3 border-b border-canvas-2 bg-[#FCFAF6] py-1 pl-4 pr-2">
+                  <h3 className="font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
+                    What visitors will see
+                  </h3>
+                  <Link
+                    to="/admin/basics"
+                    onClick={() => setOpen(false)}
+                    className="inline-flex min-h-11 items-center px-2 text-[12px] font-medium text-brand hover:text-brand-hover"
+                  >
+                    Edit hours
+                  </Link>
+                </div>
+                <ul className="py-0.5">
+                  {WEEK_ORDER.map((weekday) => {
+                    const value = formatWeekdayHours(freshData.hours, weekday);
+                    const muted = value === "Closed" || value === "Not set";
+                    return (
+                      <li
+                        key={weekday}
+                        className="flex justify-between gap-4 px-4 py-[9px] text-[13px] last:pb-[11px]"
+                      >
+                        <span className="text-ink">{WEEKDAYS[weekday]}</span>
+                        <span className={`text-right ${muted ? "text-ink-subtle" : "text-[#3A332C]"}`}>
+                          {value}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
                 {freshData.specialHours.length > 0 && (
-                  <li className="pt-2 text-xs text-muted-foreground">
+                  <p className="border-t border-canvas-2 px-4 py-2.5 text-[12px] text-ink-muted">
                     {freshData.specialHours.length} holiday/one-off change(s) on file.
-                  </li>
+                  </p>
                 )}
-              </ul>
+              </div>
             ))}
 
           {!isMobile && (
-            <label className="mt-4 flex min-h-11 items-start gap-2">
+            <label
+              className={`flex cursor-pointer items-start gap-[13px] rounded-[12px] border-2 border-brand bg-[#FCF3EA] px-[18px] py-4 ${
+                freshData ? "" : "cursor-not-allowed opacity-60"
+              }`}
+            >
               <Checkbox
                 checked={confirmed}
                 disabled={!freshData}
                 onCheckedChange={(checked) => setConfirmed(checked === true)}
+                className="mt-px h-[19px] w-[19px] rounded-[4px] border-2 border-brand bg-white data-[state=checked]:bg-brand data-[state=checked]:text-white"
               />
-              <span className="text-sm">These hours are correct as of today.</span>
+              <span className="flex flex-col gap-1">
+                <span className="text-[14px] font-semibold text-ink">
+                  These hours are correct as of today.
+                </span>
+                <span className="text-[12px] leading-[1.5] text-ink-muted">
+                  We'll stamp your page with today's date and stop nudging you for ninety days.
+                </span>
+              </span>
             </label>
           )}
 
           {error && (
-            <p role="alert" className="mt-2 text-sm text-danger">
+            <p role="alert" className="text-[13px] text-danger">
               {error}
             </p>
           )}
 
-          <DialogFooter>
-            <Button
-              type="button"
-              disabled={!canPublish || submitting}
-              className="h-11 w-full"
-              onClick={onPublish}
-            >
-              Publish
-            </Button>
-          </DialogFooter>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <DialogClose asChild>
+              <button
+                type="button"
+                className="inline-flex h-[46px] items-center justify-center rounded-[9px] border border-[#D3CBBD] bg-transparent px-[19px] text-[14px] font-medium text-ink transition-colors hover:bg-canvas-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                Back to editing
+              </button>
+            </DialogClose>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3.5">
+              {showTickHint && (
+                <p className="text-center text-[12px] text-ink-subtle sm:text-left">
+                  Tick the box to continue
+                </p>
+              )}
+              <button
+                type="button"
+                disabled={!canPublish || submitting}
+                onClick={onPublish}
+                className="inline-flex h-[46px] items-center justify-center rounded-[9px] bg-brand px-6 text-[14px] font-semibold text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:bg-[#DED7CB] disabled:text-[#8C8275]"
+              >
+                {submitting ? "Publishing…" : "Publish"}
+              </button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -9,5 +9,14 @@ export const Route = createFileRoute("/admin/theme")({
 
 function ThemeRoute() {
   const member = Route.useLoaderData();
-  return <ThemePicker memberId={member.id} currentTheme={member.theme} />;
+  return (
+    <ThemePicker
+      memberId={member.id}
+      currentTheme={member.theme}
+      businessName={member.business_name}
+      city={member.city}
+      state={member.state}
+      tagline={member.tagline}
+    />
+  );
 }

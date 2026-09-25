@@ -1,18 +1,27 @@
 import { useRouter } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import { createMemberRecord } from "@/lib/guild/create-member.server";
 import type { MemberType } from "@/lib/supabase/types";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+const labelClass = "text-[13px] font-medium text-ink";
+const inputClass =
+  "h-[46px] w-full rounded-[9px] border border-canvas-border bg-white px-3.5 font-sans text-sm text-ink placeholder:text-ink-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60";
 
 /**
- * "Create a new member row" (task brief, roster actions). The created row
- * starts as status = 'draft' (create-member.server.ts, this plan's
- * Decision 8) -- the member gets invited next (Task 16) and publishes
- * their own profile from there.
+ * "Add a member" (artboard P's accent button). The created row starts as
+ * status = 'draft' (create-member.server.ts, this plan's Decision 8) --
+ * the member gets invited next from the roster and publishes their own
+ * profile from there.
  */
 export function CreateMemberDialog() {
   const router = useRouter();
@@ -37,11 +46,13 @@ export function CreateMemberDialog() {
           contactEmail: contactEmail || null,
         },
       });
+      const created = businessName;
       setOpen(false);
       setBusinessName("");
       setCity("");
       setContactEmail("");
       await router.invalidate();
+      toast.success(`Added ${created}`);
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Could not create the member.");
     } finally {
@@ -50,67 +61,102 @@ export function CreateMemberDialog() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(next) => !submitting && setOpen(next)}>
       <DialogTrigger asChild>
-        <Button className="h-11">Create member</Button>
+        <button
+          type="button"
+          className="inline-flex h-11 shrink-0 items-center rounded-[9px] bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+        >
+          Add a member
+        </button>
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create a new member</DialogTitle>
+      <DialogContent className="gap-5 rounded-[14px] border-canvas-border bg-white p-6 font-sans sm:max-w-[480px] sm:rounded-[14px]">
+        <DialogHeader className="gap-1.5 text-left">
+          <DialogTitle className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink">
+            Add a member
+          </DialogTitle>
+          <DialogDescription className="text-[13px] leading-[1.55] text-[#564E45]">
+            They start as a draft. Invite them from the roster when you're ready, and they'll
+            publish their own profile.
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="new-member-business-name">Business name</Label>
-            <Input
+        <form onSubmit={onSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="new-member-business-name" className={labelClass}>
+              Business name
+            </label>
+            <input
               id="new-member-business-name"
               required
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
-              className="mt-1 h-11"
+              disabled={submitting}
+              className={inputClass}
             />
           </div>
-          <div>
-            <Label htmlFor="new-member-city">City</Label>
-            <Input
+          <div className="flex flex-col gap-2">
+            <label htmlFor="new-member-city" className={labelClass}>
+              City
+            </label>
+            <input
               id="new-member-city"
               required
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="mt-1 h-11"
+              disabled={submitting}
+              className={inputClass}
             />
           </div>
-          <div>
-            <Label htmlFor="new-member-type">Member type</Label>
-            <Select value={memberType} onValueChange={(value) => setMemberType(value as MemberType)}>
-              <SelectTrigger id="new-member-type" className="mt-1 h-11">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="producer">Producer</SelectItem>
-                <SelectItem value="mobile">Mobile</SelectItem>
-                <SelectItem value="allied">Allied Member</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="new-member-type" className={labelClass}>
+              Member type
+            </label>
+            <select
+              id="new-member-type"
+              value={memberType}
+              onChange={(e) => setMemberType(e.target.value as MemberType)}
+              disabled={submitting}
+              className={`${inputClass} px-3`}
+            >
+              <option value="producer">Producer</option>
+              <option value="mobile">Mobile</option>
+              <option value="allied">Allied Member</option>
+            </select>
           </div>
-          <div>
-            <Label htmlFor="new-member-contact-email">Contact email (optional)</Label>
-            <Input
+          <div className="flex flex-col gap-2">
+            <label htmlFor="new-member-contact-email" className={labelClass}>
+              Contact email <span className="font-normal text-ink-subtle">(optional)</span>
+            </label>
+            <input
               id="new-member-contact-email"
               type="email"
               value={contactEmail}
               onChange={(e) => setContactEmail(e.target.value)}
-              className="mt-1 h-11"
+              disabled={submitting}
+              className={inputClass}
             />
           </div>
           {errorMessage && (
-            <p role="alert" className="text-sm text-danger">
+            <p role="alert" className="text-[13px] text-danger">
               {errorMessage}
             </p>
           )}
-          <DialogFooter>
-            <Button type="submit" disabled={submitting} className="h-11">
-              {submitting ? "Creating…" : "Create member"}
-            </Button>
+          <DialogFooter className="gap-2 pt-1 sm:gap-2">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              disabled={submitting}
+              className="inline-flex h-11 items-center justify-center rounded-[9px] border border-canvas-border bg-canvas px-[17px] text-[13px] font-medium text-ink transition-colors hover:bg-canvas-2 disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="inline-flex h-11 items-center justify-center rounded-[9px] bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
+            >
+              {submitting ? "Adding…" : "Add member"}
+            </button>
           </DialogFooter>
         </form>
       </DialogContent>

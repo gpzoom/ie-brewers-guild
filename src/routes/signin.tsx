@@ -1,9 +1,20 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  BrandBar,
+  CanvasCard,
+  CanvasHeading,
+  IconTile,
+  MailIcon,
+  NoticeBox,
+  cardLinkClass,
+  inputClass,
+  labelClass,
+  leadClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from "@/components/public-forms/PublicFormParts";
 
 const NOTICE_MESSAGES: Record<string, string> = {
   "no-account": "We couldn't find a member or Guild admin account for that sign-in link. Contact the Guild if you think this is a mistake.",
@@ -31,78 +42,172 @@ export const Route = createFileRoute("/signin")({
   component: SignInPage,
 });
 
+/**
+ * Artboard T (docs/design/artboards/SignIn.dc.html): a standalone page (no
+ * site header/footer -- see __root.tsx's BARE_ROUTES) on the dark ground,
+ * with the form on a light card. Once the link is sent, the card is
+ * replaced by the artboard's "Check your email" card.
+ */
 function SignInPage() {
   const { notice } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
-  const onSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    setStatus("sending");
-    setErrorMessage(null);
-
+  const sendLink = async (): Promise<string | null> => {
     try {
       const supabase = getSupabaseBrowserClient();
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
-
-      if (error) {
-        setStatus("error");
-        setErrorMessage(error.message);
-        return;
-      }
-      setStatus("sent");
+      return error ? error.message : null;
     } catch (err) {
-      setStatus("error");
-      setErrorMessage(err instanceof Error ? err.message : "Couldn't send the sign-in link.");
+      return err instanceof Error ? err.message : "Couldn't send the sign-in link.";
     }
   };
 
+  const onSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    setStatus("sending");
+    setErrorMessage(null);
+
+    const error = await sendLink();
+    if (error) {
+      setStatus("error");
+      setErrorMessage(error);
+      return;
+    }
+    setResendState("idle");
+    setStatus("sent");
+  };
+
+  const onResend = async () => {
+    setResendState("sending");
+    setErrorMessage(null);
+    const error = await sendLink();
+    if (error) {
+      setResendState("error");
+      setErrorMessage(error);
+      return;
+    }
+    setResendState("sent");
+  };
+
   return (
-    <section className="mx-auto max-w-md px-4 py-24">
-      <h1 className="font-display text-3xl text-foreground">Member sign in</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Enter the email your Guild membership is registered under. We'll send you a one-click sign-in
-        link — no password needed.
-      </p>
+    <div className="min-h-screen bg-bg pb-10 font-sans">
+      <div className="mx-auto w-full max-w-[480px]">
+        <BrandBar linkHome />
 
-      {notice && NOTICE_MESSAGES[notice] && (
-        <p role="alert" className="mt-4 rounded-md border border-warn/40 bg-warn/10 p-3 text-sm text-foreground">
-          {NOTICE_MESSAGES[notice]}
-        </p>
-      )}
+        <div className="mx-2.5 sm:mx-0 sm:mt-6">
+          {status === "sent" ? (
+            <CanvasCard className="gap-[18px]">
+              <IconTile>
+                <MailIcon />
+              </IconTile>
 
-      {status === "sent" ? (
-        <p role="status" className="mt-6 rounded-md border border-open/40 bg-open/10 p-3 text-sm text-foreground">
-          Check your email for a sign-in link. It's good for a little while, then you'll need a fresh one.
-        </p>
-      ) : (
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <div>
-            <Label htmlFor="signin-email">Email address</Label>
-            <Input
-              id="signin-email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 h-11"
-            />
-          </div>
-          {status === "error" && errorMessage && (
-            <p role="alert" className="text-sm text-danger">
-              {errorMessage}
-            </p>
+              <div className="flex flex-col gap-[9px]" role="status">
+                <CanvasHeading size="md">Check your email</CanvasHeading>
+                <p className={leadClass}>
+                  If <strong className="font-semibold text-ink break-all">{email}</strong> belongs to a
+                  member, a sign-in link is on its way. It works once, and only for a limited time.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2.5">
+                <button
+                  type="button"
+                  onClick={onResend}
+                  disabled={resendState === "sending"}
+                  className={secondaryButtonClass}
+                >
+                  {resendState === "sending" ? "Sending…" : resendState === "sent" ? "Sent again" : "Send it again"}
+                </button>
+                {resendState === "error" && errorMessage && (
+                  <p role="alert" className="text-[13px] text-danger">
+                    {errorMessage}
+                  </p>
+                )}
+                <p className="text-xs leading-normal text-ink-subtle text-pretty">
+                  Nothing after a minute or two? Check spam, and make sure it's the address the Guild
+                  has for you.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatus("idle");
+                    setResendState("idle");
+                    setErrorMessage(null);
+                  }}
+                  className="-mt-1 inline-flex min-h-11 items-center self-start text-[13px] font-medium text-brand underline underline-offset-2 hover:text-brand-hover"
+                >
+                  Use a different email
+                </button>
+              </div>
+            </CanvasCard>
+          ) : (
+            <CanvasCard>
+              <div className="flex flex-col gap-[9px]">
+                <CanvasHeading>Member sign in</CanvasHeading>
+                <p className={leadClass}>
+                  Enter the email the Guild has for you and we'll send a link that signs you in. No
+                  password to remember.
+                </p>
+              </div>
+
+              {notice && NOTICE_MESSAGES[notice] && <NoticeBox>{NOTICE_MESSAGES[notice]}</NoticeBox>}
+
+              <form onSubmit={onSubmit} className="flex flex-col gap-[22px]">
+                <div className="flex flex-col gap-[7px]">
+                  <label htmlFor="signin-email" className={labelClass}>
+                    Email
+                  </label>
+                  <input
+                    id="signin-email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    inputMode="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    aria-invalid={status === "error" ? true : undefined}
+                    aria-describedby={status === "error" && errorMessage ? "signin-error" : undefined}
+                    className={`${inputClass} h-[52px]`}
+                  />
+                  {status === "error" && errorMessage && (
+                    <p id="signin-error" role="alert" className="text-[13px] text-danger">
+                      {errorMessage}
+                    </p>
+                  )}
+                </div>
+
+                <button type="submit" disabled={status === "sending"} className={primaryButtonClass}>
+                  {status === "sending" ? "Sending…" : "Email me a link"}
+                </button>
+              </form>
+
+              <div className="flex flex-col gap-2.5 border-t border-canvas-border pt-[18px]">
+                <p className="text-[13px] leading-[1.55] text-ink-muted text-pretty">
+                  Not sure which address? It's whatever the Guild sent your invitation to. If that's
+                  changed,{" "}
+                  <Link to="/contact" className={cardLinkClass}>
+                    get in touch
+                  </Link>{" "}
+                  and we'll update it.
+                </p>
+                <p className="text-[13px] leading-[1.55] text-ink-muted text-pretty">
+                  Not a member?{" "}
+                  <Link to="/contact" className={cardLinkClass}>
+                    Ask us about joining
+                  </Link>
+                  .
+                </p>
+              </div>
+            </CanvasCard>
           )}
-          <Button type="submit" disabled={status === "sending"} className="h-11 w-full">
-            {status === "sending" ? "Sending…" : "Send sign-in link"}
-          </Button>
-        </form>
-      )}
-    </section>
+        </div>
+      </div>
+    </div>
   );
 }

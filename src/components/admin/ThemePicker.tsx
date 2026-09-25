@@ -1,14 +1,64 @@
 import { useRef, useState } from "react";
-import { MEMBER_THEMES, type MemberThemeName } from "@/lib/theme/member-themes";
+import { MEMBER_THEMES, getMemberThemeHex, type MemberThemeName } from "@/lib/theme/member-themes";
 import { updateMemberTheme } from "@/lib/theme/member-theme.server";
 
-/** A fixed set of 8, never a free color picker (spec, "Profile hero and theme"). */
+// The four swatches in the "No cover photo yet?" panel (artboard K) --
+// illustrative only, not the member's choice.
+const COVER_FALLBACK_EXAMPLES: MemberThemeName[] = ["amber", "teal", "plum", "forest"];
+
+function CheckBadge({ color }: { color: string }) {
+  return (
+    <span className="flex size-5 items-center justify-center rounded-full bg-white">
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <path
+          d="M2.5 6.2 5 8.6l4.5-5"
+          stroke={color}
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  );
+}
+
+function InfoIcon() {
+  return (
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 16 16"
+      fill="none"
+      className="mt-px shrink-0"
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="8" r="6.4" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M8 7.2v4M8 4.9v.9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/**
+ * A fixed set of 8, never a free color picker (spec, "Profile hero and
+ * theme"). Layout follows artboard K (AdminTheme): heading, the eight
+ * swatch cards, the "No cover photo yet?" panel, the frame note, and a
+ * live preview column on wide screens (stacked underneath on a phone).
+ */
 export function ThemePicker({
   memberId,
   currentTheme,
+  businessName,
+  city,
+  state,
+  tagline,
 }: {
   memberId: string;
   currentTheme: MemberThemeName;
+  /** Preview-only: shown in the live preview card. */
+  businessName?: string | null;
+  city?: string | null;
+  state?: string | null;
+  tagline?: string | null;
 }) {
   const [selected, setSelected] = useState(currentTheme);
   const [error, setError] = useState<string | undefined>(undefined);
@@ -77,35 +127,148 @@ export function ThemePicker({
     }
   }
 
+  const selectedHex = getMemberThemeHex(selected);
+  const place = [city, state].filter(Boolean).join(", ");
+  const name = businessName?.trim() || "Your business";
+
   return (
-    <section>
-      <h2 className="text-lg font-medium text-foreground">Theme</h2>
-      <p className="text-xs text-muted-foreground">
-        Colours your primary button, highlights, and cover band when there's no cover photo.
-      </p>
-      <div role="radiogroup" aria-label="Member theme" className="mt-3 grid grid-cols-4 gap-3">
-        {MEMBER_THEMES.map((theme) => (
-          <button
-            key={theme.name}
-            type="button"
-            role="radio"
-            aria-checked={selected === theme.name}
-            aria-label={theme.label}
-            className={`flex h-16 w-full flex-col items-center justify-center gap-1 rounded-md border-2 text-xs text-white ${
-              selected === theme.name ? "border-foreground" : "border-transparent"
-            }`}
-            style={{ backgroundColor: theme.hex }}
-            onClick={() => void onSelect(theme.name)}
-          >
-            {selected === theme.name && "✓"}
-          </button>
-        ))}
+    <div className="flex flex-col gap-8 lg:flex-row">
+      <div className="flex min-w-0 flex-1 flex-col gap-6">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="font-display text-[27px] font-bold leading-tight text-ink">Theme</h1>
+          <p className="text-pretty text-[13px] text-ink-muted">
+            Pick the colour that carries your buttons, highlights and cover fallback. Every option
+            is checked for legibility, so none of them can make your page hard to read.
+          </p>
+        </div>
+
+        <fieldset className="m-0 grid min-w-0 grid-cols-2 gap-3 border-0 p-0 sm:grid-cols-4">
+          <legend className="mb-3 p-0 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
+            Eight themes
+          </legend>
+          {MEMBER_THEMES.map((theme) => {
+            const checked = selected === theme.name;
+            const inputId = `theme-${theme.name}`;
+            return (
+              <label
+                key={theme.name}
+                htmlFor={inputId}
+                className={`flex cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ink has-[:focus-visible]:ring-offset-2 ${
+                  checked ? "border-2 border-ink" : "border border-canvas-border"
+                }`}
+              >
+                <span
+                  className="flex h-[54px] items-start justify-end p-[7px]"
+                  style={{ backgroundColor: theme.hex }}
+                >
+                  {checked && <CheckBadge color={theme.hex} />}
+                </span>
+                <span className="flex min-h-11 items-center gap-[9px] px-3 py-2.5">
+                  <input
+                    type="radio"
+                    id={inputId}
+                    name="member-theme"
+                    value={theme.name}
+                    checked={checked}
+                    onChange={() => void onSelect(theme.name)}
+                    className="size-4 shrink-0 accent-ink focus-visible:outline-none"
+                  />
+                  <span className={`text-[13px] text-ink ${checked ? "font-semibold" : ""}`}>
+                    {theme.label}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </fieldset>
+
+        {error && (
+          <p role="alert" className="-mt-3 text-[13px] text-danger">
+            {error}
+          </p>
+        )}
+
+        <div className="flex flex-col gap-3.5 rounded-[13px] bg-canvas-2 p-5">
+          <div className="flex flex-col gap-[5px]">
+            <p className="text-sm font-semibold text-ink">No cover photo yet?</p>
+            <p className="text-xs leading-normal text-ink-muted">
+              Your theme fills the cover band instead, so your page still looks finished. Add a
+              photo whenever you have one.
+            </p>
+          </div>
+          <div className="flex gap-3" aria-hidden="true">
+            {COVER_FALLBACK_EXAMPLES.map((name) => (
+              <div
+                key={name}
+                className="h-[62px] flex-1 rounded-[9px]"
+                style={{ backgroundColor: getMemberThemeHex(name) }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3 rounded-[11px] border border-canvas-border px-[17px] py-[15px] text-ink-muted">
+          <InfoIcon />
+          <p className="text-pretty text-xs leading-normal text-ink">
+            The Guild's own dark frame stays the same on every profile. Your theme colours what sits
+            inside it, so the directory still reads as one site.
+          </p>
+        </div>
       </div>
-      {error && (
-        <p role="alert" className="mt-2 text-xs text-danger">
-          {error}
+
+      <div className="flex w-full max-w-[320px] shrink-0 flex-col gap-3 lg:w-[320px]">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
+          Live preview
         </p>
-      )}
-    </section>
+
+        <div className="overflow-hidden rounded-2xl bg-[#171410] pb-3.5" aria-hidden="true">
+          <div className="flex h-[38px] items-center px-3.5">
+            <span className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#B6AC9D]">
+              ISC Brewers Guild
+            </span>
+          </div>
+          <div className="mx-2 flex flex-col rounded-2xl bg-canvas">
+            <div
+              className="h-[110px] rounded-t-2xl transition-colors"
+              style={{ backgroundColor: selectedHex }}
+            />
+            <div className="flex flex-col gap-3 px-3.5 pb-4">
+              <div className="-mt-6 flex items-end gap-2.5">
+                <div className="flex size-14 shrink-0 items-center justify-center rounded-[13px] border-[3px] border-canvas bg-white font-display text-lg font-bold text-ink-subtle">
+                  {name.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex min-w-0 flex-col gap-[3px] pb-0.5">
+                  <span className="truncate font-display text-lg font-bold leading-[1.1] text-ink">
+                    {name}
+                  </span>
+                  {place && <span className="text-[11px] text-ink-muted">{place}</span>}
+                </div>
+              </div>
+              {tagline && <p className="text-xs leading-[1.45] text-[#3A332C]">{tagline}</p>}
+              <div className="flex flex-col gap-2 rounded-[12px] bg-ink px-3.5 py-[13px]">
+                <span className="font-display text-lg font-bold leading-none text-canvas">
+                  Open now
+                </span>
+                <div className="flex gap-2">
+                  <span
+                    className="flex h-9 flex-1 items-center justify-center rounded-[9px] text-xs font-semibold text-white transition-colors"
+                    style={{ backgroundColor: selectedHex }}
+                  >
+                    Directions
+                  </span>
+                  <span className="flex h-9 flex-1 items-center justify-center rounded-[9px] border border-[#4A4238] text-xs text-canvas">
+                    Call
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-[11px] leading-normal text-ink-subtle">
+          Updates as you pick. Nothing changes on your live page until you publish.
+        </p>
+      </div>
+    </div>
   );
 }

@@ -17,6 +17,8 @@ function InquiriesRoute() {
   const navigate = Route.useNavigate();
   return (
     <InquiriesTable
+      // Remount per filter so the newest inquiry in each view opens expanded.
+      key={filter}
       inquiries={inquiries}
       filter={filter}
       onFilterChange={(next) => navigate({ search: { filter: next } })}

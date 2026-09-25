@@ -1,19 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHero } from "@/components/site/PageHero";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useState, type FormEvent } from "react";
-import { Mail, MapPin, Phone } from "lucide-react";
-import heroImg from "@/assets/hero-about.jpg";
 import { submitContactForm } from "@/lib/contact/submit-contact-form.server";
 import {
   validateContactFormInput,
   type ContactFormFieldErrors,
 } from "@/lib/contact/contact-form-validation";
 import { GUILD_NOTIFICATION_EMAIL } from "@/lib/email/build-email-content";
+import {
+  CanvasCard,
+  CanvasHeading,
+  CheckCard,
+  IconTile,
+  InstagramIcon,
+  MailIcon,
+  NoticeBox,
+  fieldErrorClass,
+  hintClass,
+  inputClass,
+  labelClass,
+  leadClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+  textareaClass,
+} from "@/components/public-forms/PublicFormParts";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -27,13 +36,22 @@ export const Route = createFileRoute("/contact")({
   component: ContactPage,
 });
 
+const GUILD_INSTAGRAM_URL = "https://www.instagram.com/iebrewers/";
+const GUILD_INSTAGRAM_HANDLE = "@iebrewers";
+
 const EMPTY_FORM = { name: "", email: "", phone: "", message: "", wantsMembershipInfo: false, honeypot: "" };
 
+/**
+ * Artboard O (docs/design/artboards/ContactForm.dc.html). A public page, so
+ * the site header/footer stay (the artboard shows the site's menu button);
+ * the form sits on a light card on the dark site ground.
+ */
 function ContactPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<ContactFormFieldErrors>({});
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [formError, setFormError] = useState<string | null>(null);
+  const [sentWithMembership, setSentWithMembership] = useState(false);
 
   function validateField(field: keyof ContactFormFieldErrors) {
     const result = validateContactFormInput(form);
@@ -69,6 +87,7 @@ function ContactPage() {
         return;
       }
 
+      setSentWithMembership(form.wantsMembershipInfo);
       setStatus("sent");
       setForm(EMPTY_FORM);
     } catch {
@@ -77,68 +96,66 @@ function ContactPage() {
     }
   };
 
+  const describedBy = (...ids: Array<string | false | undefined>) => ids.filter(Boolean).join(" ") || undefined;
+
   return (
-    <>
-      <PageHero
-        image={heroImg}
-        eyebrow="Contact"
-        title="Get in touch."
-        subtitle="Membership, press, sponsorship, or just hello — we'd love to hear from you."
-        minHeight="min-h-[45vh]"
-      />
-
-      <section className="mx-auto grid max-w-6xl gap-12 px-4 py-20 md:grid-cols-[1fr_2fr] md:px-6">
-        <aside className="space-y-6">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-widest text-primary">Email</div>
-            <p className="mt-1 inline-flex items-center gap-2 text-foreground">
-              <Mail className="h-4 w-4" /> {GUILD_NOTIFICATION_EMAIL}
-            </p>
-          </div>
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-widest text-primary">Phone</div>
-            <p className="mt-1 inline-flex items-center gap-2 text-foreground"><Phone className="h-4 w-4" /> (555) 555-0142</p>
-          </div>
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-widest text-primary">Mailing</div>
-            <p className="mt-1 inline-flex items-start gap-2 text-foreground"><MapPin className="mt-0.5 h-4 w-4" /> 123 Brewery Row<br />Anytown, USA 90000</p>
-          </div>
-        </aside>
-
+    <section className="bg-bg px-2.5 pb-16 pt-6 font-sans sm:px-6 sm:pb-24 sm:pt-12">
+      <div className="mx-auto w-full max-w-[640px]">
         {status === "sent" ? (
-          <div role="status" className="flex flex-col items-start justify-center rounded-lg border border-border bg-card p-6 md:p-8">
-            <h2 className="font-display text-2xl text-foreground">Thanks for reaching out.</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              We've received your message and sent a confirmation to your email.
-            </p>
-            <Button type="button" className="mt-6 h-11" onClick={() => setStatus("idle")}>
+          <CanvasCard className="gap-[18px]">
+            <IconTile>
+              <MailIcon />
+            </IconTile>
+            <div className="flex flex-col gap-[9px]" role="status">
+              <CanvasHeading>Thanks — your message is on its way</CanvasHeading>
+              <p className={leadClass}>
+                We've received it and sent a confirmation to your email.{" "}
+                {sentWithMembership
+                  ? "A Guild representative will get in touch to talk through membership."
+                  : "Someone from the Guild will come back to you."}
+              </p>
+            </div>
+            <button type="button" className={secondaryButtonClass} onClick={() => setStatus("idle")}>
               Send another message
-            </Button>
-          </div>
+            </button>
+          </CanvasCard>
         ) : (
-          <form onSubmit={onSubmit} className="space-y-4 rounded-lg border border-border bg-card p-6 md:p-8" noValidate>
-            {/* Honeypot: a hidden field a real visitor never sees or fills, that a
-                form-filling bot often does. aria-hidden + tabIndex={-1} keep it out
-                of the tab order and off screen readers entirely (this plan's
-                Decision 2). */}
-            <div aria-hidden="true" className="absolute -left-[9999px] top-auto h-0 w-0 overflow-hidden">
-              <label htmlFor="company">Company</label>
-              <input
-                id="company"
-                name="company"
-                type="text"
-                tabIndex={-1}
-                autoComplete="off"
-                value={form.honeypot}
-                onChange={(e) => setForm({ ...form, honeypot: e.target.value })}
-              />
+          <CanvasCard>
+            <div className="flex flex-col gap-[9px]">
+              <CanvasHeading>Get in touch</CanvasHeading>
+              <p className={leadClass}>
+                Questions about the Guild, our members, or joining us? Send a note and someone will come
+                back to you.
+              </p>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
+            <form onSubmit={onSubmit} className="relative flex flex-col gap-[22px]" noValidate>
+              {/* Honeypot: a hidden field a real visitor never sees or fills, that a
+                  form-filling bot often does. aria-hidden + tabIndex={-1} keep it out
+                  of the tab order and off screen readers entirely (this plan's
+                  Decision 2). */}
+              <div aria-hidden="true" className="absolute -left-[9999px] top-auto h-0 w-0 overflow-hidden">
+                <label htmlFor="company">Company</label>
+                <input
+                  id="company"
+                  name="company"
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={form.honeypot}
+                  onChange={(e) => setForm({ ...form, honeypot: e.target.value })}
+                />
+              </div>
+
+              <div className="flex flex-col gap-[7px]">
+                <label htmlFor="name" className={labelClass}>
+                  Your name
+                </label>
+                <input
                   id="name"
+                  name="name"
+                  type="text"
+                  autoComplete="name"
                   required
                   maxLength={200}
                   value={form.name}
@@ -146,97 +163,138 @@ function ContactPage() {
                   onBlur={() => validateField("name")}
                   aria-invalid={Boolean(fieldErrors.name)}
                   aria-describedby={fieldErrors.name ? "name-error" : undefined}
-                  className="h-11 bg-background"
+                  className={inputClass}
                 />
                 {fieldErrors.name && (
-                  <p id="name-error" role="alert" className="text-sm text-destructive">
+                  <p id="name-error" role="alert" className={fieldErrorClass}>
                     {fieldErrors.name}
                   </p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
+
+              <div className="flex flex-col gap-[7px]">
+                <label htmlFor="email" className={labelClass}>
+                  Email
+                </label>
+                <input
                   id="email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
+                  inputMode="email"
                   required
                   maxLength={320}
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   onBlur={() => validateField("email")}
                   aria-invalid={Boolean(fieldErrors.email)}
-                  aria-describedby={fieldErrors.email ? "email-error" : undefined}
-                  className="h-11 bg-background"
+                  aria-describedby={describedBy("email-hint", fieldErrors.email && "email-error")}
+                  className={inputClass}
                 />
+                <p id="email-hint" className={hintClass}>
+                  We'll send a confirmation here.
+                </p>
                 {fieldErrors.email && (
-                  <p id="email-error" role="alert" className="text-sm text-destructive">
+                  <p id="email-error" role="alert" className={fieldErrorClass}>
                     {fieldErrors.email}
                   </p>
                 )}
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone (optional)</Label>
-              <Input
-                id="phone"
-                type="tel"
-                maxLength={32}
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                onBlur={() => validateField("phone")}
-                aria-invalid={Boolean(fieldErrors.phone)}
-                aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
-                className="h-11 bg-background"
-              />
-              {fieldErrors.phone && (
-                <p id="phone-error" role="alert" className="text-sm text-destructive">
-                  {fieldErrors.phone}
-                </p>
-              )}
-            </div>
+              <div className="flex flex-col gap-[7px]">
+                <label htmlFor="phone" className={labelClass}>
+                  Phone <span className="font-normal text-ink-muted">(optional)</span>
+                </label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  maxLength={32}
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  onBlur={() => validateField("phone")}
+                  aria-invalid={Boolean(fieldErrors.phone)}
+                  aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
+                  className={inputClass}
+                />
+                {fieldErrors.phone && (
+                  <p id="phone-error" role="alert" className={fieldErrorClass}>
+                    {fieldErrors.phone}
+                  </p>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="message">Message</Label>
-              <Textarea
-                id="message"
-                rows={6}
-                required
-                maxLength={5000}
-                value={form.message}
-                onChange={(e) => setForm({ ...form, message: e.target.value })}
-                onBlur={() => validateField("message")}
-                aria-invalid={Boolean(fieldErrors.message)}
-                aria-describedby={fieldErrors.message ? "message-error" : undefined}
-                className="bg-background"
-              />
-              {fieldErrors.message && (
-                <p id="message-error" role="alert" className="text-sm text-destructive">
-                  {fieldErrors.message}
-                </p>
-              )}
-            </div>
+              <div className="flex flex-col gap-[7px]">
+                <label htmlFor="message" className={labelClass}>
+                  What's on your mind?
+                </label>
+                <textarea
+                  id="message"
+                  name="message"
+                  rows={5}
+                  required
+                  maxLength={5000}
+                  value={form.message}
+                  onChange={(e) => setForm({ ...form, message: e.target.value })}
+                  onBlur={() => validateField("message")}
+                  aria-invalid={Boolean(fieldErrors.message)}
+                  aria-describedby={fieldErrors.message ? "message-error" : undefined}
+                  className={textareaClass}
+                />
+                {fieldErrors.message && (
+                  <p id="message-error" role="alert" className={fieldErrorClass}>
+                    {fieldErrors.message}
+                  </p>
+                )}
+              </div>
 
-            <label className="flex min-h-11 items-center gap-2 text-sm text-foreground">
-              <Checkbox
+              <CheckCard
+                id="membership-interest"
+                tone="accent"
                 checked={form.wantsMembershipInfo}
-                onCheckedChange={(checked) => setForm({ ...form, wantsMembershipInfo: checked === true })}
+                onChange={(checked) => setForm({ ...form, wantsMembershipInfo: checked })}
+                title="I want to learn more about becoming a member"
+                description="A Guild representative will get in touch to talk through membership."
               />
-              I want to learn more about becoming a member
-            </label>
 
-            {status === "error" && formError && (
-              <p role="alert" className="text-sm text-destructive">
-                {formError}
-              </p>
-            )}
+              {status === "error" && formError && <NoticeBox tone="danger">{formError}</NoticeBox>}
 
-            <Button type="submit" size="lg" disabled={status === "sending"} className="h-11">
-              {status === "sending" ? "Sending…" : "Send message"}
-            </Button>
-          </form>
+              <div className="flex flex-col gap-3">
+                <button type="submit" disabled={status === "sending"} className={primaryButtonClass}>
+                  {status === "sending" ? "Sending…" : "Send"}
+                </button>
+                <p className="text-xs leading-[1.55] text-ink-muted text-pretty">
+                  We use what you send here only to reply to you. Nothing is shared with our members or
+                  anyone else.
+                </p>
+              </div>
+            </form>
+
+            <div className="flex flex-col gap-[9px] border-t border-canvas-border pt-[18px]">
+              <h2 className="font-sans text-[10px] font-semibold normal-case tracking-[0.15em] text-ink-muted">
+                RATHER NOT USE A FORM?
+              </h2>
+              <a
+                href={`mailto:${GUILD_NOTIFICATION_EMAIL}`}
+                className="flex min-h-11 items-center gap-[11px] text-[15px] text-ink no-underline hover:text-brand"
+              >
+                <MailIcon size={17} />
+                <span className="break-all">{GUILD_NOTIFICATION_EMAIL}</span>
+              </a>
+              <a
+                href={GUILD_INSTAGRAM_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="flex min-h-11 items-center gap-[11px] text-[15px] text-ink no-underline hover:text-brand"
+              >
+                <InstagramIcon />
+                {GUILD_INSTAGRAM_HANDLE} on Instagram
+              </a>
+            </div>
+          </CanvasCard>
         )}
-      </section>
-    </>
+      </div>
+    </section>
   );
 }

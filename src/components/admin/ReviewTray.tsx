@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { approvePendingMedia, rejectPendingMedia } from "@/lib/media/review-tray.server";
 import type { MediaAssetRow } from "@/lib/supabase/types";
-import { Button } from "@/components/ui/button";
 
 /**
  * Re-inserts a single asset back into whatever the CURRENT pending list
@@ -78,16 +77,33 @@ export function ReviewTray({ initialPending }: { initialPending: MediaAssetRow[]
   if (pending.length === 0) return null;
 
   return (
-    <section aria-label="Pending review">
-      <h2 className="text-lg font-medium text-foreground">Waiting for your review ({pending.length})</h2>
+    <section
+      id="review-tray"
+      aria-labelledby="review-tray-heading"
+      className="flex scroll-mt-24 flex-col gap-3"
+    >
+      <div className="flex flex-col gap-1">
+        <h2
+          id="review-tray-heading"
+          className="font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted"
+        >
+          Waiting for your review ({pending.length})
+        </h2>
+        <p className="text-[12px] leading-[1.5] text-ink-muted">
+          Sent in with your upload link. Nothing shows on your profile until you approve it.
+        </p>
+      </div>
       {error && (
-        <p role="alert" className="mt-2 text-sm text-danger">
+        <p role="alert" className="text-[12px] text-danger">
           {error}
         </p>
       )}
-      <ul className="mt-3 space-y-3">
+      <ul className="flex flex-col gap-2.5">
         {pending.map((asset) => (
-          <li key={asset.id} className="flex items-center gap-3 rounded-md border border-border p-3">
+          <li
+            key={asset.id}
+            className="flex flex-wrap items-center gap-3.5 rounded-[12px] border border-canvas-border bg-white p-3.5 sm:flex-nowrap"
+          >
             {/* Served through /api/admin-media, NOT /api/member-media -- that
                 other route only serves an asset once it's `review_status:
                 'approved'` AND assigned to a published member's logo/cover/
@@ -99,19 +115,31 @@ export function ReviewTray({ initialPending }: { initialPending: MediaAssetRow[]
             <img
               src={`/api/admin-media/${asset.id}`}
               alt=""
-              className="h-16 w-16 rounded-md object-cover"
+              className="h-16 w-16 shrink-0 rounded-[9px] bg-canvas-2 object-cover"
             />
-            <div className="flex-1 text-sm">
-              <p>From {asset.creator_name ?? "someone with your upload link"}</p>
-              <p className="text-xs text-muted-foreground">{asset.creator_credit ? "Wants credit on the profile" : "No credit requested"}</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[14px] font-semibold text-ink">
+                From {asset.creator_name ?? "someone with your upload link"}
+              </p>
+              <p className="text-[12px] text-ink-muted">
+                {asset.creator_credit ? "Wants credit on the profile" : "No credit requested"}
+              </p>
             </div>
-            <div className="flex flex-col gap-2">
-              <Button type="button" size="sm" className="h-9" onClick={() => onApprove(asset)}>
-                Approve
-              </Button>
-              <Button type="button" variant="outline" size="sm" className="h-9" onClick={() => onReject(asset)}>
+            <div className="flex w-full gap-2 sm:w-auto">
+              <button
+                type="button"
+                className="inline-flex h-11 flex-1 items-center justify-center rounded-[9px] border border-[#D3CBBD] bg-canvas px-4 text-[13px] font-medium text-ink transition-colors hover:bg-canvas-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:flex-none"
+                onClick={() => onReject(asset)}
+              >
                 Reject
-              </Button>
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-11 flex-1 items-center justify-center rounded-[9px] bg-ink px-[18px] text-[13px] font-semibold text-[#F9F6F0] transition-colors hover:bg-[#3A332C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 sm:flex-none"
+                onClick={() => onApprove(asset)}
+              >
+                Approve
+              </button>
             </div>
           </li>
         ))}
