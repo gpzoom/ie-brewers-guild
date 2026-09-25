@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveRecipient } from "./resolve-recipient.server";
-import { GUILD_NOTIFICATION_EMAIL } from "./build-email-content";
+import { GUILD_NOTIFICATION_EMAIL, STAGING_GUILD_NOTIFICATION_EMAIL } from "./build-email-content";
 
 function fakeSupabase(opts: {
   memberUser: { user_id: string } | null;
@@ -75,6 +75,36 @@ describe("resolveRecipient", () => {
       supabase,
     );
     expect(to).toBe(GUILD_NOTIFICATION_EMAIL);
+  });
+
+  it("Guild-bound emails sent from the staging site go to the staging test inbox", async () => {
+    const supabase = fakeSupabase({ memberUser: { user_id: "u1" }, userEmail: "owner@example.com" });
+    const to = await resolveRecipient(
+      { trigger: "member_type_changed_in_setup", memberId: "m1", memberName: "Hop House", oldType: "producer", newType: "allied" },
+      supabase,
+      "https://ie-brewers-guild-staging.boblelle77.workers.dev",
+    );
+    expect(to).toBe(STAGING_GUILD_NOTIFICATION_EMAIL);
+  });
+
+  it("Guild-bound emails from production (or anywhere else) go to the real Guild inbox", async () => {
+    const supabase = fakeSupabase({ memberUser: { user_id: "u1" }, userEmail: "owner@example.com" });
+    for (const siteUrl of ["https://iscbrewersguild.org", "https://ie-brewers-guild.boblelle77.workers.dev", null]) {
+      const to = await resolveRecipient(
+        {
+          trigger: "contact_form_submitted",
+          inquiryId: "i1",
+          name: "Jo",
+          email: "jo@example.com",
+          phone: null,
+          message: null,
+          wantsMembershipInfo: false,
+        },
+        supabase,
+        siteUrl,
+      );
+      expect(to).toBe(GUILD_NOTIFICATION_EMAIL);
+    }
   });
 
   it("creator_upload_pending resolves the first member_users owner's real email", async () => {

@@ -59,7 +59,8 @@ function currentRequestUrl(): string | null {
 
 export async function sendTransactionalEmail(payload: TransactionalEmailPayload): Promise<void> {
   const supabase = await getSupabaseServiceRoleClient();
-  const to = await resolveRecipient(payload, supabase);
+  const siteUrl = resolveEmailSiteUrl(currentRequestUrl());
+  const to = await resolveRecipient(payload, supabase, siteUrl);
 
   if (!to) {
     const memberIdNote = "memberId" in payload ? ` (memberId: ${payload.memberId})` : "";
@@ -74,7 +75,7 @@ export async function sendTransactionalEmail(payload: TransactionalEmailPayload)
     throw new Error("Missing RESEND_API_KEY in the Worker environment.");
   }
 
-  const content = buildEmailContent(payload, resolveEmailSiteUrl(currentRequestUrl()));
+  const content = buildEmailContent(payload, siteUrl);
 
   const response = await fetch(RESEND_API_URL, {
     method: "POST",

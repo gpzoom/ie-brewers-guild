@@ -48,6 +48,28 @@ export type EmailContent = { subject: string; html: string; text: string };
  */
 export const GUILD_NOTIFICATION_EMAIL = "iscbrewersguild@gmail.com";
 
+/**
+ * Where Guild notifications go when they're sent from the STAGING site
+ * (owner's request, 2026-09-26), so testing never lands in the real Guild
+ * inbox. The public contact address shown on the site is unchanged.
+ */
+export const STAGING_GUILD_NOTIFICATION_EMAIL = "boblelle77+iscadmin@gmail.com";
+const STAGING_HOST = "ie-brewers-guild-staging.boblelle77.workers.dev";
+
+/**
+ * The Guild inbox for the site an email is being sent from: the staging
+ * inbox for the staging Worker, the real Guild inbox for everything else
+ * (production, local dev, and sends with no request such as the cron).
+ */
+export function guildInboxFor(siteUrl: string | null): string {
+  if (!siteUrl) return GUILD_NOTIFICATION_EMAIL;
+  try {
+    return new URL(siteUrl).hostname === STAGING_HOST ? STAGING_GUILD_NOTIFICATION_EMAIL : GUILD_NOTIFICATION_EMAIL;
+  } catch {
+    return GUILD_NOTIFICATION_EMAIL;
+  }
+}
+
 /** The Guild's real domain, confirmed against the spec and this session's own research. */
 export const SITE_URL = "https://iscbrewersguild.org";
 

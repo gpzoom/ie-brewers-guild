@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { GUILD_NOTIFICATION_EMAIL, type TransactionalEmailPayload } from "@/lib/email/build-email-content";
+import { guildInboxFor, type TransactionalEmailPayload } from "@/lib/email/build-email-content";
 
 /**
  * "The member" in the spec's transactional-email table, for a trigger whose
@@ -28,9 +28,15 @@ async function resolveMemberOwnerEmail(supabase: SupabaseClient, memberId: strin
   return userData.user.email;
 }
 
+/**
+ * `siteUrl` is the site the email is being sent from (send.ts passes
+ * resolveEmailSiteUrl's result); Guild-bound triggers use that site's inbox
+ * (guildInboxFor -- the staging site has its own test inbox).
+ */
 export async function resolveRecipient(
   payload: TransactionalEmailPayload,
   supabase: SupabaseClient,
+  siteUrl: string | null = null,
 ): Promise<string | null> {
   switch (payload.trigger) {
     case "member_invited":
@@ -39,7 +45,7 @@ export async function resolveRecipient(
       return payload.email;
     case "contact_form_submitted":
     case "member_type_changed_in_setup":
-      return GUILD_NOTIFICATION_EMAIL;
+      return guildInboxFor(siteUrl);
     case "creator_upload_pending":
     case "hours_stale":
       return resolveMemberOwnerEmail(supabase, payload.memberId);
