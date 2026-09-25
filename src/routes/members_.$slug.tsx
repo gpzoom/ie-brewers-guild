@@ -116,9 +116,11 @@ function MemberProfilePage() {
   const { isGuildAdmin } = rootRoute.useLoaderData();
   return (
     <>
-      {data.isPreview && (
+      {(data.isPreview || data.isImpersonatingThisMember || data.viewerIsEditor) && (
         <ProfilePreviewBanner
-          isImpersonatedPreview={data.isImpersonatedPreview}
+          isPreview={data.isPreview}
+          isImpersonating={data.isImpersonatingThisMember}
+          viewerIsEditor={data.viewerIsEditor}
           viewerIsGuildAdmin={isGuildAdmin}
         />
       )}

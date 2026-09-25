@@ -59,6 +59,11 @@ export type MemberProfileData = {
   // banner (with its "Stop" control) from a member editor plainly
   // previewing their own unpublished row.
   isImpersonatedPreview: boolean;
+  // True when a Guild admin is impersonating THIS member, published or not.
+  isImpersonatingThisMember: boolean;
+  // True when the signed-in viewer is one of this member's own editors
+  // (member_users link), published or not. False while impersonating.
+  viewerIsEditor: boolean;
 };
 
 type GetMemberProfileInput = {
@@ -125,8 +130,25 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
 
     const typedMember = member as MemberRow;
     const isPreview = typedMember.status !== "published";
-    const impersonation = isPreview ? await readImpersonationState() : null;
-    const isImpersonatedPreview = Boolean(impersonation && impersonation.memberId === typedMember.id);
+    // Checked for published profiles too (not just previews), so whoever can
+    // edit this profile -- an impersonating Guild admin or the member's own
+    // editor -- always gets a "Back to editing" way out of the public page.
+    const impersonation = sessionUser?.user ? await readImpersonationState() : null;
+    const isImpersonatingThisMember = Boolean(impersonation && impersonation.memberId === typedMember.id);
+    const isImpersonatedPreview = isPreview && isImpersonatingThisMember;
+    let viewerIsEditor = false;
+    if (sessionUser?.user && !isImpersonatingThisMember) {
+      // RLS ("member_users: users can read their own links") lets a signed-in
+      // user see only their own rows, so a hit here means they edit this member.
+      const { data: link } = await sessionClient
+        .from("member_users")
+        .select("member_id")
+        .eq("member_id", typedMember.id)
+        .eq("user_id", sessionUser.user.id)
+        .limit(1)
+        .maybeSingle();
+      viewerIsEditor = Boolean(link);
+    }
 
     const [
       { data: hours },
@@ -317,5 +339,7 @@ export const getMemberProfileData = createServerFn({ method: "GET" })
       now: now.toISOString(),
       isPreview,
       isImpersonatedPreview,
+      isImpersonatingThisMember,
+      viewerIsEditor,
     };
   });
