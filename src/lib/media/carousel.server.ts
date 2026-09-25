@@ -1,12 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
-import { initialCropForAspect } from "@/lib/media/crop-interaction";
+import { CAROUSEL_ASPECT, initialCropForAspect } from "@/lib/media/crop-interaction";
 import { validateLinkUrl } from "@/lib/links/url-safety";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { CarouselSlideRow, MediaAssetRow } from "@/lib/supabase/types";
 import type { CropRect } from "@/lib/media/crop";
-
-const CAROUSEL_ASPECT = 4 / 5;
 
 export const listCarouselSlides = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => data)

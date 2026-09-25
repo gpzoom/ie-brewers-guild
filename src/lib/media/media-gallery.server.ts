@@ -3,7 +3,9 @@ import { fileTypeFromBuffer } from "file-type";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { validateUploadedImage } from "@/lib/media/validate-file";
 import { stripImageMetadata } from "@/lib/media/strip-exif";
-import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
+import { resolveImageDimensions } from "@/lib/media/image-dimensions";
+import { recordAuditLogIfImpersonating, type AuditableAction } from "@/lib/guild/audit-log.server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MediaAssetRow } from "@/lib/supabase/types";
 
 export const listMemberMedia = createServerFn({ method: "GET" })
@@ -130,6 +132,10 @@ export const uploadMemberMedia = createServerFn({ method: "POST" })
     }
 
     const storagePath = `${memberId}/${crypto.randomUUID()}-${sanitizeFilename(file.name)}`;
+    // See image-dimensions.ts: read from the stored (stripped) bytes, with
+    // the browser-measured values as a fallback. Without these, every crop
+    // computed for this photo falls back to the full-image rectangle.
+    const dimensions = resolveImageDimensions(stripped, formData);
 
     const { error: uploadError } = await supabase.storage
       .from("member-media")
@@ -144,6 +150,8 @@ export const uploadMemberMedia = createServerFn({ method: "POST" })
         kind: "image",
         mime_type: validation.detectedMimeType,
         byte_size: stripped.byteLength,
+        width: dimensions?.width ?? null,
+        height: dimensions?.height ?? null,
         original_filename: file.name,
         source: "member_upload",
         uploaded_by_user_id: userData.user.id,
@@ -163,65 +171,118 @@ export const uploadMemberMedia = createServerFn({ method: "POST" })
     return row as MediaAssetRow;
   });
 
+type AuditRecorder = (params: {
+  memberId: string;
+  tableName: string;
+  rowId: string | null;
+  action: AuditableAction;
+}) => Promise<void>;
+
+export type DeleteMemberMediaResult = { ok: true; fileRemoved: boolean; removedSlideIds: string[] };
+
+/**
+ * The testable core of deleteMemberMedia (the createServerFn export below
+ * just injects the real client + audit recorder -- see
+ * member-email.server.ts for why the logic lives outside the wrapper).
+ *
+ * `carousel_slides.asset_id -> media_assets(id)` is ON DELETE RESTRICT, so
+ * deleting a gallery photo that's in the carousel used to fail outright
+ * with a raw FK error. Owner decision: deleting the photo removes it from
+ * the carousel too. So this first looks the asset up (RLS-scoped -- an
+ * asset the caller can't see reads as "no permission"), deletes THAT
+ * member's carousel_slides rows pointing at it (audit-logging each), and
+ * only then deletes the asset. There's no transaction over PostgREST: if
+ * the asset delete then fails, the slides are already gone -- acceptable,
+ * since the member was deleting the photo anyway and the UI warned them
+ * it would leave the carousel. cover_asset_id / og_image_asset_id /
+ * logo_asset_id are ON DELETE SET NULL, so they need nothing here.
+ */
+export async function deleteMediaAssetCore(
+  assetId: string,
+  supabase: SupabaseClient,
+  recordAudit: AuditRecorder,
+): Promise<DeleteMemberMediaResult> {
+  const { data: asset, error: lookupError } = await supabase
+    .from("media_assets")
+    .select("id, member_id")
+    .eq("id", assetId)
+    .maybeSingle();
+  if (lookupError) throw new Error(lookupError.message);
+  if (!asset) {
+    throw new Error("Delete failed — you may not have permission to remove this photo.");
+  }
+  const memberId = asset.member_id as string;
+
+  const { data: removedSlides, error: slidesError } = await supabase
+    .from("carousel_slides")
+    .delete()
+    .eq("asset_id", assetId)
+    .eq("member_id", memberId)
+    .select("id");
+  if (slidesError) throw new Error(slidesError.message);
+  const removedSlideIds = (removedSlides ?? []).map((slide) => slide.id as string);
+  for (const slideId of removedSlideIds) {
+    await recordAudit({ memberId, tableName: "carousel_slides", rowId: slideId, action: "delete" });
+  }
+
+  // Delete the DB row first, then the storage object -- and check the
+  // row count, not just `error`. PostgREST reports an RLS-denied delete
+  // as SUCCESS with zero rows affected, not as an `error` (the same
+  // gotcha member-basics.server.ts's and hours-editor.server.ts's own
+  // `.select("id")` + row-count checks already guard against). Without
+  // this check, a delete blocked by RLS (e.g. someone else's asset id)
+  // would silently report `{ ok: true }` -- which is exactly the case
+  // MediaGallery.tsx's optimistic UI removal needs a real failure signal
+  // for, so it can roll the asset back into view instead of leaving it
+  // permanently (and wrongly) hidden. Removing the DB row before the
+  // storage object also avoids the reverse inconsistency: if the delete
+  // is blocked, the file is never removed out from under a row that
+  // still exists.
+  //
+  // Reads `storage_path` back from the just-deleted row rather than
+  // trusting a client-supplied path -- a caller could otherwise send
+  // `{ id: assetX.id, storagePath: assetY.storage_path }` and delete X's
+  // DB row while removing Y's file. Not cross-tenant exploitable (RLS
+  // still confines the storage remove to the caller's own folder), but
+  // there's no reason to accept a path the server already knows.
+  const { data: deleted, error } = await supabase
+    .from("media_assets")
+    .delete()
+    .eq("id", assetId)
+    .select("id, storage_path, member_id");
+  if (error) throw new Error(error.message);
+  if (!deleted || deleted.length === 0) {
+    throw new Error("Delete failed — you may not have permission to remove this photo.");
+  }
+
+  await recordAudit({
+    memberId: deleted[0].member_id as string,
+    tableName: "media_assets",
+    rowId: assetId,
+    action: "delete",
+  });
+
+  // storage.remove() returns { data, error } -- it does NOT throw on
+  // failure (an RLS-filtered-to-zero-rows removal or a transient storage
+  // error both come back as a normal, non-throwing result). The DB row
+  // is already gone by this point, so a failure here must NOT be
+  // surfaced as a thrown error: MediaGallery.tsx's catch block restores
+  // a deleted asset to the list on failure, and the asset's record is
+  // genuinely, permanently gone -- resurrecting its tile would be worse
+  // than the orphaned-file problem this is actually reporting. Return a
+  // distinguishable, non-fatal result instead so the caller can show a
+  // non-blocking notice without touching the (correctly, already
+  // updated) list.
+  const { error: removeError } = await supabase.storage
+    .from("member-media")
+    .remove([deleted[0].storage_path as string]);
+
+  return { ok: true, fileRemoved: !removeError, removedSlideIds };
+}
+
 export const deleteMemberMedia = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data }) => {
     const supabase = await getSupabaseServerClientForRequest();
-
-    // Delete the DB row first, then the storage object -- and check the
-    // row count, not just `error`. PostgREST reports an RLS-denied delete
-    // as SUCCESS with zero rows affected, not as an `error` (the same
-    // gotcha member-basics.server.ts's and hours-editor.server.ts's own
-    // `.select("id")` + row-count checks already guard against). Without
-    // this check, a delete blocked by RLS (e.g. someone else's asset id)
-    // would silently report `{ ok: true }` -- which is exactly the case
-    // MediaGallery.tsx's optimistic UI removal needs a real failure signal
-    // for, so it can roll the asset back into view instead of leaving it
-    // permanently (and wrongly) hidden. Removing the DB row before the
-    // storage object also avoids the reverse inconsistency: if the delete
-    // is blocked, the file is never removed out from under a row that
-    // still exists.
-    //
-    // Reads `storage_path` back from the just-deleted row rather than
-    // trusting a client-supplied path -- a caller could otherwise send
-    // `{ id: assetX.id, storagePath: assetY.storage_path }` and delete X's
-    // DB row while removing Y's file. Not cross-tenant exploitable (RLS
-    // still confines the storage remove to the caller's own folder), but
-    // there's no reason to accept a path the server already knows.
-    const { data: deleted, error } = await supabase
-      .from("media_assets")
-      .delete()
-      .eq("id", data.id)
-      .select("id, storage_path, member_id");
-    if (error) throw new Error(error.message);
-    if (!deleted || deleted.length === 0) {
-      throw new Error("Delete failed — you may not have permission to remove this photo.");
-    }
-
-    await recordAuditLogIfImpersonating({
-      memberId: deleted[0].member_id as string,
-      tableName: "media_assets",
-      rowId: data.id,
-      action: "delete",
-    });
-
-    // storage.remove() returns { data, error } -- it does NOT throw on
-    // failure (an RLS-filtered-to-zero-rows removal or a transient storage
-    // error both come back as a normal, non-throwing result). The DB row
-    // is already gone by this point, so a failure here must NOT be
-    // surfaced as a thrown error: MediaGallery.tsx's catch block restores
-    // a deleted asset to the list on failure, and the asset's record is
-    // genuinely, permanently gone -- resurrecting its tile would be worse
-    // than the orphaned-file problem this is actually reporting. Return a
-    // distinguishable, non-fatal result instead so the caller can show a
-    // non-blocking notice without touching the (correctly, already
-    // updated) list.
-    const { error: removeError } = await supabase.storage
-      .from("member-media")
-      .remove([deleted[0].storage_path as string]);
-    if (removeError) {
-      return { ok: true as const, fileRemoved: false };
-    }
-
-    return { ok: true as const, fileRemoved: true };
+    return deleteMediaAssetCore(data.id, supabase, recordAuditLogIfImpersonating);
   });

@@ -2,7 +2,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { fetchMemberHoursAndSpecialHours } from "@/lib/hours/hours-editor.server";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
-import type { MemberStatus, MemberType } from "@/lib/supabase/types";
+import type { HoursRow, MemberStatus, MemberType, SpecialHoursRow } from "@/lib/supabase/types";
+
+/** Everything PublishGateDialog renders from -- see getPublishGateData below. */
+export type PublishGateData = {
+  status: MemberStatus;
+  memberType: MemberType;
+  slug: string;
+  hoursConfirmedAt: string | null;
+  hours: HoursRow[];
+  specialHours: SpecialHoursRow[];
+  appearanceStartTimes: string[];
+};
 
 /**
  * Sets status AND hours_confirmed_at together, in one update (spec: "Set it
@@ -68,7 +79,10 @@ export const unpublishMemberProfile = createServerFn({ method: "POST" })
 
 /**
  * Assembles everything PublishGateDialog needs in one call, for the admin
- * layout's own loader (Task 23 Step 3): member status/type/
+ * layout's own loader (Task 23 Step 3) AND for the dialog itself, which
+ * calls it again every time it opens so it never shows hours as of the
+ * admin layout's first load (the hours editor saves without re-running
+ * that loader): member status/type/slug/
  * hours_confirmed_at, the same hours + special_hours listHours reads (via
  * the shared fetchMemberHoursAndSpecialHours helper -- not by calling
  * listHours itself as a createServerFn from inside this handler's body,
@@ -90,13 +104,13 @@ export const unpublishMemberProfile = createServerFn({ method: "POST" })
  */
 export const getPublishGateData = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => data)
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<PublishGateData> => {
     const supabase = await getSupabaseServerClientForRequest();
 
     const [memberResult, hoursResult, eventsResult] = await Promise.all([
       supabase
         .from("members")
-        .select("status, member_type, hours_confirmed_at")
+        .select("status, member_type, slug, hours_confirmed_at")
         .eq("id", data.memberId)
         .single(),
       fetchMemberHoursAndSpecialHours(supabase, data.memberId),
@@ -111,12 +125,14 @@ export const getPublishGateData = createServerFn({ method: "GET" })
     const member = memberResult.data as {
       status: MemberStatus;
       member_type: MemberType;
+      slug: string;
       hours_confirmed_at: string | null;
     };
 
     return {
       status: member.status,
       memberType: member.member_type,
+      slug: member.slug,
       hoursConfirmedAt: member.hours_confirmed_at,
       hours: hoursResult.hours,
       specialHours: hoursResult.specialHours,

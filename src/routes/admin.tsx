@@ -21,7 +21,7 @@ export const Route = createFileRoute("/admin")({
         ? getMemberDisplayName({ data: { memberId: context.memberId } })
         : Promise.resolve(null),
     ]);
-    return { ...publishGateData, impersonatedMemberName };
+    return { publishGateData, impersonatedMemberName };
   },
   head: () => ({ meta: [{ title: "Member admin — Inland Southern California Brewers Guild" }] }),
   component: AdminLayout,
@@ -29,31 +29,13 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   const { memberId, isImpersonating } = Route.useRouteContext();
-  const {
-    status,
-    memberType,
-    hoursConfirmedAt,
-    hours,
-    specialHours,
-    appearanceStartTimes,
-    impersonatedMemberName,
-  } = Route.useLoaderData();
+  const { publishGateData, impersonatedMemberName } = Route.useLoaderData();
   return (
     <AdminShell
       memberId={memberId}
       isImpersonating={isImpersonating}
       impersonatedMemberName={impersonatedMemberName}
-      publishSlot={
-        <PublishGateDialog
-          memberId={memberId}
-          memberType={memberType}
-          status={status}
-          hoursConfirmedAt={hoursConfirmedAt}
-          hours={hours}
-          specialHours={specialHours}
-          appearanceStartTimes={appearanceStartTimes}
-        />
-      }
+      publishSlot={<PublishGateDialog memberId={memberId} initial={publishGateData} />}
     >
       <Outlet />
     </AdminShell>

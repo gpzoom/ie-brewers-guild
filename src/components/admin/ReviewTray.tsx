@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 import { approvePendingMedia, rejectPendingMedia } from "@/lib/media/review-tray.server";
 import type { MediaAssetRow } from "@/lib/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -23,20 +24,38 @@ function reinsertAsset(prev: MediaAssetRow[], asset: MediaAssetRow): MediaAssetR
 }
 
 export function ReviewTray({ initialPending }: { initialPending: MediaAssetRow[] }) {
+  const router = useRouter();
   const [pending, setPending] = useState(initialPending);
   const [error, setError] = useState<string | null>(null);
+  // Ids an approve/reject has been started for. The loader resync below
+  // drops them, so a refresh that started before the action landed can't
+  // bring the photo back mid-action (same idea as MediaGallery's
+  // hiddenIds). Only a FAILED action removes its id again; a successful
+  // one stays hidden, since the server no longer lists it as pending.
+  const actedOnIds = useRef<Set<string>>(new Set());
+
+  // Resync when the loader re-runs (see the invalidate below and
+  // MediaGallery's upload/delete).
+  useEffect(() => {
+    setPending(initialPending.filter((a) => !actedOnIds.current.has(a.id)));
+  }, [initialPending]);
 
   async function onApprove(asset: MediaAssetRow) {
     setError(null);
+    actedOnIds.current.add(asset.id);
     setPending((prev) => prev.filter((a) => a.id !== asset.id));
     try {
       await approvePendingMedia({ data: { id: asset.id } });
+      // An approved photo joins the gallery -- re-run the loader so the
+      // gallery and every photo picker on the page include it.
+      void router.invalidate();
     } catch (err) {
       // Roll back the optimistic removal above -- otherwise a failed
       // approve (including an RLS-denied one that throws via
       // approvePendingMedia's row-count check) would leave this photo
       // silently vanished from the tray with no visible error and no way
       // to know the approve didn't actually happen server-side.
+      actedOnIds.current.delete(asset.id);
       setPending((prev) => reinsertAsset(prev, asset));
       setError(err instanceof Error ? err.message : "Couldn't approve this photo — try again.");
     }
@@ -44,11 +63,13 @@ export function ReviewTray({ initialPending }: { initialPending: MediaAssetRow[]
 
   async function onReject(asset: MediaAssetRow) {
     setError(null);
+    actedOnIds.current.add(asset.id);
     setPending((prev) => prev.filter((a) => a.id !== asset.id));
     try {
       await rejectPendingMedia({ data: { id: asset.id } });
     } catch (err) {
       // Same rollback rationale as onApprove above.
+      actedOnIds.current.delete(asset.id);
       setPending((prev) => reinsertAsset(prev, asset));
       setError(err instanceof Error ? err.message : "Couldn't reject this photo — try again.");
     }

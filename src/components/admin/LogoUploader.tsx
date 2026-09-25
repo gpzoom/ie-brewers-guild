@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { uploadMemberLogo } from "@/lib/media/logo.server";
+import { appendMeasuredDimensions } from "@/lib/media/image-dimensions";
 import { Button } from "@/components/ui/button";
 
 export function LogoUploader({ memberId, initialLogoUrl }: { memberId: string; initialLogoUrl: string | null }) {
@@ -14,6 +15,7 @@ export function LogoUploader({ memberId, initialLogoUrl }: { memberId: string; i
     const formData = new FormData();
     formData.append("memberId", memberId);
     formData.append("file", file);
+    await appendMeasuredDimensions(formData, file);
     try {
       const { publicUrl } = await uploadMemberLogo({ data: formData });
       setLogoUrl(publicUrl);

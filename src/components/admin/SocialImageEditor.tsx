@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 import { clearSocialImageAsset, updateSocialImageAsset } from "@/lib/media/social-image.server";
 import { getOgPlaceholderPath } from "@/lib/media/og-placeholder";
 import type { MediaAssetRow, MemberType } from "@/lib/supabase/types";
@@ -19,12 +20,19 @@ export function SocialImageEditor({
   ogImageAssetId: string | null;
   galleryAssets: MediaAssetRow[];
 }) {
+  const router = useRouter();
   const [assetId, setAssetId] = useState(ogImageAssetId);
   const [error, setError] = useState<string | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   // Lets a failed choose reset the <select>'s own DOM value back to "" --
   // same reasoning as CoverEditor.tsx's selectRef.
   const selectRef = useRef<HTMLSelectElement | null>(null);
+
+  // Resync from the loader when it re-runs (e.g. the chosen image was just
+  // deleted from the gallery -- og_image_asset_id is ON DELETE SET NULL).
+  useEffect(() => {
+    setAssetId(ogImageAssetId);
+  }, [ogImageAssetId]);
 
   function friendlyMessage(err: unknown, fallback: string) {
     return err instanceof Error ? err.message : fallback;
@@ -36,6 +44,7 @@ export function SocialImageEditor({
     try {
       await updateSocialImageAsset({ data: { memberId, assetId: asset.id } });
       setAssetId(asset.id);
+      void router.invalidate();
     } catch (err) {
       if (selectRef.current) selectRef.current.value = "";
       setError(friendlyMessage(err, "Couldn't set this image — try again."));
@@ -50,6 +59,8 @@ export function SocialImageEditor({
     try {
       await clearSocialImageAsset({ data: { memberId } });
       setAssetId(null);
+      if (selectRef.current) selectRef.current.value = "";
+      void router.invalidate();
     } catch (err) {
       setError(friendlyMessage(err, "Couldn't remove this image — try again."));
     } finally {

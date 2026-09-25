@@ -1,14 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
-import { initialCropForAspect } from "@/lib/media/crop-interaction";
+import { COVER_ASPECT, initialCropForAspect } from "@/lib/media/crop-interaction";
 import { assertAssetOwnedByMember } from "@/lib/media/carousel.server";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { CropRect } from "@/lib/media/crop";
 import type { MemberRow } from "@/lib/supabase/types";
 
-// Phone: 2.5:1 (spec, "Profile hero and theme"). Desktop's 4:1 reuses this
-// same rectangle (Phase 3's stated v1 limitation).
-const COVER_ASPECT = 2.5;
 
 /** The subset of MemberRow CoverEditor actually reads -- same narrow-select shape as member-basics.server.ts's BasicsMember/getMemberBasics. */
 export type MemberCover = Pick<MemberRow, "id" | "cover_asset_id" | "cover_crop">;
@@ -81,6 +78,35 @@ export const updateCoverAsset = createServerFn({ method: "POST" })
     });
 
     return { crop };
+  });
+
+/**
+ * "Remove cover" -- back to the theme-colour band. Clears the crop too, so
+ * a stale rectangle can't be applied to whatever cover is chosen next.
+ * Same shape as social-image.server.ts's clearSocialImageAsset.
+ */
+export const clearCoverAsset = createServerFn({ method: "POST" })
+  .inputValidator((data: { memberId: string }) => data)
+  .handler(async ({ data }) => {
+    const supabase = await getSupabaseServerClientForRequest();
+    const { data: updated, error } = await supabase
+      .from("members")
+      .update({ cover_asset_id: null, cover_crop: null })
+      .eq("id", data.memberId)
+      .select("id");
+    if (error) throw new Error(error.message);
+    if (!updated || updated.length === 0) {
+      throw new Error("Save failed — you may not have permission to edit this member.");
+    }
+
+    await recordAuditLogIfImpersonating({
+      memberId: data.memberId,
+      tableName: "members",
+      rowId: data.memberId,
+      action: "update",
+    });
+
+    return { ok: true as const };
   });
 
 export const updateCoverCrop = createServerFn({ method: "POST" })

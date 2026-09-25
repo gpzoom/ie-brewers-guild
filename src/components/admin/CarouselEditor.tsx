@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "@tanstack/react-router";
+import { CAROUSEL_ASPECT } from "@/lib/media/crop-interaction";
 import {
   assignCarouselSlide,
   unassignCarouselSlide,
@@ -37,6 +39,7 @@ export function CarouselEditor({
   initialSlides: CarouselSlideRow[];
   galleryAssets: MediaAssetRow[];
 }) {
+  const router = useRouter();
   const [slides, setSlides] = useState(initialSlides);
   // One error slot per carousel position -- assign/unassign/crop/link
   // failures all render into the same spot, since only one of those
@@ -74,6 +77,11 @@ export function CarouselEditor({
     Object.fromEntries(initialSlides.map((slide) => [slide.id, slide.crop])),
   );
   const cropDebounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  // Number of crop save requests currently on the wire, per slide id. The
+  // loader resync below leaves a slide's local crop alone while this is
+  // non-zero, the same as while its debounce timer is pending -- a refresh
+  // that started before the save landed would otherwise carry the old crop.
+  const cropSavesInFlight = useRef<Record<string, number>>({});
   // Lets a failed assign clear the <select>'s own DOM value back to "" --
   // see onAssign's catch block for why: it's an uncontrolled element, so
   // resetting React state alone wouldn't touch what the browser is
@@ -87,6 +95,30 @@ export function CarouselEditor({
       for (const timer of Object.values(timers)) clearTimeout(timer);
     };
   }, []);
+
+  // Resync from the loader whenever it re-runs (router.invalidate() after a
+  // gallery upload/delete or after an assign/unassign here) -- otherwise
+  // this local copy stays frozen at first render, e.g. still showing a
+  // slide whose photo was just deleted from the gallery (which now removes
+  // it from the carousel server-side). A slide the member is mid-way
+  // through re-cropping (debounce timer pending, or its save request still
+  // in flight) keeps its local crop.
+  useEffect(() => {
+    const isPending = (id: string) =>
+      Boolean(cropDebounceTimers.current[id]) || (cropSavesInFlight.current[id] ?? 0) > 0;
+    const next = initialSlides.map((slide) =>
+      isPending(slide.id) && latestCropRef.current[slide.id]
+        ? { ...slide, crop: latestCropRef.current[slide.id] }
+        : slide,
+    );
+    for (const slide of initialSlides) {
+      if (!isPending(slide.id)) {
+        savedCropRef.current[slide.id] = slide.crop;
+        latestCropRef.current[slide.id] = slide.crop;
+      }
+    }
+    setSlides(next);
+  }, [initialSlides]);
 
   function slideForSlot(slot: number) {
     return slides.find((slide) => slide.sort_order === slot);
@@ -123,6 +155,10 @@ export function CarouselEditor({
         ...prev.filter((slide) => slide.sort_order !== slot),
         { id, member_id: memberId, asset_id: asset.id, crop, outbound_url: null, sort_order: slot },
       ]);
+      // Keeps the loader's `slides` current for MediaGallery's "this photo
+      // is in your carousel" delete warning. Not awaited: the assign itself
+      // already succeeded, so a refresh hiccup mustn't hit the catch below.
+      void router.invalidate();
     } catch (error) {
       // Reset the uncontrolled <select>'s own DOM value -- otherwise the
       // browser keeps showing the just-picked (but never actually saved)
@@ -157,6 +193,7 @@ export function CarouselEditor({
       await unassignCarouselSlide({ data: { id: slide.id } });
       delete savedCropRef.current[slide.id];
       delete latestCropRef.current[slide.id];
+      void router.invalidate();
     } catch (error) {
       setSlides((prev) => (prev.some((s) => s.id === slide.id) ? prev : [...prev, slide]));
       setSlotError(slide.sort_order, friendlyMessage(error, "Couldn't remove this slide — try again."));
@@ -173,6 +210,7 @@ export function CarouselEditor({
     const cropToSave = latestCropRef.current[slideId];
     if (!cropToSave) return;
 
+    cropSavesInFlight.current[slideId] = (cropSavesInFlight.current[slideId] ?? 0) + 1;
     updateCarouselSlideCrop({ data: { id: slideId, crop: cropToSave } })
       .then(() => {
         savedCropRef.current[slideId] = cropToSave;
@@ -189,16 +227,25 @@ export function CarouselEditor({
           setSlides((prev) => prev.map((s) => (s.id === slideId ? { ...s, crop: rollback } : s)));
         }
         setSlotError(slot, friendlyMessage(error, "Couldn't save this crop — try again."));
+      })
+      .finally(() => {
+        const remaining = (cropSavesInFlight.current[slideId] ?? 1) - 1;
+        if (remaining > 0) cropSavesInFlight.current[slideId] = remaining;
+        else delete cropSavesInFlight.current[slideId];
       });
   }
 
-  /** Cancels a slide's pending debounced crop save and sends the current crop immediately. */
+  /**
+   * If a slide has a pending debounced crop save, cancels it and sends the
+   * current crop immediately. A no-op when nothing is pending -- a plain
+   * tap on the frame (or on the zoom/Reset buttons, whose pointerup
+   * bubbles here before their click) changed nothing and shouldn't write.
+   */
   function flushCropSave(slideId: string, slot: number) {
     const timer = cropDebounceTimers.current[slideId];
-    if (timer) {
-      clearTimeout(timer);
-      delete cropDebounceTimers.current[slideId];
-    }
+    if (!timer) return;
+    clearTimeout(timer);
+    delete cropDebounceTimers.current[slideId];
     saveCropNow(slideId, slot);
   }
 
@@ -270,6 +317,7 @@ export function CarouselEditor({
                     <CropEditor
                       imageUrl={`/api/admin-media/${asset.id}`}
                       crop={slide.crop}
+                      aspect={CAROUSEL_ASPECT}
                       aspectClassName="aspect-[4/5]"
                       onChange={(crop) => onCropChange(slide, crop)}
                     />

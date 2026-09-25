@@ -5,7 +5,10 @@ import type { MemberType } from "@/lib/supabase/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 import { CreateMemberDialog } from "@/components/guild/CreateMemberDialog";
+import { DeleteMemberDialog } from "@/components/guild/DeleteMemberDialog";
+import { InviteEmailDialog } from "@/components/guild/InviteEmailDialog";
 import { inviteMember } from "@/lib/guild/invite-member.server";
 import { startImpersonation } from "@/lib/guild/impersonation.server";
 import {
@@ -36,16 +39,29 @@ export function RosterTable({ entries }: { entries: RosterEntry[] }) {
   const [claimFilter, setClaimFilter] = useState<RosterEntry["claimState"] | "all">("all");
   const router = useRouter();
   const [invitingId, setInvitingId] = useState<string | null>(null);
+  // Member whose invite needs an email typed in (nothing on file).
+  // Kept set after closing so the title doesn't blank out mid-animation.
+  const [inviteTarget, setInviteTarget] = useState<RosterEntry | null>(null);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+
+  async function sendInvite(entry: RosterEntry, email: string) {
+    await inviteMember({ data: { memberId: entry.member.id, email } });
+    await router.invalidate();
+    toast.success(`Invite sent to ${email}`);
+  }
 
   async function handleInvite(entry: RosterEntry) {
-    const email = entry.ownerEmail ?? window.prompt(`Invite email for ${entry.member.business_name}:`);
-    if (!email) return;
+    const knownEmail = entry.ownerEmail ?? entry.member.contact_email?.trim() ?? null;
+    if (!knownEmail) {
+      setInviteTarget(entry);
+      setInviteDialogOpen(true);
+      return;
+    }
     setInvitingId(entry.member.id);
     try {
-      await inviteMember({ data: { memberId: entry.member.id, email } });
-      await router.invalidate();
+      await sendInvite(entry, knownEmail);
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Could not send the invite.");
+      toast.error(err instanceof Error ? err.message : "Could not send the invite.");
     } finally {
       setInvitingId(null);
     }
@@ -221,6 +237,9 @@ export function RosterTable({ entries }: { entries: RosterEntry[] }) {
                   >
                     Edit as them
                   </button>
+                  <span className="ml-2 border-l border-border pl-3">
+                    <DeleteMemberDialog memberId={entry.member.id} businessName={entry.member.business_name} />
+                  </span>
                 </div>
               </td>
             </tr>
@@ -234,6 +253,15 @@ export function RosterTable({ entries }: { entries: RosterEntry[] }) {
           )}
         </tbody>
       </table>
+
+      <InviteEmailDialog
+        businessName={inviteTarget?.member.business_name ?? ""}
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
+        onSend={async (email) => {
+          if (inviteTarget) await sendInvite(inviteTarget, email);
+        }}
+      />
     </div>
   );
 }

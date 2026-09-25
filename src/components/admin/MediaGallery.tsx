@@ -1,6 +1,17 @@
 import { useRef, useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 import { deleteMemberMedia, uploadMemberMedia } from "@/lib/media/media-gallery.server";
-import type { MediaAssetRow } from "@/lib/supabase/types";
+import { appendMeasuredDimensions } from "@/lib/media/image-dimensions";
+import type { CarouselSlideRow, MediaAssetRow } from "@/lib/supabase/types";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -10,38 +21,47 @@ import { Button } from "@/components/ui/button";
  * tray are each a separate section rendered alongside this one on
  * /admin/media (Tasks 15–21) -- kept in separate components/files per
  * section, all sharing this page.
+ *
+ * Renders straight from the route loader's `assets` (no local copy): the
+ * carousel/cover/social-image pickers on the same page read that same
+ * list, so after every upload/delete this calls router.invalidate() to
+ * re-run the loader and refresh ALL of them at once. A local copy here
+ * used to leave those dropdowns stale -- offering a just-deleted photo
+ * (which then failed with "That photo isn't in this member's gallery.")
+ * and missing a just-uploaded one.
  */
 
 type UploadState = { status: "idle" | "uploading" | "error"; message?: string };
 const IDLE_UPLOAD: UploadState = { status: "idle" };
 
-/**
- * Re-inserts a single asset back into whatever the CURRENT list is (sorted
- * back into its created_at-descending position), rather than restoring a
- * whole snapshot taken before the delete started. A snapshot would
- * resurrect any OTHER asset that was deleted (and succeeded) while this
- * one's request was still in flight -- e.g. delete photo A, then photo B
- * before A's request returns; B succeeds, A then fails -- restoring a
- * stale "previousAssets" array would incorrectly bring B back too.
- */
-function reinsertAsset(prev: MediaAssetRow[], asset: MediaAssetRow): MediaAssetRow[] {
-  if (prev.some((a) => a.id === asset.id)) return prev;
-  return [...prev, asset].sort((a, b) =>
-    a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0,
-  );
-}
-
 export function MediaGallery({
   memberId,
-  initialAssets,
+  assets,
+  slides,
 }: {
   memberId: string;
-  initialAssets: MediaAssetRow[];
+  assets: MediaAssetRow[];
+  /** Used only to warn when a photo about to be deleted is in the carousel. */
+  slides: CarouselSlideRow[];
 }) {
-  const [assets, setAssets] = useState(initialAssets);
+  const router = useRouter();
   const [uploadState, setUploadState] = useState<UploadState>(IDLE_UPLOAD);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  // Optimistic delete: ids hidden from view while their delete (and the
+  // follow-up loader refresh) is in flight. A failed delete just un-hides
+  // its own id -- unlike restoring a whole pre-delete snapshot, this can
+  // never resurrect a DIFFERENT photo whose delete succeeded meanwhile.
+  const [hiddenIds, setHiddenIds] = useState<ReadonlySet<string>>(new Set());
+  const [confirmAsset, setConfirmAsset] = useState<MediaAssetRow | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function unhide(id: string) {
+    setHiddenIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }
 
   async function onFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -51,11 +71,12 @@ export function MediaGallery({
     const formData = new FormData();
     formData.append("memberId", memberId);
     formData.append("file", file);
+    // Fallback only -- the server reads the size from the stored bytes
+    // first (see image-dimensions.ts).
+    await appendMeasuredDimensions(formData, file);
 
     try {
-      const created = await uploadMemberMedia({ data: formData });
-      setAssets((prev) => [created, ...prev]);
-      setUploadState(IDLE_UPLOAD);
+      await uploadMemberMedia({ data: formData });
     } catch (error) {
       // validateUploadedImage's rejection reason and stripImageMetadata's
       // caught-and-reworded failure (media-gallery.server.ts) both throw a
@@ -66,13 +87,22 @@ export function MediaGallery({
         status: "error",
         message: error instanceof Error ? error.message : "Couldn't upload this photo — try again.",
       });
-    } finally {
       if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    // Keep showing "Uploading…" until the refreshed list (and every
+    // picker on the page) actually includes the new photo.
+    try {
+      await router.invalidate();
+    } finally {
+      setUploadState(IDLE_UPLOAD);
     }
   }
 
   async function onDelete(asset: MediaAssetRow) {
-    setAssets((prev) => prev.filter((a) => a.id !== asset.id));
+    setHiddenIds((prev) => new Set(prev).add(asset.id));
     setDeleteError(null);
 
     try {
@@ -86,15 +116,27 @@ export function MediaGallery({
         );
       }
     } catch (error) {
-      // A real failure (the delete itself didn't go through) -- re-insert
-      // just this asset into the current list rather than restoring a
-      // stale snapshot (see reinsertAsset's doc comment).
-      setAssets((prev) => reinsertAsset(prev, asset));
+      // A real failure (the delete itself didn't go through) -- bring just
+      // this photo back.
+      unhide(asset.id);
       setDeleteError(
         error instanceof Error ? error.message : "Couldn't delete this photo — try again.",
       );
+      return;
+    }
+
+    try {
+      await router.invalidate();
+    } finally {
+      // The refreshed `assets` no longer contains it, so un-hiding is a
+      // no-op visually and just keeps the set from growing.
+      unhide(asset.id);
     }
   }
+
+  const confirmInCarousel = confirmAsset
+    ? slides.some((slide) => slide.asset_id === confirmAsset.id)
+    : false;
 
   return (
     <section>
@@ -133,7 +175,7 @@ export function MediaGallery({
       )}
       <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {assets
-          .filter((asset) => asset.review_status === "approved")
+          .filter((asset) => asset.review_status === "approved" && !hiddenIds.has(asset.id))
           .map((asset) => (
             <li
               key={asset.id}
@@ -157,13 +199,49 @@ export function MediaGallery({
                 size="sm"
                 className="absolute right-1 top-1 h-9"
                 aria-label="Delete this photo"
-                onClick={() => onDelete(asset)}
+                onClick={() => setConfirmAsset(asset)}
               >
                 Delete
               </Button>
             </li>
           ))}
       </ul>
+
+      <AlertDialog
+        open={confirmAsset !== null}
+        onOpenChange={(open) => !open && setConfirmAsset(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this photo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmInCarousel && (
+                <>
+                  <strong className="font-semibold text-foreground">
+                    This photo is in your carousel and will be removed from it.
+                  </strong>{" "}
+                </>
+              )}
+              It will be removed from your gallery for good.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-11">Cancel</AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              className="h-11 text-white"
+              onClick={() => {
+                const asset = confirmAsset;
+                setConfirmAsset(null);
+                if (asset) void onDelete(asset);
+              }}
+            >
+              Delete photo
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }

@@ -79,6 +79,15 @@ export const startImpersonation = createServerFn({ method: "POST" })
 
 /** Ends the session (spec: "Stopping returns to the roster") -- the caller navigates there. */
 export const stopImpersonation = createServerFn({ method: "POST" }).handler(async () => {
+  clearImpersonationCookie();
+  return { ok: true as const };
+});
+
+/**
+ * Expires the impersonation cookie. Shared by stopImpersonation and by
+ * deleteMember (deleting the member currently being impersonated).
+ */
+export const clearImpersonationCookie = createServerOnlyFn((): void => {
   setCookie(IMPERSONATION_COOKIE_NAME, "", {
     httpOnly: true,
     secure: true,
@@ -86,7 +95,6 @@ export const stopImpersonation = createServerFn({ method: "POST" }).handler(asyn
     path: "/",
     maxAge: 0,
   });
-  return { ok: true as const };
 });
 
 /**

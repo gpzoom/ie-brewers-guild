@@ -37,7 +37,7 @@ function MediaRoute() {
     <div className="space-y-8">
       <ReviewTray initialPending={pending} />
       <LogoUploader memberId={memberId} initialLogoUrl={logo.logoUrl} />
-      <MediaGallery memberId={memberId} initialAssets={assets} />
+      <MediaGallery memberId={memberId} assets={assets} slides={slides} />
       <CarouselEditor memberId={memberId} initialSlides={slides} galleryAssets={assets} />
       <CoverEditor
         memberId={memberId}

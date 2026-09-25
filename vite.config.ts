@@ -229,6 +229,11 @@ export default defineConfig(async ({ command, mode }) => {
             // "**/*.server.*" glob above and excluded here for the same
             // reason as the rest.
             "src/lib/media/social-image.server.ts",
+            // src/lib/guild/delete-member.server.ts -- its createServerFn
+            // export, deleteMember, is called directly from
+            // src/components/guild/DeleteMemberDialog.tsx's confirm handler;
+            // same safe client/server RPC boundary as the rest.
+            "src/lib/guild/delete-member.server.ts",
             // src/lib/guild/impersonation.server.ts (Task 13, Guild Admin
             // phase) -- same reasoning as the files above: its two
             // createServerFn exports, startImpersonation and

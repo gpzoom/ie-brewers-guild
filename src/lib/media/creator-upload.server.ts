@@ -3,6 +3,7 @@ import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { hashUploadToken } from "@/lib/media/upload-tokens";
 import { validateUploadedImage } from "@/lib/media/validate-file";
 import { stripImageMetadata } from "@/lib/media/strip-exif";
+import { resolveImageDimensions } from "@/lib/media/image-dimensions";
 import { sanitizeFilename } from "@/lib/media/media-gallery.server";
 import { sendTransactionalEmail } from "@/lib/email/send";
 
@@ -230,6 +231,11 @@ export const submitCreatorUpload = createServerFn({ method: "POST" })
       // the storage path -- same path-injection risk Task 14/17 already
       // found and fixed for the member-upload and logo-upload paths.
       const storagePath = `${token.member_id}/creator-${crypto.randomUUID()}-${sanitizeFilename(file.name)}`;
+      // Anonymous input -- resolveImageDimensions prefers the stored
+      // bytes' own header and only falls back to the claimed "width"/
+      // "height" fields when both are sane positive ints (see
+      // image-dimensions.ts). Worst case a lie only skews the initial crop.
+      const dimensions = resolveImageDimensions(stripped, formData);
 
       const { error: uploadError } = await supabase.storage
         .from("member-media")
@@ -247,6 +253,8 @@ export const submitCreatorUpload = createServerFn({ method: "POST" })
           kind: "image",
           mime_type: validation.detectedMimeType,
           byte_size: stripped.byteLength,
+          width: dimensions?.width ?? null,
+          height: dimensions?.height ?? null,
           original_filename: file.name,
           source: "creator_upload",
           upload_token_id: token.id,

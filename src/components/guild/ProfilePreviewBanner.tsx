@@ -6,9 +6,17 @@ import { stopImpersonation } from "@/lib/guild/impersonation.server";
  * (spec: "a band sits on every admin screen and every preview for the
  * duration"), rendered on the public /members/$slug page when the viewer
  * is either the member's own editor (previewing their own unpublished
- * profile) or a Guild admin currently impersonating this exact member.
+ * profile) or a Guild admin -- impersonating this exact member, or simply
+ * signed in as a Guild admin (RLS lets them read unpublished rows too), in
+ * which case the member-facing "only you can see this page" would be wrong.
  */
-export function ProfilePreviewBanner({ isImpersonatedPreview }: { isImpersonatedPreview: boolean }) {
+export function ProfilePreviewBanner({
+  isImpersonatedPreview,
+  viewerIsGuildAdmin = false,
+}: {
+  isImpersonatedPreview: boolean;
+  viewerIsGuildAdmin?: boolean;
+}) {
   const router = useRouter();
 
   async function handleStop() {
@@ -24,7 +32,9 @@ export function ProfilePreviewBanner({ isImpersonatedPreview }: { isImpersonated
       <span>
         {isImpersonatedPreview
           ? "You're previewing this member's profile while editing as them. Every change is logged against your own Guild admin account."
-          : "This is a preview of your profile. It isn't published yet — only you can see this page."}
+          : viewerIsGuildAdmin
+            ? "This profile isn't published yet — only the member and Guild admins can see it."
+            : "This is a preview of your profile. It isn't published yet — only you can see this page."}
       </span>
       {isImpersonatedPreview && (
         <button

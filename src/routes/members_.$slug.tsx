@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi, Link } from "@tanstack/react-router";
 import { getMemberProfileData } from "@/lib/members/member-profile.server";
 import { validateDirectorySearch } from "@/lib/directory/search-params";
 import { MemberProfileTemplate } from "@/components/profile/MemberProfileTemplate";
@@ -105,12 +105,23 @@ export const Route = createFileRoute("/members_/$slug")({
   ),
 });
 
+// The root loader already resolves whether the viewer is a Guild admin (for
+// GuildAdminBar) -- reused here so the preview banner can say who can see
+// a draft without another server round trip.
+const rootRoute = getRouteApi("__root__");
+
 function MemberProfilePage() {
   const data = Route.useLoaderData();
   const search = Route.useSearch();
+  const { isGuildAdmin } = rootRoute.useLoaderData();
   return (
     <>
-      {data.isPreview && <ProfilePreviewBanner isImpersonatedPreview={data.isImpersonatedPreview} />}
+      {data.isPreview && (
+        <ProfilePreviewBanner
+          isImpersonatedPreview={data.isImpersonatedPreview}
+          viewerIsGuildAdmin={isGuildAdmin}
+        />
+      )}
       <MemberProfileTemplate data={data} search={search} />
     </>
   );

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { readPngHeight, validateUploadedImage } from "@/lib/media/validate-file";
 import { stripImageMetadata } from "@/lib/media/strip-exif";
+import { resolveImageDimensions } from "@/lib/media/image-dimensions";
 import { sanitizeFilename } from "@/lib/media/media-gallery.server";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 
@@ -92,6 +93,8 @@ export const uploadMemberLogo = createServerFn({ method: "POST" })
     // storage path -- same path-injection risk Task 14 already found and
     // fixed for the general gallery upload.
     const storagePath = `${memberId}/logo-${crypto.randomUUID()}-${sanitizeFilename(file.name)}`;
+    // See image-dimensions.ts -- header first, browser-measured fallback.
+    const dimensions = resolveImageDimensions(stripped, formData);
 
     const { error: uploadError } = await supabase.storage
       .from("member-logos")
@@ -106,6 +109,8 @@ export const uploadMemberLogo = createServerFn({ method: "POST" })
         kind: "image",
         mime_type: validation.detectedMimeType,
         byte_size: stripped.byteLength,
+        width: dimensions?.width ?? null,
+        height: dimensions?.height ?? null,
         original_filename: file.name,
         source: "member_upload",
         review_status: "approved",

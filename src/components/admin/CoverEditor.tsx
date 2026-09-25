@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { updateCoverAsset, updateCoverCrop } from "@/lib/media/cover.server";
+import { useRouter } from "@tanstack/react-router";
+import { clearCoverAsset, updateCoverAsset, updateCoverCrop } from "@/lib/media/cover.server";
 import { CropEditor } from "@/components/admin/CropEditor";
+import { COVER_ASPECT } from "@/lib/media/crop-interaction";
 import type { CropRect } from "@/lib/media/crop";
 import type { MediaAssetRow } from "@/lib/supabase/types";
+
+// Placeholder crop when none is stored; CropEditor corrects it to the
+// frame's real aspect as soon as the image's natural size is known.
+const FULL_IMAGE_CROP: CropRect = { x: 0, y: 0, w: 1, h: 1 };
 
 // Same ~400ms debounce as CarouselEditor's own crop autosave (see that
 // file's CROP_SAVE_DEBOUNCE_MS doc comment for the full rationale --
@@ -28,15 +34,17 @@ export function CoverEditor({
   coverCrop: CropRect | null;
   galleryAssets: MediaAssetRow[];
 }) {
+  const router = useRouter();
   const [assetId, setAssetId] = useState(coverAssetId);
-  const [crop, setCrop] = useState<CropRect>(coverCrop ?? { x: 0, y: 0, w: 1, h: 1 });
+  const [crop, setCrop] = useState<CropRect>(coverCrop ?? FULL_IMAGE_CROP);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [busy, setBusy] = useState(false);
 
   // Last known PERSISTED crop. A failed debounced crop save rolls the
   // visual crop back to this rather than leaving it showing a position
   // the server never actually saved -- same reasoning as
   // CarouselEditor.tsx's savedCropRef / MediaGallery.tsx's reinsertAsset.
-  const savedCropRef = useRef<CropRect>(coverCrop ?? { x: 0, y: 0, w: 1, h: 1 });
+  const savedCropRef = useRef<CropRect>(coverCrop ?? FULL_IMAGE_CROP);
   // The crop a debounced/flushed save should actually send. Deliberately
   // NOT read off `crop` state or captured in a closure at
   // setTimeout-schedule time -- see CarouselEditor.tsx's latestCropRef
@@ -50,8 +58,32 @@ export function CoverEditor({
   // reads at FIRE time is always the latest actual crop, with no render
   // lag and no closure to go stale. Only one cover crop exists (no
   // per-slide keying needed, unlike CarouselEditor's Record<string, ...>).
-  const latestCropRef = useRef<CropRect>(coverCrop ?? { x: 0, y: 0, w: 1, h: 1 });
+  const latestCropRef = useRef<CropRect>(coverCrop ?? FULL_IMAGE_CROP);
   const cropDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Crop save requests currently on the wire. Used both to skip a loader
+  // resync that could carry the pre-save crop (see below) and to let
+  // onChooseAsset wait for them, so an old photo's crop can't land after
+  // updateCoverAsset and be applied to the new cover.
+  const cropSavesInFlight = useRef<Set<Promise<void>>>(new Set());
+
+  // Resync from the loader whenever it re-runs (router.invalidate() after a
+  // gallery upload/delete, or after this editor's own choose/remove) --
+  // otherwise this local copy stays frozen at first render, e.g. still
+  // showing a cover photo that was just deleted from the gallery (the FK is
+  // ON DELETE SET NULL, so the server has already cleared it). A crop the
+  // member is mid-way through editing (debounce timer pending, or its save
+  // request still in flight) is kept -- a refresh that started before that
+  // save landed would otherwise snap the photo back to the old position.
+  useEffect(() => {
+    setAssetId(coverAssetId);
+  }, [coverAssetId]);
+  useEffect(() => {
+    if (cropDebounceTimer.current || cropSavesInFlight.current.size > 0) return;
+    const next = coverCrop ?? FULL_IMAGE_CROP;
+    savedCropRef.current = next;
+    latestCropRef.current = next;
+    setCrop(next);
+  }, [coverCrop]);
   // Lets a failed choose reset the <select>'s own DOM value back to ""
   // -- see onChooseAsset's catch block for why: it's an uncontrolled
   // element, so resetting React state alone wouldn't touch what the
@@ -83,7 +115,13 @@ export function CoverEditor({
    */
   async function onChooseAsset(asset: MediaAssetRow) {
     setError(undefined);
+    cancelPendingCropSave();
+    setBusy(true);
     try {
+      // A crop save already on the wire targets the OLD photo; let it land
+      // (or fail and roll back) before the new cover and its crop are set.
+      // saveCropNow's promises never reject, so this can't throw.
+      await Promise.all([...cropSavesInFlight.current]);
       const result = await updateCoverAsset({
         data: { memberId, assetId: asset.id, assetWidth: asset.width, assetHeight: asset.height },
       });
@@ -91,9 +129,42 @@ export function CoverEditor({
       latestCropRef.current = result.crop;
       setAssetId(asset.id);
       setCrop(result.crop);
+      void router.invalidate();
     } catch (err) {
       if (selectRef.current) selectRef.current.value = "";
       setError(friendlyMessage(err, "Couldn't set this cover photo — try again."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Back to the theme-colour band -- same shape as SocialImageEditor's onRemove. */
+  async function onRemove() {
+    setError(undefined);
+    cancelPendingCropSave();
+    setBusy(true);
+    try {
+      // Same as onChooseAsset: don't let an in-flight crop save land after the clear.
+      await Promise.all([...cropSavesInFlight.current]);
+      await clearCoverAsset({ data: { memberId } });
+      setAssetId(null);
+      savedCropRef.current = FULL_IMAGE_CROP;
+      latestCropRef.current = FULL_IMAGE_CROP;
+      setCrop(FULL_IMAGE_CROP);
+      if (selectRef.current) selectRef.current.value = "";
+      void router.invalidate();
+    } catch (err) {
+      setError(friendlyMessage(err, "Couldn't remove the cover photo — try again."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Drops a queued crop save -- it would otherwise land after a choose/remove and overwrite its crop. */
+  function cancelPendingCropSave() {
+    if (cropDebounceTimer.current) {
+      clearTimeout(cropDebounceTimer.current);
+      cropDebounceTimer.current = null;
     }
   }
 
@@ -104,7 +175,7 @@ export function CoverEditor({
    */
   function saveCropNow() {
     const cropToSave = latestCropRef.current;
-    updateCoverCrop({ data: { memberId, crop: cropToSave } })
+    const request: Promise<void> = updateCoverCrop({ data: { memberId, crop: cropToSave } })
       .then(() => {
         savedCropRef.current = cropToSave;
         setError(undefined);
@@ -118,15 +189,23 @@ export function CoverEditor({
         latestCropRef.current = rollback;
         setCrop(rollback);
         setError(friendlyMessage(err, "Couldn't save this crop — try again."));
+      })
+      .finally(() => {
+        cropSavesInFlight.current.delete(request);
       });
+    cropSavesInFlight.current.add(request);
   }
 
-  /** Cancels any pending debounced crop save and sends the current crop immediately. */
+  /**
+   * If a debounced crop save is pending, cancels it and sends the current
+   * crop immediately. A no-op when nothing is pending -- a plain tap on the
+   * frame (or on the zoom/Reset buttons, whose pointerup bubbles here
+   * before their click) changed nothing and shouldn't write.
+   */
   function flushCropSave() {
-    if (cropDebounceTimer.current) {
-      clearTimeout(cropDebounceTimer.current);
-      cropDebounceTimer.current = null;
-    }
+    if (!cropDebounceTimer.current) return;
+    clearTimeout(cropDebounceTimer.current);
+    cropDebounceTimer.current = null;
     saveCropNow();
   }
 
@@ -174,6 +253,7 @@ export function CoverEditor({
             <CropEditor
               imageUrl={`/api/admin-media/${asset.id}`}
               crop={crop}
+              aspect={COVER_ASPECT}
               aspectClassName="aspect-[5/2]"
               onChange={onCropChange}
             />
@@ -186,6 +266,7 @@ export function CoverEditor({
           className="mt-2 h-11 w-full rounded-md border border-border bg-background text-sm"
           aria-label="Choose a cover photo"
           defaultValue=""
+          disabled={busy}
           onChange={(e) => {
             const chosen = galleryAssets.find((a) => a.id === e.target.value);
             if (chosen) void onChooseAsset(chosen);
@@ -202,6 +283,16 @@ export function CoverEditor({
               </option>
             ))}
         </select>
+        {assetId && (
+          <button
+            type="button"
+            className="mt-2 h-11 text-sm text-muted-foreground underline"
+            disabled={busy}
+            onClick={() => void onRemove()}
+          >
+            Remove cover — use your theme colour instead
+          </button>
+        )}
         {error && (
           <p role="alert" className="mt-2 text-xs text-danger">
             {error}

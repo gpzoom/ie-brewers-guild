@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { submitCreatorUpload } from "@/lib/media/creator-upload.server";
+import { appendMeasuredDimensions } from "@/lib/media/image-dimensions";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -55,6 +56,9 @@ function SendPage() {
     formData.set("creditRequested", String(creditRequested));
     formData.set("permissionAccepted", String(permissionAccepted));
     formData.set("file", file);
+    // Fallback only -- the server reads the size from the file itself
+    // first (see image-dimensions.ts).
+    await appendMeasuredDimensions(formData, file);
 
     try {
       await submitCreatorUpload({ data: formData });
