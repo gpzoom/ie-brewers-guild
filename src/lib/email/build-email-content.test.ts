@@ -241,3 +241,71 @@ describe("buildEmailContent: member_type_changed_in_setup", () => {
     expect(content.html).toContain("A &lt;b&gt;&amp;&lt;/b&gt; B");
   });
 });
+
+describe("buildEmailContent: type_change_requested", () => {
+  const payload = {
+    trigger: "type_change_requested" as const,
+    memberId: "m1",
+    memberName: "Hop House",
+    currentType: "producer" as const,
+    requestedType: "allied" as const,
+    note: "We sell grain now <3",
+    requestedByEmail: "owner@hophouse.com",
+  };
+
+  it("names the member, both types, who asked and their note", () => {
+    const content = buildEmailContent(payload);
+    expect(content.text).toContain(
+      "Hop House asked to change their member type from Producer to Allied Member.",
+    );
+    expect(content.text).toContain("Requested by: owner@hophouse.com");
+    expect(content.text).toContain("Their note: We sell grain now <3");
+    expect(content.subject).toBe("Hop House asked to change their member type");
+  });
+
+  it("links to the roster on the site that sent it and escapes the note", () => {
+    const content = buildEmailContent(payload, "https://staging.example");
+    expect(content.html).toContain('href="https://staging.example/guild/roster"');
+    expect(content.html).toContain("We sell grain now &lt;3");
+  });
+
+  it("says when there's no note", () => {
+    const content = buildEmailContent({ ...payload, note: null, requestedByEmail: null });
+    expect(content.text).toContain("Their note: (no note)");
+    expect(content.text).not.toContain("Requested by");
+  });
+});
+
+describe("buildEmailContent: editor_invited", () => {
+  const payload = {
+    trigger: "editor_invited" as const,
+    memberId: "m1",
+    memberName: "Hop House",
+    email: "sam@example.com",
+    role: "media_events" as const,
+    inviterEmail: "owner@hophouse.com",
+  };
+
+  it("says who invited them, to which member, and what they can edit", () => {
+    const content = buildEmailContent(payload);
+    expect(content.text).toContain("owner@hophouse.com invited you to help with Hop House's profile");
+    expect(content.text).toContain("photos and video, and its events");
+    expect(content.text).toContain("sam@example.com");
+  });
+
+  it("describes a full editor's access", () => {
+    const content = buildEmailContent({ ...payload, role: "editor" });
+    expect(content.text).toContain("edit everything on its profile");
+  });
+
+  it("links to the Member Portal sign-in on the site that sent it", () => {
+    const content = buildEmailContent(payload, "https://staging.example");
+    expect(content.text).toContain("https://staging.example/signin?next=/portal");
+    expect(content.html).toContain('href="https://staging.example/signin?next=/portal"');
+  });
+
+  it("names the Guild when a Guild admin sent the invite", () => {
+    const content = buildEmailContent({ ...payload, inviterEmail: null });
+    expect(content.text).toContain("The Inland Southern California Brewers Guild invited you");
+  });
+});

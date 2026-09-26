@@ -166,6 +166,7 @@ export function BasicsForm({
   isImpersonating = false,
   logo,
   hours,
+  typeChange,
   showHeading = true,
 }: {
   memberId: string;
@@ -179,6 +180,12 @@ export function BasicsForm({
   logo?: ReactNode;
   /** The weekly/special hours editor (HoursEditor), shown after IDENTITY. */
   hours?: ReactNode;
+  /**
+   * The portal's "Request a type change" control, shown with the locked
+   * type once it's confirmed (docs/member-profiles.md, "Member type: confirm
+   * once, then locked"). /admin leaves it out.
+   */
+  typeChange?: ReactNode;
   /** False where the page around it has its own heading (the setup wizard's step chrome). */
   showHeading?: boolean;
 }) {
@@ -439,7 +446,15 @@ export function BasicsForm({
       </fieldset>
 
       <InfoBox>
-        {typeConfirmed ? (
+        {typeConfirmed && typeChange ? (
+          <span className="flex flex-col items-start gap-2">
+            <span>
+              Your member type is locked. It decides which sections appear on your public page. Only
+              the Guild can change it.
+            </span>
+            {typeChange}
+          </span>
+        ) : typeConfirmed ? (
           <>
             Your member type is set by the Guild. It decides which sections appear on your public
             page. If it's wrong, contact the Guild to change it.

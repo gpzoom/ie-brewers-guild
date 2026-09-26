@@ -122,10 +122,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 // outside any wrapper -- only an ancestor of <body> reaches them. The
 // public site (including /contact) stays on the dark theme.
 const CANVAS_ROUTE_PREFIXES = ["/admin", "/guild", "/signin", "/send", "/portal"];
-// ...except the draft previews (src/routes/admin_.preview.tsx and the setup
-// wizard's preview step), which show the profile the way the public page
-// does: dark site ground, light card.
-const NON_CANVAS_ROUTES = ["/admin/preview", "/portal/setup/preview"];
+// ...except the draft previews (src/routes/admin_.preview.tsx, the portal's
+// src/routes/portal.preview.tsx and the setup wizard's preview step), which
+// show the profile the way the public page does: dark site ground, light card.
+const NON_CANVAS_ROUTES = ["/admin/preview", "/portal/preview", "/portal/setup/preview"];
 
 function matchesPrefix(pathname: string, prefixes: string[]) {
   const normalized = pathname.replace(/\/+$/, "") || "/";

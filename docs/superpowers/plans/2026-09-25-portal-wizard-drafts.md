@@ -99,6 +99,8 @@ One migration file per concern, applied with `supabase db push` (dry run first).
 
 ## Phase 6: New emails
 
+Built together with phase 5 (2026-09-26), since the portal's "Request a type change" and People invites need them to work.
+
 `member_type_changed_in_setup`, `type_change_requested` (→ Guild, link to the roster row), `editor_invited` (→ invitee: inviter, member, role, Member Portal link). The existing `member_invited` link changes to `/signin?next=/portal`.
 
 ## Components: reuse vs new

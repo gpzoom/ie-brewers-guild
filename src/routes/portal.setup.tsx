@@ -49,9 +49,9 @@ function SetupLayout() {
       slug: shell.slug,
       surface: "portal",
       paths: {
-        // The Basics step closes once setup is complete; phase 5's portal
-        // Basics section will be the link target from then on.
-        basics: shell.setupCompleted ? null : { to: "/portal/setup/basics" },
+        // The Basics step closes once setup is complete; the portal's Basics
+        // & hours section is the link target from then on.
+        basics: shell.setupCompleted ? { to: "/portal/basics" } : { to: "/portal/setup/basics" },
         hours: { to: "/portal/setup/hours" },
         events:
           shell.memberType === "mobile"

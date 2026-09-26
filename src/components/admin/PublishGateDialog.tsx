@@ -310,7 +310,7 @@ export function PublishGateDialog({
               aria-hidden="true"
               className="h-2 w-2 shrink-0 rounded-full bg-brand md:bg-brand-bright"
             />
-            Unpublished changes
+            {status.role === "media_events" ? "Unpublished photo changes" : "Unpublished changes"}
           </p>
         )}
         {status.photoChangesFrom && (

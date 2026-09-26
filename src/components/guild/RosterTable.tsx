@@ -47,7 +47,7 @@ const STATUS_BY_MEMBER_STATUS: Record<Exclude<MemberStatus, "published">, RowSta
 };
 
 function formatShortDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
+  return new Date(iso).toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",

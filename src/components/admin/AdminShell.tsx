@@ -17,14 +17,22 @@ import {
 // (artboard AdminPhone). "Basics & hours" is one item for both
 // /admin/basics and /admin/hours -- the pages themselves merge in a later
 // stage; until then /admin/hours still works and still lights this item.
-const NAV_ITEMS = [
+export type ShellNavItem = {
+  to: string;
+  label: string;
+  short: string;
+  /** Paths that light this item (the item's own path and anything under it). */
+  match: readonly string[];
+};
+
+const NAV_ITEMS: readonly ShellNavItem[] = [
   { to: "/admin/basics", label: "Basics & hours", short: "Basics", match: ["/admin/basics", "/admin/hours"] },
   { to: "/admin/media", label: "Photos & video", short: "Photos", match: ["/admin/media"] },
   { to: "/admin/theme", label: "Theme", short: "Theme", match: ["/admin/theme"] },
   { to: "/admin/links", label: "Links & contact", short: "Links", match: ["/admin/links"] },
   { to: "/admin/events", label: "Events", short: "Events", match: ["/admin/events"] },
   { to: "/admin/discount", label: "Discount", short: "Discount", match: ["/admin/discount"] },
-] as const;
+];
 
 function isActivePath(pathname: string, prefixes: readonly string[]) {
   const normalized = pathname.replace(/\/+$/, "");
@@ -65,6 +73,9 @@ export function AdminShell({
   previewHref,
   liveHref,
   publishSlot,
+  navItems = NAV_ITEMS,
+  topBarLabel = "ISC Brewers Guild · Member admin",
+  sidebarExtra,
   children,
 }: {
   memberId: string;
@@ -76,6 +87,11 @@ export function AdminShell({
   /** The live public page, once the member is published. */
   liveHref?: string;
   publishSlot?: ReactNode;
+  /** The sidebar's sections; /admin's by default (the portal passes its own, per role). */
+  navItems?: readonly ShellNavItem[];
+  topBarLabel?: string;
+  /** Anything under the sections, above Sign out (the portal's Switch business). */
+  sidebarExtra?: ReactNode;
   children: ReactNode;
 }) {
   const router = useRouter();
@@ -109,7 +125,7 @@ export function AdminShell({
         />
       )}
 
-      <AppTopBar label="ISC Brewers Guild · Member admin" shortLabel={memberName ?? "Member admin"}>
+      <AppTopBar label={topBarLabel} shortLabel={memberName ?? "Member admin"}>
         {memberName && (
           <span className="hidden max-w-[16rem] truncate text-[13px] text-text-muted xl:inline">
             {memberName}
@@ -148,7 +164,7 @@ export function AdminShell({
           <div className="hidden px-3 pb-3 font-display text-[19px] font-bold leading-tight tracking-[-0.01em] text-ink normal-case [overflow-wrap:anywhere] md:block">
             {memberName ? `${memberName} Profile` : "Your profile"}
           </div>
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const active = isActivePath(pathname, item.match);
             return (
               <Link
@@ -162,6 +178,7 @@ export function AdminShell({
               </Link>
             );
           })}
+          {sidebarExtra}
           <SidebarSignOut onClick={handleSignOut} />
         </nav>
 

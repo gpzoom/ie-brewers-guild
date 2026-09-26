@@ -34,6 +34,27 @@ export type TransactionalEmailPayload =
       memberName: string;
       oldType: MemberType;
       newType: MemberType;
+    }
+  | {
+      /** Portal Basics' "Request a type change": to the Guild. */
+      trigger: "type_change_requested";
+      memberId: string;
+      memberName: string;
+      currentType: MemberType;
+      requestedType: MemberType;
+      note: string | null;
+      /** Who asked, or null when a Guild admin asked while editing as them. */
+      requestedByEmail: string | null;
+    }
+  | {
+      /** The owner's People section invited someone: to the invitee. */
+      trigger: "editor_invited";
+      memberId: string;
+      memberName: string;
+      email: string;
+      role: "editor" | "media_events";
+      /** The owner's address, or null when a Guild admin invited while editing as them. */
+      inviterEmail: string | null;
     };
 
 export type EmailContent = { subject: string; html: string; text: string };
@@ -217,6 +238,45 @@ export function buildEmailContent(payload: TransactionalEmailPayload, siteUrl: s
           escapeHtml(sentence),
           escapeHtml(note),
           `<a href="${rosterUrl}">Open the roster</a>`,
+        ]),
+      };
+    }
+
+    case "type_change_requested": {
+      const currentLabel = MEMBER_TYPE_EMAIL_LABEL[payload.currentType] ?? payload.currentType;
+      const requestedLabel = MEMBER_TYPE_EMAIL_LABEL[payload.requestedType] ?? payload.requestedType;
+      const rosterUrl = `${siteUrl}/guild/roster`;
+      const sentence =
+        `${payload.memberName} asked to change their member type from ${currentLabel} to ${requestedLabel}.`;
+      const from = payload.requestedByEmail ? `Requested by: ${payload.requestedByEmail}` : null;
+      const note = `Their note: ${payload.note ?? "(no note)"}`;
+      const action =
+        "Their type is locked for them, so the change is yours to make from the roster. The request is also listed under Inquiries.";
+      const lines = [sentence, ...(from ? [from] : []), note, action];
+      return {
+        subject: `${payload.memberName} asked to change their member type`,
+        text: `${lines.join("\n\n")}\n\nOpen the roster: ${rosterUrl}`,
+        html: wrapHtml([...lines.map(escapeHtml), `<a href="${rosterUrl}">Open the roster</a>`]),
+      };
+    }
+
+    case "editor_invited": {
+      const signInUrl = `${siteUrl}/signin?next=/portal`;
+      const inviter = payload.inviterEmail ?? `The ${ORG_NAME}`;
+      const canEdit =
+        payload.role === "media_events"
+          ? "You'll be able to update its photos and video, and its events."
+          : "You'll be able to edit everything on its profile.";
+      const intro = `${inviter} invited you to help with ${payload.memberName}'s profile on the ${ORG_SHORT_NAME} member directory.`;
+      const howTo = `Sign in to the Member Portal with this email address (${payload.email}). The invitation lasts 14 days.`;
+      return {
+        subject: `You're invited to help with ${payload.memberName}'s profile`,
+        text: `${intro}\n\n${canEdit}\n\n${howTo}\n\n${signInUrl}`,
+        html: wrapHtml([
+          escapeHtml(intro),
+          escapeHtml(canEdit),
+          escapeHtml(howTo),
+          `<a href="${signInUrl}">Sign in to the Member Portal</a>`,
         ]),
       };
     }

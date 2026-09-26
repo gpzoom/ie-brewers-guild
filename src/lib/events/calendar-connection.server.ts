@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
+import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { buildEventUpsertRows, parseIcsFeedForTag } from "@/lib/events/ics-sync";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { CalendarConnectionRow } from "@/lib/supabase/types";
@@ -311,7 +311,14 @@ export const refreshIcsConnectionNow = createServerFn({ method: "POST" })
     const supabase = await getSupabaseServerClientForRequest();
     const { data: connection, error } = await supabase.from("calendar_connections").select("*").eq("id", data.connectionId).single();
     if (error || !connection) throw new Error("Calendar connection not found.");
-    await syncOneIcsConnection(supabase, connection as CalendarConnectionRow);
+    // Refresh now is open to all three roles (spec, "Enforcement"), but
+    // calendar_connections writes are owner-only under RLS, so the sync
+    // itself -- which records its status on the connection row -- runs on
+    // the service-role client. The session read just above is the
+    // permission check: RLS returns the row only to someone linked to this
+    // member, or a Guild admin.
+    const service = await getSupabaseServiceRoleClient();
+    await syncOneIcsConnection(service, connection as CalendarConnectionRow);
 
     // syncOneIcsConnection itself stays free of impersonation-specific
     // logic -- it's shared verbatim with the Task 29 cron, which runs on

@@ -40,11 +40,13 @@ export async function resolveRecipient(
 ): Promise<string | null> {
   switch (payload.trigger) {
     case "member_invited":
+    case "editor_invited":
       return payload.email;
     case "contact_confirmation":
       return payload.email;
     case "contact_form_submitted":
     case "member_type_changed_in_setup":
+    case "type_change_requested":
       return guildInboxFor(siteUrl);
     case "creator_upload_pending":
     case "hours_stale":

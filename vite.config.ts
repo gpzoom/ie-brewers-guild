@@ -394,6 +394,20 @@ export default defineConfig(async ({ command, mode }) => {
             // Google key) stays protected: only drafts.server.ts and
             // member-admin-actions.server.ts handlers import it.
             "src/lib/members/directory.server.ts",
+            // The Member Portal, phase 5 -- same reasoning again, each file
+            // is a set of createServerFn exports the portal's routes and
+            // components call: portal-shell.server.ts (getPortalShell in
+            // portal._sections.tsx's beforeLoad, getPortalSectionData and
+            // getPortalPreviewData in loaders), portal-people.server.ts (the
+            // People section's buttons), type-change.server.ts ("Request a
+            // type change") and guild/support-requests.server.ts (the Guild
+            // Inquiries screen). Their service-role helpers --
+            // people-store.server.ts, section-data.server.ts -- are only
+            // imported inside handlers, so those stay protected.
+            "src/lib/portal/portal-shell.server.ts",
+            "src/lib/portal/portal-people.server.ts",
+            "src/lib/portal/type-change.server.ts",
+            "src/lib/guild/support-requests.server.ts",
           ],
           specifiers: ["server-only"],
         },

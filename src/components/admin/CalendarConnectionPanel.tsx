@@ -72,13 +72,20 @@ function relativeTime(iso: string, now: number): string {
  * sync tag, sync status, Refresh now, "Edit link"), or, before anything
  * is connected, the dashed "Add an Apple or other calendar" row, which
  * opens the link and tag fields in place.
+ *
+ * `canEdit` false (anyone but the owner -- only the owner connects the
+ * calendar, spec "People and permissions"): the connected card keeps its
+ * status and Refresh now, which every role may use, but loses Edit link;
+ * before anything is connected it just says who can connect one.
  */
 export function CalendarConnectionPanel({
   memberId,
   initialConnection,
+  canEdit = true,
 }: {
   memberId: string;
   initialConnection: CalendarConnectionRow | null;
+  canEdit?: boolean;
 }) {
   const [connection, setConnection] = useState(initialConnection);
   const [icsUrl, setIcsUrl] = useState(initialConnection?.ics_url ?? "");
@@ -174,7 +181,19 @@ export function CalendarConnectionPanel({
   }
 
   const connected = connection !== null;
-  const showFields = editing || (connected && !connection.ics_url);
+  const showFields = canEdit && (editing || (connected && !connection.ics_url));
+
+  if (!connected && !canEdit) {
+    return (
+      <section
+        aria-label="Calendar connection"
+        className="rounded-[14px] border border-dashed border-[#D3CBBD] px-6 py-4 text-[13px] text-ink-muted max-md:px-4"
+      >
+        No calendar is connected. Only the profile's owner can connect one. You can still add dates
+        by hand below.
+      </section>
+    );
+  }
   const host = feedHost(connection?.ics_url ?? null);
   // Shown verbatim: the sync matches this text literally (ics-sync.ts),
   // so adding a "#" here would suggest a different tag than the real one.
@@ -244,14 +263,16 @@ export function CalendarConnectionPanel({
               <RefreshIcon />
               {refreshing ? "Refreshing…" : "Refresh now"}
             </button>
-            <button
-              type="button"
-              aria-expanded={showFields}
-              className="h-11 rounded-[9px] px-[15px] text-[13px] text-ink-muted hover:bg-canvas-2 hover:text-ink"
-              onClick={() => setEditing((open) => !open)}
-            >
-              {showFields ? "Done" : "Edit link"}
-            </button>
+            {canEdit && (
+              <button
+                type="button"
+                aria-expanded={showFields}
+                className="h-11 rounded-[9px] px-[15px] text-[13px] text-ink-muted hover:bg-canvas-2 hover:text-ink"
+                onClick={() => setEditing((open) => !open)}
+              >
+                {showFields ? "Done" : "Edit link"}
+              </button>
+            )}
           </div>
         </div>
       ) : (

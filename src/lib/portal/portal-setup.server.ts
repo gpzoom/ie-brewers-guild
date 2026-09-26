@@ -13,11 +13,12 @@ import {
   loadEventsSection,
   loadHoursSection,
   loadLogoCoverSection,
+  loadMemberShell,
   loadPhotosSection,
+  type PortalMemberShell,
 } from "@/lib/portal/section-data.server";
 import { isSetupStepName, type SetupStepName } from "@/lib/portal/wizard-steps";
-import type { PortalRole } from "@/lib/portal/portal-destination";
-import type { MemberStatus, MemberType } from "@/lib/supabase/types";
+import type { MemberType } from "@/lib/supabase/types";
 
 /**
  * The setup wizard's server side (plan phase 4). Every function here
@@ -31,8 +32,6 @@ import type { MemberStatus, MemberType } from "@/lib/supabase/types";
  * A Photos & events editor never gets the wizard: they're sent to /portal.
  */
 
-type SessionClient = Awaited<ReturnType<typeof getSupabaseServerClientForRequest>>;
-
 async function requireWizardMember(): Promise<PortalMember> {
   const member = await requirePortalMember();
   if (member.role === "media_events") {
@@ -41,52 +40,7 @@ async function requireWizardMember(): Promise<PortalMember> {
   return member;
 }
 
-export type PortalSetupShell = {
-  memberId: string;
-  memberName: string;
-  role: PortalRole;
-  isImpersonating: boolean;
-  memberType: MemberType;
-  typeConfirmed: boolean;
-  setupCompleted: boolean;
-  status: MemberStatus;
-  slug: string;
-  draftStatus: DraftStatus;
-};
-
-async function loadShell(supabase: SessionClient, member: PortalMember): Promise<PortalSetupShell> {
-  const [rowResult, draftStatus] = await Promise.all([
-    supabase
-      .from("members")
-      .select("business_name, member_type, status, slug, type_confirmed_at, setup_completed_at")
-      .eq("id", member.memberId)
-      .maybeSingle(),
-    loadDraftStatus(supabase, member.memberId),
-  ]);
-  if (rowResult.error || !rowResult.data) {
-    throw new Error(rowResult.error?.message ?? "Member not found.");
-  }
-  const row = rowResult.data as {
-    business_name: string | null;
-    member_type: MemberType;
-    status: MemberStatus;
-    slug: string;
-    type_confirmed_at: string | null;
-    setup_completed_at: string | null;
-  };
-  return {
-    memberId: member.memberId,
-    memberName: row.business_name?.trim() || member.memberName,
-    role: member.role,
-    isImpersonating: member.isImpersonating,
-    memberType: row.member_type,
-    typeConfirmed: row.type_confirmed_at !== null,
-    setupCompleted: row.setup_completed_at !== null,
-    status: row.status,
-    slug: row.slug,
-    draftStatus,
-  };
-}
+export type PortalSetupShell = PortalMemberShell;
 
 /**
  * The /portal/setup layout's beforeLoad: who's signed in, which business,
@@ -99,7 +53,7 @@ export const getPortalSetupShell = createServerFn({ method: "GET" }).handler(
   async (): Promise<PortalSetupShell> => {
     const member = await requireWizardMember();
     const supabase = await getSupabaseServerClientForRequest();
-    return loadShell(supabase, member);
+    return loadMemberShell(supabase, member);
   },
 );
 

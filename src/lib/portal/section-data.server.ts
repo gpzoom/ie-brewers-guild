@@ -1,11 +1,22 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
-import { loadMemberDraftBundle, type MemberDraftBundle } from "@/lib/drafts/drafts.server";
+import {
+  loadDraftStatus,
+  loadMemberDraftBundle,
+  type DraftStatus,
+  type MemberDraftBundle,
+} from "@/lib/drafts/drafts.server";
 import { logoStoragePathPattern } from "@/lib/media/logo-path";
+import { fetchMemberEmail } from "@/lib/members/member-email.server";
+import type { PortalRole } from "@/lib/portal/portal-destination";
+import type { TypeChangeRequestSummary } from "@/lib/portal/type-change.server";
 import type {
   CalendarConnectionRow,
   CategoryRow,
   EventRow,
   MediaAssetRow,
+  MemberStatus,
+  MemberType,
   UploadTokenRow,
 } from "@/lib/supabase/types";
 
@@ -25,6 +36,61 @@ import type {
  */
 
 type SessionClient = Awaited<ReturnType<typeof getSupabaseServerClientForRequest>>;
+
+/**
+ * Who's working on which member, and that member's live state -- what the
+ * wizard's layout (/portal/setup) and the portal's layout both start from.
+ * The member has already been resolved from the session.
+ */
+export type PortalMemberShell = {
+  memberId: string;
+  memberName: string;
+  role: PortalRole;
+  isImpersonating: boolean;
+  memberType: MemberType;
+  typeConfirmed: boolean;
+  setupCompleted: boolean;
+  status: MemberStatus;
+  slug: string;
+  draftStatus: DraftStatus;
+};
+
+export async function loadMemberShell(
+  supabase: SessionClient,
+  member: { memberId: string; memberName: string; role: PortalRole; isImpersonating: boolean },
+): Promise<PortalMemberShell> {
+  const [rowResult, draftStatus] = await Promise.all([
+    supabase
+      .from("members")
+      .select("business_name, member_type, status, slug, type_confirmed_at, setup_completed_at")
+      .eq("id", member.memberId)
+      .maybeSingle(),
+    loadDraftStatus(supabase, member.memberId),
+  ]);
+  if (rowResult.error || !rowResult.data) {
+    throw new Error(rowResult.error?.message ?? "Member not found.");
+  }
+  const row = rowResult.data as {
+    business_name: string | null;
+    member_type: MemberType;
+    status: MemberStatus;
+    slug: string;
+    type_confirmed_at: string | null;
+    setup_completed_at: string | null;
+  };
+  return {
+    memberId: member.memberId,
+    memberName: row.business_name?.trim() || member.memberName,
+    role: member.role,
+    isImpersonating: member.isImpersonating,
+    memberType: row.member_type,
+    typeConfirmed: row.type_confirmed_at !== null,
+    setupCompleted: row.setup_completed_at !== null,
+    status: row.status,
+    slug: row.slug,
+    draftStatus,
+  };
+}
 
 async function listGallery(supabase: SessionClient, memberId: string): Promise<MediaAssetRow[]> {
   const { data, error } = await supabase
@@ -168,6 +234,47 @@ export async function loadDiscountSection(supabase: SessionClient, memberId: str
     listCategories(supabase),
   ]);
   return { draft, categories };
+}
+
+/** The member's open "Request a type change", if any (RLS: owner, full editor, Guild admin). */
+async function loadOpenTypeChangeRequest(
+  supabase: SessionClient,
+  memberId: string,
+): Promise<TypeChangeRequestSummary | null> {
+  const { data } = await supabase
+    .from("support_requests")
+    .select("requested_member_type, created_at")
+    .eq("member_id", memberId)
+    .eq("kind", "type_change")
+    .eq("status", "open")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    requestedType: data.requested_member_type as MemberType,
+    createdAt: data.created_at as string,
+  };
+}
+
+/**
+ * The portal's Basics & hours: the draft, any open type-change request,
+ * and -- only while a Guild admin is editing as them, exactly as on
+ * /admin/basics -- the member's sign-in email.
+ */
+export async function loadBasicsSection(
+  supabase: SessionClient,
+  service: SupabaseClient,
+  member: { memberId: string; isImpersonating: boolean },
+) {
+  const [draft, typeChangeRequest, email] = await Promise.all([
+    loadMemberDraftBundle(supabase, member.memberId),
+    loadOpenTypeChangeRequest(supabase, member.memberId),
+    member.isImpersonating
+      ? fetchMemberEmail(member.memberId, supabase, service).then((r) => r.email)
+      : Promise.resolve(null),
+  ]);
+  return { draft, typeChangeRequest, email };
 }
 
 /** What sectionCompleteness needs: the draft plus the live, undrafted events facts. */

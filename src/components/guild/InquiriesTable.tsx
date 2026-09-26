@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -30,7 +30,7 @@ const EMPTY_MESSAGE: Record<InquiryFilter, string> = {
 };
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
+  return new Date(iso).toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -38,7 +38,7 @@ function formatDate(iso: string): string {
 }
 
 function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString("en-GB", {
+  return new Date(iso).toLocaleString("en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -49,7 +49,7 @@ function formatDateTime(iso: string): string {
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("en-GB", {
+  return new Date(iso).toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
@@ -89,10 +89,13 @@ export function InquiriesTable({
   inquiries,
   filter,
   onFilterChange,
+  memberRequests,
 }: {
   inquiries: InquiryRow[];
   filter: InquiryFilter;
   onFilterChange: (filter: InquiryFilter) => void;
+  /** Open requests from members' portals (MemberRequests), shown above the inquiries. */
+  memberRequests?: ReactNode;
 }) {
   const router = useRouter();
   const [expanded, setExpanded] = useState<Set<string>>(
@@ -163,6 +166,8 @@ export function InquiriesTable({
           })}
         </div>
       </div>
+
+      {memberRequests}
 
       {inquiries.length === 0 && (
         <div className="rounded-[14px] border border-canvas-border bg-white px-6 py-8 text-center text-sm text-ink-muted">

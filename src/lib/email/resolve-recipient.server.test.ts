@@ -143,3 +143,38 @@ describe("resolveRecipient", () => {
     expect(to).toBeNull();
   });
 });
+
+describe("resolveRecipient: portal emails", () => {
+  it("type_change_requested goes to the Guild", async () => {
+    const supabase = fakeSupabase({ memberUser: { user_id: "u1" }, userEmail: "owner@example.com" });
+    const to = await resolveRecipient(
+      {
+        trigger: "type_change_requested",
+        memberId: "m1",
+        memberName: "Hop House",
+        currentType: "producer",
+        requestedType: "allied",
+        note: null,
+        requestedByEmail: "owner@example.com",
+      },
+      supabase,
+    );
+    expect(to).toBe(GUILD_NOTIFICATION_EMAIL);
+  });
+
+  it("editor_invited goes to the invitee", async () => {
+    const supabase = fakeSupabase({ memberUser: { user_id: "u1" }, userEmail: "owner@example.com" });
+    const to = await resolveRecipient(
+      {
+        trigger: "editor_invited",
+        memberId: "m1",
+        memberName: "Hop House",
+        email: "sam@example.com",
+        role: "editor",
+        inviterEmail: "owner@example.com",
+      },
+      supabase,
+    );
+    expect(to).toBe("sam@example.com");
+  });
+});

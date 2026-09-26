@@ -24,25 +24,17 @@ import { WizardInfoBox, WizardStep } from "@/components/portal/setup/WizardStep"
  */
 
 /** Only the owner connects the calendar (calendar_connections writes are owner-only in SQL). */
-function canConnectCalendar(shell: PortalSetupShell): boolean {
+export function canConnectCalendar(shell: { role: PortalSetupShell["role"]; isImpersonating: boolean }): boolean {
   return shell.role === "owner" || shell.isImpersonating;
 }
 
 function CalendarBlock({ shell, schedule }: { shell: PortalSetupShell; schedule: ScheduleData }) {
-  if (canConnectCalendar(shell)) {
-    return (
-      <CalendarConnectionPanel
-        memberId={shell.memberId}
-        initialConnection={schedule.calendarConnection}
-      />
-    );
-  }
   return (
-    <WizardInfoBox>
-      {schedule.calendarConnection
-        ? "A calendar is connected. Only the profile's owner can change the calendar link."
-        : "Only the profile's owner can connect a calendar. You can still add dates by hand below."}
-    </WizardInfoBox>
+    <CalendarConnectionPanel
+      memberId={shell.memberId}
+      initialConnection={schedule.calendarConnection}
+      canEdit={canConnectCalendar(shell)}
+    />
   );
 }
 
