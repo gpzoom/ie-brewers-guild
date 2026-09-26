@@ -8,6 +8,7 @@ import { recordAuditLogIfImpersonating, type AuditableAction } from "@/lib/guild
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { assetInUseMessage, findAssetUsages } from "@/lib/media/asset-usage";
 import type { MediaAssetRow } from "@/lib/supabase/types";
+import { logoStoragePathPattern } from "@/lib/media/logo-path";
 
 export const listMemberMedia = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => data)
@@ -17,6 +18,10 @@ export const listMemberMedia = createServerFn({ method: "GET" })
       .from("media_assets")
       .select("*")
       .eq("member_id", data.memberId)
+      // Logos live in the public member-logos bucket and belong only in the
+      // logo slot -- they'd show as broken thumbnails here (/api/admin-media
+      // reads member-media) and can't be used as a cover or slide.
+      .not("storage_path", "like", logoStoragePathPattern(data.memberId))
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return assets as MediaAssetRow[];

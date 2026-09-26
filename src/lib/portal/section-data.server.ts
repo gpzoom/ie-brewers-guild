@@ -1,5 +1,6 @@
 import type { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { loadMemberDraftBundle, type MemberDraftBundle } from "@/lib/drafts/drafts.server";
+import { logoStoragePathPattern } from "@/lib/media/logo-path";
 import type {
   CalendarConnectionRow,
   CategoryRow,
@@ -30,6 +31,8 @@ async function listGallery(supabase: SessionClient, memberId: string): Promise<M
     .from("media_assets")
     .select("*")
     .eq("member_id", memberId)
+    // Logos aren't gallery photos -- see logoStoragePathPattern.
+    .not("storage_path", "like", logoStoragePathPattern(memberId))
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []) as MediaAssetRow[];

@@ -41,6 +41,8 @@ export function LogoUploader({
   businessName: string;
 }) {
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl);
+  // Upload problems show right under the logo row; background-save problems under the choices.
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [background, setBackground] = useState<LogoBackground>(initialBackground);
@@ -53,7 +55,7 @@ export function LogoUploader({
   async function onFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    setError(null);
+    setUploadError(null);
     setUploading(true);
     const formData = new FormData();
     formData.append("memberId", memberId);
@@ -64,7 +66,7 @@ export function LogoUploader({
       setLogoUrl(publicUrl);
       reportSaved?.("basics", dirtySections);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed.");
+      setUploadError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -107,7 +109,7 @@ export function LogoUploader({
           <div className="flex min-w-0 flex-grow flex-col gap-[3px] md:gap-1">
             <div className="text-[13px] font-semibold text-ink md:text-[14px]">Your logo</div>
             <div className="text-[11px] leading-[1.4] text-ink-muted md:text-[12px]">
-              PNG only, transparent background, at least 400px tall. JPGs and SVGs are rejected.
+              PNG only, transparent background, at least 400px tall, up to 2 MB. JPGs and SVGs are rejected.
             </div>
           </div>
           <label htmlFor="logo-upload" className="sr-only">
@@ -130,6 +132,11 @@ export function LogoUploader({
             {uploading ? "Uploading…" : logoUrl ? "Replace" : "Upload"}
           </button>
         </div>
+        {uploadError && (
+          <p role="alert" className="-mt-2 text-[13px] font-medium text-danger">
+            {uploadError}
+          </p>
+        )}
 
         <fieldset className="m-0 flex flex-col gap-2.5 border-0 border-t border-canvas-2 p-0 pt-4">
           <legend className="float-left mb-2.5 flex w-full items-baseline justify-between gap-3 p-0">
