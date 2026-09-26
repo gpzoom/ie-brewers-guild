@@ -32,6 +32,9 @@ const MEMBER_MUTATION_FILES = [
   "src/lib/media/review-tray.server.ts",
   "src/lib/events/events.server.ts",
   "src/lib/events/calendar-connection.server.ts",
+  // The portal's People actions (service-role writes) and type-change requests.
+  "src/lib/portal/portal-people.server.ts",
+  "src/lib/portal/type-change.server.ts",
 ];
 
 describe("audit-log coverage", () => {

@@ -13,6 +13,7 @@ import {
   type InviteRole,
 } from "@/lib/portal/people";
 import { sendTransactionalEmail } from "@/lib/email/send";
+import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 
 /**
  * The People section's actions (docs/member-profiles.md, "The People
@@ -22,6 +23,10 @@ import { sendTransactionalEmail } from "@/lib/email/send";
  * with owner rights -- before the service-role client is touched. The
  * browser only ever sends an email, a role, or the id of an invite or
  * person, and each of those is looked up within this member only.
+ *
+ * A Guild admin's actions while editing as the member are audit-logged
+ * against them (spec, "Enforcement"); these writes use the service key,
+ * so nothing in SQL would record them otherwise.
  */
 
 async function requireOwner(): Promise<PortalMember> {
@@ -78,6 +83,12 @@ export const invitePortalPerson = createServerFn({ method: "POST" })
       role: data.role,
       invitedByUserId: member.userId,
     });
+    await recordAuditLogIfImpersonating({
+      memberId: member.memberId,
+      tableName: "member_invites",
+      rowId: invite.inviteId,
+      action: invite.refreshed ? "update" : "insert",
+    });
     const emailSent = await emailInvite(member, invite);
     return { email: invite.email, refreshed: invite.refreshed, emailSent };
   });
@@ -90,6 +101,12 @@ export const resendPortalInvite = createServerFn({ method: "POST" })
       memberId: member.memberId,
       inviteId: data.inviteId,
     });
+    await recordAuditLogIfImpersonating({
+      memberId: member.memberId,
+      tableName: "member_invites",
+      rowId: typeof data.inviteId === "string" ? data.inviteId : null,
+      action: "update",
+    });
     const emailSent = await emailInvite(member, invite);
     return { email: invite.email, emailSent };
   });
@@ -99,6 +116,12 @@ export const cancelPortalInvite = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const member = await requireOwner();
     await cancelInvite(await peopleStore(), { memberId: member.memberId, inviteId: data.inviteId });
+    await recordAuditLogIfImpersonating({
+      memberId: member.memberId,
+      tableName: "member_invites",
+      rowId: typeof data.inviteId === "string" ? data.inviteId : null,
+      action: "update",
+    });
     return { ok: true as const };
   });
 
@@ -107,5 +130,11 @@ export const removePortalPerson = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const member = await requireOwner();
     await removePerson(await peopleStore(), { memberId: member.memberId, userId: data.userId });
+    await recordAuditLogIfImpersonating({
+      memberId: member.memberId,
+      tableName: "member_users",
+      rowId: typeof data.userId === "string" ? data.userId : null,
+      action: "delete",
+    });
     return { ok: true as const };
   });

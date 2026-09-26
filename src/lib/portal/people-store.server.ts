@@ -17,6 +17,7 @@ type InviteRow = {
   role: string;
   expires_at: string;
   created_at: string;
+  updated_at: string;
 };
 
 function toInvite(row: InviteRow): InviteRecord | null {
@@ -27,6 +28,7 @@ function toInvite(row: InviteRow): InviteRecord | null {
     role: row.role,
     expiresAt: row.expires_at,
     createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -54,7 +56,7 @@ export function supabasePeopleStore(service: SupabaseClient): PeopleStore {
     async listOpenInvites(memberId) {
       const { data, error } = await service
         .from("member_invites")
-        .select("id, email, role, expires_at, created_at")
+        .select("id, email, role, expires_at, created_at, updated_at")
         .eq("member_id", memberId)
         .is("accepted_at", null)
         .is("cancelled_at", null);
@@ -75,7 +77,7 @@ export function supabasePeopleStore(service: SupabaseClient): PeopleStore {
           invited_by_user_id: row.invitedByUserId,
           expires_at: row.expiresAt,
         })
-        .select("id, email, role, expires_at, created_at")
+        .select("id, email, role, expires_at, created_at, updated_at")
         .single();
       if (error || !data) {
         // The one-open-invite-per-address index: someone else invited the

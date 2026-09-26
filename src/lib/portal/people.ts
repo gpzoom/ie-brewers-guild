@@ -14,7 +14,8 @@ import type { PortalRole } from "@/lib/portal/portal-destination";
  * - Inviting an address with an invite still open (pending or expired, not
  *   accepted or canceled) refreshes that invite instead of adding a second
  *   one -- the database allows one open invite per address per member.
- * - Invites last 14 days; Resend restarts the 14 days.
+ * - Invites last 14 days; Resend restarts the 14 days. The same invite
+ *   can be sent again only after a few minutes (INVITE_RESEND_COOLDOWN_MINUTES).
  * - The owner can't be removed (so the owner can't remove themselves).
  *   Changing someone's role is remove-and-reinvite, for now.
  */
@@ -24,6 +25,22 @@ export type InviteRole = "editor" | "media_events";
 export const INVITE_ROLES: readonly InviteRole[] = ["media_events", "editor"];
 
 export const INVITE_LIFETIME_DAYS = 14;
+
+/**
+ * An invite email to the same address goes out at most once per this
+ * many minutes, so Resend can't be used to flood someone's inbox with
+ * Guild-branded mail.
+ */
+export const INVITE_RESEND_COOLDOWN_MINUTES = 5;
+
+function assertCooledDown(invite: InviteRecord, now: Date) {
+  const last = new Date(invite.updatedAt).getTime();
+  if (now.getTime() - last < INVITE_RESEND_COOLDOWN_MINUTES * 60 * 1000) {
+    throw new Error(
+      `An invite just went to ${invite.email}. You can send it again in a few minutes.`,
+    );
+  }
+}
 
 export function isInviteRole(value: unknown): value is InviteRole {
   return value === "editor" || value === "media_events";
@@ -37,6 +54,8 @@ export type InviteRecord = {
   role: InviteRole;
   expiresAt: string;
   createdAt: string;
+  /** When it was last sent (created, refreshed or resent). */
+  updatedAt: string;
 };
 
 export type InvitePatch = {
@@ -166,6 +185,7 @@ export async function invitePerson(
     (invite) => invite.email.trim().toLowerCase() === email,
   );
   if (open) {
+    assertCooledDown(open, now);
     await store.updateInvite(input.memberId, open.id, {
       role,
       expiresAt,
@@ -199,9 +219,9 @@ export async function resendInvite(
   input: { memberId: string; inviteId: unknown; now?: Date },
 ): Promise<{ email: string; role: InviteRole }> {
   const invite = await findOpenInvite(store, input.memberId, input.inviteId);
-  await store.updateInvite(input.memberId, invite.id, {
-    expiresAt: inviteExpiry(input.now ?? new Date()),
-  });
+  const now = input.now ?? new Date();
+  assertCooledDown(invite, now);
+  await store.updateInvite(input.memberId, invite.id, { expiresAt: inviteExpiry(now) });
   return { email: invite.email, role: invite.role };
 }
 

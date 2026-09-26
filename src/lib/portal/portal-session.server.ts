@@ -92,8 +92,22 @@ const resolvePortalState = createServerOnlyFn(
 
     const service = await getSupabaseServiceRoleClient();
 
+    // The impersonation cookie alone isn't enough: it also has to come from
+    // someone who is STILL a Guild admin. A Guild admin editing as a member
+    // gets owner rights here, and the People actions use the service-role
+    // client, so an admin demoted mid-session must lose those rights on
+    // their next request, not when the cookie goes idle.
     const impersonation = await readImpersonationState();
+    let actorIsGuildAdmin = false;
     if (impersonation && impersonation.actorUserId === user.id) {
+      const { data: actorProfile } = await supabase
+        .from("profiles")
+        .select("is_guild_admin")
+        .eq("id", user.id)
+        .maybeSingle();
+      actorIsGuildAdmin = actorProfile?.is_guild_admin === true;
+    }
+    if (impersonation && impersonation.actorUserId === user.id && actorIsGuildAdmin) {
       await touchImpersonationActivity(impersonation);
       const { data: member } = await service
         .from("members")

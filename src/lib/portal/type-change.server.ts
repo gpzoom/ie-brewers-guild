@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { requirePortalMember } from "@/lib/portal/portal-session.server";
 import { sendTransactionalEmail } from "@/lib/email/send";
+import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { MemberType } from "@/lib/supabase/types";
 
 /**
@@ -69,11 +70,17 @@ export const requestTypeChange = createServerFn({ method: "POST" })
         requested_member_type: data.memberType,
         note: data.note,
       })
-      .select("requested_member_type, created_at")
+      .select("id, requested_member_type, created_at")
       .single();
     if (error || !inserted) {
       throw new Error("Couldn't send your request — try again.");
     }
+    await recordAuditLogIfImpersonating({
+      memberId: member.memberId,
+      tableName: "support_requests",
+      rowId: inserted.id as string,
+      action: "insert",
+    });
 
     let requestedByEmail: string | null = null;
     if (!member.isImpersonating) {

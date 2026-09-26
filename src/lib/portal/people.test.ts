@@ -42,6 +42,7 @@ function memoryStore(seed: {
         role: row.role,
         expiresAt: row.expiresAt,
         createdAt: NOW.toISOString(),
+        updatedAt: NOW.toISOString(),
         cancelledAt: null,
       };
       invites.push(invite);
@@ -52,6 +53,7 @@ function memoryStore(seed: {
       if (!invite) throw new Error("not found");
       if (patch.role) invite.role = patch.role;
       if (patch.expiresAt) invite.expiresAt = patch.expiresAt;
+      invite.updatedAt = NOW.toISOString();
       if (patch.cancelledAt) invite.cancelledAt = patch.cancelledAt;
     },
     async deleteMemberUser(_memberId, userId) {
@@ -113,6 +115,7 @@ describe("loadPeople", () => {
           role: "editor",
           expiresAt: "2026-09-20T00:00:00Z",
           createdAt: "2026-09-06T00:00:00Z",
+          updatedAt: "2026-09-06T00:00:00Z",
           cancelledAt: null,
         },
       ],
@@ -160,6 +163,7 @@ describe("invitePerson", () => {
           role: "media_events",
           expiresAt: "2026-09-20T00:00:00Z",
           createdAt: "2026-09-06T00:00:00Z",
+          updatedAt: "2026-09-06T00:00:00Z",
           cancelledAt: null,
         },
       ],
@@ -191,6 +195,23 @@ describe("invitePerson", () => {
 });
 
 describe("resendInvite and cancelInvite", () => {
+  it("won't send the same invite again within a few minutes", async () => {
+    const recent = { ...pending(), updatedAt: "2026-09-26T11:58:00Z" };
+    const { store } = memoryStore({ invites: [recent] });
+    await expect(resendInvite(store, { memberId: MEMBER, inviteId: "p1", now: NOW })).rejects.toThrow(
+      "send it again in a few minutes",
+    );
+    await expect(
+      invitePerson(store, {
+        memberId: MEMBER,
+        email: "sam@x.com",
+        role: "editor",
+        invitedByUserId: "u-owner",
+        now: NOW,
+      }),
+    ).rejects.toThrow("send it again in a few minutes");
+  });
+
   const pending = (): StoredInvite => ({
     id: "p1",
     memberId: MEMBER,
@@ -198,6 +219,7 @@ describe("resendInvite and cancelInvite", () => {
     role: "editor",
     expiresAt: "2026-09-27T00:00:00Z",
     createdAt: "2026-09-13T00:00:00Z",
+    updatedAt: "2026-09-13T00:00:00Z",
     cancelledAt: null,
   });
 
