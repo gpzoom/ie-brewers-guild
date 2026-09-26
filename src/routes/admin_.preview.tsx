@@ -21,6 +21,10 @@ import { StatusBand, bandButtonClass } from "@/components/shell/AppChrome";
  * photos aren't public yet.
  */
 export const Route = createFileRoute("/admin_/preview")({
+  // Never reuse a previous visit's data: every member shares these URLs, so a
+  // cached copy could show one member's profile while editing another.
+  staleTime: 0,
+  gcTime: 0,
   beforeLoad: async () => {
     const session = await requireMemberSession();
     return { memberId: session.memberId };

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getMemberDraft } from "@/lib/drafts/drafts.server";
 import { LinksContactEditor } from "@/components/admin/LinksContactEditor";
+import { SameMemberGuard } from "@/components/admin/SameMemberGuard";
 
 /**
  * Links & contact. The link pills read and save the draft's `links`
@@ -9,14 +10,20 @@ import { LinksContactEditor } from "@/components/admin/LinksContactEditor";
  * this page only shows them, from the same draft, with a pointer there.
  */
 export const Route = createFileRoute("/admin/links")({
+  // Never reuse a previous visit's data: every member shares these URLs, so a
+  // cached copy could show one member's profile while editing another.
+  staleTime: 0,
+  gcTime: 0,
   loader: async ({ context }) => getMemberDraft({ data: { memberId: context.memberId } }),
   component: LinksRoute,
 });
 
 function LinksRoute() {
   const draft = Route.useLoaderData();
+  const { memberId } = Route.useRouteContext();
   const basics = draft.data.basics;
   return (
+    <SameMemberGuard memberId={memberId} dataMemberId={draft.member.id}>
     <LinksContactEditor
       memberId={draft.member.id}
       initialLinks={draft.data.links.links}
@@ -29,5 +36,6 @@ function LinksRoute() {
         state: basics.state,
       }}
     />
+    </SameMemberGuard>
   );
 }

@@ -14,6 +14,10 @@ import {
 } from "@/components/admin/MemberEditingContext";
 
 export const Route = createFileRoute("/admin")({
+  // Never reuse a previous visit's data: every member shares these URLs, so a
+  // cached copy could show one member's profile while editing another.
+  staleTime: 0,
+  gcTime: 0,
   beforeLoad: async () => {
     const session = await requireMemberSession();
     return {
@@ -59,8 +63,10 @@ function AdminLayout() {
     }),
     [memberId, memberName, publishGateData, draftStatus.role, isImpersonating],
   );
+  // key={memberId}: switching to a different member (Edit as them) must never
+  // carry the previous member's draft status or editor state over.
   return (
-    <MemberEditingProvider value={editing}>
+    <MemberEditingProvider key={memberId} value={editing}>
       <DraftStatusProvider initial={draftStatus}>
         <AdminLayoutInner />
       </DraftStatusProvider>
@@ -84,7 +90,7 @@ function AdminLayoutInner() {
       publishSlot={<PublishGateDialog memberId={memberId} initial={publishGateData} />}
     >
       {/* Remounted after a discard so every editor starts again from the reloaded draft. */}
-      <Fragment key={epoch}>
+      <Fragment key={`${memberId}:${epoch}`}>
         <Outlet />
       </Fragment>
     </AdminShell>

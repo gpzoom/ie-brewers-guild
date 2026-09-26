@@ -9,8 +9,13 @@ import { CoverEditor } from "@/components/admin/CoverEditor";
 import { SocialImageEditor } from "@/components/admin/SocialImageEditor";
 import { CreatorLinkPanel } from "@/components/admin/CreatorLinkPanel";
 import { ReviewTray } from "@/components/admin/ReviewTray";
+import { SameMemberGuard } from "@/components/admin/SameMemberGuard";
 
 export const Route = createFileRoute("/admin/media")({
+  // Never reuse a previous visit's data: every member shares these URLs, so a
+  // cached copy could show one member's profile while editing another.
+  staleTime: 0,
+  gcTime: 0,
   loader: async ({ context }) => {
     const [assets, draft, uploadTokens, pending] = await Promise.all([
       listMemberMedia({ data: { memberId: context.memberId } }),
@@ -38,6 +43,7 @@ function MediaRoute() {
   const basics = draft.data.basics;
   const { memberId } = Route.useRouteContext();
   return (
+    <SameMemberGuard memberId={memberId} dataMemberId={draft.member.id}>
     <div className="flex flex-col gap-8 md:gap-9">
       <header className="flex flex-col gap-1.5">
         <h1 className="font-display text-[24px] font-bold leading-[1.15] text-ink md:text-[27px]">
@@ -80,5 +86,6 @@ function MediaRoute() {
         galleryAssets={assets}
       />
     </div>
+    </SameMemberGuard>
   );
 }

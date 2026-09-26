@@ -171,6 +171,9 @@ export function RosterTable({ entries }: { entries: RosterEntry[] }) {
     setImpersonatingId(entry.member.id);
     try {
       await startImpersonation({ data: { memberId: entry.member.id } });
+      // Mark every loaded page stale before opening the editor, so nothing
+      // loaded for a previously edited member can be shown for this one.
+      await router.invalidate();
       await router.navigate({ to: "/admin/basics" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not start editing as this member.");

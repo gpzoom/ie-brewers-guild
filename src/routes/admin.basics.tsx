@@ -4,6 +4,7 @@ import { getMemberEmail } from "@/lib/members/member-email.server";
 import { BasicsForm } from "@/components/admin/BasicsForm";
 import { HoursEditor } from "@/components/admin/HoursEditor";
 import { LogoUploader } from "@/components/admin/LogoUploader";
+import { SameMemberGuard } from "@/components/admin/SameMemberGuard";
 
 /**
  * "Basics & hours" -- one page (artboard AdminBasics; owner decision
@@ -15,6 +16,10 @@ import { LogoUploader } from "@/components/admin/LogoUploader";
  * `basics` section) except member type, which isn't drafted.
  */
 export const Route = createFileRoute("/admin/basics")({
+  // Never reuse a previous visit's data: every member shares these URLs, so a
+  // cached copy could show one member's profile while editing another.
+  staleTime: 0,
+  gcTime: 0,
   loader: async ({ context }) => {
     // The sign-in email field only matters (and is only editable) while
     // impersonating -- see BasicsForm's own doc comment -- so it's only
@@ -35,6 +40,7 @@ function BasicsRoute() {
   const { memberId, isImpersonating } = Route.useRouteContext();
   const basics = draft.data.basics;
   return (
+    <SameMemberGuard memberId={memberId} dataMemberId={draft.member.id}>
     <BasicsForm
       memberId={memberId}
       memberType={draft.member.member_type}
@@ -55,5 +61,6 @@ function BasicsRoute() {
         <HoursEditor memberId={memberId} hours={basics.hours} specialHours={basics.special_hours} />
       }
     />
+    </SameMemberGuard>
   );
 }

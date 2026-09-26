@@ -22,6 +22,10 @@ import {
  * __root.tsx (light theme, no site header/footer).
  */
 export const Route = createFileRoute("/portal/setup")({
+  // Never reuse a previous visit's data: every member shares these URLs, so a
+  // cached copy could show one member's profile while editing another.
+  staleTime: 0,
+  gcTime: 0,
   beforeLoad: async () => ({ shell: await getPortalSetupShell() }),
   head: () => ({
     meta: [

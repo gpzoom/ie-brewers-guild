@@ -35,6 +35,10 @@ function validatePortalSearch(search: Record<string, unknown>): PortalSearch {
  * itself is phase 5 -- with a "Continue setup" link to the wizard's Review.
  */
 export const Route = createFileRoute("/portal/")({
+  // Never reuse a previous visit's data: every member shares these URLs, so a
+  // cached copy could show one member's profile while editing another.
+  staleTime: 0,
+  gcTime: 0,
   validateSearch: validatePortalSearch,
   loaderDeps: ({ search }) => ({ forceChoose: search.switch === true }),
   loader: async ({ deps }) => {

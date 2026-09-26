@@ -4,8 +4,13 @@ import { getCalendarConnection } from "@/lib/events/calendar-connection.server";
 import { getMemberBasics } from "@/lib/members/member-basics.server";
 import { EventsEditor } from "@/components/admin/EventsEditor";
 import { CalendarConnectionPanel } from "@/components/admin/CalendarConnectionPanel";
+import { SameMemberGuard } from "@/components/admin/SameMemberGuard";
 
 export const Route = createFileRoute("/admin/events")({
+  // Never reuse a previous visit's data: every member shares these URLs, so a
+  // cached copy could show one member's profile while editing another.
+  staleTime: 0,
+  gcTime: 0,
   loader: async ({ context }) => {
     // Parallel loads, same Promise.all pattern as admin.media.tsx's loader
     // -- getMemberBasics gives us member.timezone, which EventsEditor
@@ -17,7 +22,7 @@ export const Route = createFileRoute("/admin/events")({
       getMemberBasics({ data: { memberId: context.memberId } }),
       getCalendarConnection({ data: { memberId: context.memberId } }),
     ]);
-    return { events, memberTimezone: member.timezone, calendarConnection };
+    return { dataMemberId: member.id, events, memberTimezone: member.timezone, calendarConnection };
   },
   component: EventsRoute,
 });
@@ -40,9 +45,10 @@ function InfoIcon() {
 
 /** Artboard M (AdminEvents): heading, calendar connection, upcoming list, note. */
 function EventsRoute() {
-  const { events, memberTimezone, calendarConnection } = Route.useLoaderData();
+  const { dataMemberId, events, memberTimezone, calendarConnection } = Route.useLoaderData();
   const { memberId } = Route.useRouteContext();
   return (
+    <SameMemberGuard memberId={memberId} dataMemberId={dataMemberId}>
     <div className="flex flex-col gap-[26px]">
       <div className="flex flex-col gap-1.5">
         <h1 className="font-display text-[27px] font-bold leading-tight text-ink">Events</h1>
@@ -63,5 +69,6 @@ function EventsRoute() {
         </p>
       </div>
     </div>
+    </SameMemberGuard>
   );
 }
