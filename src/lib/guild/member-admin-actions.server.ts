@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import type { MemberRow, MemberType } from "@/lib/supabase/types";
+import { geocodeMemberAfterPublish } from "@/lib/geo/geocode.server";
 
 /**
  * The five write-limited columns the schema's own trigger
@@ -41,6 +42,8 @@ export const approveMember = createServerFn({ method: "POST" })
       })
       .eq("id", data.memberId);
     if (error) throw new Error(error.message);
+    // Best-effort map pin for a profile going live without coordinates yet.
+    await geocodeMemberAfterPublish(data.memberId, null);
     return { ok: true as const };
   });
 

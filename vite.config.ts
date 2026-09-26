@@ -386,6 +386,14 @@ export default defineConfig(async ({ command, mode }) => {
             // imports at runtime (client components import its types only),
             // so that one stays protected.
             "src/lib/portal/portal-setup.server.ts",
+            // src/lib/members/directory.server.ts -- its one createServerFn
+            // export, getDirectoryMembers, is imported straight into
+            // src/routes/members.tsx's own loader (the public /members map
+            // and cards) -- the same safe client/server RPC boundary as the
+            // rest. src/lib/geo/geocode.server.ts (service-role write +
+            // Google key) stays protected: only drafts.server.ts and
+            // member-admin-actions.server.ts handlers import it.
+            "src/lib/members/directory.server.ts",
           ],
           specifiers: ["server-only"],
         },

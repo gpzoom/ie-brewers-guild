@@ -22,6 +22,7 @@ import {
   type ViewerRole,
 } from "@/lib/drafts/sections";
 import { validateDraftPatch } from "@/lib/drafts/validate-patch";
+import { geocodeMemberAfterPublish, readAddressSnapshot } from "@/lib/geo/geocode.server";
 import type { MemberStatus, MemberType } from "@/lib/supabase/types";
 
 /**
@@ -211,6 +212,9 @@ export const publishDraft = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const sections = parseSections(data.sections);
     const supabase = await getSupabaseServerClientForRequest();
+    // The live address before publishing, so the map-pin lookup below can
+    // tell whether this publish changed it.
+    const addressBefore = await readAddressSnapshot(supabase, data.memberId);
     const { data: result, error } = await supabase.rpc("publish_member_draft", {
       p_member_id: data.memberId,
       p_sections: sections,
@@ -218,6 +222,9 @@ export const publishDraft = createServerFn({ method: "POST" })
     });
     if (error || !result) throw toError(error, "Publish failed — try again.");
     await touchImpersonation(data.memberId);
+    // Best-effort (never throws): map coordinates for a new/changed street
+    // address, written server-side for this member only.
+    await geocodeMemberAfterPublish(data.memberId, addressBefore);
     const parsed = result as {
       status: MemberStatus;
       published_at: string;

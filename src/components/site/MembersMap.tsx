@@ -1,40 +1,14 @@
 import { APIProvider, Map, Marker, InfoWindow, useMap } from "@vis.gl/react-google-maps";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import type { Member } from "@/data/site";
 import type { DirectorySearch } from "@/lib/directory/search-params";
-import { locationSlug } from "@/lib/slug";
+import { directionsUrl, directoryPins, type DirectoryMember, type DirectoryPin } from "@/lib/members/directory";
 import { Compass, ExternalLink, Navigation } from "lucide-react";
 
-type Pin = {
-  brewery: string;
-  slug: string;
-  city: string;
-  address: string;
-  lat: number;
-  lng: number;
-  website: string;
-  tourUrl?: string;
-};
-
-function membersToPins(members: Member[]): Pin[] {
-  return members.flatMap((m) => {
-    const multiLocation = m.locations.length > 1;
-    return m.locations.map((l) => ({
-      brewery: m.name,
-      // Each pin links to ITS OWN location's profile, not always the
-      // first -- clicking the Ontario pin should land on the Ontario
-      // profile, not Chino's, for a business with locations in both.
-      slug: locationSlug(m.name, l.city, multiLocation),
-      city: l.city,
-      address: l.address,
-      lat: l.lat,
-      lng: l.lng,
-      website: m.website,
-      tourUrl: m.tourUrl,
-    }));
-  });
-}
+// Pins come from the database (src/lib/members/directory.ts): one per
+// location with a street address and coordinates -- mobile members and
+// not-yet-geocoded addresses get a card on the page but no pin.
+type Pin = DirectoryPin;
 
 // Once the map is mounted, frame all pins.
 function FitToPins({ pins }: { pins: Pin[] }) {
@@ -55,14 +29,14 @@ function FitToPins({ pins }: { pins: Pin[] }) {
 const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 type MembersMapProps = {
-  members: Member[];
+  members: DirectoryMember[];
   linkSearch: DirectorySearch;
   initialView?: { lat: number; lng: number; zoom: number };
   onViewChange?: (view: { lat: number; lng: number; zoom: number }) => void;
 };
 
 export function MembersMap({ members, linkSearch, initialView, onViewChange }: MembersMapProps) {
-  const pins = useMemo(() => membersToPins(members), [members]);
+  const pins = useMemo(() => directoryPins(members), [members]);
   const [active, setActive] = useState<Pin | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -121,14 +95,16 @@ export function MembersMap({ members, linkSearch, initialView, onViewChange }: M
                   >
                     View profile
                   </Link>
-                  <a
-                    href={active.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 rounded-md bg-amber-700 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white hover:bg-amber-800"
-                  >
-                    <ExternalLink className="h-3 w-3" /> Website
-                  </a>
+                  {active.website && (
+                    <a
+                      href={active.website}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 rounded-md bg-amber-700 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white hover:bg-amber-800"
+                    >
+                      <ExternalLink className="h-3 w-3" /> Website
+                    </a>
+                  )}
                   {active.tourUrl ? (
                     <a
                       href={active.tourUrl}
@@ -149,7 +125,7 @@ export function MembersMap({ members, linkSearch, initialView, onViewChange }: M
                     </button>
                   )}
                   <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${active.lat},${active.lng}`}
+                    href={directionsUrl(active)}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-gray-900 hover:bg-gray-100"

@@ -3,8 +3,8 @@ import { useState } from "react";
 import { PageHero } from "@/components/site/PageHero";
 import { SectionHeader } from "@/components/site/SectionHeader";
 import { MembersMap } from "@/components/site/MembersMap";
-import { members, type Location } from "@/data/site";
-import { locationSlug } from "@/lib/slug";
+import { getDirectoryMembers } from "@/lib/members/directory.server";
+import { directionsUrl, type DirectoryLocation } from "@/lib/members/directory";
 import { validateDirectorySearch } from "@/lib/directory/search-params";
 import { Beer, ExternalLink, Facebook, Instagram, MapPin, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,10 @@ import heroImg from "@/assets/pillar-events.jpg";
 
 export const Route = createFileRoute("/members")({
   validateSearch: validateDirectorySearch,
+  // Every PUBLISHED member, straight from the database (retired the
+  // hard-coded list in src/data/site.ts): publishing adds a card,
+  // "Move back to draft" removes it.
+  loader: () => getDirectoryMembers(),
   head: () => ({
     meta: [
       { title: "Member Directory — Inland Southern California Brewers Guild" },
@@ -42,11 +46,12 @@ function UntappdIcon({ className }: { className?: string }) {
 
 type SelectedLocation = {
   brewery: string;
-  website: string;
-  location: Location;
+  website: string | null;
+  location: DirectoryLocation;
 };
 
 function MembersPage() {
+  const members = Route.useLoaderData();
   const [selected, setSelected] = useState<SelectedLocation | null>(null);
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/members" });
@@ -181,21 +186,23 @@ function MembersPage() {
                 // business (per product decision) -- the profile page's
                 // own "Next location" link is how a visitor reaches the
                 // others from there.
-                params={{ slug: locationSlug(m.name, m.locations[0].city, m.locations.length > 1) }}
+                params={{ slug: m.locations[0].slug }}
                 search={search}
                 className="mt-2 inline-flex min-h-11 items-center gap-1 text-sm font-semibold uppercase tracking-wider text-primary hover:underline"
               >
                 View profile
               </Link>
 
-              <a
-                href={m.website}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-semibold uppercase tracking-wider text-foreground hover:text-primary"
-              >
-                Visit <ExternalLink className="h-4 w-4" />
-              </a>
+              {m.website && (
+                <a
+                  href={m.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-semibold uppercase tracking-wider text-foreground hover:text-primary"
+                >
+                  Visit <ExternalLink className="h-4 w-4" />
+                </a>
+              )}
             </article>
           ))}
         </div>
@@ -214,18 +221,20 @@ function MembersPage() {
               <DialogFooter className="gap-2 sm:gap-2">
                 <Button asChild variant="outline">
                   <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${selected.location.lat},${selected.location.lng}`}
+                    href={directionsUrl(selected.location)}
                     target="_blank"
                     rel="noreferrer"
                   >
                     <Navigation className="h-4 w-4" /> Directions
                   </a>
                 </Button>
-                <Button asChild>
-                  <a href={selected.website} target="_blank" rel="noreferrer">
-                    <ExternalLink className="h-4 w-4" /> Visit website
-                  </a>
-                </Button>
+                {selected.website && (
+                  <Button asChild>
+                    <a href={selected.website} target="_blank" rel="noreferrer">
+                      <ExternalLink className="h-4 w-4" /> Visit website
+                    </a>
+                  </Button>
+                )}
               </DialogFooter>
             </>
           )}
