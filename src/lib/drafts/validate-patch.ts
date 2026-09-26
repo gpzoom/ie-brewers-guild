@@ -5,6 +5,7 @@ import { isLogoBackground } from "@/lib/members/logo-background";
 import { validateLinkUrl } from "@/lib/links/url-safety";
 import { LINK_KINDS } from "@/lib/links/link-kinds";
 import { MEMBER_THEMES } from "@/lib/theme/member-themes";
+import { isValidZip } from "@/lib/geo/places-address";
 import { applyDiscountXor, assertValidDiscountPercent } from "@/lib/members/discount";
 
 /**
@@ -28,6 +29,9 @@ const SECTION_KEYS: Record<DraftSection, readonly string[]> = {
     "city",
     "state",
     "street_address",
+    "postal_code",
+    "latitude",
+    "longitude",
     "service_area",
     "lead_time",
     "member_since_year",
@@ -101,6 +105,29 @@ function validateCrop(value: unknown, what: string) {
   }
 }
 
+/**
+ * A patch that touches the map pin sends both halves: two numbers in range
+ * (a picked address) or two nulls (a hand edit clearing it).
+ */
+function validateCoordinates(patch: Json) {
+  const hasLat = "latitude" in patch;
+  const hasLng = "longitude" in patch;
+  if (!hasLat && !hasLng) return;
+  if (hasLat !== hasLng) throw new Error("Invalid map location.");
+  const { latitude: lat, longitude: lng } = patch;
+  if (lat === null && lng === null) return;
+  if (
+    typeof lat !== "number" ||
+    typeof lng !== "number" ||
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng) ||
+    Math.abs(lat) > 90 ||
+    Math.abs(lng) > 180
+  ) {
+    throw new Error("Invalid map location.");
+  }
+}
+
 function validateBasics(patch: Json) {
   if ("business_name" in patch) requireNonEmpty(patch.business_name, "Business name");
   if ("city" in patch) requireNonEmpty(patch.city, "City");
@@ -115,6 +142,12 @@ function validateBasics(patch: Json) {
   ]) {
     if (key in patch) optionalString(patch[key], key);
   }
+  if ("postal_code" in patch && patch.postal_code !== null) {
+    if (typeof patch.postal_code !== "string" || !isValidZip(patch.postal_code)) {
+      throw new Error("Enter a 5-digit ZIP code (or ZIP+4, like 92374-1234).");
+    }
+  }
+  validateCoordinates(patch);
   if (typeof patch.tagline === "string" && patch.tagline.length > 70) {
     throw new Error("Tagline must be 70 characters or fewer.");
   }

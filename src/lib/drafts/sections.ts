@@ -40,6 +40,15 @@ export type BasicsDraft = {
   city: string;
   state: string;
   street_address: string | null;
+  /** ZIP (5-digit or ZIP+4); producer/allied only. */
+  postal_code: string | null;
+  /**
+   * Map pin, set together from a picked address suggestion
+   * (src/lib/geo/places-address.ts) and cleared by a hand edit of the
+   * address, so the post-publish geocode looks it up instead. Both or neither.
+   */
+  latitude: number | null;
+  longitude: number | null;
   service_area: string | null;
   lead_time: string | null;
   member_since_year: number | null;
@@ -122,6 +131,20 @@ function crop(value: unknown): CropRect | null {
   return x === null || y === null || w === null || h === null ? null : { x, y, w, h };
 }
 
+/** Both or neither (the database's rule too); numeric strings are accepted. */
+function coordinates(
+  lat: unknown,
+  lng: unknown,
+): { latitude: number | null; longitude: number | null } {
+  const toNum = (v: unknown) =>
+    typeof v === "string" && v.trim() !== "" ? num(Number(v)) : num(v);
+  const latitude = toNum(lat);
+  const longitude = toNum(lng);
+  return latitude === null || longitude === null
+    ? { latitude: null, longitude: null }
+    : { latitude, longitude };
+}
+
 const LOGO_BACKGROUND_VALUES = ["light", "dark", "theme"] as const;
 
 /**
@@ -146,6 +169,8 @@ export function normalizeDraftData(raw: unknown): MemberDraftData {
       city: str(b.city) ?? "",
       state: str(b.state) ?? "",
       street_address: str(b.street_address),
+      postal_code: str(b.postal_code),
+      ...coordinates(b.latitude, b.longitude),
       service_area: str(b.service_area),
       lead_time: str(b.lead_time),
       member_since_year: num(b.member_since_year),

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   buildGeocodeAddress,
   buildGeocodeUrl,
+  draftDataWithGeocode,
   geocodeAddress,
   needsGeocode,
   parseGeocodeResponse,
@@ -48,9 +49,23 @@ describe("needsGeocode", () => {
     expect(needsGeocode(null, { ...addr, latitude: null, longitude: null })).toBe(true);
     expect(needsGeocode(addr, { ...addr, latitude: 33.9, longitude: null })).toBe(true);
   });
-  it("is true when the street, city or state changed in this publish", () => {
-    expect(needsGeocode({ ...addr, street_address: "1 Old Rd" }, withCoords)).toBe(true);
-    expect(needsGeocode({ ...addr, city: "Corona" }, withCoords)).toBe(true);
+  it("is true when the address changed but the coordinates are the old ones", () => {
+    expect(needsGeocode({ ...withCoords, street_address: "1 Old Rd" }, withCoords)).toBe(true);
+    expect(needsGeocode({ ...withCoords, city: "Corona" }, withCoords)).toBe(true);
+    // numeric columns can come back as strings
+    expect(
+      needsGeocode(
+        { ...addr, city: "Corona", latitude: "33.953346", longitude: "-117.524014" },
+        withCoords,
+      ),
+    ).toBe(true);
+  });
+  it("is false when the address and coordinates changed together (a picked suggestion)", () => {
+    expect(
+      needsGeocode({ street_address: "1 Old Rd", city: "Corona", state: "CA", latitude: 33.8, longitude: -117.5 }, withCoords),
+    ).toBe(false);
+    expect(needsGeocode({ ...addr, street_address: "1 Old Rd", latitude: null, longitude: null }, withCoords)).toBe(false);
+    expect(needsGeocode({ ...addr, street_address: "1 Old Rd" }, withCoords)).toBe(false);
   });
   it("is false when nothing relevant changed (case/space-insensitive)", () => {
     expect(needsGeocode({ street_address: "110 north dr ", city: "NORCO", state: "ca" }, withCoords)).toBe(false);
@@ -136,5 +151,32 @@ describe("geocodeAddress", () => {
   it("throws on an HTTP error", async () => {
     const fetchImpl = fakeFetch({}, 500);
     await expect(geocodeAddress({ address: "x", apiKey: "KEY", fetchImpl })).rejects.toThrow("HTTP 500");
+  });
+});
+
+describe("draftDataWithGeocode", () => {
+  const result = { lat: 33.953346, lng: -117.524014, postalCode: "92860" };
+  const draft = (basics: Record<string, unknown>) => ({ basics, theme: { theme: "amber" } });
+
+  it("copies the pin (and a missing ZIP) into a draft still at the looked-up address", () => {
+    expect(
+      draftDataWithGeocode(draft({ ...addr, postal_code: null, latitude: null, longitude: null }), addr, result),
+    ).toEqual(
+      draft({ ...addr, postal_code: "92860", latitude: 33.953346, longitude: -117.524014 }),
+    );
+  });
+  it("keeps the member's own ZIP", () => {
+    expect(
+      draftDataWithGeocode(draft({ ...addr, postal_code: "92861", latitude: null, longitude: null }), addr, result)
+        ?.basics,
+    ).toMatchObject({ postal_code: "92861", latitude: 33.953346 });
+  });
+  it("leaves a draft whose address was edited since, or that already has a pin", () => {
+    expect(draftDataWithGeocode(draft({ ...addr, street_address: "9 New St" }), addr, result)).toBeNull();
+    expect(draftDataWithGeocode(draft({ ...addr, latitude: 1, longitude: 2 }), addr, result)).toBeNull();
+  });
+  it("ignores junk", () => {
+    expect(draftDataWithGeocode(null, addr, result)).toBeNull();
+    expect(draftDataWithGeocode({ basics: [] }, addr, result)).toBeNull();
   });
 });

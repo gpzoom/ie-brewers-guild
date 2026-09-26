@@ -205,3 +205,43 @@ describe("validateDraftPatch -- theme", () => {
     expect(() => validateDraftPatch("theme", { theme: "neon" })).toThrow(/eight themes/);
   });
 });
+
+describe("validateDraftPatch -- basics address (ZIP and map pin)", () => {
+  it("accepts a picked address saved in one patch", () => {
+    const patch = {
+      street_address: "1710 Sessums Drive",
+      city: "Redlands",
+      state: "CA",
+      postal_code: "92374",
+      latitude: 34.066,
+      longitude: -117.2,
+    };
+    expect(validateDraftPatch("basics", patch).patch).toEqual(patch);
+  });
+  it("accepts ZIP+4, an empty ZIP (null) and cleared coordinates", () => {
+    expect(() => validateDraftPatch("basics", { postal_code: "92374-1234" })).not.toThrow();
+    expect(() =>
+      validateDraftPatch("basics", { postal_code: null, latitude: null, longitude: null }),
+    ).not.toThrow();
+  });
+  it("rejects a malformed ZIP", () => {
+    for (const bad of ["9237", "ABCDE", "92374-12", 92374]) {
+      expect(() => validateDraftPatch("basics", { postal_code: bad })).toThrow("ZIP");
+    }
+  });
+  it("rejects half a pin, out-of-range or non-numeric coordinates", () => {
+    expect(() => validateDraftPatch("basics", { latitude: 34 })).toThrow("Invalid map location.");
+    expect(() => validateDraftPatch("basics", { latitude: 34, longitude: null })).toThrow(
+      "Invalid map location.",
+    );
+    expect(() => validateDraftPatch("basics", { latitude: 91, longitude: 0 })).toThrow(
+      "Invalid map location.",
+    );
+    expect(() => validateDraftPatch("basics", { latitude: 0, longitude: -181 })).toThrow(
+      "Invalid map location.",
+    );
+    expect(() => validateDraftPatch("basics", { latitude: "34", longitude: "-117" })).toThrow(
+      "Invalid map location.",
+    );
+  });
+});

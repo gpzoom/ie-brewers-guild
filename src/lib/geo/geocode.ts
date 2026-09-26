@@ -55,17 +55,72 @@ function sameAddress(a: AddressFields, b: AddressFields): boolean {
   return norm(a) === norm(b);
 }
 
+function sameCoordinates(
+  a: Partial<Pick<AddressSnapshot, "latitude" | "longitude">>,
+  b: Pick<AddressSnapshot, "latitude" | "longitude">,
+): boolean {
+  const n = (v: number | string | null | undefined) =>
+    v === null || v === undefined || v === "" ? null : Math.round(Number(v) * 1e6);
+  return n(a.latitude) === n(b.latitude) && n(a.longitude) === n(b.longitude);
+}
+
 /**
- * Whether a just-published row needs a lookup: it has a street address, and
- * either has no coordinates yet or its street/city/state changed in this
- * publish. `before` is the live row just before publishing; null when that
- * isn't known, in which case only missing coordinates trigger a lookup.
+ * Whether a just-published row needs a lookup. Coordinates now normally
+ * arrive WITH the address: a picked address suggestion saves them in the
+ * draft and publish copies them live, while a hand edit of the address
+ * clears them (src/lib/geo/places-address.ts). So:
+ *
+ * - no street address: never (a mobile member, or a blank street);
+ * - no coordinates after publishing: yes -- the hand-typed case;
+ * - coordinates present: no, EXCEPT when the street/city/state changed in
+ *   this publish while the coordinates stayed exactly what they were --
+ *   they belong to the old address (a draft saved before the draft carried
+ *   coordinates). A pick changes both together and is kept as picked.
+ *
+ * `before` is the live row just before publishing; null when that isn't
+ * known, in which case only missing coordinates trigger a lookup.
  */
-export function needsGeocode(before: AddressFields | null, after: AddressSnapshot): boolean {
+export function needsGeocode(
+  before: (AddressFields & Partial<Pick<AddressSnapshot, "latitude" | "longitude">>) | null,
+  after: AddressSnapshot,
+): boolean {
   if (buildGeocodeAddress(after) === null) return false;
   if (!hasCoordinates(after)) return true;
   if (!before) return false;
-  return !sameAddress(before, after);
+  if (sameAddress(before, after)) return false;
+  return sameCoordinates(before, after);
+}
+
+/**
+ * After a lookup wrote live coordinates, the same values for the member's
+ * draft basics, so the draft matches live (and the next Basics publish
+ * doesn't clear the pin and look it up again). Returns the new draft `data`,
+ * or null to leave the draft alone: when its basics no longer describe the
+ * address that was looked up (the member has edited it since), or it
+ * already has coordinates. The ZIP is filled only when the draft has none.
+ */
+export function draftDataWithGeocode(
+  data: unknown,
+  looked: AddressFields,
+  result: Pick<GeocodeResult, "lat" | "lng" | "postalCode">,
+): Record<string, unknown> | null {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  const draft = data as Record<string, unknown>;
+  const basics = draft.basics;
+  if (!basics || typeof basics !== "object" || Array.isArray(basics)) return null;
+  const b = basics as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" ? v : null);
+  const draftAddress: AddressFields = {
+    street_address: str(b.street_address),
+    city: str(b.city),
+    state: str(b.state),
+  };
+  if (!sameAddress(draftAddress, looked)) return null;
+  const hasPin = (v: unknown) => v !== null && v !== undefined;
+  if (hasPin(b.latitude) || hasPin(b.longitude)) return null;
+  const next: Record<string, unknown> = { ...b, latitude: result.lat, longitude: result.lng };
+  if (!clean(str(b.postal_code)) && result.postalCode) next.postal_code = result.postalCode;
+  return { ...draft, basics: next };
 }
 
 export function buildGeocodeUrl(address: string, apiKey: string): string {

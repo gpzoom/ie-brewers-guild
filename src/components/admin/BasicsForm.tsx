@@ -20,6 +20,15 @@ import {
 } from "@/components/ui/select";
 import { SaveNoteText } from "@/components/admin/SaveNote";
 import { useMemberEditing } from "@/components/admin/MemberEditingContext";
+import { AddressAutocompleteInput } from "@/components/admin/basics/AddressAutocomplete";
+import {
+  handEditPatch,
+  isValidZip,
+  normalizeZip,
+  pickPatch,
+  type HandEditedAddressField,
+  type PickedPlace,
+} from "@/lib/geo/places-address";
 import {
   Field,
   IDLE,
@@ -178,6 +187,8 @@ export function BasicsForm({
   const initialValues: BasicsFormValues = { ...basics, member_type: memberType };
   const [local, setLocal] = useState<BasicsFormValues>(initialValues);
   const [status, setStatus] = useState<Record<string, SaveState>>({});
+  /** A small line under the address after a pick (e.g. a business was picked). */
+  const [pickNote, setPickNote] = useState<string | null>(null);
 
   // The last value this component knows to be saved, per field -- used
   // both to skip no-op saves (tabbing through the form without changing
@@ -307,6 +318,65 @@ export function BasicsForm({
     return false;
   }
 
+  /**
+   * Street / city / state / ZIP typed by hand. The inputs are controlled
+   * (a picked suggestion fills them), so `local` always takes the keystroke;
+   * the save goes through the same checks as before, and a real change
+   * clears the saved map pin in the same patch (handEditPatch) so the
+   * post-publish geocode places the edited address.
+   */
+  function editAddress(field: HandEditedAddressField, raw: string, mode: "schedule" | "flush") {
+    const value =
+      field === "postal_code" ? normalizeZip(raw) : field === "street_address" ? raw || null : raw;
+    setLocal((prev) => ({ ...prev, [field]: field === "street_address" ? raw || null : raw }));
+
+    if ((field === "city" || field === "state") && !requireNonEmpty(field, raw)) return;
+    if (field === "postal_code" && value !== null && !isValidZip(value)) {
+      cancelPendingSave(field);
+      // Half-typed: no nagging until they leave the field.
+      setStatus((prev) => ({
+        ...prev,
+        postal_code:
+          mode === "flush"
+            ? { status: "error", message: "Enter a 5-digit ZIP code (or ZIP+4, like 92374-1234)." }
+            : IDLE,
+      }));
+      return;
+    }
+    if (field === "street_address") setPickNote(null);
+
+    const hasCoordinates =
+      local.latitude !== null ||
+      local.longitude !== null ||
+      savedRef.current.latitude !== null ||
+      savedRef.current.longitude !== null;
+    const patch = handEditPatch(
+      field,
+      value,
+      savedRef.current[field] as string | null,
+      hasCoordinates,
+    ) as BasicsFormPatch;
+    if ("latitude" in patch) setLocal((prev) => ({ ...prev, latitude: null, longitude: null }));
+    if (mode === "schedule") scheduleSave(field, patch);
+    else flushSave(field, patch);
+  }
+
+  /** A picked suggestion: street, city, state, ZIP and the exact pin, saved together. */
+  function applyPick(picked: PickedPlace) {
+    const patch = pickPatch(picked.address);
+    for (const field of ["street_address", "city", "state", "postal_code"]) cancelPendingSave(field);
+    setLocal((prev) => ({ ...prev, ...patch }));
+    setStatus((prev) => ({ ...prev, city: IDLE, state: IDLE, postal_code: IDLE }));
+    setPickNote(
+      picked.address.street_address === null
+        ? "That place has no street address. Pick a street address, or type it in."
+        : picked.businessName
+          ? `Filled in the address of ${picked.businessName}. Your business name stays as you entered it.`
+          : null,
+    );
+    performSave("street_address", patch);
+  }
+
   const isMobile = local.member_type === "mobile";
   const showStreet = isFieldVisibleForMemberType(local.member_type, "street_address");
   const showServiceArea = isFieldVisibleForMemberType(local.member_type, "service_area");
@@ -407,44 +477,6 @@ export function BasicsForm({
             />
           </Field>
 
-          <Field id="city" label="City" state={status.city ?? IDLE}>
-            <Input
-              id="city"
-              defaultValue={local.city}
-              className={textInputClass}
-              required
-              onChange={(e) => {
-                if (requireNonEmpty("city", e.target.value)) {
-                  scheduleSave("city", { city: e.target.value });
-                }
-              }}
-              onBlur={(e) => {
-                if (requireNonEmpty("city", e.target.value)) {
-                  flushSave("city", { city: e.target.value });
-                }
-              }}
-            />
-          </Field>
-
-          <Field id="state" label="State" state={status.state ?? IDLE}>
-            <Input
-              id="state"
-              defaultValue={local.state}
-              className={textInputClass}
-              required
-              onChange={(e) => {
-                if (requireNonEmpty("state", e.target.value)) {
-                  scheduleSave("state", { state: e.target.value });
-                }
-              }}
-              onBlur={(e) => {
-                if (requireNonEmpty("state", e.target.value)) {
-                  flushSave("state", { state: e.target.value });
-                }
-              }}
-            />
-          </Field>
-
           <Field id="timezone" label="Timezone" state={status.timezone ?? IDLE}>
             <Select
               defaultValue={local.timezone}
@@ -485,22 +517,77 @@ export function BasicsForm({
             <Field
               id="street_address"
               label={LOCATION_FIELD_LABEL[local.member_type]}
+              hint={
+                pickNote ??
+                "Start typing your address or business name and pick it from the list, or type it in full."
+              }
               state={status.street_address ?? IDLE}
               className="md:col-span-2"
             >
-              <Input
+              <AddressAutocompleteInput
                 id="street_address"
-                defaultValue={local.street_address ?? ""}
+                value={local.street_address ?? ""}
                 className={textInputClass}
-                onChange={(e) =>
-                  scheduleSave("street_address", { street_address: e.target.value || null })
-                }
-                onBlur={(e) =>
-                  flushSave("street_address", { street_address: e.target.value || null })
-                }
+                onValueChange={(value) => editAddress("street_address", value, "schedule")}
+                onBlur={(value) => editAddress("street_address", value, "flush")}
+                onPick={applyPick}
               />
             </Field>
           )}
+
+          {/* City / State (/ ZIP when there's a street address), one row. */}
+          <div
+            className={cn(
+              "grid grid-cols-2 gap-[14px] md:col-span-2 md:gap-4",
+              showStreet
+                ? "md:grid-cols-[minmax(0,1fr)_120px_150px]"
+                : "md:grid-cols-[minmax(0,1fr)_120px]",
+            )}
+          >
+            <Field
+              id="city"
+              label="City"
+              state={status.city ?? IDLE}
+              className="col-span-2 md:col-span-1"
+            >
+              <Input
+                id="city"
+                value={local.city}
+                className={textInputClass}
+                required
+                autoComplete="address-level2"
+                onChange={(e) => editAddress("city", e.target.value, "schedule")}
+                onBlur={(e) => editAddress("city", e.target.value, "flush")}
+              />
+            </Field>
+
+            <Field id="state" label="State" state={status.state ?? IDLE}>
+              <Input
+                id="state"
+                value={local.state}
+                className={textInputClass}
+                required
+                autoComplete="address-level1"
+                onChange={(e) => editAddress("state", e.target.value, "schedule")}
+                onBlur={(e) => editAddress("state", e.target.value, "flush")}
+              />
+            </Field>
+
+            {showStreet && (
+              <Field id="postal_code" label="ZIP code" state={status.postal_code ?? IDLE}>
+                <Input
+                  id="postal_code"
+                  value={local.postal_code ?? ""}
+                  className={textInputClass}
+                  inputMode="numeric"
+                  autoComplete="postal-code"
+                  maxLength={10}
+                  onChange={(e) => editAddress("postal_code", e.target.value, "schedule")}
+                  onBlur={(e) => editAddress("postal_code", e.target.value, "flush")}
+                />
+              </Field>
+            )}
+          </div>
 
           {showServiceArea && (
             <Field id="service_area" label="Service area" state={status.service_area ?? IDLE}>

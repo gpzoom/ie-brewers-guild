@@ -212,6 +212,30 @@ describe("normalizeDraftData", () => {
     expect(data.media.slides.map((s) => s.asset_id)).toEqual(["a", "b"]);
   });
 
+  it("reads the ZIP and the map pin, both halves or neither", () => {
+    const full = normalizeDraftData({
+      basics: { postal_code: "92374", latitude: 34.066, longitude: -117.2 },
+    });
+    expect(full.basics).toMatchObject({
+      postal_code: "92374",
+      latitude: 34.066,
+      longitude: -117.2,
+    });
+    // numeric columns can come back as strings
+    expect(
+      normalizeDraftData({ basics: { latitude: "34.5", longitude: "-117.25" } }).basics,
+    ).toMatchObject({ latitude: 34.5, longitude: -117.25 });
+    expect(normalizeDraftData({ basics: { latitude: 34 } }).basics).toMatchObject({
+      latitude: null,
+      longitude: null,
+    });
+    expect(normalizeDraftData({ basics: {} }).basics).toMatchObject({
+      postal_code: null,
+      latitude: null,
+      longitude: null,
+    });
+  });
+
   it("copes with garbage", () => {
     expect(() => normalizeDraftData(null)).not.toThrow();
     expect(normalizeDraftData("nope").basics.business_name).toBe("");
