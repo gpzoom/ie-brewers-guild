@@ -546,11 +546,12 @@ export function CarouselEditor({
             Add a slide and you'll crop it here.
           </div>
         )}
-      </div>
 
-      {/* Tap-through link for the selected slide. */}
-      {selected && (
-        <div className="flex flex-col gap-2 self-start rounded-[13px] border border-canvas-border px-5 py-[18px] lg:col-start-2 lg:row-start-2">
+        {/* Tap-through link for the selected slide, under its crop controls
+            (owner's request, 2026-09-26). */}
+        {selected && (
+        <div className="mt-2 flex w-full max-w-[300px] flex-col gap-2 rounded-[13px] border border-canvas-border px-4 py-4">
+
           <label
             htmlFor={`slide-link-${selected.id}`}
             className="text-[13px] font-semibold text-ink"
@@ -571,7 +572,8 @@ export function CarouselEditor({
             Leave it blank and the slide just sits in the carousel.
           </p>
         </div>
-      )}
+        )}
+      </div>
     </section>
   );
 }
