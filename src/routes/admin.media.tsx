@@ -29,9 +29,10 @@ export const Route = createFileRoute("/admin/media")({
 });
 
 /**
- * Photos & video (artboard AdminMedia): slides + crop at the top, then the
- * gallery upload box, cover photo, creator link + review tray, and the
- * social sharing image. The logo lives on Basics & hours.
+ * Photos & video (artboard AdminMedia): the gallery upload box at the top,
+ * then the carousel (slides + crop), cover photo, creator link + review
+ * tray, and the social sharing image (owner's order, 2026-09-26). The logo
+ * lives on Basics & hours.
  *
  * Phase 2: the slides (draft `media` section) and the cover and social
  * sharing image (draft `basics`) read from and save to the member's
@@ -55,13 +56,13 @@ function MediaRoute() {
         </p>
       </header>
 
+      <MediaGallery memberId={memberId} assets={assets} />
+
       <CarouselEditor
         memberId={memberId}
         initialSlides={draft.data.media.slides}
         galleryAssets={assets}
       />
-
-      <MediaGallery memberId={memberId} assets={assets} />
 
       <CoverEditor
         memberId={memberId}

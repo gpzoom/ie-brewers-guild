@@ -35,7 +35,7 @@ export function LogoCoverSection({
       <section aria-labelledby="logo-section-heading" className="flex flex-col gap-3">
         <h2
           id="logo-section-heading"
-          className="font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted"
+          className="font-sans text-[14px] font-bold uppercase tracking-[0.12em] text-ink"
         >
           Logo
         </h2>

@@ -9,7 +9,10 @@ import type { MediaAssetRow } from "@/lib/supabase/types";
 
 const SLOTS = [0, 1, 2, 3];
 
-const sectionLabelClass =
+// A page section's label (Your Carousel), and the smaller label of a
+// panel inside it (Crop to portrait).
+const sectionLabelClass = "font-sans text-[14px] font-bold uppercase tracking-[0.12em] text-ink";
+const panelLabelClass =
   "font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted";
 
 // Same ~400ms debounce as BasicsForm/HoursEditor's own autosave (this
@@ -390,7 +393,7 @@ export function CarouselEditor({
       <div className="flex min-w-0 flex-col gap-3 lg:col-start-2 lg:row-start-1">
         <div className="flex items-baseline gap-2">
           <h2 id="carousel-heading" className={sectionLabelClass}>
-            Your slides
+            Your Carousel
           </h2>
           <span className="text-[10px] text-[#A89D8E]">Portrait · 4:5</span>
         </div>
@@ -507,7 +510,7 @@ export function CarouselEditor({
       {/* Crop panel for the selected slide -- left column on desktop. */}
       <div className="flex flex-col gap-[13px] lg:col-start-1 lg:row-span-2 lg:row-start-1">
         <div className="flex items-baseline gap-2">
-          <h3 className={sectionLabelClass}>Crop to portrait</h3>
+          <h3 className={panelLabelClass}>Crop to portrait</h3>
           <span className="text-[10px] text-[#A89D8E]">4:5</span>
         </div>
         {selected && selectedAsset && activeSlot !== undefined ? (

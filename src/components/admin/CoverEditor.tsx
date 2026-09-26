@@ -250,7 +250,7 @@ export function CoverEditor({
         <div className="flex items-baseline gap-2">
           <h2
             id="cover-heading"
-            className="font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted"
+            className="font-sans text-[14px] font-bold uppercase tracking-[0.12em] text-ink"
           >
             Cover photo
           </h2>

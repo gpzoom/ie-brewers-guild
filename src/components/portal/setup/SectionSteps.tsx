@@ -174,12 +174,12 @@ export function PhotosStep({
       lede="Up to four slides. Visitors swipe through them on your page, so lead with your best one."
       skipNote="No photos yet? Skip it, or make a link for your photographer to send them straight to you."
     >
+      <MediaGallery memberId={memberId} assets={assets} />
       <CarouselEditor
         memberId={memberId}
         initialSlides={draft.data.media.slides}
         galleryAssets={assets}
       />
-      <MediaGallery memberId={memberId} assets={assets} />
       <div className="flex flex-col gap-6">
         <CreatorLinkPanel
           memberId={memberId}

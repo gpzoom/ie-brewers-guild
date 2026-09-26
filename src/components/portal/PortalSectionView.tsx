@@ -120,12 +120,12 @@ export function PortalSectionView({ data, shell }: { data: PortalSectionData; sh
             lede="Up to four slides. Visitors swipe through them on your page, so lead with your best one."
           />
           {notice}
+          <MediaGallery memberId={shell.memberId} assets={data.assets} />
           <CarouselEditor
             memberId={shell.memberId}
             initialSlides={data.draft.data.media.slides}
             galleryAssets={data.assets}
           />
-          <MediaGallery memberId={shell.memberId} assets={data.assets} />
           <div className="flex flex-col gap-6">
             <CreatorLinkPanel
               memberId={shell.memberId}

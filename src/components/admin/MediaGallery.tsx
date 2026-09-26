@@ -149,7 +149,7 @@ export function MediaGallery({ memberId, assets }: { memberId: string; assets: M
       <div className="flex flex-col gap-1">
         <h2
           id="gallery-heading"
-          className="font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted"
+          className="font-sans text-[14px] font-bold uppercase tracking-[0.12em] text-ink"
         >
           Your gallery
         </h2>
