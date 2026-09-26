@@ -52,7 +52,7 @@ function SaveNoteFooter() {
 function PhotosEventsNotice({ memberName }: { memberName: string }) {
   return (
     <InfoBox>
-      You can edit Photos &amp; video and Events for{" "}
+      You can edit Photos and Events for{" "}
       <strong className="font-semibold">{memberName}</strong>. Photo changes go live when you
       publish. Event changes show on the page right away.
     </InfoBox>
@@ -116,7 +116,7 @@ export function PortalSectionView({ data, shell }: { data: PortalSectionData; sh
       return (
         <div className="flex flex-col gap-8 md:gap-9">
           <SectionHeader
-            title="Photos & video"
+            title="Photos"
             lede="Up to four slides. Visitors swipe through them on your page, so lead with your best one."
           />
           {notice}

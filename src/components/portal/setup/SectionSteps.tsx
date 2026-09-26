@@ -154,7 +154,7 @@ export function EventsStep({
   );
 }
 
-/** Step 7: Photos & video, including the creator upload link. */
+/** Step 7: Photos, including the creator upload link. */
 export function PhotosStep({
   draft,
   assets,
@@ -170,7 +170,7 @@ export function PhotosStep({
   return (
     <WizardStep
       step="photos"
-      title="Photos & video"
+      title="Photos"
       lede="Up to four slides. Visitors swipe through them on your page, so lead with your best one."
       skipNote="No photos yet? Skip it, or make a link for your photographer to send them straight to you."
     >

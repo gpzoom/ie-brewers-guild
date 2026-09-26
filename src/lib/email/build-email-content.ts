@@ -265,7 +265,7 @@ export function buildEmailContent(payload: TransactionalEmailPayload, siteUrl: s
       const inviter = payload.inviterEmail ?? `The ${ORG_NAME}`;
       const canEdit =
         payload.role === "media_events"
-          ? "You'll be able to update its photos and video, and its events."
+          ? "You'll be able to update its photos and its events."
           : "You'll be able to edit everything on its profile.";
       const intro = `${inviter} invited you to help with ${payload.memberName}'s profile on the ${ORG_SHORT_NAME} member directory.`;
       const howTo = `Sign in to the Member Portal with this email address (${payload.email}). The invitation lasts 14 days.`;

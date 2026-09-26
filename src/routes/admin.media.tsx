@@ -29,7 +29,7 @@ export const Route = createFileRoute("/admin/media")({
 });
 
 /**
- * Photos & video (artboard AdminMedia): the gallery upload box at the top,
+ * Photos (artboard AdminMedia): the gallery upload box at the top,
  * then the carousel (slides + crop), cover photo, creator link + review
  * tray, and the social sharing image (owner's order, 2026-09-26). The logo
  * lives on Basics & hours.
@@ -48,7 +48,7 @@ function MediaRoute() {
     <div className="flex flex-col gap-8 md:gap-9">
       <header className="flex flex-col gap-1.5">
         <h1 className="font-display text-[24px] font-bold leading-[1.15] text-ink md:text-[27px]">
-          Photos &amp; video
+          Photos
         </h1>
         <p className="text-[13px] text-ink-muted">
           Up to four slides. Visitors swipe through them on your profile, so lead with your best

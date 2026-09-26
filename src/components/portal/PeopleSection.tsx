@@ -26,7 +26,7 @@ const ROLE_LABEL: Record<PortalRole, string> = {
 };
 
 const ROLE_HELP: Record<InviteRole, string> = {
-  media_events: "Photos & video and Events. They can publish photo changes, nothing else.",
+  media_events: "Photos and Events. They can publish photo changes, nothing else.",
   editor: "Everything on the profile except People. They can publish all changes.",
 };
 

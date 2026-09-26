@@ -42,7 +42,7 @@ export function isPortalSection(value: unknown): value is PortalSection {
 export const PORTAL_SECTION_LABELS: Record<PortalSection, { label: string; short: string }> = {
   basics: { label: "Basics & hours", short: "Basics" },
   "logo-cover": { label: "Logo & cover", short: "Logo" },
-  photos: { label: "Photos & video", short: "Photos" },
+  photos: { label: "Photos", short: "Photos" },
   events: { label: "Events", short: "Events" },
   links: { label: "Links & contact", short: "Links" },
   discount: { label: "Discount & supplies", short: "Discount" },

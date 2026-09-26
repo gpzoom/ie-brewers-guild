@@ -27,7 +27,7 @@ export type ShellNavItem = {
 
 const NAV_ITEMS: readonly ShellNavItem[] = [
   { to: "/admin/basics", label: "Basics & hours", short: "Basics", match: ["/admin/basics", "/admin/hours"] },
-  { to: "/admin/media", label: "Photos & video", short: "Photos", match: ["/admin/media"] },
+  { to: "/admin/media", label: "Photos", short: "Photos", match: ["/admin/media"] },
   { to: "/admin/theme", label: "Theme", short: "Theme", match: ["/admin/theme"] },
   { to: "/admin/links", label: "Links & contact", short: "Links", match: ["/admin/links"] },
   { to: "/admin/events", label: "Events", short: "Events", match: ["/admin/events"] },

@@ -289,7 +289,7 @@ describe("buildEmailContent: editor_invited", () => {
   it("says who invited them, to which member, and what they can edit", () => {
     const content = buildEmailContent(payload);
     expect(content.text).toContain("owner@hophouse.com invited you to help with Hop House's profile");
-    expect(content.text).toContain("photos and video, and its events");
+    expect(content.text).toContain("photos and its events");
     expect(content.text).toContain("sam@example.com");
   });
 

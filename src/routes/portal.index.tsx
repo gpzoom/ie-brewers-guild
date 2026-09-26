@@ -32,7 +32,7 @@ function validatePortalSearch(search: Record<string, unknown>): PortalSearch {
  * wizard or portal. While setup is incomplete it sends the member into the
  * setup wizard at the first of steps 1-3 that isn't done; once it's
  * complete, into the portal at their first section (Basics & hours, or
- * Photos & video for a Photos & events editor). What's left to show here
+ * Photos for a Photos & events editor). What's left to show here
  * is "Choose a business" and "No business is linked to this sign-in".
  */
 export const Route = createFileRoute("/portal/")({

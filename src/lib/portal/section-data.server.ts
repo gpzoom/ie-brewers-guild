@@ -216,7 +216,7 @@ export async function loadEventsSection(
   return loadSchedule(supabase, memberId);
 }
 
-/** Photos & video: slides (draft `media`), the gallery, creator links and the review tray. */
+/** Photos: slides (draft `media`), the gallery, creator links and the review tray. */
 export async function loadPhotosSection(supabase: SessionClient, memberId: string) {
   const [draft, assets, uploadTokens, pending] = await Promise.all([
     loadMemberDraftBundle(supabase, memberId),

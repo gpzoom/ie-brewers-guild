@@ -117,7 +117,7 @@ export const SETUP_STEP_LABELS: Record<SetupStepName, string> = {
   "logo-cover": "Logo & cover",
   hours: "When you're open",
   events: "Events",
-  photos: "Photos & video",
+  photos: "Photos",
   links: "Links",
   discount: "Member discount & supplies",
   theme: "Pick your color",
