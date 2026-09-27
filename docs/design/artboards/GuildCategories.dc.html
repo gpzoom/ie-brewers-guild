@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Updated in the repo on 2026-09-27 to match the code (super admin, docs/member-profiles.md "Super admin"): Brand & theme moved into a "Super admin" sidebar group with Guild admins and Audit log, shown only to the super admin. Delete is super admin only (its confirmation says how many members use the category); Guild admins add, rename and reorder. The live canvas still shows the older version. -->
+<!-- Updated in the repo on 2026-09-27 to match the code (super admin, docs/member-profiles.md "Super admin"): Brand & theme moved into a "Super admin" sidebar group with Guild admins and Audit log, shown only to the super admin. Delete is super admin only (its confirmation says how many members use the category); Guild admins add, rename and reorder. One page with Allied categories and Mobile categories tabs (2026-09-26). The live canvas still shows the older version. -->
 <meta charset="utf-8">
 <title>Guild admin — supply categories</title>
 <script src="./support.js"></script>
@@ -38,18 +38,23 @@ a{color:#B3591F}a:hover{color:#8F4517}
       <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #8C8275; padding: 0 12px 4px;">SUPER ADMIN</div>
       <div style="font-size: 11px; color: #A89D8E; padding: 0 12px 8px;">Shown only to the super admin</div>
       <a href="GuildBrand.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Brand &amp; theme</a>
-      <a href="#admins" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Guild admins</a>
-      <a href="#audit" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Audit log</a>
+      <a href="GuildAdmins.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Guild admins</a>
+      <a href="GuildAudit.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Audit log</a>
     </div>
 
     <div style="flex-grow: 1; padding: 30px 36px; display: flex; flex-direction: column; gap: 22px;">
 
       <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 24px;">
         <div style="display: flex; flex-direction: column; gap: 6px;">
-          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 28px; font-weight: 700; color: #241F1A; letter-spacing: -0.01em;">Supply categories</div>
-          <div style="font-size: 13px; color: #564E45; text-wrap: pretty;">What Allied Members can tick to say what they supply. The Guild owns this list — members pick from it rather than typing their own, so the directory stays filterable.</div>
+          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 28px; font-weight: 700; color: #241F1A; letter-spacing: -0.01em;">Categories</div>
+          <div style="font-size: 13px; color: #564E45; text-wrap: pretty;">What Allied Members can check to say what they supply. The Guild owns these lists — members pick from it rather than typing their own, so the directory stays filterable.</div>
         </div>
         <button type="button" style="height: 44px; flex-shrink: 0; padding: 0 20px; border-radius: 9px; border: 0; background: #B3591F; font-family: inherit; font-size: 14px; font-weight: 600; color: #FFFFFF;">Add a category</button>
+      </div>
+
+      <div role="tablist" aria-label="Category lists" style="display: flex; gap: 8px;">
+        <button type="button" role="tab" aria-selected="true" style="height: 42px; padding: 0 15px; border-radius: 9px; font-family: inherit; font-size: 13px; display: flex; align-items: center; gap: 8px; border: 1px solid #241F1A; background: #241F1A; color: #F9F6F0; font-weight: 600;">Allied categories<span style="font-size: 12px; color: #B6AC9D;">[N]</span></button>
+        <button type="button" role="tab" aria-selected="false" style="height: 42px; padding: 0 15px; border-radius: 9px; font-family: inherit; font-size: 13px; display: flex; align-items: center; gap: 8px; border: 1px solid #DED7CB; background: #FFFFFF; color: #241F1A;">Mobile categories<span style="font-size: 12px; color: #6B6156;">[N]</span></button>
       </div>
 
       <div style="border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF; overflow: hidden;">
