@@ -194,6 +194,13 @@ export type EventRow = {
   description: string | null;
   starts_at: string;
   ends_at: string | null;
+  /** An all-day calendar entry: shown as "All day" (20260927200000_event_all_day_and_images.sql). */
+  all_day: boolean;
+  /** A food vendor's picture: the calendar link it came from, and its copy in the event-images bucket. */
+  image_source: string | null;
+  image_path: string | null;
+  /** The picture's public URL, filled in by the loaders from image_path (not a column). */
+  image_url?: string | null;
   venue_name: string | null;
   city: string | null;
   address: string | null;

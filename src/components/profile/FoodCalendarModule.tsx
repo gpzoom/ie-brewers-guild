@@ -52,14 +52,30 @@ function FoodDayRow({
       {day.status === "vendors" ? (
         <div className="flex min-w-0 flex-1 flex-col gap-2.5">
           {day.vendors.map((vendor) => (
-            <div key={vendor.id} className="flex min-w-0 flex-col gap-[3px] lg:gap-1">
-              <span className="text-[13px] font-semibold text-ink lg:text-[15px]">
-                {vendor.title}
-              </span>
-              <span className="text-xs text-ink-muted lg:text-[13px]">
-                {formatTimeRange(vendor.startsAt, vendor.endsAt, timezone)}
-              </span>
-              {vendor.description && <EventDescription text={vendor.description} muted={false} />}
+            <div key={vendor.id} className="flex min-w-0 items-start gap-3">
+              {vendor.imageUrl && (
+                // The picture from the vendor's calendar entry, copied to our
+                // own storage at sync (event-images).
+                <img
+                  src={vendor.imageUrl}
+                  alt=""
+                  loading="lazy"
+                  className="size-14 shrink-0 rounded-[10px] border border-canvas-border bg-canvas-2 object-cover lg:size-16"
+                />
+              )}
+              <div className="flex min-w-0 flex-1 flex-col gap-[3px] lg:gap-1">
+                <span className="text-[13px] font-semibold text-ink lg:text-[15px]">
+                  {vendor.title}
+                </span>
+                <span className="text-xs text-ink-muted lg:text-[13px]">
+                  {vendor.allDay
+                    ? "All day"
+                    : formatTimeRange(vendor.startsAt, vendor.endsAt, timezone)}
+                </span>
+                {vendor.description && (
+                  <EventDescription text={vendor.description} muted={false} />
+                )}
+              </div>
             </div>
           ))}
         </div>

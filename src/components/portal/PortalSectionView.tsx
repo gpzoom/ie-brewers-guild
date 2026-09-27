@@ -189,7 +189,7 @@ export function PortalSectionView({ data, shell }: { data: PortalSectionData; sh
               asPage
             />
           ) : (
-            <InfoBox>The food truck calendar is only for Producers.</InfoBox>
+            <InfoBox>The food calendar is only for Producers.</InfoBox>
           )}
         </div>
       );

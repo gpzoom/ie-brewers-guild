@@ -11,7 +11,59 @@ export type ParsedIcsEvent = {
   location: string | null;
   /** The event's DESCRIPTION as plain text, without the sync tag; null when nothing is left. */
   description: string | null;
+  /** An all-day entry (a DATE, not a time): stored from the member's local midnight, shown as "All day". */
+  allDay: boolean;
+  /** Where the entry's picture comes from (an image attachment, or an image link in the description). */
+  imageSource: string | null;
 };
+
+/**
+ * The UTC instant of local midnight on a YYYY-MM-DD date in an IANA time
+ * zone -- so an all-day entry on Oct 1 in Los Angeles starts at Oct 1, 7am
+ * UTC, not Oct 1 00:00 UTC (which is still Sept 30 there).
+ */
+export function zonedMidnightUtc(date: string, timeZone: string): string {
+  const [year, month, day] = date.split("-").map(Number);
+  const guess = Date.UTC(year, month - 1, day);
+  // How far the zone is from UTC around that moment, read back through Intl.
+  const offsetAt = (instant: number) => {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(new Date(instant));
+    const get = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? "0");
+    const asUtc = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour") % 24, get("minute"));
+    return asUtc - instant;
+  };
+  const first = guess - offsetAt(guess);
+  // Once more, in case midnight falls on the other side of a clock change.
+  return new Date(guess - offsetAt(first)).toISOString();
+}
+
+const IMAGE_LINK = /https?:\/\/[^\s<>"']+\.(?:jpe?g|png|webp|gif)(?:\?[^\s<>"']*)?/i;
+
+/**
+ * Where an entry's picture comes from: the first image attachment
+ * (Google Calendar adds one as an ATTACH with an image FMTTYPE, pointing
+ * at the file in Google Drive), else the first direct image link in the
+ * description. Only http(s).
+ */
+export function findImageSource(
+  attachments: Array<{ url: string; type: string | null }>,
+  rawDescription: string | null | undefined,
+): string | null {
+  const attached = attachments.find(
+    (item) => (item.type ?? "").toLowerCase().startsWith("image/") && /^https?:\/\//i.test(item.url),
+  );
+  if (attached) return attached.url;
+  const match = (rawDescription ?? "").replace(/&amp;/gi, "&").match(IMAGE_LINK);
+  return match ? match[0] : null;
+}
 
 const TITLE_MAX = 200;
 const LOCATION_MAX = 300;
@@ -114,6 +166,11 @@ export function cleanEventDescription(
     : tidied;
 }
 
+function nextDay(date: string): string {
+  const [year, month, day] = date.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -195,7 +252,11 @@ export function venueFromLocation(location: string | null): string | null {
  *    treated the same as one with a missing property: skipped, without
  *    losing the rest of the feed.
  */
-export function parseIcsFeedForTag(icsText: string, syncTag: string): ParsedIcsEvent[] {
+export function parseIcsFeedForTag(
+  icsText: string,
+  syncTag: string,
+  timeZone = "America/Los_Angeles",
+): ParsedIcsEvent[] {
   const needle = syncTag.trim().toLowerCase();
   if (!needle) {
     return [];
@@ -230,14 +291,34 @@ export function parseIcsFeedForTag(icsText: string, syncTag: string): ParsedIcsE
       if (!matchesTag) continue;
 
       const place = (location ?? "").replace(/\s+/g, " ").trim();
+      // An all-day entry is a DATE with no time: start it at the member's
+      // own local midnight (toJSDate would use the server's, UTC, which
+      // puts Oct 1 on the evening of Sept 30 in California). Its end is
+      // the day after its last day (or the next day when there's none).
+      const allDay = startDate.isDate;
+      const startDay = startDate.toString().slice(0, 10);
+      const startsAt = allDay ? zonedMidnightUtc(startDay, timeZone) : startDate.toJSDate().toISOString();
+      let endsAt: string | null;
+      if (allDay) {
+        const endDay = endDate?.isDate ? endDate.toString().slice(0, 10) : null;
+        endsAt = zonedMidnightUtc(endDay ?? nextDay(startDay), timeZone);
+      } else {
+        endsAt = endDate ? endDate.toJSDate().toISOString() : null;
+      }
+      const attachments = event.component.getAllProperties("attach").map((prop) => ({
+        url: String(prop.getFirstValue() ?? ""),
+        type: (prop.getParameter("fmttype") as string | undefined) ?? null,
+      }));
       parsedEvents.push({
         externalEventId: uid,
-        startsAt: startDate.toJSDate().toISOString(),
-        endsAt: endDate ? endDate.toJSDate().toISOString() : null,
+        startsAt,
+        endsAt,
         summary: summary ?? "",
         title: stripSyncTag(summary ?? "", syncTag),
         location: place ? place.slice(0, LOCATION_MAX) : null,
         description: cleanEventDescription(description, syncTag),
+        allDay,
+        imageSource: findImageSource(attachments, description),
       });
     } catch {
       continue;
@@ -255,6 +336,7 @@ export type EventUpsertRow = {
   external_event_id: string;
   starts_at: string;
   ends_at: string | null;
+  all_day: boolean;
   title: string | null;
   description: string | null;
   venue_name: string | null;
@@ -287,6 +369,7 @@ export function buildEventUpsertRows(
     starts_at: event.startsAt,
     ends_at: event.endsAt,
     // The calendar is the source of truth for these: a re-sync updates them.
+    all_day: event.allDay,
     title: event.title,
     description: event.description,
     venue_name: venueFromLocation(event.location),

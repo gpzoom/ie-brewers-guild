@@ -1,4 +1,5 @@
 import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
+import { EVENT_IMAGES_BUCKET, withEventImageUrls } from "@/lib/events/event-images";
 import { getRequest } from "@tanstack/react-start/server";
 import { notFound } from "@tanstack/react-router";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -191,7 +192,11 @@ async function assembleProfile(args: {
   return buildProfileObject({
     rows,
     assets,
-    events: (eventsResult.data ?? []) as EventRow[],
+    // A food vendor's picture: its public event-images address.
+    events: withEventImageUrls(
+      (eventsResult.data ?? []) as EventRow[],
+      (path) => supabase.storage.from(EVENT_IMAGES_BUCKET).getPublicUrl(path).data.publicUrl,
+    ),
     categories: (categoriesResult.data ?? []) as CategoryRow[],
     logoPublicUrl,
     directoryEntries: toEntries(directoryResult.data),

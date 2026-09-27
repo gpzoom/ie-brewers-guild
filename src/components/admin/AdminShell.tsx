@@ -37,12 +37,12 @@ const NAV_ITEMS: readonly ShellNavItem[] = [
 
 const FOOD_NAV_ITEM: ShellNavItem = {
   to: "/admin/food",
-  label: "Food trucks",
+  label: "Food",
   short: "Food",
   match: ["/admin/food"],
 };
 
-/** /admin's sections for this member: a producer also gets Food trucks, after Events. */
+/** /admin's sections for this member: a producer also gets Food, after Events. */
 export function adminNavItemsFor(memberType: MemberType | null | undefined): readonly ShellNavItem[] {
   if (memberType !== "producer") return NAV_ITEMS;
   const events = NAV_ITEMS.findIndex((item) => item.to === "/admin/events");

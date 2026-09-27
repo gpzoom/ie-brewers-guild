@@ -5,9 +5,9 @@ import { FoodCalendarSection } from "@/components/admin/FoodCalendarSection";
 import { SameMemberGuard } from "@/components/admin/SameMemberGuard";
 
 /**
- * Food trucks (producers only; docs/member-profiles.md, "Events" > "Food
+ * Food (producers only; docs/member-profiles.md, "Events" > "Food
  * calendar"): the food truck calendar and its 7-day preview, the same block
- * as the portal's Food trucks section. Not drafted -- like events, the
+ * as the portal's Food section. Not drafted -- like events, the
  * calendar goes live on its own.
  */
 export const Route = createFileRoute("/admin/food")({
@@ -39,7 +39,7 @@ function FoodRoute() {
           asPage
         />
       ) : (
-        <p className="text-[13px] text-ink-muted">The food truck calendar is only for Producers.</p>
+        <p className="text-[13px] text-ink-muted">The food calendar is only for Producers.</p>
       )}
     </SameMemberGuard>
   );

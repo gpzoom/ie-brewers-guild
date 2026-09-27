@@ -46,7 +46,7 @@ export const PORTAL_SECTION_LABELS: Record<PortalSection, { label: string; short
   "logo-cover": { label: "Logo & cover", short: "Logo" },
   photos: { label: "Photos", short: "Photos" },
   events: { label: "Events", short: "Events" },
-  food: { label: "Food trucks", short: "Food" },
+  food: { label: "Food", short: "Food" },
   links: { label: "Links & contact", short: "Links" },
   discount: { label: "Discount & supplies", short: "Discount" },
   theme: { label: "Theme", short: "Theme" },

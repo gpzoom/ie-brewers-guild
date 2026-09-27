@@ -8,7 +8,7 @@ import type { FoodCalendarData } from "@/lib/portal/section-data.server";
  * calendar"; artboard M2): its own connection box (own link, own tag), and
  * once connected, the next seven days exactly as "Food this week" shows
  * them on the profile. Refresh now reloads the preview. `asPage`: it's the
- * whole "Food trucks" page (portal section, /admin/food), with a page
+ * whole "Food" page (portal section, /admin/food), with a page
  * heading; otherwise a block inside wizard step 6.
  */
 export function FoodCalendarSection({
@@ -36,7 +36,7 @@ export function FoodCalendarSection({
               : "font-display text-[21px] font-bold leading-tight text-ink"
           }
         >
-          Food trucks
+          Food
         </Heading>
         <p className="text-pretty text-[13px] text-ink-muted">
           Show which food trucks and pop-ups are at your taproom over the next 7 days, from a

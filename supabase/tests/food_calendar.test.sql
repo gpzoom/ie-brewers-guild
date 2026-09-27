@@ -6,7 +6,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(11);
+insert into _tap (line) select plan(13);
 
 -- m1 (producer, published) is owned by f0..01.
 set local role authenticated;
@@ -60,6 +60,14 @@ insert into _tap (line) select ok(
 insert into _tap (line) select is(
   (select count(*)::int from public.calendar_connections),
   0, 'visitor: still cannot read anyone''s calendar links');
+
+reset role;
+insert into _tap (line) select is(
+  (select all_day from public.events where id = 'f6000000-0000-4000-8000-000000000001'),
+  false, 'a timed entry is not all-day (20260927200000_event_all_day_and_images.sql)');
+insert into _tap (line) select is(
+  (select public from storage.buckets where id = 'event-images'),
+  true, 'food pictures live in a public bucket');
 
 insert into _tap (line) select * from finish();
 select line as tap from _tap order by n;

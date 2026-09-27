@@ -191,7 +191,7 @@ export function referencedAssetIds(rows: ProfileRows): string[] {
 }
 
 /**
- * "Coming up"/"Where we'll be" only ever shows the future or the
+ * "Upcoming events"/"Where we'll be" only ever shows the future or the
  * happening-right-now: events whose EFFECTIVE END is still ahead of `now`.
  * A canceled event always stays visible (spec, "Events": "a canceled event
  * stays visible rather than disappearing"). A rescheduled event has no

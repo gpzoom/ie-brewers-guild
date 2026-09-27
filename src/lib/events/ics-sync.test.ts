@@ -6,6 +6,8 @@ import {
   staleSyncedEventIds,
   stripSyncTag,
   venueFromLocation,
+  zonedMidnightUtc,
+  findImageSource,
 } from "./ics-sync";
 
 const SAMPLE_ICS = `BEGIN:VCALENDAR
@@ -389,5 +391,57 @@ describe("staleSyncedEventIds", () => {
     expect(staleSyncedEventIds([{ id: "row-1", external_event_id: "g-1@google.com" }], [])).toEqual(
       ["row-1"],
     );
+  });
+});
+
+// Google Calendar's all-day entry with an attached photo, as its feed has it.
+const ALL_DAY_ICS = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Google Inc//Google Calendar 70.9054//EN
+BEGIN:VEVENT
+UID:bbq-1@google.com
+DTSTART;VALUE=DATE:20261001
+DTEND;VALUE=DATE:20261002
+SUMMARY:BBQ from Jones Bones
+DESCRIPTION:Delicious BBQ with all the fixins!\\nhttps://jonesbonesbbq.com\\n\\n#food
+ATTACH;FILENAME=img_0257.jpg;FMTTYPE=image/jpeg:https://drive.google.com/open?id=1ybGtIGM10pl8F9raqBt22ZkWvYvJD7Qg
+END:VEVENT
+END:VCALENDAR`;
+
+describe("all-day entries", () => {
+  it("start at the member's own local midnight, not UTC's", () => {
+    const [bbq] = parseIcsFeedForTag(ALL_DAY_ICS, "#food", "America/Los_Angeles");
+    expect(bbq.allDay).toBe(true);
+    // Oct 1 midnight in Los Angeles (PDT, UTC-7) is 07:00 UTC.
+    expect(bbq.startsAt).toBe("2026-10-01T07:00:00.000Z");
+    expect(bbq.endsAt).toBe("2026-10-02T07:00:00.000Z");
+    expect(buildEventUpsertRows("m", "c", [bbq], "food")[0].all_day).toBe(true);
+  });
+
+  it("a timed entry isn't all-day", () => {
+    expect(parseIcsFeedForTag(GOOGLE_STYLE_ICS, "#guild")[0].allDay).toBe(false);
+  });
+
+  it("zonedMidnightUtc handles standard time and daylight time", () => {
+    expect(zonedMidnightUtc("2026-12-25", "America/Los_Angeles")).toBe("2026-12-25T08:00:00.000Z");
+    expect(zonedMidnightUtc("2026-07-04", "America/Los_Angeles")).toBe("2026-07-04T07:00:00.000Z");
+    expect(zonedMidnightUtc("2026-11-01", "America/Los_Angeles")).toBe("2026-11-01T07:00:00.000Z");
+  });
+});
+
+describe("pictures", () => {
+  it("takes an image attachment from the entry", () => {
+    const [bbq] = parseIcsFeedForTag(ALL_DAY_ICS, "#food");
+    expect(bbq.imageSource).toBe(
+      "https://drive.google.com/open?id=1ybGtIGM10pl8F9raqBt22ZkWvYvJD7Qg",
+    );
+  });
+
+  it("else the first image link in the description; nothing else", () => {
+    expect(
+      findImageSource([], "Menu: https://cdn.example/menu.pdf and https://cdn.example/truck.JPG?w=2"),
+    ).toBe("https://cdn.example/truck.JPG?w=2");
+    expect(findImageSource([{ url: "https://x.example/doc.pdf", type: "application/pdf" }], "no pictures")).toBeNull();
+    expect(findImageSource([{ url: "ftp://x.example/a.jpg", type: "image/jpeg" }], null)).toBeNull();
   });
 });

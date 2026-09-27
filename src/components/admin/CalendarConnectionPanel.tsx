@@ -91,12 +91,12 @@ const COPY = {
     hint: "Paste your calendar's ICS subscription URL. Only events with your sync tag (for example #guild) in their title or description are imported; the tag is left off on your profile. Each event's description shows on your profile too, so keep private notes out of tagged events. Deleting an event, or taking its tag off, removes it here too.",
   },
   food: {
-    label: "Food truck calendar",
-    connectedTitle: "Food truck calendar",
-    addTitle: "Add a food truck calendar",
+    label: "Food calendar",
+    connectedTitle: "Food calendar",
+    addTitle: "Add a food calendar",
     importing: "importing vendors tagged",
     tagPlaceholder: "e.g. #food",
-    nobody: "No food truck calendar is connected. Only the profile's owner can connect one.",
+    nobody: "No food calendar is connected. Only the profile's owner can connect one.",
     hint: "Keep your food trucks and pop-ups on their own calendar (or give them their own tag), and paste its ICS subscription URL. Use a different tag from your events calendar, for example #food, in the title or description of each vendor's day. Put the vendor's name in the title, and anything else (their menu or Instagram link) in the description. Your profile shows the next 7 days; a day with no vendor says \"Bring your own food\", or \"Closed\" when your hours say you're closed.",
   },
 } as const;

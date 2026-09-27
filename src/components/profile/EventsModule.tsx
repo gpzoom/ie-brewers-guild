@@ -16,9 +16,9 @@ type EventsModuleProps = {
 };
 
 const HEADINGS: Record<MemberType, string> = {
-  producer: "Coming up",
+  producer: "Upcoming events",
   mobile: "Where we'll be",
-  allied: "Coming up",
+  allied: "Upcoming events",
 };
 
 export function dateParts(
@@ -126,7 +126,9 @@ export function EventsModule({ events, memberType, timezone }: EventsModuleProps
           const { weekday, day, month } = dateParts(shownStart, timezone);
           const time = isRescheduled
             ? `now ${formatTime(shownStart, timezone)}`
-            : formatTimeRange(event.starts_at, event.ends_at, timezone);
+            : event.all_day
+              ? "All day"
+              : formatTimeRange(event.starts_at, event.ends_at, timezone);
 
           // Title line: the event's own name, else its venue. The detail
           // line carries the time plus whatever of venue/city isn't already

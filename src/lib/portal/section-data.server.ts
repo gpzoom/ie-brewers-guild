@@ -7,6 +7,7 @@ import {
   type MemberDraftBundle,
 } from "@/lib/drafts/drafts.server";
 import { logoStoragePathPattern } from "@/lib/media/logo-path";
+import { EVENT_IMAGES_BUCKET, withEventImageUrls } from "@/lib/events/event-images";
 import { toSpecialHoursDay, toWeekdayHours } from "@/lib/hours/hours-rows";
 import type { SpecialHoursDay, WeekdayHours } from "@/lib/hours/open-now";
 import { fetchMemberEmail } from "@/lib/members/member-email.server";
@@ -213,7 +214,10 @@ async function loadFoodCalendar(supabase: SessionClient, memberId: string): Prom
   ]);
   return {
     connection,
-    slots,
+    slots: withEventImageUrls(
+      slots,
+      (path) => supabase.storage.from(EVENT_IMAGES_BUCKET).getPublicUrl(path).data.publicUrl,
+    ),
     hours: toWeekdayHours((hours.data ?? []) as HoursRow[]),
     specialHours: toSpecialHoursDay((specialHours.data ?? []) as SpecialHoursRow[]),
   };
@@ -287,7 +291,7 @@ export async function loadEventsSection(
 }
 
 /**
- * Food trucks (producers only): the food truck calendar and its 7-day
+ * Food (producers only): the food calendar and its 7-day
  * preview. Not drafted -- like events, the calendar goes live on its own.
  */
 export async function loadFoodSection(supabase: SessionClient, memberId: string) {

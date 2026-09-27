@@ -50,6 +50,7 @@ function timeRange(event: EventRow, timeZone: string) {
     event.overlay_status === "rescheduled" && event.overlay_starts_at
       ? event.overlay_starts_at
       : event.starts_at;
+  if (event.all_day && start === event.starts_at) return "All day";
   if (!event.ends_at || start !== event.starts_at) return timeOf(start, timeZone);
   return `${timeOf(start, timeZone)} – ${timeOf(event.ends_at, timeZone)}`;
 }

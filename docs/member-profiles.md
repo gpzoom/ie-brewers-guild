@@ -26,7 +26,7 @@ There is one profile template with a member type flag, not three templates. The 
 | Primary action | Directions | Book us | Request a quote |
 | Schedule module | Seven-day hour chips | Upcoming appearance list | Five-day business hour chips |
 | Category chips | — | What they offer | What they supply |
-| Events module | Yes — "Coming up" | Yes — "Where we'll be", and it replaces hours | Yes — "Coming up" |
+| Events module | Yes — "Upcoming events" | Yes — "Where we'll be", and it replaces hours | Yes — "Upcoming events" |
 | Discount block | — | — | Yes, prominent |
 | Location field | Street address | Service area | Business address |
 | Contact | Phone | Phone (booking), plus optional Instagram DM and WhatsApp booking links | Phone (sales) and email |
@@ -191,7 +191,7 @@ A member with no cover photo gets their theme color filling the band. That is th
 
 What differs is the relationship to the schedule module. For a producer or Allied Member, events sit alongside weekly hours — "we're open these hours, and these things are happening." For a mobile member, events *are* the schedule; there are no hours at all.
 
-The heading differs to match: "Coming up" for producers and Allied Members, "Where we'll be" for mobile members, since a mobile member's event is somewhere else and a taproom's is at home. That is a label, not a different component.
+The heading differs to match: "Upcoming events" (was "Coming up" until 27 September 2026) for producers and Allied Members, "Where we'll be" for mobile members, since a mobile member's event is somewhere else and a taproom's is at home. That is a label, not a different component.
 
 An event's venue fields are nullable. Null means the event is at the member's own address, which is the normal case for a producer or Allied Member — don't make them retype their own name as the venue.
 
@@ -222,13 +222,15 @@ On the profile each event's date column reads weekday, day and **month** ("THU /
 
 ### Food calendar
 
-Decided with the owner on 27 September 2026. **Producers only.** A taproom can connect a **second** calendar for the food trucks and pop-ups parked there, with **its own ICS link and its own tag** (for example `#food`; it must differ from their events tag). It has **its own menu item, Food trucks** (owner's request, 27 September 2026), for producers only: the portal section `/portal/food` and the old editor's `/admin/food` (where Edit as them opens). In the setup wizard it sits in step 6, under the events calendar. Only the owner (or a Guild admin editing as them) connects it, like the events calendar.
+Decided with the owner on 27 September 2026. **Producers only.** A taproom can connect a **second** calendar for the food trucks and pop-ups parked there, with **its own ICS link and its own tag** (for example `#food`; it must differ from their events tag). It has **its own menu item, Food** (owner's request, 27 September 2026), for producers only: the portal section `/portal/food` and the old editor's `/admin/food` (where Edit as them opens). In the setup wizard it sits in step 6, under the events calendar. Only the owner (or a Guild admin editing as them) connects it, like the events calendar.
 
 - Each entry is a **vendor's day**: the vendor's name in the title, the time, and anything else (a menu or Instagram link) in the description. Title and description are cleaned the same way as events (tag taken out, links clickable).
-- The profile shows **Food this week** directly above "Coming up". It starts **collapsed** (owner, 27 September 2026): only **today** shows, with a **Next 6 days ▾** button under it that opens the rest (and becomes **Hide ▴**). When today has no vendor, the button names the next one instead: **Next food truck: Fri, Tacos El Rey ▾**. The member's own preview always shows all seven. Open, it's the next **7 days**, today first, in the member's time zone, each with the weekday, day and month. A day lists its vendors (name, time, description; several in time order). A day with no vendor says **"Bring your own food"**, or **"Closed"** when their posted hours (weekly, or a holiday) say they're closed that day, the same rule "open now" uses. With no hours posted, no day is Closed.
+- The profile shows **Food this week** directly above "Upcoming events". It starts **collapsed** (owner, 27 September 2026): only **today** shows, with a **Next 6 days ▾** button under it that opens the rest (and becomes **Hide ▴**). When today has no vendor, the button names the next one instead: **Next food truck: Fri, Tacos El Rey ▾**. The member's own preview always shows all seven. Open, it's the next **7 days**, today first, in the member's time zone, each with the weekday, day and month. A day lists its vendors (name, time, description; several in time order). A day with no vendor says **"Bring your own food"**, or **"Closed"** when their posted hours (weekly, or a holiday) say they're closed that day, the same rule "open now" uses. With no hours posted, no day is Closed.
 - It shows only once a food calendar is connected, so a taproom without one never gets a week of "Bring your own food". Visitors can't read calendar links, so `member_has_food_calendar(member_id)` (security definer) answers only yes or no, for a published producer (or for someone who can see the unpublished profile).
+- **A vendor's photo** shows as a small square thumbnail beside its name. It comes from the calendar entry: an image **attached** to the event (Google Calendar attaches it from Google Drive), or else the first direct image link (.jpg, .png, .webp, .gif) in the description. A Drive photo shows only when the file is shared **"Anyone with the link"**; Drive answers anything else with a sign-in page. The sync copies each photo once into the public `event-images` bucket (`events.image_path`, with its link in `image_source`) and fetches it again only when the link changes, or on the next sync while it still couldn't be fetched (at most 10 per sync). Removed entries take their photo with them.
+- **All-day entries** (a date, no time) start at the member's own local midnight and show **"All day"** instead of a time (`events.all_day`), for events and food alike. (Before this, an all-day entry on Oct 1 landed on the evening of Sept 30 in California.)
 - Below the connection box, the member sees **Next 7 days on your profile**, drawn the same way; Refresh now reloads it.
-- Food entries are stored in `events` with `kind = 'food'`, so the sync, the removal of deleted or untagged entries, hiding, the public read policy and the super admin's sync timer all apply unchanged. Everything that means "events" (the Events list, "Coming up", "Tonight", "Next appearance", the publish check, the Finish-your-profile check) reads `kind = 'event'` only.
+- Food entries are stored in `events` with `kind = 'food'`, so the sync, the removal of deleted or untagged entries, hiding, the public read policy and the super admin's sync timer all apply unchanged. Everything that means "events" (the Events list, "Upcoming events", "Tonight", "Next appearance", the publish check, the Finish-your-profile check) reads `kind = 'event'` only.
 
 ## Layout and breakpoints
 
@@ -520,7 +522,7 @@ A member's profile can have three kinds of people. The role lives in `member_use
 | Can they… | Owner (`owner`) | Full editor (`editor`) | Photos & events editor (`media_events`) |
 | --- | --- | --- | --- |
 | Go through the setup wizard | yes | yes, if setup isn't done | never |
-| Basics & hours, Logo & cover, Links, Discount, Theme, Food trucks (producers) | yes | yes | no, sections hidden |
+| Basics & hours, Logo & cover, Links, Discount, Theme, Food (producers) | yes | yes | no, sections hidden |
 | Photos: upload, crop, reorder, tap-through links, creator upload links, approve or reject creator uploads | yes | yes | yes |
 | Events: add, edit, hide, set Postponed / Rescheduled / Canceled, Refresh now | yes | yes | yes |
 | Connect or disconnect the Google / Apple calendar | yes | no | no |
@@ -850,6 +852,8 @@ Every member type uses this table. Venue fields are nullable — null means the 
 | calendar\_connection\_id | uuid | fk, null for hand-entered |
 | source | text not null | check in (google, ics, manual) |
 | kind | text not null default 'event' | check in (event, food); `food` rows come from a food calendar and show only in "Food this week" |
+| all\_day | boolean not null default false | an all-day calendar entry: shown as "All day" |
+| image\_source / image\_path | text | a food vendor's photo: the calendar link it came from, and its copy in the `event-images` bucket |
 | external\_event\_id | text | the provider's event id, null for manual |
 | starts\_at | timestamptz not null |  |
 | ends\_at | timestamptz |  |
@@ -977,7 +981,7 @@ The general principle: a member who has filled in almost nothing should still ge
 - [ ] Retire `/admin`
 - [x] Photos & events editor — owner-invited role; edits Photos and Events only; publishes and discards Photos only; can't connect a calendar
 - [x] Synced with staging, 27 September 2026 — Photos (not "Photos & video") until video uploads exist; Mobile categories; Members page from the database; address suggestions and geocode on publish; 2 MB logo limit; staging Guild mail to a test inbox
-- [x] Food calendar — producers only; own ICS link and tag; "Food this week" (7 days, Bring your own food / Closed); event dates show the month (27 September 2026)
+- [x] Food calendar — producers only; its own Food menu item; vendor photos from the calendar; all-day entries shown as All day; own ICS link and tag; "Food this week" (7 days, Bring your own food / Closed); event dates show the month (27 September 2026)
 - [x] Help button — bug report or feature request to the site owner from every portal, /admin and Guild screen; saved in `support_messages`; subject by type; super admin bell and Help messages screen (27 September 2026)
 - [x] Super admin — separate account boblelle77+sa@gmail.com, seeded only; owns Brand & theme, Delete member, sign-in email changes, Guild admins, Audit log, Trail switch and category delete; enforced on the server and in the database
 
