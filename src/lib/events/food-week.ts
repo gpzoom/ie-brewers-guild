@@ -94,3 +94,15 @@ export function buildFoodWeek(params: {
     return { date, vendors, status };
   });
 }
+
+/**
+ * For the collapsed "Food this week" (only today shows): the next day after
+ * today with a vendor, and its first vendor, so the toggle can say "Next
+ * food truck: Fri, Tacos El Rey". Null when today has a vendor itself or
+ * nothing is scheduled in the rest of the week.
+ */
+export function nextFoodVendor(week: FoodDay[]): { date: string; title: string } | null {
+  if (week[0]?.status === "vendors") return null;
+  const day = week.slice(1).find((candidate) => candidate.status === "vendors");
+  return day ? { date: day.date, title: day.vendors[0].title } : null;
+}

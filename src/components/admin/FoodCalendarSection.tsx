@@ -54,6 +54,8 @@ export function FoodCalendarSection({
         <div className="rounded-[14px] border border-canvas-border bg-canvas px-4 py-4 md:px-5">
           <FoodCalendarModule
             label="Next 7 days on your profile"
+            // All seven, open: on the profile only today shows until opened.
+            collapsible={false}
             slots={food.slots}
             now={new Date()}
             timezone={memberTimezone}
