@@ -25,8 +25,6 @@ export type FoodVendor = {
   endsAt: string | null;
   allDay: boolean;
   description: string | null;
-  /** The vendor's picture from their calendar entry, when there is one. */
-  imageUrl: string | null;
 };
 
 export type FoodDay = {
@@ -83,7 +81,6 @@ export function buildFoodWeek(params: {
       endsAt: slot.ends_at,
       allDay: slot.all_day === true,
       description: slot.description?.trim() || null,
-      imageUrl: slot.image_url ?? null,
     });
     byDate.set(date, list);
   }

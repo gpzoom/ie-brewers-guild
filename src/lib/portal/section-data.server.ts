@@ -7,7 +7,6 @@ import {
   type MemberDraftBundle,
 } from "@/lib/drafts/drafts.server";
 import { logoStoragePathPattern } from "@/lib/media/logo-path";
-import { EVENT_IMAGES_BUCKET, withEventImageUrls } from "@/lib/events/event-images";
 import { toSpecialHoursDay, toWeekdayHours } from "@/lib/hours/hours-rows";
 import type { SpecialHoursDay, WeekdayHours } from "@/lib/hours/open-now";
 import { fetchMemberEmail } from "@/lib/members/member-email.server";
@@ -214,10 +213,7 @@ async function loadFoodCalendar(supabase: SessionClient, memberId: string): Prom
   ]);
   return {
     connection,
-    slots: withEventImageUrls(
-      slots,
-      (path) => supabase.storage.from(EVENT_IMAGES_BUCKET).getPublicUrl(path).data.publicUrl,
-    ),
+    slots,
     hours: toWeekdayHours((hours.data ?? []) as HoursRow[]),
     specialHours: toSpecialHoursDay((specialHours.data ?? []) as SpecialHoursRow[]),
   };

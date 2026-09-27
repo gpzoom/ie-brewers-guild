@@ -18,8 +18,6 @@ function slot(partial: Partial<EventRow>): EventRow {
     starts_at: "2026-10-01T01:00:00Z",
     ends_at: null,
     all_day: false,
-    image_source: null,
-    image_path: null,
     venue_name: null,
     city: null,
     address: null,

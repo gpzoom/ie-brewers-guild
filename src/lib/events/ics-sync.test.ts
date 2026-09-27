@@ -7,7 +7,6 @@ import {
   stripSyncTag,
   venueFromLocation,
   zonedMidnightUtc,
-  findImageSource,
 } from "./ics-sync";
 
 const SAMPLE_ICS = `BEGIN:VCALENDAR
@@ -394,7 +393,7 @@ describe("staleSyncedEventIds", () => {
   });
 });
 
-// Google Calendar's all-day entry with an attached photo, as its feed has it.
+// Google Calendar's all-day entry, as its feed has it (with an attachment, which is ignored).
 const ALL_DAY_ICS = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Google Inc//Google Calendar 70.9054//EN
@@ -426,22 +425,5 @@ describe("all-day entries", () => {
     expect(zonedMidnightUtc("2026-12-25", "America/Los_Angeles")).toBe("2026-12-25T08:00:00.000Z");
     expect(zonedMidnightUtc("2026-07-04", "America/Los_Angeles")).toBe("2026-07-04T07:00:00.000Z");
     expect(zonedMidnightUtc("2026-11-01", "America/Los_Angeles")).toBe("2026-11-01T07:00:00.000Z");
-  });
-});
-
-describe("pictures", () => {
-  it("takes an image attachment from the entry", () => {
-    const [bbq] = parseIcsFeedForTag(ALL_DAY_ICS, "#food");
-    expect(bbq.imageSource).toBe(
-      "https://drive.google.com/open?id=1ybGtIGM10pl8F9raqBt22ZkWvYvJD7Qg",
-    );
-  });
-
-  it("else the first image link in the description; nothing else", () => {
-    expect(
-      findImageSource([], "Menu: https://cdn.example/menu.pdf and https://cdn.example/truck.JPG?w=2"),
-    ).toBe("https://cdn.example/truck.JPG?w=2");
-    expect(findImageSource([{ url: "https://x.example/doc.pdf", type: "application/pdf" }], "no pictures")).toBeNull();
-    expect(findImageSource([{ url: "ftp://x.example/a.jpg", type: "image/jpeg" }], null)).toBeNull();
   });
 });

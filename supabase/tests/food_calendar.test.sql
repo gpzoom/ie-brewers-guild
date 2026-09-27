@@ -66,8 +66,8 @@ insert into _tap (line) select is(
   (select all_day from public.events where id = 'f6000000-0000-4000-8000-000000000001'),
   false, 'a timed entry is not all-day (20260927200000_event_all_day_and_images.sql)');
 insert into _tap (line) select is(
-  (select public from storage.buckets where id = 'event-images'),
-  true, 'food pictures live in a public bucket');
+  (select count(*)::int from storage.buckets where id = 'event-images' and public),
+  0, 'food photo storage is no longer public (20260927210000_remove_event_images.sql)');
 
 insert into _tap (line) select * from finish();
 select line as tap from _tap order by n;

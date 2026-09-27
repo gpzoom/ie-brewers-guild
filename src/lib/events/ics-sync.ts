@@ -13,8 +13,6 @@ export type ParsedIcsEvent = {
   description: string | null;
   /** An all-day entry (a DATE, not a time): stored from the member's local midnight, shown as "All day". */
   allDay: boolean;
-  /** Where the entry's picture comes from (an image attachment, or an image link in the description). */
-  imageSource: string | null;
 };
 
 /**
@@ -43,26 +41,6 @@ export function zonedMidnightUtc(date: string, timeZone: string): string {
   const first = guess - offsetAt(guess);
   // Once more, in case midnight falls on the other side of a clock change.
   return new Date(guess - offsetAt(first)).toISOString();
-}
-
-const IMAGE_LINK = /https?:\/\/[^\s<>"']+\.(?:jpe?g|png|webp|gif)(?:\?[^\s<>"']*)?/i;
-
-/**
- * Where an entry's picture comes from: the first image attachment
- * (Google Calendar adds one as an ATTACH with an image FMTTYPE, pointing
- * at the file in Google Drive), else the first direct image link in the
- * description. Only http(s).
- */
-export function findImageSource(
-  attachments: Array<{ url: string; type: string | null }>,
-  rawDescription: string | null | undefined,
-): string | null {
-  const attached = attachments.find(
-    (item) => (item.type ?? "").toLowerCase().startsWith("image/") && /^https?:\/\//i.test(item.url),
-  );
-  if (attached) return attached.url;
-  const match = (rawDescription ?? "").replace(/&amp;/gi, "&").match(IMAGE_LINK);
-  return match ? match[0] : null;
 }
 
 const TITLE_MAX = 200;
@@ -305,10 +283,6 @@ export function parseIcsFeedForTag(
       } else {
         endsAt = endDate ? endDate.toJSDate().toISOString() : null;
       }
-      const attachments = event.component.getAllProperties("attach").map((prop) => ({
-        url: String(prop.getFirstValue() ?? ""),
-        type: (prop.getParameter("fmttype") as string | undefined) ?? null,
-      }));
       parsedEvents.push({
         externalEventId: uid,
         startsAt,
@@ -318,7 +292,6 @@ export function parseIcsFeedForTag(
         location: place ? place.slice(0, LOCATION_MAX) : null,
         description: cleanEventDescription(description, syncTag),
         allDay,
-        imageSource: findImageSource(attachments, description),
       });
     } catch {
       continue;

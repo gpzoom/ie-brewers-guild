@@ -4,13 +4,6 @@ import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from 
 import { buildEventUpsertRows, parseIcsFeedForTag, staleSyncedEventIds } from "@/lib/events/ics-sync";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import { foodCalendarProblem, parseCalendarPurpose } from "@/lib/events/calendar-purpose";
-import {
-  EVENT_IMAGES_BUCKET,
-  EVENT_IMAGE_MAX_BYTES,
-  imageExtension,
-  imageFetchUrl,
-  imageStoragePath,
-} from "@/lib/events/event-images";
 import type { CalendarConnectionRow, MemberType } from "@/lib/supabase/types";
 
 /**
@@ -346,11 +339,10 @@ export async function syncOneIcsConnection(supabase: SupabaseClient, connection:
     const parsedEvents = parseIcsFeedForTag(icsText, connection.sync_tag, timeZone);
     const isFood = connection.purpose === "food";
 
-    // What this connection imported before -- read before the upsert, so
-    // the pictures step below knows which ones changed.
+    // What this connection imported before (for removing what's gone).
     const { data: existing, error: existingError } = await supabase
       .from("events")
-      .select("id, external_event_id, image_source, image_path")
+      .select("id, external_event_id")
       .eq("calendar_connection_id", connection.id);
     if (existingError) throw existingError;
     const existingRows = (existing ?? []) as ExistingSyncedRow[];
@@ -367,24 +359,14 @@ export async function syncOneIcsConnection(supabase: SupabaseClient, connection:
       if (upsertError) throw upsertError;
     }
 
-    // A food vendor's picture: copied once into event-images, and again
-    // only when the entry's picture link changes (syncEventImages).
-    if (isFood) {
-      await syncEventImages(supabase, connection, parsedEvents, existingRows);
-    }
-
     // Events this connection imported before that are no longer in the
     // feed with the tag (deleted in the calendar, or the tag taken off)
-    // come off the profile, with their pictures. Only reached after a
-    // successful fetch and parse, so a failing feed never removes anything.
+    // come off the profile. Only reached after a successful fetch and
+    // parse, so a failing feed never removes anything.
     const staleIds = staleSyncedEventIds(existingRows, parsedEvents);
     if (staleIds.length > 0) {
       const { error: deleteError } = await supabase.from("events").delete().in("id", staleIds);
       if (deleteError) throw deleteError;
-      const stalePaths = existingRows
-        .filter((row) => staleIds.includes(row.id) && row.image_path)
-        .map((row) => row.image_path as string);
-      await removeEventImages(supabase, stalePaths);
     }
 
     await supabase.from("calendar_connections").update({ last_synced_at: new Date().toISOString(), last_sync_error: null, sync_status: "ok" }).eq("id", connection.id);
@@ -403,116 +385,7 @@ export async function syncOneIcsConnection(supabase: SupabaseClient, connection:
 type ExistingSyncedRow = {
   id: string;
   external_event_id: string | null;
-  image_source: string | null;
-  image_path: string | null;
 };
-
-/** At most this many pictures are fetched in one sync; the rest follow on the next. */
-const MAX_IMAGE_FETCHES_PER_SYNC = 10;
-
-/**
- * Brings each food entry's picture up to date: when its picture link
- * (image_source) differs from what's stored, fetch the new one, store it
- * under the member's folder in event-images, point the row at it, and
- * remove the old copy. A picture that can't be fetched -- most often a
- * Google Drive file that isn't shared "Anyone with the link", which Drive
- * answers with a sign-in page, not an image -- is recorded with no path
- * and tried again on the next sync (up to MAX_IMAGE_FETCHES_PER_SYNC), so
- * it appears once the member shares it.
- */
-async function syncEventImages(
-  supabase: SupabaseClient,
-  connection: CalendarConnectionRow,
-  parsedEvents: ReturnType<typeof parseIcsFeedForTag>,
-  existingRows: ExistingSyncedRow[],
-): Promise<void> {
-  const byExternalId = new Map(existingRows.map((row) => [row.external_event_id, row]));
-  let fetches = 0;
-  for (const parsed of parsedEvents) {
-    const before = byExternalId.get(parsed.externalEventId);
-    const sameSource = (before?.image_source ?? null) === parsed.imageSource;
-    // Up to date: the same link, already stored (or no picture at all).
-    if (sameSource && (before?.image_path || !parsed.imageSource)) continue;
-
-    let imagePath: string | null = null;
-    if (parsed.imageSource) {
-      if (fetches >= MAX_IMAGE_FETCHES_PER_SYNC) continue;
-      fetches += 1;
-      imagePath = await storeEventImage(supabase, connection.member_id, parsed.imageSource);
-    }
-    const { error } = await supabase
-      .from("events")
-      .update({ image_source: parsed.imageSource, image_path: imagePath })
-      .eq("calendar_connection_id", connection.id)
-      .eq("external_event_id", parsed.externalEventId);
-    if (error) throw error;
-    if (before?.image_path && before.image_path !== imagePath) {
-      await removeEventImages(supabase, [before.image_path]);
-    }
-  }
-}
-
-/** Fetches a picture and stores it; its path, or null when there's no usable image there. */
-async function storeEventImage(
-  supabase: SupabaseClient,
-  memberId: string,
-  source: string,
-): Promise<string | null> {
-  const url = imageFetchUrl(source);
-  if (!url) return null;
-  try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(ICS_FETCH_TIMEOUT_MS) });
-    const extension = imageExtension(response.headers.get("content-type"));
-    if (!response.ok || !extension) {
-      await response.body?.cancel().catch(() => {});
-      return null;
-    }
-    const bytes = await readBoundedBytes(response, EVENT_IMAGE_MAX_BYTES);
-    const path = await imageStoragePath(memberId, source, extension);
-    const { error } = await supabase.storage.from(EVENT_IMAGES_BUCKET).upload(path, bytes, {
-      contentType: response.headers.get("content-type") ?? undefined,
-      upsert: true,
-    });
-    return error ? null : path;
-  } catch {
-    return null;
-  }
-}
-
-async function removeEventImages(supabase: SupabaseClient, paths: string[]): Promise<void> {
-  if (paths.length === 0) return;
-  await supabase.storage.from(EVENT_IMAGES_BUCKET).remove(paths);
-}
-
-/** Like readBoundedText, for a picture's bytes. */
-async function readBoundedBytes(response: Response, maxBytes: number): Promise<Uint8Array> {
-  if (!response.body) {
-    const buffer = new Uint8Array(await response.arrayBuffer());
-    if (buffer.byteLength > maxBytes) throw new Error("Image too large.");
-    return buffer;
-  }
-  const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let received = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (!value) continue;
-    received += value.byteLength;
-    if (received > maxBytes) {
-      await reader.cancel().catch(() => {});
-      throw new Error("Image too large.");
-    }
-    chunks.push(value);
-  }
-  const combined = new Uint8Array(received);
-  let offset = 0;
-  for (const chunk of chunks) {
-    combined.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return combined;
-}
 
 export const refreshIcsConnectionNow = createServerFn({ method: "POST" })
   .inputValidator((data: { connectionId: string }) => data)
