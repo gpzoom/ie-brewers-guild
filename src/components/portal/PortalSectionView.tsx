@@ -173,13 +173,23 @@ export function PortalSectionView({ data, shell }: { data: PortalSectionData; sh
             initialEvents={data.events}
             memberTimezone={data.memberTimezone}
           />
-          {data.food && (
+        </div>
+      );
+
+    case "food":
+      return (
+        <div className="flex flex-col gap-[26px]">
+          {notice}
+          {data.food ? (
             <FoodCalendarSection
               memberId={shell.memberId}
               food={data.food}
               memberTimezone={data.memberTimezone}
               canEdit={canConnectCalendar(shell)}
+              asPage
             />
+          ) : (
+            <InfoBox>The food truck calendar is only for Producers.</InfoBox>
           )}
         </div>
       );

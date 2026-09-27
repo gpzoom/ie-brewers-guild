@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { listEvents } from "@/lib/events/events.server";
 import { getCalendarConnection } from "@/lib/events/calendar-connection.server";
-import { getFoodCalendar } from "@/lib/events/food-calendar.server";
-import { FoodCalendarSection } from "@/components/admin/FoodCalendarSection";
 import { getMemberBasics } from "@/lib/members/member-basics.server";
 import { EventsEditor } from "@/components/admin/EventsEditor";
 import { CalendarConnectionPanel } from "@/components/admin/CalendarConnectionPanel";
@@ -19,20 +17,12 @@ export const Route = createFileRoute("/admin/events")({
     // needs to display/edit event times in the member's OWN business
     // timezone rather than whatever timezone the viewing browser happens
     // to be set to (see EventsEditor.tsx's TZDate usage).
-    const [events, member, calendarConnection, food] = await Promise.all([
+    const [events, member, calendarConnection] = await Promise.all([
       listEvents({ data: { memberId: context.memberId } }),
       getMemberBasics({ data: { memberId: context.memberId } }),
       getCalendarConnection({ data: { memberId: context.memberId } }),
-      // A producer's food truck calendar ("Food this week"); null otherwise.
-      getFoodCalendar({ data: { memberId: context.memberId } }),
     ]);
-    return {
-      dataMemberId: member.id,
-      events,
-      memberTimezone: member.timezone,
-      calendarConnection,
-      food,
-    };
+    return { dataMemberId: member.id, events, memberTimezone: member.timezone, calendarConnection };
   },
   component: EventsRoute,
 });
@@ -55,7 +45,7 @@ function InfoIcon() {
 
 /** Artboard M (AdminEvents): heading, calendar connection, upcoming list, note. */
 function EventsRoute() {
-  const { dataMemberId, events, memberTimezone, calendarConnection, food } = Route.useLoaderData();
+  const { dataMemberId, events, memberTimezone, calendarConnection } = Route.useLoaderData();
   const { memberId } = Route.useRouteContext();
   return (
     <SameMemberGuard memberId={memberId} dataMemberId={dataMemberId}>
@@ -70,15 +60,6 @@ function EventsRoute() {
 
       <CalendarConnectionPanel memberId={memberId} initialConnection={calendarConnection} />
       <EventsEditor memberId={memberId} initialEvents={events} memberTimezone={memberTimezone} />
-
-      {food && (
-        <FoodCalendarSection
-          memberId={memberId}
-          food={food}
-          memberTimezone={memberTimezone}
-          canEdit
-        />
-      )}
 
       <div className="flex items-start gap-3 rounded-[11px] bg-canvas-2 px-[17px] py-[15px] text-ink-muted">
         <InfoIcon />

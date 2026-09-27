@@ -42,6 +42,7 @@ import { Route as AdminThemeRouteImport } from './routes/admin.theme'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminLinksRouteImport } from './routes/admin.links'
 import { Route as AdminHoursRouteImport } from './routes/admin.hours'
+import { Route as AdminFoodRouteImport } from './routes/admin.food'
 import { Route as AdminEventsRouteImport } from './routes/admin.events'
 import { Route as AdminDiscountRouteImport } from './routes/admin.discount'
 import { Route as AdminBasicsRouteImport } from './routes/admin.basics'
@@ -217,6 +218,11 @@ const AdminHoursRoute = AdminHoursRouteImport.update({
   path: '/hours',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFoodRoute = AdminFoodRouteImport.update({
+  id: '/food',
+  path: '/food',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminEventsRoute = AdminEventsRouteImport.update({
   id: '/events',
   path: '/events',
@@ -278,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/discount': typeof AdminDiscountRoute
   '/admin/events': typeof AdminEventsRoute
+  '/admin/food': typeof AdminFoodRoute
   '/admin/hours': typeof AdminHoursRoute
   '/admin/links': typeof AdminLinksRoute
   '/admin/media': typeof AdminMediaRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/discount': typeof AdminDiscountRoute
   '/admin/events': typeof AdminEventsRoute
+  '/admin/food': typeof AdminFoodRoute
   '/admin/hours': typeof AdminHoursRoute
   '/admin/links': typeof AdminLinksRoute
   '/admin/media': typeof AdminMediaRoute
@@ -363,6 +371,7 @@ export interface FileRoutesById {
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/discount': typeof AdminDiscountRoute
   '/admin/events': typeof AdminEventsRoute
+  '/admin/food': typeof AdminFoodRoute
   '/admin/hours': typeof AdminHoursRoute
   '/admin/links': typeof AdminLinksRoute
   '/admin/media': typeof AdminMediaRoute
@@ -409,6 +418,7 @@ export interface FileRouteTypes {
     | '/admin/basics'
     | '/admin/discount'
     | '/admin/events'
+    | '/admin/food'
     | '/admin/hours'
     | '/admin/links'
     | '/admin/media'
@@ -451,6 +461,7 @@ export interface FileRouteTypes {
     | '/admin/basics'
     | '/admin/discount'
     | '/admin/events'
+    | '/admin/food'
     | '/admin/hours'
     | '/admin/links'
     | '/admin/media'
@@ -493,6 +504,7 @@ export interface FileRouteTypes {
     | '/admin/basics'
     | '/admin/discount'
     | '/admin/events'
+    | '/admin/food'
     | '/admin/hours'
     | '/admin/links'
     | '/admin/media'
@@ -781,6 +793,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminHoursRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/food': {
+      id: '/admin/food'
+      path: '/food'
+      fullPath: '/admin/food'
+      preLoaderRoute: typeof AdminFoodRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/events': {
       id: '/admin/events'
       path: '/events'
@@ -851,6 +870,7 @@ interface AdminRouteChildren {
   AdminBasicsRoute: typeof AdminBasicsRoute
   AdminDiscountRoute: typeof AdminDiscountRoute
   AdminEventsRoute: typeof AdminEventsRoute
+  AdminFoodRoute: typeof AdminFoodRoute
   AdminHoursRoute: typeof AdminHoursRoute
   AdminLinksRoute: typeof AdminLinksRoute
   AdminMediaRoute: typeof AdminMediaRoute
@@ -862,6 +882,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBasicsRoute: AdminBasicsRoute,
   AdminDiscountRoute: AdminDiscountRoute,
   AdminEventsRoute: AdminEventsRoute,
+  AdminFoodRoute: AdminFoodRoute,
   AdminHoursRoute: AdminHoursRoute,
   AdminLinksRoute: AdminLinksRoute,
   AdminMediaRoute: AdminMediaRoute,

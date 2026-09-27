@@ -1,5 +1,6 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import type { MemberType } from "@/lib/supabase/types";
 import { stopImpersonation } from "@/lib/guild/impersonation.server";
 import { signOutEverything } from "@/lib/auth/sign-out.server";
 import {
@@ -33,6 +34,20 @@ const NAV_ITEMS: readonly ShellNavItem[] = [
   { to: "/admin/events", label: "Events", short: "Events", match: ["/admin/events"] },
   { to: "/admin/discount", label: "Discount", short: "Discount", match: ["/admin/discount"] },
 ];
+
+const FOOD_NAV_ITEM: ShellNavItem = {
+  to: "/admin/food",
+  label: "Food trucks",
+  short: "Food",
+  match: ["/admin/food"],
+};
+
+/** /admin's sections for this member: a producer also gets Food trucks, after Events. */
+export function adminNavItemsFor(memberType: MemberType | null | undefined): readonly ShellNavItem[] {
+  if (memberType !== "producer") return NAV_ITEMS;
+  const events = NAV_ITEMS.findIndex((item) => item.to === "/admin/events");
+  return [...NAV_ITEMS.slice(0, events + 1), FOOD_NAV_ITEM, ...NAV_ITEMS.slice(events + 1)];
+}
 
 function isActivePath(pathname: string, prefixes: readonly string[]) {
   const normalized = pathname.replace(/\/+$/, "");

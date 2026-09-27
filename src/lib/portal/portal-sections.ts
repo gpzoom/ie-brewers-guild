@@ -12,6 +12,7 @@ import type { CompletenessStep } from "@/lib/portal/section-completeness";
  *   logo-cover   yes    yes     --
  *   photos       yes    yes     yes
  *   events       yes    yes     yes
+ *   food         yes    yes     --        (Producers only: the food truck calendar)
  *   links        yes    yes     --
  *   discount     yes    yes     --        (Allied Members only)
  *   theme        yes    yes     --
@@ -27,6 +28,7 @@ export const PORTAL_SECTIONS = [
   "logo-cover",
   "photos",
   "events",
+  "food",
   "links",
   "discount",
   "theme",
@@ -44,6 +46,7 @@ export const PORTAL_SECTION_LABELS: Record<PortalSection, { label: string; short
   "logo-cover": { label: "Logo & cover", short: "Logo" },
   photos: { label: "Photos", short: "Photos" },
   events: { label: "Events", short: "Events" },
+  food: { label: "Food trucks", short: "Food" },
   links: { label: "Links & contact", short: "Links" },
   discount: { label: "Discount & supplies", short: "Discount" },
   theme: { label: "Theme", short: "Theme" },
@@ -58,6 +61,7 @@ export function canOpenPortalSection(
   viewer: { role: PortalRole; memberType: MemberType },
 ): boolean {
   if (section === "discount" && viewer.memberType !== "allied") return false;
+  if (section === "food" && viewer.memberType !== "producer") return false;
   if (viewer.role === "media_events") return MEDIA_EVENTS_SECTIONS.includes(section);
   if (section === "people") return viewer.role === "owner";
   return true;

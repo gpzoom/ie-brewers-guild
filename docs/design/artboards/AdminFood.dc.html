@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Member admin — food trucks</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#F9F6F0}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+
+<div style="width: 1280px; height: 900px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column;">
+
+  <div style="height: 64px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 28px;">
+    <div style="display: flex; align-items: center; gap: 11px;">
+      <div style="width: 24px; height: 24px; border-radius: 5px; background: #38322A;"></div>
+      <div style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">IE BREWERS GUILD · MEMBER ADMIN</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="font-size: 13px; color: #A89D8E;">[MEMBER NAME]</div>
+      <a href="MobileProfile.dc.html" style="height: 40px; padding: 0 16px; border-radius: 9px; border: 1px solid #4A4238; color: #F9F6F0; display: flex; align-items: center; font-size: 13px; font-weight: 500; text-decoration: none;">Preview</a>
+      <a href="AdminPublish.dc.html" style="height: 40px; padding: 0 18px; border-radius: 9px; background: #B3591F; color: #FFFFFF; display: flex; align-items: center; font-size: 13px; font-weight: 600; text-decoration: none;">Publish changes</a>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; display: flex;">
+
+    <div style="width: 236px; flex-shrink: 0; border-right: 1px solid #EFEAE1; padding: 26px 16px; display: flex; flex-direction: column; gap: 3px;">
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #8C8275; padding: 0 12px 10px;">YOUR PROFILE</div>
+      <a href="AdminBasics.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Basics</a>
+      <a href="AdminMedia.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Photos<span style="font-size: 11px; color: #8C8275;">3 / 4</span></a>
+      <a href="AdminTheme.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Theme</a>
+      <a href="#links" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Links &amp; contact</a>
+      <a href="AdminEvents.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Events</a>
+      <a href="#food" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; background: #241F1A; color: #F9F6F0; font-size: 14px; font-weight: 600; text-decoration: none;">Food trucks<span style="font-size: 10px; letter-spacing: 0.08em; color: #CFC6B6;">PRODUCERS</span></a>
+    </div>
+
+    <div style="flex-grow: 1; padding: 30px 36px; display: flex; flex-direction: column; gap: 26px;">
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 27px; font-weight: 700; color: #241F1A;">Food trucks <span style="font-family: Chivo, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: #8C8275;">PRODUCERS ONLY</span></div>
+          <div style="font-size: 13px; color: #6B6156;">Show which food trucks and pop-ups are at your taproom over the next 7 days, from a calendar of their own. Changes show on your page right away.</div>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 16px; padding: 20px 24px; border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF;">
+          <div style="display: flex; flex-direction: column; gap: 5px; flex-grow: 1;">
+            <div style="font-size: 16px; font-weight: 600; color: #241F1A;">Food truck calendar</div>
+            <div style="font-size: 13px; color: #6B6156;">[CALENDAR HOST] · importing vendors tagged <strong style="font-weight: 600; color: #241F1A;">#food</strong></div>
+            <div style="font-size: 12px; color: #6B6156;">Its own link and its own tag, different from your events tag.</div>
+          </div>
+          <button type="button" style="height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #D3CBBD; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 600; color: #241F1A;">Refresh now</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 16px 20px; border-radius: 14px; border: 1px solid #DED7CB; background: #F9F6F0;">
+          <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">NEXT 7 DAYS ON YOUR PROFILE</div>
+          <div style="display: flex; gap: 14px; align-items: center; padding: 10px 14px; border-radius: 11px; border: 1px solid #DED7CB; background: #FFFFFF;"><div style="width: 40px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;"><div style="font-size: 9px; letter-spacing: 0.1em; color: #6B6156;">TODAY</div><div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 19px; font-weight: 700; color: #241F1A; line-height: 1.05;">24</div><div style="font-size: 9px; letter-spacing: 0.1em; color: #6B6156;">SEP</div></div><div style="display: flex; flex-direction: column; gap: 2px;"><div style="font-size: 14px; font-weight: 600; color: #241F1A;">[FOOD TRUCK NAME]</div><div style="font-size: 12px; color: #6B6156;">5:00 – 9:00 pm</div></div></div>
+          <div style="display: flex; gap: 14px; align-items: center; padding: 10px 14px; border-radius: 11px; border: 1px solid #EFEAE1; background: #F7F4EE;"><div style="width: 40px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;"><div style="font-size: 9px; letter-spacing: 0.1em; color: #6B6156;">FRI</div><div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 19px; font-weight: 700; color: #241F1A; line-height: 1.05;">25</div><div style="font-size: 9px; letter-spacing: 0.1em; color: #6B6156;">SEP</div></div><div style="font-size: 13px; color: #6B6156;">Bring your own food</div></div>
+          <div style="display: flex; gap: 14px; align-items: center; padding: 10px 14px; border-radius: 11px; border: 1px solid #EFEAE1; background: #F7F4EE;"><div style="width: 40px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;"><div style="font-size: 9px; letter-spacing: 0.1em; color: #6B6156;">TUE</div><div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 19px; font-weight: 700; color: #241F1A; line-height: 1.05;">29</div><div style="font-size: 9px; letter-spacing: 0.1em; color: #6B6156;">SEP</div></div><div style="font-size: 13px; color: #6B6156;">Closed</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

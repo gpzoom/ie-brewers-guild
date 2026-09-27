@@ -10,8 +10,8 @@
       "y": 2300
     },
     "AdminEvents.dc.html": {
-      "h": 1640,
-      "title": "M · Admin — events & calendar, plus a producer's food truck calendar",
+      "h": 1160,
+      "title": "M · Admin — events & calendar (all member types)",
       "w": 1280,
       "x": 5860,
       "y": 2300
@@ -162,6 +162,13 @@
       "w": 1280,
       "x": 19460,
       "y": 2300
+    },
+    "AdminFood.dc.html": {
+      "h": 900,
+      "title": "M2 · Admin — food trucks (producers only)",
+      "w": 1280,
+      "x": 5860,
+      "y": 3560
     }
   },
   "createdOnFiles": {
@@ -203,6 +210,7 @@
     "CreatorUpload.dc.html",
     "AdminTheme.dc.html",
     "AdminEvents.dc.html",
+    "AdminFood.dc.html",
     "GuildApprovals.dc.html",
     "GuildMembers.dc.html",
     "GuildBrand.dc.html",

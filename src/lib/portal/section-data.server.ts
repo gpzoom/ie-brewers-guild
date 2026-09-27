@@ -286,6 +286,16 @@ export async function loadEventsSection(
   return loadSchedule(supabase, memberId);
 }
 
+/**
+ * Food trucks (producers only): the food truck calendar and its 7-day
+ * preview. Not drafted -- like events, the calendar goes live on its own.
+ */
+export async function loadFoodSection(supabase: SessionClient, memberId: string) {
+  const live = await readLiveMember(supabase, memberId);
+  const food = live.memberType === "producer" ? await loadFoodCalendar(supabase, memberId) : null;
+  return { food, memberTimezone: live.timezone };
+}
+
 /** Photos: slides (draft `media`), the gallery, creator links and the review tray. */
 export async function loadPhotosSection(supabase: SessionClient, memberId: string) {
   const [draft, assets, uploadTokens, pending] = await Promise.all([

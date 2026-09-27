@@ -4,7 +4,7 @@ import { requireMemberSession } from "@/lib/auth/require-member-session.server";
 import { getPublishGateData } from "@/lib/hours/publish-gate.server";
 import { getDraftStatus } from "@/lib/drafts/drafts.server";
 import { getMemberDisplayName } from "@/lib/guild/impersonation.server";
-import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminShell, adminNavItemsFor } from "@/components/admin/AdminShell";
 import { PublishGateDialog } from "@/components/admin/PublishGateDialog";
 import { DraftStatusProvider, useDraftStatus } from "@/components/admin/DraftStatusContext";
 import {
@@ -89,6 +89,7 @@ function AdminLayoutInner() {
       previewHref="/admin/preview"
       liveHref={isPublished ? `/members/${publishGateData.slug}` : undefined}
       publishSlot={<PublishGateDialog memberId={memberId} initial={publishGateData} />}
+      navItems={adminNavItemsFor(publishGateData.memberType)}
     >
       {/* Remounted after a discard so every editor starts again from the reloaded draft. */}
       <Fragment key={`${memberId}:${epoch}`}>

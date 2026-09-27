@@ -14,11 +14,21 @@ describe("portalSectionsFor", () => {
       "logo-cover",
       "photos",
       "events",
+      "food",
       "links",
       "theme",
       "people",
     ]);
     expect(portalSectionsFor({ role: "owner", memberType: "allied" })).toContain("discount");
+  });
+
+  it("gives Food trucks to producers only, and not to a Photos & events editor", () => {
+    expect(portalSectionsFor({ role: "owner", memberType: "allied" })).not.toContain("food");
+    expect(portalSectionsFor({ role: "owner", memberType: "mobile" })).not.toContain("food");
+    expect(portalSectionsFor({ role: "editor", memberType: "producer" })).toContain("food");
+    expect(portalSectionsFor({ role: "media_events", memberType: "producer" })).not.toContain(
+      "food",
+    );
   });
 
   it("gives a full editor everything but People", () => {

@@ -222,7 +222,7 @@ On the profile each event's date column reads weekday, day and **month** ("THU /
 
 ### Food calendar
 
-Decided with the owner on 27 September 2026. **Producers only.** A taproom can connect a **second** calendar for the food trucks and pop-ups parked there, with **its own ICS link and its own tag** (for example `#food`; it must differ from their events tag). It's set up under the events calendar, on the portal's Events section, in wizard step 6 and on the old `/admin/events` screen (where Edit as them still opens), and only the owner connects it, like the events calendar.
+Decided with the owner on 27 September 2026. **Producers only.** A taproom can connect a **second** calendar for the food trucks and pop-ups parked there, with **its own ICS link and its own tag** (for example `#food`; it must differ from their events tag). It has **its own menu item, Food trucks** (owner's request, 27 September 2026), for producers only: the portal section `/portal/food` and the old editor's `/admin/food` (where Edit as them opens). In the setup wizard it sits in step 6, under the events calendar. Only the owner (or a Guild admin editing as them) connects it, like the events calendar.
 
 - Each entry is a **vendor's day**: the vendor's name in the title, the time, and anything else (a menu or Instagram link) in the description. Title and description are cleaned the same way as events (tag taken out, links clickable).
 - The profile shows **Food this week** directly above "Coming up": the next **7 days**, today first, in the member's time zone, each with the weekday, day and month. A day lists its vendors (name, time, description; several in time order). A day with no vendor says **"Bring your own food"**, or **"Closed"** when their posted hours (weekly, or a holiday) say they're closed that day, the same rule "open now" uses. With no hours posted, no day is Closed.
@@ -520,7 +520,7 @@ A member's profile can have three kinds of people. The role lives in `member_use
 | Can they… | Owner (`owner`) | Full editor (`editor`) | Photos & events editor (`media_events`) |
 | --- | --- | --- | --- |
 | Go through the setup wizard | yes | yes, if setup isn't done | never |
-| Basics & hours, Logo & cover, Links, Discount, Theme | yes | yes | no, sections hidden |
+| Basics & hours, Logo & cover, Links, Discount, Theme, Food trucks (producers) | yes | yes | no, sections hidden |
 | Photos: upload, crop, reorder, tap-through links, creator upload links, approve or reject creator uploads | yes | yes | yes |
 | Events: add, edit, hide, set Postponed / Rescheduled / Canceled, Refresh now | yes | yes | yes |
 | Connect or disconnect the Google / Apple calendar | yes | no | no |
