@@ -471,7 +471,7 @@ One step per screen. Every step has **Back**, **Skip for now** (except steps 2 a
 | 3 | The basics: name, city, tagline, phone, member since, plus the type's location fields (address with suggestions and ZIP; an Allied Member's is their business address); Mobile members also pick "What you offer" categories here, and their Booking phone notes that more booking links go on Links & contact | ✓ | ✓ | ✓ | name and city | F |
 | 4 | Logo and cover (the cover hint suggests using your Facebook cover photo) | ✓ | ✓ | ✓ | — | G |
 | 5 | When you're open: 7-day hours / 5-day business hours / Where we'll be (calendar or hand entry) | hours | calendar | hours | — | F, M |
-| 6 | Events (producers also: the food truck calendar) | ✓ | — (step 5 covered it) | ✓ | — | M |
+| 6 | Events (producers also: the food calendar) | ✓ | — (step 5 covered it) | ✓ | — | M |
 | 7 | Photos: gallery upload first, then Your Carousel (slides, crop, tap-through link under the crop controls), then the creator upload link | ✓ | ✓ | ✓ | — | G, J |
 | 8 | Links: link buttons (third button: Tap list / Press kit / Catalog; Mobile members can add Instagram DM and WhatsApp booking links) | ✓ | ✓ | ✓ | — | R |
 | 9 | Member discount and supplies | — | — | ✓ | — | /admin/discount |

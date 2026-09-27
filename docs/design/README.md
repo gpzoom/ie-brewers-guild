@@ -54,7 +54,7 @@ Placeholders like `[MEMBER NAME]` in the artboards are stand-ins for real data. 
 | S `GuildCategories` | Guild: categories (Allied / Mobile tabs; Delete: super admin only) | `routes/guild.categories.tsx` → `guild/CategoriesEditor` |
 | U `GuildAdmins` | Guild admins (super admin only) | `routes/guild.admins.tsx` → `guild/GuildAdminsScreen` |
 | W `GuildAudit` | Audit log (super admin only) | `routes/guild.audit.tsx` → `guild/AuditLogScreen` |
-| M2 `AdminFood` | Food: the food truck calendar and 7-day preview (producers only) | `routes/admin.food.tsx`, portal section `food` → `admin/FoodCalendarSection` |
+| M2 `AdminFood` | Food: the food calendar and 7-day preview (producers only) | `routes/admin.food.tsx`, portal section `food` → `admin/FoodCalendarSection` |
 | X `SupportHelp` | Help button: bug report or feature request (every portal, /admin and Guild screen) | `support/SupportButton`, mounted in `routes/__root.tsx` |
 | Y `GuildHelp` | Help messages, with the top bar's bell (super admin only) | `routes/guild.help.tsx` → `guild/HelpMessagesScreen`; bell in `guild/GuildShell` |
 | Z `GuildSettings` | Settings: calendar sync timing (super admin only) | `routes/guild.settings.tsx` → `guild/SiteSettingsScreen` |
