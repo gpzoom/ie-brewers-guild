@@ -3,6 +3,7 @@ import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { resolveCallbackRedirect, resolveUserRoleAndTarget } from "@/lib/auth/role-routing";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { readImpersonationState } from "@/lib/guild/impersonation.server";
+import { acceptGuildAdminInvitesAtSignIn } from "@/lib/guild/guild-admins.server";
 
 /**
  * The magic-link landing page. A real request/response cycle (server.handlers,
@@ -17,6 +18,10 @@ import { readImpersonationState } from "@/lib/guild/impersonation.server";
  * /portal is where pending invites are accepted (and it explains itself
  * when there's nothing to accept). Without a valid `next`, role routing is
  * unchanged.
+ *
+ * Before routing, a pending Guild admin invite for the signed-in address is
+ * accepted (docs/member-profiles.md, "Super admin" > "Guild admins
+ * screen"), so a new Guild admin lands in /guild on their first sign-in.
  */
 export const Route = createFileRoute("/auth/callback")({
   server: {
@@ -35,6 +40,7 @@ export const Route = createFileRoute("/auth/callback")({
           throw redirect({ href: "/signin?notice=invalid-link" });
         }
 
+        await acceptGuildAdminInvitesAtSignIn({ id: data.user.id, email: data.user.email });
         const routing = await resolveUserRoleAndTarget(supabase, data.user.id);
         const next = safeNextPath(url.searchParams.get("next"));
 

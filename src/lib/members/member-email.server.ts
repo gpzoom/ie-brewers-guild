@@ -5,6 +5,7 @@ import { readImpersonationState } from "@/lib/guild/impersonation.server";
 import { shouldRecordAudit } from "@/lib/guild/impersonation-token";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { ImpersonationState } from "@/lib/guild/impersonation-token";
+import { requireSuperAdmin } from "@/lib/auth/super-admin";
 
 // Deliberately simple -- matches contact-form-validation.ts's own choice
 // not to implement full RFC 5322: a basic shape check is a reasonable bar,
@@ -55,8 +56,10 @@ export async function fetchMemberEmail(
 }
 
 /**
- * Changes the sign-in email tied to a member's account. Available ONLY
- * while a Guild admin is actively impersonating THIS specific member --
+ * Changes the sign-in email tied to a member's account. SUPER ADMIN ONLY
+ * (docs/member-profiles.md, "Super admin": the rescue path for a member who
+ * has lost access to their old address; a Guild admin editing as them sees
+ * it read-only), and only while actively impersonating THIS specific member --
  * the exact same gate recordAuditLogIfImpersonating uses (shouldRecordAudit)
  * -- by explicit product decision (2026-09-24): a member who lets an
  * employee manage their profile, then loses that employee, could otherwise
@@ -92,6 +95,9 @@ export async function changeMemberEmail(
   if (!EMAIL_PATTERN.test(newEmail)) {
     throw new Error("Enter a valid email address.");
   }
+
+  // Before the service-role client is touched: it bypasses every policy.
+  await requireSuperAdmin(sessionClient, "change a member's sign-in email");
 
   if (!shouldRecordAudit(impersonation, memberId)) {
     throw new Error("Changing a member's sign-in email is only available while editing as them.");

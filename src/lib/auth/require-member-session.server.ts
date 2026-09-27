@@ -45,6 +45,16 @@ export const requireMemberSession = createServerFn({ method: "GET" }).handler(
         // the same device afterward). Never honor a mismatched cookie.
         throw redirect({ href: "/guild/roster" });
       }
+      // Guild admin access can be removed (the super admin's Guild admins
+      // screen); it ends on the next request, "Edit as them" included.
+      const { data: actorProfile } = await supabase
+        .from("profiles")
+        .select("is_guild_admin")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (!actorProfile?.is_guild_admin) {
+        throw redirect({ href: "/signin" });
+      }
       await touchImpersonationActivity(impersonation);
       return {
         memberId: impersonation.memberId,

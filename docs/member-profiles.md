@@ -121,7 +121,7 @@ PNG or SVG only, transparent background, minimum 400px tall, 2 MB maximum (the u
 
 **Always place a member logo on a light chip**, never directly on a dark surface. A transparent PNG of a dark-ink mark disappears against the dark guild chrome, and a large share of craft logos are exactly that. The cross-link card at the bottom of every profile is the place this bites — it is a dark card carrying another member's logo. An ivory rounded chip behind it costs nothing and removes the whole class of problem. The alternative, asking members for a light variant, is one more thing to chase and will be inconsistently supplied.
 
-**Serve member SVGs through an `<img>` tag, never inlined into the page.** A member-uploaded SVG can carry script, event handlers and external references. Inlining it executes that in the page's origin. If inline rendering is ever needed for CSS colouring, sanitize server-side first and treat that as a separate decision with its own review.
+**Serve member SVGs through an `<img>` tag, never inlined into the page.** A member-uploaded SVG can carry script, event handlers and external references. Inlining it executes that in the page's origin. If inline rendering is ever needed for CSS coloring, sanitize server-side first and treat that as a separate decision with its own review.
 
 Strip EXIF from uploaded photos. Phone photos carry GPS coordinates, and a member's home address can end up in a file served from the Guild's site.
 
@@ -141,7 +141,7 @@ Allied Member cross-links point to another Allied Member. Pointing one at a prod
 
 ## Allied Member discount
 
-Allied Member profiles carry a discount block, set by the member in their admin panel. It renders large and in the accent colour, directly under the status block and above the supply categories — deliberately the loudest thing on the page after the business name.
+Allied Member profiles carry a discount block, set by the member in their admin panel. It renders large and in the accent color, directly under the status block and above the supply categories — deliberately the loudest thing on the page after the business name.
 
 This is the most concrete answer the site has to "what does Guild membership get me," so it earns the prominence.
 
@@ -164,9 +164,9 @@ The cover is a third aspect ratio, 2.5:1 on phone. Same storage rule as the caro
 
 ### Theme picker
 
-Members pick one of eight themes. It colours the primary button, small highlights, the trail progress strip, and the cover band when they have no cover photo.
+Members pick one of eight themes. It colors the primary button, small highlights, the trail progress strip, and the cover band when they have no cover photo.
 
-Member themes and the Guild brand are separate systems. The Guild brand sets the site's own type and colour — the dark frame, the chrome, the admin. A member theme colours what sits inside that frame on their own page. Changing the Guild brand does not change anyone's member theme, and a member cannot change the Guild's.
+Member themes and the Guild brand are separate systems. The Guild brand sets the site's own type and color — the dark frame, the chrome, the admin. A member theme colors what sits inside that frame on their own page. Changing the Guild brand does not change anyone's member theme, and a member cannot change the Guild's.
 
 | Theme | Hex |
 | --- | --- |
@@ -179,11 +179,11 @@ Member themes and the Guild brand are separate systems. The Guild brand sets the
 | Forest | `#2F6B33` |
 | Olive | `#55621C` |
 
-A fixed set, not a colour picker. A free picker guarantees contrast failures and a directory that looks like a ransom note; eight pre-checked options give real variety with no way to break it. Every value here clears 4.5:1 against white text — re-verify if any are swapped.
+A fixed set, not a color picker. A free picker guarantees contrast failures and a directory that looks like a ransom note; eight pre-checked options give real variety with no way to break it. Every value here clears 4.5:1 against white text — re-verify if any are swapped.
 
-The Guild's dark frame never changes. The theme colours what sits inside it, so the directory still reads as one site.
+The Guild's dark frame never changes. The theme colors what sits inside it, so the directory still reads as one site.
 
-A member with no cover photo gets their theme colour filling the band. That is the difference between a thin profile looking deliberate and looking unfinished, and most members will be thin profiles.
+A member with no cover photo gets their theme color filling the band. That is the difference between a thin profile looking deliberate and looking unfinished, and most members will be thin profiles.
 
 ## Events
 
@@ -231,11 +231,11 @@ Non-negotiables carried over from the artboards:
 - 44px minimum on every tap target, including the schedule day chips
 - real `<button>`, `<a href>` and `<input>` with `<label>` — no clickable divs
 - `aria-label` on every icon-only control
-- text at 4.5:1 contrast, 3:1 above 24px; the grey caption text and any white-on-colour fill are where this usually fails
+- text at 4.5:1 contrast, 3:1 above 24px; the grey caption text and any white-on-color fill are where this usually fails
 - no fake status bar or device chrome
 - phone number as `tel:`, email as `mailto:`, address linking out to maps
 
-Colour and type come from the Brand system section. The artboards are drawn on those tokens, so a hex in an artboard should match a token — if it doesn't, the token wins.
+Color and type come from the Brand system section. The artboards are drawn on those tokens, so a hex in an artboard should match a token — if it doesn't, the token wins.
 
 ## Migrating the existing members
 
@@ -282,13 +282,68 @@ Two admin surfaces. The **member admin** (F, G, I, K, M) edits one member's own 
 
 Seed the first Guild admin account against **boblelle77@gmail.com** — there has to be one admin before anyone can be invited, and it cannot be created through the UI because the UI requires an admin.
 
+### Super admin
+
+Decided with the owner on 27 September 2026. The site's creator gets a **super admin** account, separate from their everyday Guild admin account. A super admin can do everything a Guild admin can, plus a short list of site-level and irreversible actions that a Guild admin can't.
+
+#### Accounts
+
+- **Super admin:** `boblelle77+sa@gmail.com`. Gmail delivers `+sa` mail to the same inbox, but Supabase Auth treats it as a separate account. Magic-link sign-in works the same way as for everyone else.
+- **Guild admin:** `boblelle77@gmail.com` stays an ordinary Guild admin. That lets the owner see exactly what the Guild sees when testing.
+- The super admin account is **seeded in a migration**, never created or granted through a screen, the same way the first Guild admin was seeded. There is exactly one super admin. No screen can grant, remove or change super admin.
+- Sign-in routes by role as before: a super admin lands in `/guild`. The top bar reads **ISC Brewers Guild · Super admin** instead of "Guild admin", so it's always obvious which of the two accounts is signed in.
+
+#### Super admin only
+
+| Feature | What a Guild admin gets instead |
+| --- | --- |
+| **Brand & theme** (`/guild/brand`): site-wide typefaces and brand colors | Menu item hidden; the route refuses them |
+| **Delete member**: permanently removes the member, their profile and all their stored files | **Suspend** (reversible); the Delete item is not in their menu |
+| **Change a member's sign-in email** while editing as them | The sign-in email shows read-only while editing as them |
+| **Guild admins** (`/guild/admins`, new): list who has Guild admin access, invite a new Guild admin by email, remove access | Menu item hidden |
+| **Audit log** (`/guild/audit`, new): read-only list of who did what and when, filterable by member, person and date; changes made while editing as a member show as "[real person], editing as [member]" | Menu item hidden |
+| **Trail eligible** switch on the roster | Hidden until the Trail is built and the owner decides otherwise |
+| **Delete category**: the confirmation says how many members use it, since deleting removes it from all of them | Add, rename and reorder only |
+
+Everything else in the Guild admin stays with Guild admins: inquiries; the roster (search, create, invite, view, Edit as them); approve, decline and suspend; dues; changing member type; member requests; categories add, rename and reorder; and Applications when it's built.
+
+This changes three earlier rules:
+
+- **Impersonation:** a Guild admin editing as a member still can't change the member's email or sign-in settings. Only a super admin can change the sign-in email, as the rescue path for a member who has lost access to their old address.
+- **Brand editing** (Editing the brand from the admin) is a super admin screen, not a Guild admin one.
+- **Guild admins** are added and removed from `/guild/admins`, not only by seeding. The first Guild admin seed stays as it is.
+
+#### Guild admins screen
+
+- Lists every account with Guild admin access: email, date added, and last sign-in.
+- **Invite a Guild admin:** enter an email. That person gets an email with a sign-in link (a sign-in account is created for them if they don't have one; that alone grants nothing), and when they sign in with that address, the sign-in callback turns Guild admin access on. Pending invites show until accepted, last 14 days, can be resent (which restarts the 14 days; the same invite can be sent again only after 5 minutes) and can be canceled. Invites live in `guild_admin_invites` (see Enforcement).
+- **Remove access:** turns Guild admin access off. It doesn't delete the account, and it takes effect on that person's next request, including an "Edit as them" session they have open. The super admin account can't be removed here.
+- Every invite, resend, cancel, grant and removal is written to the audit log, with the address in `details`.
+
+#### Enforcement
+
+**Hiding menu items is not the protection.** Every super-admin-only action is checked on the server, and the database enforces it too.
+
+- `profiles` gains `is_super_admin boolean not null default false`. A new `public.is_super_admin()` (security definer, like `is_guild_admin()`) checks it. `is_guild_admin()` returns true for a super admin as well, so every existing Guild admin check keeps working for them. The seed also sets `is_guild_admin` on the super admin's row, because several server checks read that column directly.
+- No client can write `profiles` at all: insert, update and delete are revoked from `authenticated` and `anon` (there was never a client write policy either). A trigger, `profiles_protect_super_admin`, goes further: only a migration (running as `postgres`) can grant or remove super admin, take Guild admin access away from the super admin, or delete the super admin's row. Not even the Worker's service key can. `profiles.is_guild_admin` is changed only by the Guild admins server functions (service key, after the super admin check) and by accepting a Guild admin invite at sign-in.
+- **Seeding:** a migration can't create a Supabase Auth account cleanly, so `scripts/seed-super-admin-account.ts` creates the sign-in account for `boblelle77+sa@gmail.com` first (it grants nothing), and the migration `20260927100300_seed_super_admin.sql` sets both flags. The migration fails loudly if the account doesn't exist yet.
+- Database policy changes:
+  - `members` delete: super admin only.
+  - `members.trail_eligible`: only the super admin can change it from a client session, enforced in the `members_enforce_owner_write_limits` trigger (the members update policy lets any Guild admin update a row, so a policy alone can't lock one column). The roster's generic Guild admin update no longer accepts it either.
+  - `brand_settings` insert, update and delete: super admin only. Read access is unchanged.
+  - `categories`: split the current "guild admins can manage" policy. Guild admins keep insert and update; delete becomes super admin only. Deleting goes through `delete_category(id)`, a security definer function that checks for the super admin, takes the category out of every member's draft (otherwise that member's next publish would fail) and deletes it, in one transaction. `category_usage(id)` counts the members using it, live or in a draft, for the delete confirmation.
+  - `audit_log` select: super admin only. Guild admins still insert their own rows. A new `details jsonb` column keeps names that would otherwise be lost: a deleted member's business name, the address on a Guild admin invite, grant or removal.
+  - `guild_admin_invites` (new): `email` (lower-case), `invited_by_user_id`, `expires_at` (default 14 days), `accepted_at`, `accepted_user_id`, `cancelled_at`; one open invite per address. No client access at all; the Worker reads and writes it with the service key.
+- Server functions that run with the service key bypass these policies, so each one checks for the super admin (the real signed-in person, never the member being impersonated) before doing anything: delete member (including the storage wipe), change sign-in email, save brand settings, delete category, set Trail eligible, the Guild admins list, invite, resend, cancel and remove, and the audit log reader. Unit tests call each one as an ordinary Guild admin and check it's refused before anything is read or written; database tests (`supabase/tests/super_admin.test.sql`) check the same refusals straight through the database.
+- A super admin editing as a member is still subject to every impersonation rule except the email one: the band that can't be dismissed, the 30-minute idle timeout, and every write logged against the real person.
+
 ### Editing as a member
 
 From the roster, **Edit as them** opens that member's admin in an impersonation session. Four rules, all load-bearing:
 
 - The session records both the real admin and the member being edited. **Every write is logged against the real actor**, never the member.
 - A band sits on every admin screen and every preview for the duration, and **cannot be dismissed**. An admin must never be able to forget whose profile they are typing into.
-- Impersonation **cannot change the member's email or sign-in settings**. That is the line between an impersonation feature and an account-takeover feature.
+- Impersonation by a Guild admin **cannot change the member's email or sign-in settings**. That is the line between an impersonation feature and an account-takeover feature. The one exception: a **super admin** may change a member's sign-in email while editing as them (see Super admin).
 - Stopping returns to the roster, and the session ends on sign-out and on a short idle timeout.
 
 ### Transactional email
@@ -302,6 +357,7 @@ Resend, called from a Worker. Supabase Auth sends the magic link; everything els
 | Member invited | the new member | Welcome and a sign-in link |
 | Hours stale past 90 days | the member | One-click confirmation — the link itself sets the timestamp, no login |
 | Creator uploads to a gallery | the member | Something is waiting for review |
+| Super admin invites a Guild admin | the invitee | Who invited them, what a Guild admin does, and a sign-in link; the invite lasts 14 days |
 
 On staging, Guild-bound mail (contact form, type changed in setup) goes to the test inbox **boblelle77+iscadmin@gmail.com** instead of the real Guild inbox; production and local dev use the real one. The public contact address shown on the site doesn't change.
 
@@ -488,7 +544,7 @@ On `members`:
 
 ## Brand system
 
-The staging site's type and colour were chosen without a brief. This replaces them, and the replacement is **approved**. Everything here lives as tokens in one file so it can be changed in one place.
+The staging site's type and color were chosen without a brief. This replaces them, and the replacement is **approved**. Everything here lives as tokens in one file so it can be changed in one place.
 
 ### Typefaces
 
@@ -505,7 +561,7 @@ The Guild's wordmark stays whatever the logo artwork is — that is an asset, no
 
 The staging CSS has a bug — it loads Oswald at 500/600/700 but every heading computes to weight 400. It is not being fixed: that stylesheet is replaced wholesale by the tokens here, so don't port anything out of it.
 
-### Colour tokens
+### Color tokens
 
 Two grounds. The site chrome is dark; the profile card is a light canvas, so a member's logo and photos sit on neutral ground instead of fighting the Guild's brown.
 
@@ -534,10 +590,10 @@ Radii: 8px controls, 12px inset blocks, 16–22px cards, 999px pills. Keep the s
 
 ### Editing the brand from the admin
 
-The Guild admin gets a Brand & theme screen. Two rules for it, learned from the member theme picker:
+The **super admin** (not the Guild admin; see Super admin) gets a Brand & theme screen. Two rules for it, learned from the member theme picker:
 
 - **Typefaces are chosen from a curated list of pairings**, not a free font field. An open font picker guarantees someone tries Comic Sans, and there is no undo for a brand.
-- **Colour is edited as a brand hue and lightness, with live contrast readouts**, not as raw hex. The screen shows, in place, whether white or dark text passes on the chosen fill and refuses to save a combination that fails 4.5:1. Every token here already passes; the editor's job is to keep it that way.
+- **Color is edited as a brand hue and lightness, with live contrast readouts**, not as raw hex. The screen shows, in place, whether white or dark text passes on the chosen fill and refuses to save a combination that fails 4.5:1. Every token here already passes; the editor's job is to keep it that way.
 
 Store the token set as one row of JSON and inject it as CSS custom properties at render. Never let an edit reach the page as inline styles scattered through components — the whole point is that the swap stays one file.
 
@@ -777,6 +833,8 @@ Nothing in the current build writes visitor data of any kind.
 - Child tables (`carousel_slides`, `member_links`, `hours`, `special_hours`, `events`, `member_categories`): public select only when the parent member is published. Writes gated by `member_users`.
 - `media_assets`: public select only when `review_status = 'approved'` **and** the asset is referenced by a published slide, logo or cover. Members see all of their own rows including pending.
 - `upload_tokens` and `calendar_connections`: no public select at all. The creator upload route reads tokens with the service key inside a Worker.
+- `profiles`: each person reads their own row; Guild admins read all. No client writes at all (see Super admin > Enforcement).
+- Super admin only: `members` delete, `brand_settings` writes, `categories` delete, `audit_log` reads, the `members.trail_eligible` column. `guild_admin_invites` and `member_invites` have no client access.
 
 ### Storage buckets
 
@@ -822,7 +880,7 @@ Every module needs a defined absence. The rule is that a module with nothing in 
 | --- | --- |
 | No carousel slides | Module omitted. The cover and hero carry the page. |
 | One slide | Module renders, no dots |
-| No cover photo | Theme colour fills the band |
+| No cover photo | Theme color fills the band |
 | No tagline | Line omitted, name and badge close up |
 | No hours at all (producer or Allied Member) | Status block shows "Hours not listed" with the phone number as the action, instead of open/closed |
 | Hours stale past 90 days | Status still computes, plus a quiet "Hours confirmed \[Month Year\]" line |
@@ -830,7 +888,7 @@ Every module needs a defined absence. The rule is that a module with nothing in 
 | Calendar sync failing | Nothing on the public page. The admin shows the failure and the last successful sync. |
 | Allied Member, no discount set | Block omitted entirely |
 | Allied or Mobile member, no categories | Module omitted |
-| An image fails to load | Theme-coloured block in its place, never a broken-image icon or alt text alone |
+| An image fails to load | Theme-colored block in its place, never a broken-image icon or alt text alone |
 | Profile is a draft or still an application | 404 to the public, preview banner to its own members |
 | Slug not found | The directory's own 404, offering the member list — not a bare error |
 
@@ -855,5 +913,6 @@ The general principle: a member who has filled in almost nothing should still ge
 - [x] Portal entry — Member Portal link under Member sign in; `/admin` kept as fallback until tested
 - [x] Photos & events editor — owner-invited role; edits Photos and Events only; publishes and discards Photos only; can't connect a calendar
 - [x] Synced with staging, 27 September 2026 — Photos (not "Photos & video") until video uploads exist; Mobile categories; Members page from the database; address suggestions and geocode on publish; 2 MB logo limit; staging Guild mail to a test inbox
+- [x] Super admin — separate account boblelle77+sa@gmail.com, seeded only; owns Brand & theme, Delete member, sign-in email changes, Guild admins, Audit log, Trail switch and category delete; enforced on the server and in the database
 
 Nothing is open. This is ready to hand to Claude Code.

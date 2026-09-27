@@ -41,6 +41,7 @@ export async function resolveRecipient(
   switch (payload.trigger) {
     case "member_invited":
     case "editor_invited":
+    case "guild_admin_invited":
       return payload.email;
     case "contact_confirmation":
       return payload.email;

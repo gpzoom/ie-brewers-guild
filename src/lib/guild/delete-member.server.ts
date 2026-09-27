@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { clearImpersonationCookie, readImpersonationState } from "@/lib/guild/impersonation.server";
+import { requireSuperAdmin } from "@/lib/auth/super-admin";
 
 /** Both buckets store a member's files under `{member_id}/...`. */
 export const MEMBER_STORAGE_BUCKETS = ["member-media", "member-logos"] as const;
@@ -90,9 +91,12 @@ async function deleteOrphanedAuthUsers(serviceClient: SupabaseClient, userIds: s
 /**
  * Permanently deletes a member and everything hanging off it.
  *
- * The is_guild_admin check runs via the per-request session client BEFORE
- * the service-role client is touched (same reasoning as inviteMember: the
- * createServerFn below is an independently network-reachable endpoint).
+ * Super admin only (docs/member-profiles.md, "Super admin"; a Guild admin
+ * gets Suspend instead). The check runs via the per-request session client
+ * BEFORE the service-role client is touched (same reasoning as
+ * inviteMember: the createServerFn below is an independently
+ * network-reachable endpoint), and the database's members delete policy
+ * refuses a Guild admin too.
  *
  * DB order matters:
  *  - audit_log.member_id and inquiries.converted_member_id have no ON DELETE
@@ -114,17 +118,15 @@ export async function deleteMemberCore(
   sessionClient: SupabaseClient,
   serviceClient: SupabaseClient,
 ): Promise<{ ok: true }> {
-  const { data: userData } = await sessionClient.auth.getUser();
-  if (!userData?.user) throw new Error("Not signed in.");
+  const actor = await requireSuperAdmin(sessionClient, "delete a member");
 
-  const { data: profile } = await sessionClient
-    .from("profiles")
-    .select("is_guild_admin")
-    .eq("id", userData.user.id)
+  // The business name, for the audit row -- the member row is about to go.
+  const { data: memberRow } = await serviceClient
+    .from("members")
+    .select("business_name")
+    .eq("id", memberId)
     .maybeSingle();
-  if (!profile?.is_guild_admin) {
-    throw new Error("Only a Guild admin can delete a member.");
-  }
+  const businessName = (memberRow as { business_name?: string | null } | null)?.business_name ?? null;
 
   // Collected before anything is deleted -- the member delete cascades
   // these member_users rows away.
@@ -144,15 +146,15 @@ export async function deleteMemberCore(
   // Record the delete itself. Written AFTER the member_id nulling above
   // (so that step can't null it) and with member_id null (the member row is
   // about to go, and audit_log.member_id has no ON DELETE clause). row_id
-  // keeps which member it was. audit_log has no free-text column, so the
-  // business name can't be stored here. If this fails nothing has been
-  // deleted yet -- abort rather than delete without a trail.
+  // keeps which member it was, and details keeps its name. If this fails
+  // nothing has been deleted yet -- abort rather than delete without a trail.
   const { error: auditInsertError } = await serviceClient.from("audit_log").insert({
-    actor_user_id: userData.user.id,
+    actor_user_id: actor.userId,
     member_id: null,
     table_name: "members",
     row_id: memberId,
     action: "delete",
+    details: { business_name: businessName },
   });
   if (auditInsertError) throw new Error(auditInsertError.message);
 
@@ -185,7 +187,7 @@ export const deleteMember = createServerFn({ method: "POST" })
   .inputValidator((data: { memberId: string }) => data)
   .handler(async ({ data }) => {
     const sessionClient = await getSupabaseServerClientForRequest();
-    // deleteMemberCore checks is_guild_admin on the session client before
+    // deleteMemberCore checks for the super admin on the session client before
     // using this one; creating the client object itself does no I/O.
     const serviceClient = await getSupabaseServiceRoleClient();
     const result = await deleteMemberCore(data.memberId, sessionClient, serviceClient);

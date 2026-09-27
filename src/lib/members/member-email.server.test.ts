@@ -3,9 +3,23 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { changeMemberEmail, fetchMemberEmail } from "./member-email.server";
 import type { ImpersonationState } from "@/lib/guild/impersonation-token";
 
-function fakeSessionClient(memberUser: { user_id: string } | null): SupabaseClient {
+/** The signed-in person is the super admin unless `isSuperAdmin` is false (an ordinary Guild admin). */
+function fakeSessionClient(memberUser: { user_id: string } | null, isSuperAdmin = true): SupabaseClient {
   return {
+    auth: { getUser: async () => ({ data: { user: { id: "actor-1" } }, error: null }) },
     from(table: string) {
+      if (table === "profiles") {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({
+                data: { is_guild_admin: true, is_super_admin: isSuperAdmin },
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
       if (table !== "member_users") throw new Error(`unexpected table ${table}`);
       return {
         select: () => ({
@@ -82,6 +96,20 @@ describe("changeMemberEmail", () => {
         fakeServiceClient({}),
       ),
     ).rejects.toThrow("only available while editing as them");
+  });
+
+  it("rejects a Guild admin who isn't the super admin, even while editing as that member", async () => {
+    const calls: Array<{ userId: string; attrs: Record<string, unknown> }> = [];
+    await expect(
+      changeMemberEmail(
+        "member-1",
+        "new@example.com",
+        impersonating("member-1"),
+        fakeSessionClient({ user_id: "user-1" }, false),
+        fakeServiceClient({ updateUserByIdCalls: calls }),
+      ),
+    ).rejects.toThrow("Only the super admin can change a member's sign-in email.");
+    expect(calls).toHaveLength(0);
   });
 
   it("rejects when impersonating a DIFFERENT member than the one being updated", async () => {

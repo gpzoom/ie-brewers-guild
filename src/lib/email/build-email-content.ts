@@ -55,6 +55,13 @@ export type TransactionalEmailPayload =
       role: "editor" | "media_events";
       /** The owner's address, or null when a Guild admin invited while editing as them. */
       inviterEmail: string | null;
+    }
+  | {
+      /** The super admin's Guild admins screen invited someone: to the invitee. */
+      trigger: "guild_admin_invited";
+      email: string;
+      /** The super admin's address. */
+      inviterEmail: string | null;
     };
 
 export type EmailContent = { subject: string; html: string; text: string };
@@ -257,6 +264,31 @@ export function buildEmailContent(payload: TransactionalEmailPayload, siteUrl: s
         subject: `${payload.memberName} asked to change their member type`,
         text: `${lines.join("\n\n")}\n\nOpen the roster: ${rosterUrl}`,
         html: wrapHtml([...lines.map(escapeHtml), `<a href="${rosterUrl}">Open the roster</a>`]),
+      };
+    }
+
+    case "guild_admin_invited": {
+      const signInUrl = `${siteUrl}/signin`;
+      const inviter = payload.inviterEmail ?? `The ${ORG_NAME}`;
+      const intro = `${inviter} invited you to be a Guild admin on the ${ORG_SHORT_NAME} website.`;
+      const what =
+        "Guild admins answer inquiries, look after the member roster and edit members' profiles for them.";
+      const howTo = `Sign in with this email address (${payload.email}) to accept. The invitation lasts 14 days.`;
+      return {
+        subject: `You're invited to be a Guild admin — ${ORG_SHORT_NAME}`,
+        text: `${intro}
+
+${what}
+
+${howTo}
+
+${signInUrl}`,
+        html: wrapHtml([
+          escapeHtml(intro),
+          escapeHtml(what),
+          escapeHtml(howTo),
+          `<a href="${signInUrl}">Sign in</a>`,
+        ]),
       };
     }
 

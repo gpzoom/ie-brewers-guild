@@ -309,3 +309,18 @@ describe("buildEmailContent: editor_invited", () => {
     expect(content.text).toContain("The Inland Southern California Brewers Guild invited you");
   });
 });
+
+describe("buildEmailContent: guild_admin_invited", () => {
+  const payload = {
+    trigger: "guild_admin_invited" as const,
+    email: "new.admin@example.com",
+    inviterEmail: "boblelle77+sa@gmail.com",
+  };
+
+  it("says who invited them and links to sign-in on the site that sent it", () => {
+    const content = buildEmailContent(payload, "https://staging.example");
+    expect(content.text).toContain("boblelle77+sa@gmail.com invited you to be a Guild admin");
+    expect(content.text).toContain("new.admin@example.com");
+    expect(content.html).toContain('href="https://staging.example/signin"');
+  });
+});

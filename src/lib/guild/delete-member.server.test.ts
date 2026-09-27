@@ -59,12 +59,13 @@ function makeFrom(log: Op[], respond: Responder) {
   };
 }
 
-function fakeSessionClient(isAdmin: boolean): SupabaseClient {
+/** The signed-in person: the super admin when `isSuperAdmin`, else an ordinary Guild admin. */
+function fakeSessionClient(isSuperAdmin: boolean): SupabaseClient {
   return {
     auth: { getUser: async () => ({ data: { user: { id: "admin-1" } }, error: null }) },
     from: makeFrom([], (op) => {
       if (op.table !== "profiles") throw new Error(`unexpected session table ${op.table}`);
-      return { data: { is_guild_admin: isAdmin }, error: null };
+      return { data: { is_guild_admin: true, is_super_admin: isSuperAdmin }, error: null };
     }),
   } as unknown as SupabaseClient;
 }
@@ -128,6 +129,9 @@ function fakeServiceClient(opts: {
     if (op.table === "audit_log" && op.action === "insert" && opts.failAuditInsert) {
       return { data: null, error: { message: "audit insert denied" } };
     }
+    if (op.table === "members" && op.action === "select") {
+      return { data: { business_name: "Hop House" }, error: null };
+    }
     if (op.table === "members" && op.action === "delete") {
       return { data: Array.from({ length: opts.deletedRows ?? 1 }, () => ({ id: "member-1" })), error: null };
     }
@@ -159,10 +163,10 @@ describe("deleteMemberCore", () => {
     vi.restoreAllMocks();
   });
 
-  it("rejects a non-admin without touching anything", async () => {
+  it("rejects a Guild admin who isn't the super admin, without touching anything", async () => {
     const service = fakeServiceClient({ memberUserIds: ["user-1"] });
     await expect(deleteMemberCore("member-1", fakeSessionClient(false), service.client)).rejects.toThrow(
-      "Only a Guild admin can delete a member.",
+      "Only the super admin can delete a member.",
     );
     expect(service.log).toHaveLength(0);
     expect(service.deletedUsers).toHaveLength(0);
@@ -197,6 +201,7 @@ describe("deleteMemberCore", () => {
       table_name: "members",
       row_id: "member-1",
       action: "delete",
+      details: { business_name: "Hop House" },
     });
     expect(inquiries).toMatchObject({
       payload: { converted_member_id: null },

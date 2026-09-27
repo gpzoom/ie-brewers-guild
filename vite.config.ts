@@ -408,6 +408,14 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/portal/portal-people.server.ts",
             "src/lib/portal/type-change.server.ts",
             "src/lib/guild/support-requests.server.ts",
+            // Super admin (2026-09-27): guild-admins.server.ts (the Guild
+            // admins screen's actions, and acceptGuildAdminInvitesAtSignIn,
+            // a createServerOnlyFn the auth callback route calls) and
+            // audit-log-view.server.ts (the Audit log screen's loader).
+            // Their service-role store and helpers are private to each
+            // file and used only inside handlers, after the super admin check.
+            "src/lib/guild/guild-admins.server.ts",
+            "src/lib/guild/audit-log-view.server.ts",
           ],
           specifiers: ["server-only"],
         },
