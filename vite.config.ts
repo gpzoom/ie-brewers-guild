@@ -432,6 +432,10 @@ export default defineConfig(async ({ command, mode }) => {
             // guild.settings.tsx and SiteSettingsScreen.tsx. Session client
             // only, after the super admin check.
             "src/lib/guild/site-settings.server.ts",
+            // food-calendar.server.ts: getFoodCalendar, the old
+            // /admin/events screen's loader for a producer's food calendar
+            // (session client; RLS limits it to the member's editors).
+            "src/lib/events/food-calendar.server.ts",
           ],
           specifiers: ["server-only"],
         },

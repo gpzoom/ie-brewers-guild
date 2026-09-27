@@ -219,6 +219,18 @@ async function loadFoodCalendar(supabase: SessionClient, memberId: string): Prom
   };
 }
 
+/**
+ * The food calendar for a producer, or null for anyone else -- for the old
+ * /admin/events screen, which has no ScheduleData of its own.
+ */
+export async function loadFoodCalendarIfProducer(
+  supabase: SessionClient,
+  memberId: string,
+): Promise<FoodCalendarData | null> {
+  const live = await readLiveMember(supabase, memberId);
+  return live.memberType === "producer" ? loadFoodCalendar(supabase, memberId) : null;
+}
+
 async function loadSchedule(supabase: SessionClient, memberId: string): Promise<ScheduleData> {
   const [events, live, calendarConnection] = await Promise.all([
     listMemberEvents(supabase, memberId),
