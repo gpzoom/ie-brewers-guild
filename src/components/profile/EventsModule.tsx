@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { EventRow, MemberType } from "@/lib/supabase/types";
 import { SectionLabel } from "@/components/profile/SectionLabel";
 import { cn } from "@/lib/utils";
+import { linkifyText } from "@/lib/text/linkify";
 
 type EventsModuleProps = {
   events: EventRow[];
@@ -72,7 +73,8 @@ const LONG_DESCRIPTION = 140;
 /**
  * The event's description (from the member's calendar, as plain text --
  * cleanEventDescription in ics-sync.ts). Line breaks are kept; React
- * escapes the text, so nothing in it is ever treated as HTML.
+ * escapes the text, so nothing in it is ever treated as HTML. Web addresses
+ * in it become links (linkifyText: http(s) only), opening in a new tab.
  */
 function EventDescription({ text, muted }: { text: string; muted: boolean }) {
   const [open, setOpen] = useState(false);
@@ -86,7 +88,21 @@ function EventDescription({ text, muted }: { text: string; muted: boolean }) {
           long && !open && "line-clamp-3",
         )}
       >
-        {text}
+        {linkifyText(text).map((part, index) =>
+          part.kind === "link" ? (
+            <a
+              key={index}
+              href={part.href}
+              target="_blank"
+              rel="noopener noreferrer nofollow ugc"
+              className="break-all font-medium text-brand underline underline-offset-2 hover:text-brand-hover"
+            >
+              {part.text}
+            </a>
+          ) : (
+            <span key={index}>{part.text}</span>
+          ),
+        )}
       </p>
       {long && (
         <button

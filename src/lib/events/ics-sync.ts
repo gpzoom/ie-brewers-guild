@@ -28,13 +28,53 @@ const HTML_ENTITIES: Record<string, string> = {
 };
 
 /**
+ * Google wraps links in its descriptions as
+ * "https://www.google.com/url?q=<the real address>&sa=…"; this returns the
+ * real address. Anything else comes back as it was.
+ */
+function unwrapGoogleRedirect(href: string): string {
+  try {
+    const url = new URL(href);
+    if (/(^|\.)google\.com$/i.test(url.hostname) && url.pathname === "/url") {
+      return url.searchParams.get("q") ?? href;
+    }
+  } catch {
+    /* not a URL: left as it was */
+  }
+  return href;
+}
+
+/**
+ * An `<a href>` in a description, as text the profile can link again
+ * (linkifyText): the address itself when the link's text is the address,
+ * otherwise "text (address)". Only http(s) addresses are kept; any other
+ * kind of link is reduced to its text.
+ */
+function linkToText(
+  _match: string,
+  _quoted: string,
+  doubleQuoted: string | undefined,
+  singleQuoted: string | undefined,
+  inner: string,
+): string {
+  const label = inner.replace(/<[^>]*>/g, "").trim();
+  const href = unwrapGoogleRedirect(
+    (doubleQuoted ?? singleQuoted ?? "").replace(/&amp;/gi, "&").trim(),
+  );
+  if (!/^https?:\/\//i.test(href)) return label;
+  const labelIsAddress =
+    !label || href.replace(/\/$/, "").toLowerCase().endsWith(label.replace(/\/$/, "").toLowerCase());
+  return labelIsAddress ? href : `${label} (${href})`;
+}
+
+/**
  * An event's description as plain text for the profile. Calendars send it
  * in different shapes -- Google Calendar sends the HTML its editor makes
  * ("<b>", "<br>", "<a href>") and appends a block of Google Meet joining
  * details when the event has a video call -- so this:
  *  - drops the Google Meet block (it starts with a "-::~:~::~" divider);
  *  - turns line breaks and paragraph ends into new lines, and removes every
- *    other tag (keeping a link's text);
+ *    other tag (a link keeps its address, as "text (address)" -- see linkToText);
  *  - decodes the common HTML entities;
  *  - takes the sync tag out, as for the title;
  *  - tidies spaces and blank lines, and caps the length.
@@ -49,6 +89,7 @@ export function cleanEventDescription(
   const meet = text.search(/-::~:~::~/);
   if (meet >= 0) text = text.slice(0, meet);
   text = text
+    .replace(/<a\b[^>]*\bhref\s*=\s*("([^"]*)"|'([^']*)')[^>]*>([\s\S]*?)<\/a\s*>/gi, linkToText)
     .replace(/<\s*br\s*\/?>/gi, "\n")
     .replace(/<\s*\/\s*(p|div|li|h[1-6])\s*>/gi, "\n")
     .replace(/<\s*li[^>]*>/gi, "• ")

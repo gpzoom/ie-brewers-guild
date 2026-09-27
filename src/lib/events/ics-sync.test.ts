@@ -272,13 +272,34 @@ describe("cleanEventDescription", () => {
     );
   });
 
-  it("turns Google's HTML into plain text with line breaks, keeping link text", () => {
+  it("turns Google's HTML into plain text with line breaks, keeping each link's address", () => {
     expect(
       cleanEventDescription(
         '<b>Trivia</b> night<br>Teams of 4 &amp; up<br><br><br>Sign up: <a href="https://x.example">here</a>',
         "#guild",
       ),
-    ).toBe("Trivia night\nTeams of 4 & up\n\nSign up: here");
+    ).toBe("Trivia night\nTeams of 4 & up\n\nSign up: here (https://x.example)");
+  });
+
+  it("keeps a link whose text is its address as just the address, unwrapping Google's redirect", () => {
+    expect(
+      cleanEventDescription(
+        'Tickets: <a href="https://www.google.com/url?q=https://tix.example/halloween&amp;sa=D&amp;source=calendar">https://tix.example/halloween</a>',
+        "#guild",
+      ),
+    ).toBe("Tickets: https://tix.example/halloween");
+  });
+
+  it("drops the address of a link that isn't http(s), keeping its text", () => {
+    expect(cleanEventDescription('<a href="javascript:alert(1)">Click</a> me', "#guild")).toBe(
+      "Click me",
+    );
+  });
+
+  it("leaves a plain address in the text as it is", () => {
+    expect(cleanEventDescription("Prizes!\nhttps://google.com\n\n#guild", "#guild")).toBe(
+      "Prizes!\nhttps://google.com",
+    );
   });
 
   it("drops Google Meet's joining block", () => {
