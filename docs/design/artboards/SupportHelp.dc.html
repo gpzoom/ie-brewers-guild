@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Help button</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#F9F6F0}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+
+<div style="width: 1280px; height: 980px; box-sizing: border-box; background: #F9F6F0; position: relative; overflow: hidden; display: flex; flex-direction: column;">
+
+  <!-- The screen underneath: any portal, /admin or Guild screen -->
+  <div style="height: 64px; flex-shrink: 0; background: #171410; display: flex; align-items: center; padding: 0 28px;">
+    <div style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">ISC BREWERS GUILD · MEMBER PORTAL</div>
+  </div>
+  <div style="flex-grow: 1; display: flex;">
+    <div style="width: 236px; border-right: 1px solid #E6E0D6;"></div>
+    <div style="flex-grow: 1; padding: 30px 36px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 28px; font-weight: 700; color: #241F1A;">[ANY SECTION]</div>
+      <div style="height: 46px; width: 520px; border: 1px solid #DED7CB; border-radius: 9px; background: #FFFFFF;"></div>
+      <div style="height: 46px; width: 520px; border: 1px solid #DED7CB; border-radius: 9px; background: #FFFFFF;"></div>
+    </div>
+  </div>
+
+  <!-- The Help tab: right edge, halfway down, on every portal, /admin and Guild screen -->
+  <div style="position: absolute; right: 0; top: 450px; width: 36px; height: 76px; border-radius: 9px 0 0 9px; background: #241F1A; color: #FFFFFF; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; display: flex; align-items: center; justify-content: center; writing-mode: vertical-rl;">Help</div>
+
+  <!-- Dimmed backdrop and the form -->
+  <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.55);"></div>
+  <div style="position: absolute; left: 380px; top: 70px; width: 520px; box-sizing: border-box; border-radius: 18px; background: #F9F6F0; padding: 30px; display: flex; flex-direction: column; gap: 18px;">
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 25px; font-weight: 700; color: #241F1A; line-height: 1.1;">Help</div>
+      <div style="font-size: 14px; line-height: 1.5; color: #564E45;">Found a problem, or have an idea? Tell us here and it goes straight to the person who looks after the website.</div>
+    </div>
+    <div style="border-radius: 9px; background: #EFEAE1; padding: 10px 14px; font-size: 13px; color: #564E45;">About: <strong style="color: #241F1A;">[BUSINESS NAME]</strong> <span style="color: #8C8275;">(from the session; not shown on Guild screens)</span></div>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 13px; font-weight: 500; color: #241F1A;">What is this about?</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div style="min-height: 52px; box-sizing: border-box; border: 2px solid #241F1A; border-radius: 12px; background: #FFFFFF; display: flex; align-items: center; gap: 12px; padding: 0 15px;"><span style="width: 16px; height: 16px; border-radius: 99px; border: 5px solid #241F1A; box-sizing: border-box;"></span><span style="font-size: 15px; font-weight: 600; color: #241F1A;">Problem/bug</span></div>
+        <div style="min-height: 52px; box-sizing: border-box; border: 1px solid #DED7CB; border-radius: 12px; background: #FFFFFF; display: flex; align-items: center; gap: 12px; padding: 0 16px;"><span style="width: 16px; height: 16px; border-radius: 99px; border: 1px solid #8C8275; box-sizing: border-box;"></span><span style="font-size: 15px; font-weight: 600; color: #241F1A;">Feature request</span></div>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+      <div style="display: flex; flex-direction: column; gap: 8px;"><span style="font-size: 13px; font-weight: 500; color: #241F1A;">First name</span><div style="height: 46px; border: 1px solid #DED7CB; border-radius: 9px; background: #FFFFFF; display: flex; align-items: center; padding: 0 14px; font-size: 14px; color: #241F1A;">[FIRST NAME]</div></div>
+      <div style="display: flex; flex-direction: column; gap: 8px;"><span style="font-size: 13px; font-weight: 500; color: #241F1A;">Email</span><div style="height: 46px; border: 1px solid #DED7CB; border-radius: 9px; background: #FFFFFF; display: flex; align-items: center; padding: 0 14px; font-size: 14px; color: #241F1A;">[SIGN-IN EMAIL]</div></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <span style="font-size: 13px; font-weight: 500; color: #241F1A;">Describe the problem</span>
+      <div style="height: 120px; border: 1px solid #DED7CB; border-radius: 9px; background: #FFFFFF; padding: 12px 14px; box-sizing: border-box; font-size: 14px; color: #8C8275;">What were you doing, and what went wrong?</div>
+      <span style="font-size: 12px; color: #8C8275;">The page you're on and your browser are sent along, to help track down problems.</span>
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 12px;">
+      <div style="height: 46px; padding: 0 19px; border: 1px solid #D3CBBD; border-radius: 9px; display: flex; align-items: center; font-size: 14px; font-weight: 500; color: #241F1A;">Cancel</div>
+      <div style="height: 46px; padding: 0 24px; border-radius: 9px; background: #B3591F; display: flex; align-items: center; font-size: 14px; font-weight: 600; color: #FFFFFF;">Send</div>
+    </div>
+  </div>
+
+  <!-- After sending -->
+  <div style="position: absolute; left: 930px; top: 70px; width: 300px; box-sizing: border-box; border-radius: 18px; background: #F9F6F0; padding: 24px; display: flex; flex-direction: column; gap: 10px;">
+    <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #8C8275;">AFTER SENDING</div>
+    <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 22px; font-weight: 700; color: #241F1A;">Thanks, we got it</div>
+    <div style="font-size: 13px; line-height: 1.5; color: #564E45;">Your message is on its way. If we need more detail, we'll reply to [EMAIL].</div>
+    <div style="align-self: flex-end; height: 44px; padding: 0 20px; border-radius: 9px; background: #B3591F; display: flex; align-items: center; font-size: 14px; font-weight: 600; color: #FFFFFF;">Close</div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

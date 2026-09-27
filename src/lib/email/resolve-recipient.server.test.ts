@@ -178,3 +178,27 @@ describe("resolveRecipient: portal emails", () => {
     expect(to).toBe("sam@example.com");
   });
 });
+
+describe("resolveRecipient: Help button", () => {
+  it("support_message goes to the inbox the server chose", async () => {
+    const supabase = fakeSupabase({ memberUser: null, userEmail: null });
+    const to = await resolveRecipient(
+      {
+        trigger: "support_message",
+        to: "support@example.com",
+        kind: "bug",
+        firstName: "Sam",
+        email: "sam@example.com",
+        message: "It broke.",
+        memberName: null,
+        memberType: null,
+        accountEmail: null,
+        senderRole: "guild_admin",
+        pagePath: "/guild",
+        userAgent: null,
+      },
+      supabase,
+    );
+    expect(to).toBe("support@example.com");
+  });
+});

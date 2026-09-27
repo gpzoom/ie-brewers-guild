@@ -62,9 +62,30 @@ export type TransactionalEmailPayload =
       email: string;
       /** The super admin's address. */
       inviterEmail: string | null;
+    }
+  | {
+      /** The Help button (docs/member-profiles.md, "Help button"): to the site owner. */
+      trigger: "support_message";
+      /** The support inbox, chosen by the server (SUPPORT_INBOX_EMAIL). */
+      to: string;
+      kind: "bug" | "feature";
+      firstName: string;
+      /** What they typed; replies go here. */
+      email: string;
+      message: string;
+      /** The profile they were working on, from the session; null on the Guild screens or with no profile yet. */
+      memberName: string | null;
+      memberType: MemberType | null;
+      /** The signed-in account, when it differs from what they typed. */
+      accountEmail: string | null;
+      /** member: the member or their editor · guild_admin: on the Guild screens · guild_admin_as_member: editing as the member. */
+      senderRole: "member" | "guild_admin" | "guild_admin_as_member";
+      pagePath: string;
+      userAgent: string | null;
     };
 
-export type EmailContent = { subject: string; html: string; text: string };
+/** replyTo: where hitting Reply goes, when it isn't the sender's no-reply address. */
+export type EmailContent = { subject: string; html: string; text: string; replyTo?: string };
 
 /**
  * The Guild's real, currently-used contact inbox (confirmed against
@@ -83,6 +104,21 @@ export const GUILD_NOTIFICATION_EMAIL = "iscbrewersguild@gmail.com";
  */
 export const STAGING_GUILD_NOTIFICATION_EMAIL = "boblelle77+iscadmin@gmail.com";
 const STAGING_HOST = "ie-brewers-guild-staging.boblelle77.workers.dev";
+
+/**
+ * Where the Help button's messages go (owner's request, 2026-09-27), unless
+ * the Worker's SUPPORT_INBOX_EMAIL variable names another address.
+ */
+export const DEFAULT_SUPPORT_INBOX_EMAIL = "boblelle77@gmail.com";
+
+function isStagingSite(siteUrl: string | null): boolean {
+  if (!siteUrl) return false;
+  try {
+    return new URL(siteUrl).hostname === STAGING_HOST;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * The Guild inbox for the site an email is being sent from: the staging
@@ -145,6 +181,12 @@ function wrapHtml(paragraphs: string[]): string {
     .map((paragraph) => `<p>${paragraph}</p>`)
     .join("\n")}</div>`;
 }
+
+const SUPPORT_SENDER_LABEL = {
+  member: "Member or their editor",
+  guild_admin: "Guild admin",
+  guild_admin_as_member: "Guild admin, editing as this member",
+} as const;
 
 /** How the email names each member type (same words as the type cards' short names). */
 const MEMBER_TYPE_EMAIL_LABEL: Record<MemberType, string> = {
@@ -310,6 +352,37 @@ ${signInUrl}`,
           escapeHtml(howTo),
           `<a href="${signInUrl}">Sign in to the Member Portal</a>`,
         ]),
+      };
+    }
+
+    case "support_message": {
+      const kindLabel = payload.kind === "bug" ? "Bug report" : "Feature request";
+      const typeLabel = payload.memberType ? MEMBER_TYPE_EMAIL_LABEL[payload.memberType] ?? payload.memberType : null;
+      const about = payload.memberName
+        ? `${payload.memberName}${typeLabel ? ` (${typeLabel})` : ""}`
+        : payload.senderRole === "guild_admin"
+          ? "Guild admin screens"
+          : "No profile yet";
+      const staging = isStagingSite(siteUrl) ? "[Staging] " : "";
+      const details = [
+        `From: ${payload.firstName} <${payload.email}>`,
+        ...(payload.accountEmail && payload.accountEmail.toLowerCase() !== payload.email.toLowerCase()
+          ? [`Signed in as: ${payload.accountEmail}`]
+          : []),
+        `Who: ${SUPPORT_SENDER_LABEL[payload.senderRole]}`,
+        `Profile: ${payload.memberName ?? "(none)"}${typeLabel ? ` · ${typeLabel}` : ""}`,
+        `Page: ${payload.pagePath ? `${siteUrl}${payload.pagePath}` : "(unknown)"}`,
+        `Device: ${payload.userAgent ?? "(unknown)"}`,
+      ];
+      return {
+        subject: `${staging}${kindLabel}: ${about}`,
+        replyTo: payload.email,
+        text: `${kindLabel.toUpperCase()}\n\n${payload.message}\n\n${details.join("\n")}`,
+        html: `<div style="font-family: sans-serif; font-size: 15px; line-height: 1.6; color: #241F1A;"><p><strong>${escapeHtml(
+          kindLabel,
+        )}</strong></p><p style="white-space: pre-wrap;">${escapeHtml(payload.message)}</p><p style="color: #6B6156; font-size: 13px;">${details
+          .map(escapeHtml)
+          .join("<br>")}</p></div>`,
       };
     }
   }

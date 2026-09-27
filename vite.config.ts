@@ -416,6 +416,11 @@ export default defineConfig(async ({ command, mode }) => {
             // file and used only inside handlers, after the super admin check.
             "src/lib/guild/guild-admins.server.ts",
             "src/lib/guild/audit-log-view.server.ts",
+            // The Help button (2026-09-27): support-message.server.ts's
+            // getSupportContext and sendSupportMessage are called from
+            // SupportButton.tsx. The sender is worked out from the session
+            // inside the handlers; its service-role use stays there.
+            "src/lib/support/support-message.server.ts",
           ],
           specifiers: ["server-only"],
         },

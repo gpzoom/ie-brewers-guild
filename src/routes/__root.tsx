@@ -14,6 +14,8 @@ import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import { UnderConstruction } from "@/components/site/UnderConstruction";
+import { SupportButton } from "@/components/support/SupportButton";
+import { supportAreaForPath } from "@/lib/support/support-message";
 import { getActiveBrandTokens } from "@/lib/brand/active-brand.server";
 import { getGuildAdminStatus } from "@/lib/guild/guild-admin-status.server";
 
@@ -196,6 +198,8 @@ function RootComponent() {
           <Outlet />
         </main>
         {!isBare && <Footer />}
+        {/* The Help button: member portal, /admin and Guild screens only. */}
+        {supportAreaForPath(pathname) && <SupportButton pathname={pathname} />}
         <Toaster />
       </div>
     </QueryClientProvider>

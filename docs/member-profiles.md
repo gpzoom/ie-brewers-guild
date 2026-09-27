@@ -370,12 +370,34 @@ Resend, called from a Worker. Supabase Auth sends the magic link; everything els
 | Hours stale past 90 days | the member | One-click confirmation — the link itself sets the timestamp, no login |
 | Creator uploads to a gallery | the member | Something is waiting for review |
 | Super admin invites a Guild admin | the invitee | Who invited them, what a Guild admin does, and a sign-in link; the invite lasts 14 days |
+| Help button message | the site owner | The bug report or feature request, with who sent it, the profile, the page and the device (see Help button) |
 
 On staging, Guild-bound mail (contact form, type changed in setup) goes to the test inbox **boblelle77+iscadmin@gmail.com** instead of the real Guild inbox; production and local dev use the real one. The public contact address shown on the site doesn't change.
 
 Send from **`mail.iscbrewersguild.org`**, verified in Resend with its SPF, DKIM and DMARC records in place before the first send. A workers.dev sender puts half of this mail in spam.
 
 The contact form is a public endpoint that writes rows and sends mail, so it needs a rate limit per IP and a honeypot field at minimum.
+
+### Help button
+
+Added 27 September 2026, at the owner's request. A **Help** tab on the right edge of every screen for people who edit profiles: the member portal and setup wizard, the old `/admin` editor, and the Guild screens. Not on the public site, sign-in, creator upload or the draft previews. It sits on the edge, not a bottom corner, so it never covers the pinned Publish bar or the wizard's Continue bar.
+
+It opens a short form (artboard X), not a chat bot:
+
+- **What is this about?** Radio buttons: **Problem/bug** or **Feature request**. Required.
+- **First name.** Required. Remembered in that browser for next time.
+- **Email.** Filled in from the sign-in; they can change it. Replies go here.
+- **Describe the problem** / **Describe your suggestion.** Required, up to 5,000 characters.
+- The profile they're working on is **not asked**: it's worked out from the session, the same way each area does it, and shown as "About: [business]". The Guild screens have no profile.
+- The page they were on and their browser are sent along, and the form says so.
+
+Sending shows **"Thanks, we got it"** on screen. No confirmation email.
+
+- **Goes to the site owner only**, `boblelle77@gmail.com`, or whatever the Worker's `SUPPORT_INBOX_EMAIL` variable says. Not the Guild inbox, and Guild admins don't see these on the site.
+- **Subject by type:** "Bug report: [business] ([type])" or "Feature request: [business] ([type])". With no profile, "Guild admin screens" or "No profile yet". Messages sent from staging start with "[Staging]". Reply-To is the sender's email.
+- **Also saved** in `support_messages` before the email goes, so nothing is lost if an email fails or lands in spam. Only the super admin can read the table; nobody can change or delete a row through the API; the server writes it with the service role.
+- A Guild admin editing as a member is marked as such in the email and the row.
+- Signed-in people only, and at most **5 messages an hour** per person.
 
 ## Addresses and map pins
 
@@ -927,6 +949,7 @@ The general principle: a member who has filled in almost nothing should still ge
 - [ ] Retire `/admin`
 - [x] Photos & events editor — owner-invited role; edits Photos and Events only; publishes and discards Photos only; can't connect a calendar
 - [x] Synced with staging, 27 September 2026 — Photos (not "Photos & video") until video uploads exist; Mobile categories; Members page from the database; address suggestions and geocode on publish; 2 MB logo limit; staging Guild mail to a test inbox
+- [x] Help button — bug report or feature request to the site owner from every portal, /admin and Guild screen; saved in `support_messages`; subject by type (27 September 2026)
 - [x] Super admin — separate account boblelle77+sa@gmail.com, seeded only; owns Brand & theme, Delete member, sign-in email changes, Guild admins, Audit log, Trail switch and category delete; enforced on the server and in the database
 
 Nothing is open. This is ready to hand to Claude Code.

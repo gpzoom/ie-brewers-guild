@@ -89,6 +89,7 @@ export async function sendTransactionalEmail(payload: TransactionalEmailPayload)
       subject: content.subject,
       html: content.html,
       text: content.text,
+      ...(content.replyTo ? { reply_to: content.replyTo } : {}),
     }),
   });
 

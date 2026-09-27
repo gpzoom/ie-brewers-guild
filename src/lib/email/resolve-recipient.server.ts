@@ -45,6 +45,8 @@ export async function resolveRecipient(
       return payload.email;
     case "contact_confirmation":
       return payload.email;
+    case "support_message":
+      return payload.to;
     case "contact_form_submitted":
     case "member_type_changed_in_setup":
     case "type_change_requested":

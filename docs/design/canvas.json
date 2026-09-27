@@ -141,6 +141,13 @@
       "w": 1280,
       "x": 15380,
       "y": 2300
+    },
+    "SupportHelp.dc.html": {
+      "h": 980,
+      "title": "X · Help button — bug report or feature request",
+      "w": 1280,
+      "x": 16740,
+      "y": 2300
     }
   },
   "createdOnFiles": {
@@ -189,7 +196,8 @@
     "AdminLinks.dc.html",
     "GuildCategories.dc.html",
     "GuildAdmins.dc.html",
-    "GuildAudit.dc.html"
+    "GuildAudit.dc.html",
+    "SupportHelp.dc.html"
   ],
   "pages": [],
   "title": "IE Brewers Guild — Member Profile"

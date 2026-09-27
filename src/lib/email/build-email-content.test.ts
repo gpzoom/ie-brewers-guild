@@ -324,3 +324,58 @@ describe("buildEmailContent: guild_admin_invited", () => {
     expect(content.html).toContain('href="https://staging.example/signin"');
   });
 });
+
+describe("buildEmailContent: support_message", () => {
+  const base = {
+    trigger: "support_message" as const,
+    to: "support@example.com",
+    kind: "bug" as const,
+    firstName: "Sam",
+    email: "sam@example.com",
+    message: "The <Publish> button does nothing.",
+    memberName: "Rolling Taps",
+    memberType: "mobile" as const,
+    accountEmail: "sam@example.com",
+    senderRole: "member" as const,
+    pagePath: "/portal/basics",
+    userAgent: "Mozilla/5.0 (iPhone)",
+  };
+
+  it("names the kind and the profile in the subject", () => {
+    expect(buildEmailContent(base).subject).toBe("Bug report: Rolling Taps (Mobile member)");
+    expect(buildEmailContent({ ...base, kind: "feature" }).subject).toBe(
+      "Feature request: Rolling Taps (Mobile member)",
+    );
+  });
+
+  it("says Guild admin screens, or No profile yet, when there's no profile", () => {
+    const guild = { ...base, memberName: null, memberType: null, senderRole: "guild_admin" as const };
+    expect(buildEmailContent(guild).subject).toBe("Bug report: Guild admin screens");
+    expect(buildEmailContent({ ...guild, senderRole: "member" }).subject).toBe("Bug report: No profile yet");
+  });
+
+  it("marks messages sent from the staging site", () => {
+    const content = buildEmailContent(base, "https://ie-brewers-guild-staging.boblelle77.workers.dev");
+    expect(content.subject).toBe("[Staging] Bug report: Rolling Taps (Mobile member)");
+    expect(content.text).toContain("Page: https://ie-brewers-guild-staging.boblelle77.workers.dev/portal/basics");
+  });
+
+  it("replies go to the sender, and the message is escaped in the HTML", () => {
+    const content = buildEmailContent(base);
+    expect(content.replyTo).toBe("sam@example.com");
+    expect(content.text).toContain("The <Publish> button does nothing.");
+    expect(content.text).toContain("Device: Mozilla/5.0 (iPhone)");
+    expect(content.text).not.toContain("Signed in as");
+    expect(content.html).toContain("The &lt;Publish&gt; button does nothing.");
+  });
+
+  it("shows the signed-in account when it differs, and a Guild admin editing as the member", () => {
+    const content = buildEmailContent({
+      ...base,
+      accountEmail: "admin@example.com",
+      senderRole: "guild_admin_as_member",
+    });
+    expect(content.text).toContain("Signed in as: admin@example.com");
+    expect(content.text).toContain("Who: Guild admin, editing as this member");
+  });
+});
