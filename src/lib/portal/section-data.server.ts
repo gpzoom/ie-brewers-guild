@@ -180,7 +180,16 @@ async function loadSchedule(supabase: SessionClient, memberId: string): Promise<
   return { events, memberTimezone, calendarConnection };
 }
 
-/** The basics (name, city, …) -- and anything else that only needs the draft (links, theme). */
+/** Wizard step 3, The basics: the draft, plus the category list for a Mobile member's picker. */
+export async function loadWizardBasicsSection(supabase: SessionClient, memberId: string) {
+  const [draft, categories] = await Promise.all([
+    loadMemberDraftBundle(supabase, memberId),
+    listCategories(supabase),
+  ]);
+  return { draft, categories };
+}
+
+/** Anything that only needs the draft (links, theme). */
 export async function loadDraftSection(
   supabase: SessionClient,
   memberId: string,
@@ -267,14 +276,15 @@ export async function loadBasicsSection(
   service: SupabaseClient,
   member: { memberId: string; isImpersonating: boolean },
 ) {
-  const [draft, typeChangeRequest, email] = await Promise.all([
+  const [draft, typeChangeRequest, email, categories] = await Promise.all([
     loadMemberDraftBundle(supabase, member.memberId),
     loadOpenTypeChangeRequest(supabase, member.memberId),
     member.isImpersonating
       ? fetchMemberEmail(member.memberId, supabase, service).then((r) => r.email)
       : Promise.resolve(null),
+    listCategories(supabase),
   ]);
-  return { draft, typeChangeRequest, email };
+  return { draft, typeChangeRequest, email, categories };
 }
 
 /** What sectionCompleteness needs: the draft plus the live, undrafted events facts. */

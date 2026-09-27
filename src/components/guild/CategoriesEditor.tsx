@@ -3,7 +3,7 @@ import { useRouter } from "@tanstack/react-router";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { createCategory, deleteCategory, updateCategory } from "@/lib/categories/categories.server";
-import type { CategoryRow } from "@/lib/supabase/types";
+import type { CategoryMemberType, CategoryRow } from "@/lib/supabase/types";
 import {
   Dialog,
   DialogContent,
@@ -55,13 +55,48 @@ function InfoIcon() {
   );
 }
 
+/** What each tab's list is for, in the words the page uses. */
+const TAB_COPY: Record<
+  CategoryMemberType,
+  { tab: string; who: string; lede: string; empty: string; example: string }
+> = {
+  allied: {
+    tab: "Allied categories",
+    who: "Allied Members",
+    lede: "What Allied Members can check to say what they supply.",
+    empty: "No categories yet. Add the first one so Allied Members can say what they supply.",
+    example: "e.g. Malt & grain",
+  },
+  mobile: {
+    tab: "Mobile categories",
+    who: "Mobile members",
+    lede: "What Mobile members can check to say what they offer.",
+    empty: "No categories yet. Add the first one so Mobile members can say what they offer.",
+    example: "e.g. Food Truck",
+  },
+};
+
+const TABS: CategoryMemberType[] = ["allied", "mobile"];
+
 /**
- * Guild supply categories (artboard S, GuildCategories): name/slug/
- * sort_order CRUD over the categories table. Rename happens in place on the
- * row; order is changed with the row's up/down buttons (the list is
- * renumbered 0..n so ties can't stick); delete asks first.
+ * Guild categories (artboard S, GuildCategories): name/slug/sort_order CRUD
+ * over the categories table, with a tab per member type -- Allied Members'
+ * supply categories and Mobile members' categories (owner's request,
+ * 2026-09-26). Rename happens in place on the row; order is changed with
+ * the row's up/down buttons (each tab's list is renumbered 0..n so ties
+ * can't stick); delete asks first.
  */
-export function CategoriesEditor({ categories }: { categories: CategoryRow[] }) {
+export function CategoriesEditor({
+  categories: allCategories,
+  tab,
+  onTabChange,
+}: {
+  categories: CategoryRow[];
+  tab: CategoryMemberType;
+  onTabChange: (tab: CategoryMemberType) => void;
+}) {
+  const categories = allCategories.filter((category) => category.member_type === tab);
+  const copy = TAB_COPY[tab];
   const router = useRouter();
   const [addOpen, setAddOpen] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -73,7 +108,7 @@ export function CategoriesEditor({ categories }: { categories: CategoryRow[] }) 
   async function handleCreate(name: string) {
     const nextSortOrder =
       categories.reduce((max, category) => Math.max(max, category.sort_order), -1) + 1;
-    await createCategory({ data: { name, sortOrder: nextSortOrder } });
+    await createCategory({ data: { name, sortOrder: nextSortOrder, memberType: tab } });
     await router.invalidate();
     toast.success(`Added "${name}"`);
   }
@@ -133,16 +168,41 @@ export function CategoriesEditor({ categories }: { categories: CategoryRow[] }) 
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
         <div className="flex max-w-[640px] flex-col gap-1.5">
           <h1 className="font-display text-[28px] font-bold leading-tight tracking-[-0.01em] text-ink">
-            Supply categories
+            Categories
           </h1>
           <p className="text-pretty text-[13px] text-[#564E45]">
-            What Allied Members can check to say what they supply. The Guild owns this list — members
-            pick from it rather than typing their own, so the directory stays filterable.
+            {copy.lede} The Guild owns these lists — members pick from them rather than typing
+            their own, so the directory stays filterable.
           </p>
         </div>
         <button type="button" onClick={() => setAddOpen(true)} className={accentButtonClass}>
           Add a category
         </button>
+      </div>
+
+      <div role="tablist" aria-label="Category lists" className="flex gap-2">
+        {TABS.map((value) => {
+          const active = value === tab;
+          return (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onTabChange(value)}
+              className={`inline-flex h-11 items-center rounded-[9px] border px-[15px] text-[13px] transition-colors md:h-[42px] ${
+                active
+                  ? "border-ink bg-ink font-semibold text-canvas"
+                  : "border-canvas-border bg-white text-ink hover:bg-canvas-2"
+              }`}
+            >
+              {TAB_COPY[value].tab}
+              <span className={`ml-2 text-[12px] ${active ? "text-canvas/70" : "text-ink-muted"}`}>
+                {allCategories.filter((category) => category.member_type === value).length}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="overflow-hidden rounded-[14px] border border-canvas-border bg-white">
@@ -216,7 +276,7 @@ export function CategoriesEditor({ categories }: { categories: CategoryRow[] }) 
           ))}
           {categories.length === 0 && (
             <li className="px-5 py-8 text-center text-sm text-ink-muted">
-              No categories yet. Add the first one so Allied Members can say what they supply.
+              {copy.empty}
             </li>
           )}
         </ul>
@@ -226,12 +286,18 @@ export function CategoriesEditor({ categories }: { categories: CategoryRow[] }) 
         <InfoIcon />
         <p className="text-pretty text-[13px] leading-[1.55] text-[#3A332C]">
           <strong className="font-semibold">Rename rather than delete when you can.</strong>{" "}
-          Deleting a category also takes it off every Allied Member who picked it, so their page
+          Deleting a category also takes it off every member who picked it, so their page
           quietly loses that information. Renaming keeps it on their profiles under the new name.
         </p>
       </div>
 
-      <AddCategoryDialog open={addOpen} onOpenChange={setAddOpen} onAdd={handleCreate} />
+      <AddCategoryDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        onAdd={handleCreate}
+        who={copy.who}
+        example={copy.example}
+      />
 
       <DeleteCategoryDialog
         category={deleteTarget}
@@ -306,10 +372,15 @@ function AddCategoryDialog({
   open,
   onOpenChange,
   onAdd,
+  who,
+  example,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdd: (name: string) => Promise<void>;
+  /** "Allied Members" or "Mobile members": whose list it's added to. */
+  who: string;
+  example: string;
 }) {
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -347,7 +418,7 @@ function AddCategoryDialog({
             Add a category
           </DialogTitle>
           <DialogDescription className="text-[13px] leading-[1.55] text-[#564E45]">
-            It goes to the bottom of the list, and Allied Members can pick it straight away.
+            It goes to the bottom of the list, and {who} can pick it straight away.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
@@ -358,7 +429,7 @@ function AddCategoryDialog({
             <input
               id="new-category-name"
               autoFocus
-              placeholder="e.g. Malt & grain"
+              placeholder={example}
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={submitting}
@@ -433,7 +504,7 @@ function DeleteCategoryDialog({
             Delete "{category?.name}"?
           </AlertDialogTitle>
           <AlertDialogDescription className="text-[13px] leading-[1.55] text-[#564E45]">
-            It comes off the picker and off every Allied Member who has already picked it. This
+            It comes off the picker and off every member who has already picked it. This
             can't be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>

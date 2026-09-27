@@ -205,7 +205,11 @@ export type CategoryRow = {
   name: string;
   slug: string;
   sort_order: number;
+  /** Which member type picks it: Allied Members (what they supply) or Mobile members (what they offer). */
+  member_type: CategoryMemberType;
 };
+
+export type CategoryMemberType = "allied" | "mobile";
 
 // --- Added by the Member Admin plan's Task 1 (admin panel: /admin,
 // /signin, /send/[token]) -- these types cover admin-only tables and

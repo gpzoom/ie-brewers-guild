@@ -77,6 +77,16 @@ export function PortalSectionView({ data, shell }: { data: PortalSectionData; sh
             basics={basics}
             email={data.email}
             isImpersonating={shell.isImpersonating}
+            categories={
+              data.draft.member.member_type === "mobile" && (
+                <SupplyCategoriesPicker
+                  memberId={shell.memberId}
+                  memberType="mobile"
+                  categories={data.categories}
+                  initialCategoryIds={data.draft.data.discount.category_ids}
+                />
+              )
+            }
             typeChange={
               <RequestTypeChange
                 currentType={data.draft.member.member_type}

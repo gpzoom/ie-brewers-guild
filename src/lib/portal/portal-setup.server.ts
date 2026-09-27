@@ -14,6 +14,7 @@ import {
   loadHoursSection,
   loadLogoCoverSection,
   loadMemberShell,
+  loadWizardBasicsSection,
   loadPhotosSection,
   type PortalMemberShell,
 } from "@/lib/portal/section-data.server";
@@ -60,7 +61,8 @@ export const getPortalSetupShell = createServerFn({ method: "GET" }).handler(
 /** What one wizard step's editors start from. */
 export type SetupStepData =
   | { step: "welcome" | "type" | "live" }
-  | ({ step: "basics" | "links" | "theme" } & Awaited<ReturnType<typeof loadDraftSection>>)
+  | ({ step: "basics" } & Awaited<ReturnType<typeof loadWizardBasicsSection>>)
+  | ({ step: "links" | "theme" } & Awaited<ReturnType<typeof loadDraftSection>>)
   | ({ step: "logo-cover" } & Awaited<ReturnType<typeof loadLogoCoverSection>>)
   | ({ step: "hours" } & Awaited<ReturnType<typeof loadHoursSection>>)
   | ({ step: "events" } & Awaited<ReturnType<typeof loadEventsSection>>)
@@ -93,6 +95,7 @@ export const getPortalStepData = createServerFn({ method: "GET" })
       case "live":
         return { step: data.step };
       case "basics":
+        return { step: "basics", ...(await loadWizardBasicsSection(supabase, id)) };
       case "links":
       case "theme":
         return { step: data.step, ...(await loadDraftSection(supabase, id)) };

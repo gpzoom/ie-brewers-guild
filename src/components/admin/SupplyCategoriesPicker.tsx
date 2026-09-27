@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import type { CategoryRow } from "@/lib/supabase/types";
+import type { CategoryMemberType, CategoryRow } from "@/lib/supabase/types";
 import { useSaveDraftSection } from "@/components/admin/DraftStatusContext";
 
 /**
@@ -9,23 +9,54 @@ import { useSaveDraftSection } from "@/components/admin/DraftStatusContext";
  * change, like the other list editors) and reaches member_categories when
  * published. There was no member-facing editor for categories before this.
  *
+ * Mobile members get the same picker over their own list ("What you
+ * offer": Entertainment, Food Truck, ...), on Basics & hours -- the choice
+ * saves to the same `category_ids`. Each type sees only its own list;
+ * picks from the other list (left from before a type change) are kept,
+ * never sent away, since a type change never deletes data. Any number of
+ * categories can be picked.
+ *
  * Optimistic: a chip flips straight away and flips back if its save fails.
  * Each save builds its list from a ref WHEN IT RUNS (the patch is a
  * function), with saves for the section queued in order, so two quick taps
  * both land.
  */
+const COPY: Record<CategoryMemberType, { heading: string; lede: string; empty: string }> = {
+  allied: {
+    heading: "What you supply",
+    lede: "Pick everything that fits. Members browsing the directory find you under these.",
+    empty: "The Guild hasn't set up any supply categories yet.",
+  },
+  mobile: {
+    heading: "What you offer",
+    lede: "Pick everything that fits. Visitors browsing the directory find you under these.",
+    empty: "The Guild hasn't set up any categories for Mobile members yet.",
+  },
+};
+
 export function SupplyCategoriesPicker({
   memberId,
-  categories,
+  categories: allCategories,
   initialCategoryIds,
+  memberType = "allied",
 }: {
   memberId: string;
+  /** Every Guild category; the picker shows the ones for `memberType`. */
   categories: CategoryRow[];
   initialCategoryIds: string[];
+  memberType?: CategoryMemberType;
 }) {
   const saveDraft = useSaveDraftSection(memberId);
+  const copy = COPY[memberType];
+  const categories = allCategories.filter((c) => c.member_type === memberType);
+  const headingId = `categories-heading-${memberType}`;
   // Only ids the Guild still lists: a deleted category can't be re-sent.
   const known = new Set(categories.map((c) => c.id));
+  // Picks from the other type's list, kept as they are in every save.
+  const [otherTypeIds] = useState<string[]>(() => {
+    const other = new Set(allCategories.filter((c) => c.member_type !== memberType).map((c) => c.id));
+    return initialCategoryIds.filter((id) => other.has(id));
+  });
   const [selected, setSelected] = useState<string[]>(() =>
     initialCategoryIds.filter((id) => known.has(id)),
   );
@@ -49,7 +80,9 @@ export function SupplyCategoriesPicker({
     );
     setSaving((n) => n + 1);
     try {
-      await saveDraft("discount", () => ({ category_ids: selectedRef.current }));
+      await saveDraft("discount", () => ({
+        category_ids: [...otherTypeIds, ...selectedRef.current],
+      }));
     } catch (err) {
       // Undo just this chip, against the CURRENT list.
       update(
@@ -64,30 +97,30 @@ export function SupplyCategoriesPicker({
   }
 
   return (
-    <section aria-labelledby="supplies-heading" className="flex flex-col gap-3">
+    <section aria-labelledby={headingId} className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
         <div className="flex items-baseline justify-between gap-3">
           <h2
-            id="supplies-heading"
+            id={headingId}
             className="font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted"
           >
-            What you supply
+            {copy.heading}
           </h2>
           <span aria-live="polite" className="text-[12px] text-ink-muted">
             {saving > 0 ? "Saving…" : ""}
           </span>
         </div>
         <p className="text-[12px] leading-[1.5] text-ink-muted">
-          Pick everything that fits. Members browsing the directory find you under these.
+          {copy.lede}
         </p>
       </div>
 
       {categories.length === 0 ? (
         <p className="rounded-[11px] bg-canvas-2 px-[15px] py-3 text-[13px] text-ink-muted">
-          The Guild hasn't set up any categories yet.
+          {copy.empty}
         </p>
       ) : (
-        <div className="flex flex-wrap gap-2" role="group" aria-labelledby="supplies-heading">
+        <div className="flex flex-wrap gap-2" role="group" aria-labelledby={headingId}>
           {categories.map((category) => {
             const checked = selected.includes(category.id);
             const inputId = `supply-${category.id}`;

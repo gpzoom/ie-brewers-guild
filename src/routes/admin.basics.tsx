@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getMemberDraft } from "@/lib/drafts/drafts.server";
 import { getMemberEmail } from "@/lib/members/member-email.server";
+import { getCategories } from "@/lib/categories/categories.server";
+import { SupplyCategoriesPicker } from "@/components/admin/SupplyCategoriesPicker";
 import { BasicsForm } from "@/components/admin/BasicsForm";
 import { HoursEditor } from "@/components/admin/HoursEditor";
 import { LogoUploader } from "@/components/admin/LogoUploader";
@@ -24,19 +26,20 @@ export const Route = createFileRoute("/admin/basics")({
     // The sign-in email field only matters (and is only editable) while
     // impersonating -- see BasicsForm's own doc comment -- so it's only
     // fetched then.
-    const [draft, emailData] = await Promise.all([
+    const [draft, emailData, categories] = await Promise.all([
       getMemberDraft({ data: { memberId: context.memberId } }),
       context.isImpersonating
         ? getMemberEmail({ data: { memberId: context.memberId } })
         : Promise.resolve(null),
+      getCategories(),
     ]);
-    return { draft, email: emailData?.email ?? null };
+    return { draft, email: emailData?.email ?? null, categories };
   },
   component: BasicsRoute,
 });
 
 function BasicsRoute() {
-  const { draft, email } = Route.useLoaderData();
+  const { draft, email, categories } = Route.useLoaderData();
   const { memberId, isImpersonating } = Route.useRouteContext();
   const basics = draft.data.basics;
   return (
@@ -48,6 +51,16 @@ function BasicsRoute() {
       basics={basics}
       email={email}
       isImpersonating={isImpersonating}
+      categories={
+        draft.member.member_type === "mobile" && (
+          <SupplyCategoriesPicker
+            memberId={memberId}
+            memberType="mobile"
+            categories={categories}
+            initialCategoryIds={draft.data.discount.category_ids}
+          />
+        )
+      }
       logo={
         <LogoUploader
           memberId={memberId}

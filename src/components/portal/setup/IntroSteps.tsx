@@ -3,8 +3,9 @@ import { completePortalSetup, confirmPortalMemberType } from "@/lib/portal/porta
 import type { PortalSetupShell } from "@/lib/portal/portal-setup.server";
 import type { MemberDraftBundle } from "@/lib/drafts/drafts.server";
 import { MEMBER_TYPE_OPTIONS } from "@/lib/members/member-type-options";
-import type { MemberType } from "@/lib/supabase/types";
+import type { CategoryRow, MemberType } from "@/lib/supabase/types";
 import { BasicsForm } from "@/components/admin/BasicsForm";
+import { SupplyCategoriesPicker } from "@/components/admin/SupplyCategoriesPicker";
 import {
   WizardInfoBox,
   WizardStep,
@@ -240,7 +241,13 @@ function readRequiredField(id: string): string | null {
  * confirmed. Continue checks name and city, lets the last edits save, then
  * complete_member_setup re-checks them in the DRAFT and ends setup.
  */
-export function BasicsStep({ draft }: { draft: MemberDraftBundle }) {
+export function BasicsStep({
+  draft,
+  categories,
+}: {
+  draft: MemberDraftBundle;
+  categories: CategoryRow[];
+}) {
   const { goTo, settle } = useWizardNavigation();
   const [error, setError] = useState<string | null>(null);
 
@@ -280,6 +287,16 @@ export function BasicsStep({ draft }: { draft: MemberDraftBundle }) {
         memberType={draft.member.member_type}
         typeConfirmed
         basics={draft.data.basics}
+        categories={
+          draft.member.member_type === "mobile" && (
+            <SupplyCategoriesPicker
+              memberId={draft.member.id}
+              memberType="mobile"
+              categories={categories}
+              initialCategoryIds={draft.data.discount.category_ids}
+            />
+          )
+        }
         showHeading={false}
       />
     </WizardStep>

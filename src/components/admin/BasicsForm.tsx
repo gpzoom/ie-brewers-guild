@@ -167,6 +167,7 @@ export function BasicsForm({
   logo,
   hours,
   typeChange,
+  categories,
   showHeading = true,
 }: {
   memberId: string;
@@ -186,6 +187,12 @@ export function BasicsForm({
    * once, then locked"). /admin leaves it out.
    */
   typeChange?: ReactNode;
+  /**
+   * A Mobile member's "What you offer" category picker
+   * (SupplyCategoriesPicker), shown under the member type. Pages pass it
+   * only for Mobile members; Allied Members pick theirs under Discount.
+   */
+  categories?: ReactNode;
   /** False where the page around it has its own heading (the setup wizard's step chrome). */
   showHeading?: boolean;
 }) {
@@ -467,6 +474,8 @@ export function BasicsForm({
           </>
         )}
       </InfoBox>
+
+      {categories}
 
       <section className="flex flex-col gap-[14px] md:gap-4" aria-labelledby="identity-heading">
         <h2 id="identity-heading" className={cn(sectionLabelClass, "font-sans")}>

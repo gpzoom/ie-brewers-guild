@@ -187,7 +187,7 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
               now={now}
             />
             <DiscountBlock member={member} />
-            <CategoryChips categories={categories} />
+            <CategoryChips categories={categories} memberType={member.member_type} />
           </div>
 
           {hasCarousel && (
