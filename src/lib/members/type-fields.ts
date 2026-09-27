@@ -5,7 +5,9 @@ export type MemberFieldKey = "street_address" | "service_area" | "lead_time" | "
 const FIELDS_BY_TYPE: Record<MemberType, MemberFieldKey[]> = {
   producer: ["street_address"],
   mobile: ["service_area"],
-  allied: ["street_address", "service_area", "lead_time", "contact_email", "discount"],
+  // lead_time was dropped from the Allied Member's fields (owner, 2026-09-27);
+  // the column and any stored value are kept, just never shown.
+  allied: ["street_address", "service_area", "contact_email", "discount"],
 };
 
 /**
@@ -26,5 +28,5 @@ export function isFieldVisibleForMemberType(memberType: MemberType, field: Membe
 export const LOCATION_FIELD_LABEL: Record<MemberType, string> = {
   producer: "Street address",
   mobile: "Service area",
-  allied: "Warehouse address",
+  allied: "Business address",
 };

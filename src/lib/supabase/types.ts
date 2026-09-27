@@ -140,6 +140,8 @@ export type MemberLinkKind =
   | "menu"
   | "press_kit"
   | "catalog"
+  | "instagram_dm"
+  | "whatsapp"
   | "other";
 
 export type MemberLinkRow = {

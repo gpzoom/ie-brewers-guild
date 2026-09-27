@@ -15,6 +15,8 @@ const LABELS: Record<MemberLinkRow["kind"], string> = {
   menu: "Menu",
   press_kit: "Press kit",
   catalog: "Catalog",
+  instagram_dm: "Message on Instagram",
+  whatsapp: "WhatsApp",
   other: "Link",
 };
 

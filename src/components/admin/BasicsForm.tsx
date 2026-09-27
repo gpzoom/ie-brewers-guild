@@ -419,7 +419,6 @@ export function BasicsForm({
   const isMobile = local.member_type === "mobile";
   const showStreet = isFieldVisibleForMemberType(local.member_type, "street_address");
   const showServiceArea = isFieldVisibleForMemberType(local.member_type, "service_area");
-  const showLeadTime = isFieldVisibleForMemberType(local.member_type, "lead_time");
   // The profile shows a sales email for Allied Members only (ContactBlock).
   const showSalesEmail = local.member_type === "allied";
 
@@ -655,19 +654,6 @@ export function BasicsForm({
             </Field>
           )}
 
-          {showLeadTime && (
-            <Field id="lead_time" label="Typical lead time" state={status.lead_time ?? IDLE}>
-              <Input
-                id="lead_time"
-                defaultValue={local.lead_time ?? ""}
-                className={textInputClass}
-                placeholder="e.g. 2–3 business days"
-                onChange={(e) => scheduleSave("lead_time", { lead_time: e.target.value || null })}
-                onBlur={(e) => flushSave("lead_time", { lead_time: e.target.value || null })}
-              />
-            </Field>
-          )}
-
           <Field
             id="member_since_year"
             label="Member since"
@@ -707,7 +693,11 @@ export function BasicsForm({
                   ? "Sales phone"
                   : "Phone"
             }
-            hint="Shown on your profile as a tap-to-call link."
+            hint={
+              local.member_type === "mobile"
+                ? "Shown on your profile as a tap-to-call link. Additional booking links can be added in the Links & contact section."
+                : "Shown on your profile as a tap-to-call link."
+            }
             state={status.phone ?? IDLE}
           >
             <Input

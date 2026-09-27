@@ -1,6 +1,12 @@
 import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { LINK_KINDS } from "@/lib/links/link-kinds";
+import {
+  isBookingLinkKind,
+  linkInputHint,
+  toDisplayLinkValue,
+  toStoredLinkUrl,
+} from "@/lib/links/booking-links";
 import { isFieldVisibleForMemberType, LOCATION_FIELD_LABEL } from "@/lib/members/type-fields";
 import type { DraftLink } from "@/lib/drafts/sections";
 import type { MemberLinkKind, MemberType } from "@/lib/supabase/types";
@@ -18,6 +24,8 @@ const LINK_KIND_LABEL: Partial<Record<MemberLinkKind, string>> = {
   menu: "Menu",
   press_kit: "Press kit",
   catalog: "Catalog",
+  instagram_dm: "Instagram DM (booking)",
+  whatsapp: "WhatsApp (booking)",
   other: "Something else",
 };
 
@@ -49,11 +57,16 @@ function toDraftLinks(rows: LinkRow[]): DraftLink[] {
 }
 
 /**
- * Links & contact (artboard R). The link pills save to the member's DRAFT
+ * Links & contact (artboard R). The link buttons save to the member's DRAFT
  * (the `links` section, sent whole on every change) and go live when
  * published. Phone and sales email moved to Basics & hours (plan Decision
  * 2) -- they belong to the draft's `basics` section -- so the Contact part
  * here just shows them, with the address, and points there.
+ *
+ * Mobile members also get two booking link types, Instagram DM and
+ * WhatsApp (src/lib/links/booking-links.ts): typed as @name or a phone
+ * number, stored as an ig.me / wa.me link. Other types don't offer them,
+ * unless a link already uses one (so it can still be seen and changed).
  */
 export function LinksContactEditor({
   memberId,
@@ -85,6 +98,8 @@ export function LinksContactEditor({
   // it stands right now (saves are queued in order by useSaveDraftSection).
   const linksRef = useRef<LinkRow[]>(links);
   const [error, setError] = useState<string | null>(null);
+  // A booking link typed in a way that can't become a link, per row.
+  const [inputErrors, setInputErrors] = useState<Record<string, string>>({});
 
   function updateLinks(update: (prev: LinkRow[]) => LinkRow[]) {
     linksRef.current = update(linksRef.current);
@@ -175,7 +190,7 @@ export function LinksContactEditor({
             Links &amp; contact
           </h1>
           <p className="text-[13px] text-ink-muted">
-            The pills on your profile, and the ways people reach you.
+            The buttons on your profile, and the ways people reach you.
           </p>
         </div>
       )}
@@ -186,63 +201,100 @@ export function LinksContactEditor({
         </p>
       )}
 
-      <section aria-labelledby="links-pills-label" className="flex flex-col gap-3">
+      <section aria-labelledby="links-buttons-label" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <h2 id="links-pills-label" className={`font-sans ${sectionLabelClass}`}>
-            Link pills
+          <h2 id="links-buttons-label" className={`font-sans ${sectionLabelClass}`}>
+            Link buttons
           </h2>
           <p className="text-xs text-ink-subtle">Shown on your profile in this order</p>
         </div>
+        {memberType === "mobile" && (
+          <p className="text-[13px] text-ink-muted">
+            Taking bookings by message? Add an{" "}
+            <strong className="font-semibold text-ink">Instagram DM</strong> (your @name) or{" "}
+            <strong className="font-semibold text-ink">WhatsApp</strong> (your number) link.
+          </p>
+        )}
 
         {links.length > 0 && (
           <ul className="flex flex-col gap-3">
-            {links.map((link, index) => (
-              <li
-                key={link.id}
-                className="flex flex-col gap-2.5 rounded-[11px] border border-canvas-border bg-white px-3.5 py-3 md:flex-row md:items-center md:gap-3"
-              >
-                <select
-                  aria-label={`Link type for link ${index + 1}`}
-                  value={link.kind}
-                  onChange={(e) => onFieldChange(link, { kind: e.target.value as MemberLinkKind })}
-                  className={`${controlClass} md:w-[170px] md:shrink-0`}
+            {links.map((link, index) => {
+              const hint = linkInputHint(link.kind);
+              const kinds = LINK_KINDS.filter(
+                (kind) => !isBookingLinkKind(kind) || memberType === "mobile" || kind === link.kind,
+              );
+              return (
+                <li
+                  key={link.id}
+                  className="flex flex-col gap-2.5 rounded-[11px] border border-canvas-border bg-white px-3.5 py-3 md:flex-row md:items-center md:gap-3"
                 >
-                  {LINK_KINDS.map((kind) => (
-                    <option key={kind} value={kind}>
-                      {LINK_KIND_LABEL[kind] ?? kind}
-                    </option>
-                  ))}
-                </select>
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <input
-                    type="url"
-                    inputMode="url"
-                    aria-label={`Link address for link ${index + 1}`}
-                    defaultValue={link.url}
-                    placeholder="https://…"
-                    className={`${controlClass} min-w-0 flex-1`}
-                    onBlur={(e) => {
-                      if (e.target.value !== link.url) onFieldChange(link, { url: e.target.value });
+                  <select
+                    aria-label={`Link type for link ${index + 1}`}
+                    value={link.kind}
+                    onChange={(e) => {
+                      setInputErrors(({ [link.id]: _dropped, ...rest }) => rest);
+                      onFieldChange(link, { kind: e.target.value as MemberLinkKind });
                     }}
-                  />
-                  <button
-                    type="button"
-                    aria-label={`Remove link ${index + 1}`}
-                    className="flex size-11 shrink-0 items-center justify-center rounded-[9px] text-ink-muted hover:bg-canvas-2 hover:text-ink"
-                    onClick={() => onRemove(link.id)}
+                    className={`${controlClass} md:w-[210px] md:shrink-0`}
                   >
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                      <path
-                        d="M3.5 3.5l9 9M12.5 3.5l-9 9"
-                        stroke="currentColor"
-                        strokeWidth="1.6"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </li>
-            ))}
+                    {kinds.map((kind) => (
+                      <option key={kind} value={kind}>
+                        {LINK_KIND_LABEL[kind] ?? kind}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <input
+                      // Remounts when the type changes, so the field shows the
+                      // stored link the way that type reads it (@name, a number).
+                      key={link.kind}
+                      type={hint.inputMode === "url" ? "url" : "text"}
+                      inputMode={hint.inputMode}
+                      aria-label={`Link address for link ${index + 1}`}
+                      aria-invalid={inputErrors[link.id] ? true : undefined}
+                      defaultValue={toDisplayLinkValue(link.kind, link.url)}
+                      placeholder={hint.placeholder}
+                      className={`${controlClass} min-w-0 flex-1`}
+                      onBlur={(e) => {
+                        const stored = toStoredLinkUrl(link.kind, e.target.value);
+                        if (!stored.ok) {
+                          setInputErrors((prev) => ({ ...prev, [link.id]: stored.reason }));
+                          return;
+                        }
+                        setInputErrors(({ [link.id]: _dropped, ...rest }) => rest);
+                        if (stored.url !== link.url) onFieldChange(link, { url: stored.url });
+                      }}
+                    />
+                    <button
+                      type="button"
+                      aria-label={`Remove link ${index + 1}`}
+                      className="flex size-11 shrink-0 items-center justify-center rounded-[9px] text-ink-muted hover:bg-canvas-2 hover:text-ink"
+                      onClick={() => onRemove(link.id)}
+                    >
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M3.5 3.5l9 9M12.5 3.5l-9 9"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  {inputErrors[link.id] && (
+                    <p role="alert" className="text-[12px] text-danger md:basis-full">
+                      {inputErrors[link.id]}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
 

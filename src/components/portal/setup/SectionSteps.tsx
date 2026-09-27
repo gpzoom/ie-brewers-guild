@@ -201,14 +201,16 @@ const THIRD_PILL: Record<PortalSetupShell["memberType"], string> = {
   allied: "Catalog",
 };
 
-/** Step 8: the link pills (third pill per type: Tap list / Press kit / Catalog). */
+/** Step 8: the link buttons (third button per type: Tap list / Press kit / Catalog). */
 export function LinksStep({ shell, draft }: { shell: PortalSetupShell; draft: MemberDraftBundle }) {
   const basics = draft.data.basics;
   return (
     <WizardStep
       step="links"
       title="Links"
-      lede={`Website, Instagram, Facebook, TikTok — plus your ${THIRD_PILL[shell.memberType]}. They show as buttons on your page, in this order.`}
+      lede={`Website, Instagram, Facebook, TikTok — plus your ${THIRD_PILL[shell.memberType]}${
+        shell.memberType === "mobile" ? " and booking links (Instagram DM, WhatsApp)" : ""
+      }. They show as buttons on your page, in this order.`}
       skipNote="Skip it for now and add links whenever you like."
     >
       <LinksContactEditor

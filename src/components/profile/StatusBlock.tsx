@@ -115,13 +115,10 @@ export function StatusBlock({ member, hours, specialHours, tonightEvent, now }: 
     if (openNow.status !== "unknown" && openNow.note) lines.push(openNow.note);
 
     // Second line, per the spec's "Member types" table: producers get
-    // tonight's event; Allied Members get service area and lead time.
+    // tonight's event; Allied Members get their service area. (Typical lead
+    // time was dropped on 2026-09-27; a stored value isn't shown.)
     if (member.member_type === "allied") {
-      const parts = [
-        member.service_area ? `Serves ${member.service_area}` : null,
-        member.lead_time ? `${member.lead_time} typical lead time` : null,
-      ].filter(Boolean);
-      if (parts.length) lines.push(parts.join(" · "));
+      if (member.service_area) lines.push(`Serves ${member.service_area}`);
       if (member.contact_email) {
         primary = {
           href: `mailto:${member.contact_email}?subject=${encodeURIComponent("Quote request")}`,

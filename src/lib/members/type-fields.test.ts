@@ -10,11 +10,10 @@ describe("visibleFieldsForMemberType", () => {
     expect(visibleFieldsForMemberType("mobile")).toEqual(["service_area"]);
   });
 
-  it("an allied member shows the full set, including discount", () => {
+  it("an allied member shows the full set, including discount (no lead time since 2026-09-27)", () => {
     expect(visibleFieldsForMemberType("allied")).toEqual([
       "street_address",
       "service_area",
-      "lead_time",
       "contact_email",
       "discount",
     ]);
@@ -37,6 +36,6 @@ describe("LOCATION_FIELD_LABEL", () => {
   it("labels each type's location field per the spec's comparison table", () => {
     expect(LOCATION_FIELD_LABEL.producer).toBe("Street address");
     expect(LOCATION_FIELD_LABEL.mobile).toBe("Service area");
-    expect(LOCATION_FIELD_LABEL.allied).toBe("Warehouse address");
+    expect(LOCATION_FIELD_LABEL.allied).toBe("Business address");
   });
 });

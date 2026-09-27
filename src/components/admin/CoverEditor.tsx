@@ -257,8 +257,8 @@ export function CoverEditor({
           <span className="text-[10px] text-[#A89D8E]">Wide band · 5:2</span>
         </div>
         <p className="text-[12px] leading-[1.5] text-ink-muted">
-          The wide band across the top of your profile. No cover photo? Your theme color fills the
-          band instead.
+          The wide band across the top of your profile. For example, use your Facebook cover photo.
+          No cover photo? Your theme color fills the band instead.
         </p>
       </div>
       <div className="flex w-full max-w-[560px] flex-col gap-3">

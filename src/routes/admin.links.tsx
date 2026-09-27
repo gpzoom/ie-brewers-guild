@@ -4,7 +4,7 @@ import { LinksContactEditor } from "@/components/admin/LinksContactEditor";
 import { SameMemberGuard } from "@/components/admin/SameMemberGuard";
 
 /**
- * Links & contact. The link pills read and save the draft's `links`
+ * Links & contact. The link buttons read and save the draft's `links`
  * section. Phone, sales email and address are edited on Basics & hours
  * (plan Decision 2 moved phone and sales email into the `basics` section);
  * this page only shows them, from the same draft, with a pointer there.

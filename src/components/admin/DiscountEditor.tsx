@@ -230,7 +230,7 @@ export function DiscountEditor({
             id="discount-redeem"
             rows={2}
             defaultValue={local.discount_redeem_text ?? ""}
-            placeholder="e.g. Show your Guild card at checkout"
+            placeholder="e.g. Call us and confirm you're a Guild Member in good standing"
             className={`${controlClass} h-auto min-h-[46px] resize-y py-3 leading-normal`}
             onBlur={(e) => save({ discount_redeem_text: e.target.value || null })}
           />

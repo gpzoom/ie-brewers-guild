@@ -22,15 +22,15 @@ There is one profile template with a member type flag, not three templates. The 
 | --- | --- | --- | --- |
 | Who | Brewery, meadery, cidery, distillery with a taproom | Entertainment, food truck, pop-up | Supply house, ingredients, equipment, services |
 | Status line | Open now / closed, with closing time | Next appearance, with date | Open now / closed, with closing time |
-| Second line | Tonight's event or pour | Venue and city | Service area and typical lead time |
+| Second line | Tonight's event or pour | Venue and city | Service area |
 | Primary action | Directions | Book us | Request a quote |
 | Schedule module | Seven-day hour chips | Upcoming appearance list | Five-day business hour chips |
 | Category chips | — | What they offer | What they supply |
 | Events module | Yes — "Coming up" | Yes — "Where we'll be", and it replaces hours | Yes — "Coming up" |
 | Discount block | — | — | Yes, prominent |
-| Location field | Street address | Service area | Warehouse address |
-| Contact | Phone | Phone (booking) | Phone (sales) and email |
-| Third link pill | Tap list | Press kit | Catalog |
+| Location field | Street address | Service area | Business address |
+| Contact | Phone | Phone (booking), plus optional Instagram DM and WhatsApp booking links | Phone (sales) and email |
+| Third link button | Tap list | Press kit | Catalog |
 | On the Guild Trail | Yes | No | No |
 | Trail progress strip | Yes | No | No |
 | Cross-link card | Next on the trail | Playing nearby | Another Allied Member |
@@ -148,7 +148,7 @@ This is the most concrete answer the site has to "what does Guild membership get
 The member sets:
 
 - a discount percentage, or a "no fixed percentage" checkbox
-- their own wording for how members redeem it
+- their own wording for how members redeem it (the field's example: "Call us and confirm you're a Guild Member in good standing")
 
 With a percentage, the block reads `[XX]% off` over "for members in good standing." With the checkbox ticked, it reads "Discounts available to members in good standing" at the same visual weight. The redemption line sits underneath in both cases.
 
@@ -220,7 +220,7 @@ Sync is tag-based opt-in: only events matching the member's chosen tag are impor
 
 Mobile-first, genuinely: the phone layout is the design and the wide layout is the adaptation. Build the single column first and let it widen.
 
-On a phone the page is one column at 390px: dark guild bar, light profile card, status block, media carousel, schedule, link pills, contact, cross-link card. Artboard L is the desktop resolution of the same page, and it settles the decisions the one-line description left open. Content is capped at 1120px and centred, so the card never stretches across a wide monitor. The cover spans the full card width and gets a wider crop, 4:1 rather than 2.5:1, from the same original. The logo chip grows to 104px and still overlaps the cover's lower edge; name, location, tagline and the Save and Share buttons sit in one row beneath it, full width. Below that the page splits: the media carousel holds a fixed 420px column on the left, still 4:5, and the status block, week chips, link pills and contact stack in the wider column beside it. The cross-link card spans the full width under the card. The dark guild bar gains real directory navigation, since a desktop visitor arrived with more intent than a thumb-scroller.
+On a phone the page is one column at 390px: dark guild bar, light profile card, status block, media carousel, schedule, link buttons, contact, cross-link card. Artboard L is the desktop resolution of the same page, and it settles the decisions the one-line description left open. Content is capped at 1120px and centred, so the card never stretches across a wide monitor. The cover spans the full card width and gets a wider crop, 4:1 rather than 2.5:1, from the same original. The logo chip grows to 104px and still overlaps the cover's lower edge; name, location, tagline and the Save and Share buttons sit in one row beneath it, full width. Below that the page splits: the media carousel holds a fixed 420px column on the left, still 4:5, and the status block, week chips, link pills and contact stack in the wider column beside it. The cross-link card spans the full width under the card. The dark guild bar gains real directory navigation, since a desktop visitor arrived with more intent than a thumb-scroller.
 
 The dark chrome holds the edges and the light card owns the middle, so the member's own brand sits on a neutral ground and does not fight the Guild's.
 
@@ -418,12 +418,12 @@ One step per screen. Every step has **Back**, **Skip for now** (except steps 2 a
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Welcome: what to have handy, about 10 minutes, what can be skipped | ✓ | ✓ | ✓ | — | new |
 | 2 | Confirm your member type | ✓ | ✓ | ✓ | yes | new |
-| 3 | The basics: name, city, tagline, phone, member since, plus the type's location fields (address with suggestions and ZIP); Mobile members also pick "What you offer" categories here | ✓ | ✓ | ✓ | name and city | F |
-| 4 | Logo and cover | ✓ | ✓ | ✓ | — | G |
+| 3 | The basics: name, city, tagline, phone, member since, plus the type's location fields (address with suggestions and ZIP; an Allied Member's is their business address); Mobile members also pick "What you offer" categories here, and their Booking phone notes that more booking links go on Links & contact | ✓ | ✓ | ✓ | name and city | F |
+| 4 | Logo and cover (the cover hint suggests using your Facebook cover photo) | ✓ | ✓ | ✓ | — | G |
 | 5 | When you're open: 7-day hours / 5-day business hours / Where we'll be (calendar or hand entry) | hours | calendar | hours | — | F, M |
 | 6 | Events | ✓ | — (step 5 covered it) | ✓ | — | M |
 | 7 | Photos: gallery upload first, then Your Carousel (slides, crop, tap-through link under the crop controls), then the creator upload link | ✓ | ✓ | ✓ | — | G, J |
-| 8 | Links (third pill: Tap list / Press kit / Catalog) | ✓ | ✓ | ✓ | — | R |
+| 8 | Links: link buttons (third button: Tap list / Press kit / Catalog; Mobile members can add Instagram DM and WhatsApp booking links) | ✓ | ✓ | ✓ | — | R |
 | 9 | Member discount and supplies | — | — | ✓ | — | /admin/discount |
 | 10 | Pick your color | ✓ | ✓ | ✓ | — | K |
 
@@ -668,7 +668,7 @@ One row per member. Type-specific fields live here as nullable columns with a ch
 | latitude | numeric(9,6) | for the nearby-member card |
 | longitude | numeric(9,6) |  |
 | service\_area | text | mobile and Allied Member |
-| lead\_time | text | Allied Member only |
+| lead\_time | text | No longer shown or edited (dropped for Allied Members on 27 September 2026); the column and any value are kept |
 | phone | text | E.164 |
 | contact\_email | text | Allied Member sales address |
 | timezone | text not null default 'America/Los\_Angeles' | IANA, never hardcode |
@@ -745,7 +745,7 @@ Unique on (member\_id, sort\_order), check sort\_order between 0 and 3. `on dele
 | Column | Type | Notes |
 | --- | --- | --- |
 | member\_id | uuid not null |  |
-| kind | text not null | website, instagram, facebook, tiktok, taplist, menu, press\_kit, catalog, other |
+| kind | text not null | website, instagram, facebook, tiktok, taplist, menu, press\_kit, catalog, instagram\_dm, whatsapp, other. `instagram_dm` and `whatsapp` are Mobile members' booking links: the member types "@name" or a phone number, and it's stored as an `https://ig.me/m/<name>` or `https://wa.me/<digits>` link (a 10-digit number gets the US country code), so the same http(s) checks apply. On the profile they read "Message on Instagram" and "WhatsApp". |
 | label | text | overrides the default label |
 | url | text not null |  |
 | sort\_order | smallint not null default 0 |  |
