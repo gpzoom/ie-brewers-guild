@@ -11,6 +11,48 @@ import {
   topBarOutlineClass,
 } from "@/components/shell/AppChrome";
 
+function BellIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+    </svg>
+  );
+}
+
+/**
+ * The super admin's bell (docs/member-profiles.md, "Help button"): opens
+ * Help messages, with the number still waiting. No number when none are.
+ */
+function HelpBell({ count }: { count: number }) {
+  const label = count > 0 ? `Help messages: ${count} waiting` : "Help messages: none waiting";
+  return (
+    <Link
+      to="/guild/help"
+      search={{ show: "waiting" }}
+      aria-label={label}
+      title={label}
+      className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[9px] text-canvas transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-bright"
+    >
+      <BellIcon className="h-[22px] w-[22px]" />
+      {count > 0 && (
+        <span className="absolute right-0.5 top-0.5 flex h-[19px] min-w-[19px] items-center justify-center rounded-full bg-brand px-1 text-[11px] font-semibold leading-none text-white">
+          {count > 99 ? "99+" : count}
+        </span>
+      )}
+    </Link>
+  );
+}
+
 function isActivePath(pathname: string, prefix: string) {
   const normalized = pathname.replace(/\/+$/, "");
   return normalized === prefix || normalized.startsWith(`${prefix}/`);
@@ -31,7 +73,8 @@ function isActivePath(pathname: string, prefix: string) {
  *
  * Super admin (docs/member-profiles.md, "Super admin"): the top bar reads
  * "Super admin" instead of "Guild admin", and a second sidebar group holds
- * the super-admin-only screens -- Brand & theme, Guild admins, Audit log.
+ * the super-admin-only screens -- Brand & theme, Guild admins, Audit log,
+ * Help messages -- and a bell in the top bar counts waiting Help messages.
  * A Guild admin doesn't see that group; the routes refuse them anyway.
  */
 export function GuildShell({
@@ -57,11 +100,13 @@ export function GuildShell({
   const categoriesActive = isActivePath(pathname, "/guild/categories");
   const adminsActive = isActivePath(pathname, "/guild/admins");
   const auditActive = isActivePath(pathname, "/guild/audit");
+  const helpActive = isActivePath(pathname, "/guild/help");
   const roleLabel = isSuperAdmin ? "Super admin" : "Guild admin";
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas text-ink">
       <AppTopBar label={`ISC Brewers Guild · ${roleLabel}`} shortLabel={roleLabel}>
+        {isSuperAdmin && <HelpBell count={summary.waitingHelpCount ?? 0} />}
         {summary.adminEmail && (
           <span className="hidden max-w-[18rem] truncate text-[13px] text-text-muted md:inline">
             {summary.adminEmail}
@@ -149,6 +194,22 @@ export function GuildShell({
                 className={sidebarItemClass(auditActive)}
               >
                 Audit log
+              </Link>
+              <Link
+                to="/guild/help"
+                search={{ show: "waiting" }}
+                aria-current={helpActive ? "page" : undefined}
+                className={sidebarItemClass(helpActive)}
+              >
+                Help messages
+                {summary.waitingHelpCount !== null && summary.waitingHelpCount > 0 && (
+                  <span
+                    className="flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-brand px-1.5 text-[11px] font-semibold text-white"
+                    aria-label={`${summary.waitingHelpCount} waiting`}
+                  >
+                    {summary.waitingHelpCount}
+                  </span>
+                )}
               </Link>
             </>
           )}

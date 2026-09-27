@@ -148,6 +148,13 @@
       "w": 1280,
       "x": 16740,
       "y": 2300
+    },
+    "GuildHelp.dc.html": {
+      "h": 1120,
+      "title": "Y · Super admin — Help messages (the bell opens it)",
+      "w": 1280,
+      "x": 18100,
+      "y": 2300
     }
   },
   "createdOnFiles": {
@@ -197,7 +204,8 @@
     "GuildCategories.dc.html",
     "GuildAdmins.dc.html",
     "GuildAudit.dc.html",
-    "SupportHelp.dc.html"
+    "SupportHelp.dc.html",
+    "GuildHelp.dc.html"
   ],
   "pages": [],
   "title": "IE Brewers Guild — Member Profile"

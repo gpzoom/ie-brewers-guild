@@ -304,6 +304,7 @@ Decided with the owner on 27 September 2026. The site's creator gets a **super a
 | **Audit log** (`/guild/audit`, new): read-only list of who did what and when, filterable by member, person and date; changes made while editing as a member show as "[real person], editing as [member]" | Menu item hidden |
 | **Trail eligible** switch on the roster | Hidden until the Trail is built and the owner decides otherwise |
 | **Delete category**: the confirmation says how many members use it, since deleting removes it from all of them | Add, rename and reorder only |
+| **Help messages** (`/guild/help`, new): the Help button's bug reports and feature requests, with a **bell** in the top bar counting the waiting ones (see Help button) | Menu item and bell hidden |
 
 Everything else in the Guild admin stays with Guild admins: inquiries; the roster (search, create, invite, view, Edit as them); approve, decline and suspend; dues; changing member type; member requests; categories add, rename and reorder; and Applications when it's built.
 
@@ -329,7 +330,8 @@ This changes three earlier rules:
 
 #### Menus
 
-- The Guild sidebar gains a second group, **Super admin**, with Brand & theme (moved out of the Guild group), Guild admins and Audit log. Only the super admin sees it; `/guild/brand`, `/guild/admins` and `/guild/audit` send anyone else to the roster.
+- The Guild sidebar gains a second group, **Super admin**, with Brand & theme (moved out of the Guild group), Guild admins, Audit log and Help messages (with the waiting count). Only the super admin sees it; `/guild/brand`, `/guild/admins`, `/guild/audit` and `/guild/help` send anyone else to the roster.
+- The super admin's top bar has a **bell** that opens Help messages, with a number when any are waiting (no number when none are; "99+" past 99).
 - A Guild admin's roster menu has no **Delete member…** and no Trail switch; Categories has no **Delete** (the page says only the super admin can delete one). While a Guild admin edits as a member, the sign-in email shows read-only ("Only the super admin can change it"), in `/admin` and in `/portal`.
 
 #### Enforcement
@@ -394,8 +396,9 @@ It opens a short form (artboard X), not a chat bot:
 Sending shows **"Thanks, we got it"** on screen. No confirmation email.
 
 - **Goes to the site owner only**, `boblelle77@gmail.com`, or whatever the Worker's `SUPPORT_INBOX_EMAIL` variable says. Not the Guild inbox, and Guild admins don't see these on the site.
+- **Bell and Help messages screen** (super admin only, artboard Y): the super admin's top bar has a bell with the number of messages still **waiting**; it opens `/guild/help`, which lists them newest first with Waiting / Done / All tabs. Each shows the type, profile, message, sender, page and device, with **Reply by email** and **Mark as done** (or **Move back to waiting**). Marking done records when and by whom, and the bell's number drops. Every new message starts as waiting.
 - **Subject by type:** "Bug report: [business] ([type])" or "Feature request: [business] ([type])". With no profile, "Guild admin screens" or "No profile yet". Messages sent from staging start with "[Staging]". Reply-To is the sender's email.
-- **Also saved** in `support_messages` before the email goes, so nothing is lost if an email fails or lands in spam. Only the super admin can read the table; nobody can change or delete a row through the API; the server writes it with the service role.
+- **Also saved** in `support_messages` before the email goes, so nothing is lost if an email fails or lands in spam. Only the super admin can read the table; nobody can change or delete a row through the API; the server writes it with the service role. `status` is `waiting` or `done`, with `handled_at` and `handled_by_user_id`; only the Help messages screen's server function changes it, after its super admin check.
 - A Guild admin editing as a member is marked as such in the email and the row.
 - Signed-in people only, and at most **5 messages an hour** per person.
 
@@ -949,7 +952,7 @@ The general principle: a member who has filled in almost nothing should still ge
 - [ ] Retire `/admin`
 - [x] Photos & events editor — owner-invited role; edits Photos and Events only; publishes and discards Photos only; can't connect a calendar
 - [x] Synced with staging, 27 September 2026 — Photos (not "Photos & video") until video uploads exist; Mobile categories; Members page from the database; address suggestions and geocode on publish; 2 MB logo limit; staging Guild mail to a test inbox
-- [x] Help button — bug report or feature request to the site owner from every portal, /admin and Guild screen; saved in `support_messages`; subject by type (27 September 2026)
+- [x] Help button — bug report or feature request to the site owner from every portal, /admin and Guild screen; saved in `support_messages`; subject by type; super admin bell and Help messages screen (27 September 2026)
 - [x] Super admin — separate account boblelle77+sa@gmail.com, seeded only; owns Brand & theme, Delete member, sign-in email changes, Guild admins, Audit log, Trail switch and category delete; enforced on the server and in the database
 
 Nothing is open. This is ready to hand to Claude Code.

@@ -1,11 +1,12 @@
--- The Help button's messages (20260927160000_support_messages.sql): only
+-- The Help button's messages (20260927160000_support_messages.sql,
+-- 20260927170000_support_messages_status.sql): only
 -- the server writes them, and only the super admin can read them. A
 -- member or a Guild admin can't read, add, change or delete one straight
 -- through the database. Runs inside one transaction that is rolled back.
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(9);
+insert into _tap (line) select plan(12);
 
 -- The super admin for this test (f0..07).
 insert into auth.users (id, email, aud, role) values
@@ -21,6 +22,12 @@ values ('f4000000-0000-4000-8000-000000000001', 'bug', 'Sam', 'pgtap-owner@examp
 insert into _tap (line) select throws_ok(
   $q$ insert into public.support_messages (kind, first_name, email, message) values ('praise', 'Sam', 'a@b.co', 'hi') $q$,
   '23514', null, 'only bug and feature are kinds');
+insert into _tap (line) select is(
+  (select status from public.support_messages where id = 'f4000000-0000-4000-8000-000000000001'),
+  'waiting', 'a new message is waiting');
+insert into _tap (line) select throws_ok(
+  $q$ update public.support_messages set status = 'lost' where id = 'f4000000-0000-4000-8000-000000000001' $q$,
+  '23514', null, 'only waiting and done are statuses');
 
 -- The member who sent it can't read it back, or send one straight to the table.
 set local role authenticated;
@@ -40,13 +47,16 @@ insert into _tap (line) select throws_ok(
 -- The super admin reads them, but can't change or delete them.
 set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000007","role":"authenticated"}';
 insert into _tap (line) select is((select count(*)::int from public.support_messages), 1, 'super admin: reads the message');
-update public.support_messages set message = 'changed' where id = 'f4000000-0000-4000-8000-000000000001';
+insert into _tap (line) select is(
+  (select count(*)::int from public.support_messages where status = 'waiting'), 1,
+  'super admin: counts the waiting ones (the bell)');
+update public.support_messages set message = 'changed', status = 'done' where id = 'f4000000-0000-4000-8000-000000000001';
 delete from public.support_messages where id = 'f4000000-0000-4000-8000-000000000001';
 
 reset role;
 insert into _tap (line) select is(
   (select message from public.support_messages where id = 'f4000000-0000-4000-8000-000000000001'),
-  'It broke.', 'super admin: an update changes nothing');
+  'It broke.', 'super admin: an update changes nothing (marking done goes through the server)');
 insert into _tap (line) select is(
   (select count(*)::int from public.support_messages where id = 'f4000000-0000-4000-8000-000000000001'),
   1, 'super admin: a delete removes nothing');
