@@ -1,6 +1,6 @@
 # Onboarding wizard & member portal: screen map
 
-A snapshot of the **Member Onboarding Screen Map** Design canvas (owner's claude.ai canvas: https://claude.ai/artifact/UENo3svcNBeNrgM6FMMtLV), taken 25 September 2026.
+A snapshot of the **Member Onboarding Screen Map** Design canvas (owner's claude.ai canvas: https://claude.ai/artifact/UENo3svcNBeNrgM6FMMtLV), taken 25 September 2026, re-synced with staging 27 September 2026.
 
 **This is a lo-fi structure map, not a visual reference.** It shows which screens exist, their order, which member types see them, and who can do what. For look and layout, build every screen against the existing artboards in [`../artboards/`](../artboards/) and the design language in [`../README.md`](../README.md). For behaviour, [`../../member-profiles.md`](../../member-profiles.md), section **Setup wizard, member portal and drafts**, wins over anything drawn here.
 

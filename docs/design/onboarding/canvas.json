@@ -87,7 +87,15 @@
       "w": 400,
       "fill": "green",
       "size": 24,
-      "text": "DECIDED — Photos & events editor\nOwner invites/removes from People. This role sees only Photos & video and Events, can't connect a calendar, and publishes (or discards) only Photos & video — the owner's other draft changes stay put."
+      "text": "DECIDED — Photos & events editor\nOwner invites/removes from People. This role sees only Photos and Events, can't connect a calendar, and publishes (or discards) only Photos — the owner's other draft changes stay put."
+    },
+    "q7": {
+      "x": 2470,
+      "y": 2540,
+      "w": 400,
+      "fill": "blue",
+      "size": 24,
+      "text": "SYNCED WITH STAGING — 27 Sep 2026\n'Photos & video' is now 'Photos' until video uploads exist. Gallery comes first on that page. Mobile members pick 'What you offer' categories in The basics. US spelling ('color'). Portal menu shows '[Business name] Profile' and People."
     }
   },
   "order": [

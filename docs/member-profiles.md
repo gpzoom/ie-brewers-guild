@@ -12,7 +12,7 @@ Those are the visual reference. Where this document and an artboard disagree, th
 
 **The artboards live in [`docs/design/`](design/README.md)** (a snapshot of each one's source, plus the link to the live canvas and a map from each artboard to the code that implements it). Every screen must be built against its artboard.
 
-Out of scope: the existing Members page itself — the map and card grid already exist and are not being rebuilt, only the links that open a profile page from them — the Guild's own marketing pages, and anything to do with taking payment, which happens off the site.
+Out of scope: redesigning the Members page — its map and card grid keep their look, though they now read published members from the database (see Routes) — the Guild's own marketing pages, and anything to do with taking payment, which happens off the site.
 
 ## Member types
 
@@ -25,7 +25,7 @@ There is one profile template with a member type flag, not three templates. The 
 | Second line | Tonight's event or pour | Venue and city | Service area and typical lead time |
 | Primary action | Directions | Book us | Request a quote |
 | Schedule module | Seven-day hour chips | Upcoming appearance list | Five-day business hour chips |
-| Category chips | — | — | What they supply |
+| Category chips | — | What they offer | What they supply |
 | Events module | Yes — "Coming up" | Yes — "Where we'll be", and it replaces hours | Yes — "Coming up" |
 | Discount block | — | — | Yes, prominent |
 | Location field | Street address | Service area | Warehouse address |
@@ -60,6 +60,8 @@ One ratio per profile, 4:5 portrait, the same for every slide in the carousel. D
 Call it "Portrait" everywhere a member can see it. "4:5" appears once, as small grey supporting text.
 
 Maximum four slides. A profile with one slide renders without carousel dots rather than showing a single dot.
+
+**Naming:** the member-facing section is called **Photos**, not "Photos & video", until video uploads exist. The data model keeps `kind = video` ready for then.
 
 ### Where media comes from
 
@@ -115,7 +117,7 @@ Mobile members have no weekly hours, so the gate for them is the appearance cale
 
 ## Logos and assets
 
-PNG or SVG only, transparent background, minimum 400px tall. Reject JPGs at upload with a message that says why, rather than accepting and looking bad. Validate the actual file signature, not the extension.
+PNG or SVG only, transparent background, minimum 400px tall, 2 MB maximum (the upload copy states the limit, and rejections show directly under "Your logo"). Logos live in the public logos bucket and never appear in the media gallery. Reject JPGs at upload with a message that says why, rather than accepting and looking bad. Validate the actual file signature, not the extension.
 
 **Always place a member logo on a light chip**, never directly on a dark surface. A transparent PNG of a dark-ink mark disappears against the dark guild chrome, and a large share of craft logos are exactly that. The cross-link card at the bottom of every profile is the place this bites — it is a dark card carrying another member's logo. An ivory rounded chip behind it costs nothing and removes the whole class of problem. The alternative, asking members for a light variant, is one more thing to chase and will be inconsistently supplied.
 
@@ -245,7 +247,7 @@ What the import does per member:
 
 - `status` = `published`, `member_type` best-guessed from the current page and corrected by the Guild admin afterwards
 - `slug` from the business name, lowercased, non-alphanumerics collapsed to hyphens, a numeric suffix on collision. Once issued a slug never changes, or shared links break
-- `latitude` / `longitude` carried across from the existing map pins — don't re-geocode, the pins are already right
+- `latitude` / `longitude` carried across from the existing map pins — don't re-geocode on import, the pins are already right. After import, coordinates come from the address (see Addresses and map pins)
 - `theme` = the default, `hours_confirmed_at` = null, no `member_users` row yet
 
 **A null `hours_confirmed_at` means "never set", not "stale".** An imported member with no hours shows no schedule block at all — the status block falls back to "Hours not listed" with the phone number as its action, per the empty states. It must not show a stale-hours warning, which would blame a member for something they were never asked to do. The 90-day nudge only applies once a member has confirmed hours at least once; members with no hours get a different, gentler prompt.
@@ -301,9 +303,18 @@ Resend, called from a Worker. Supabase Auth sends the magic link; everything els
 | Hours stale past 90 days | the member | One-click confirmation — the link itself sets the timestamp, no login |
 | Creator uploads to a gallery | the member | Something is waiting for review |
 
+On staging, Guild-bound mail (contact form, type changed in setup) goes to the test inbox **boblelle77+iscadmin@gmail.com** instead of the real Guild inbox; production and local dev use the real one. The public contact address shown on the site doesn't change.
+
 Send from **`mail.iscbrewersguild.org`**, verified in Resend with its SPF, DKIM and DMARC records in place before the first send. A workers.dev sender puts half of this mail in spam.
 
 The contact form is a public endpoint that writes rows and sends mail, so it needs a rate limit per IP and a honeypot field at minimum.
+
+## Addresses and map pins
+
+- The street address field on Basics & hours suggests addresses and businesses (Google Places API (New)), in our own styled list with the "Google Maps" attribution. Picking one fills street, city, state, ZIP and coordinates in one draft save.
+- Editing the address by hand clears the coordinates.
+- After a successful publish (and when the Guild admin approves a member), the street address is geocoded on the server with `GOOGLE_GEOCODING_API_KEY` when the address changed or coordinates are missing. This is best effort: it never fails the publish. Profiles that already have a pin and an unchanged address are skipped.
+- Mobile members have a service area, not a street address, so none of this applies to them.
 
 ## Setup wizard, member portal and drafts
 
@@ -339,14 +350,14 @@ One step per screen. Every step has **Back**, **Skip for now** (except steps 2 a
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Welcome: what to have handy, about 10 minutes, what can be skipped | ✓ | ✓ | ✓ | — | new |
 | 2 | Confirm your member type | ✓ | ✓ | ✓ | yes | new |
-| 3 | The basics: name, city, tagline, phone, member since, plus the type's location fields | ✓ | ✓ | ✓ | name and city | F |
+| 3 | The basics: name, city, tagline, phone, member since, plus the type's location fields (address with suggestions and ZIP); Mobile members also pick "What you offer" categories here | ✓ | ✓ | ✓ | name and city | F |
 | 4 | Logo and cover | ✓ | ✓ | ✓ | — | G |
 | 5 | When you're open: 7-day hours / 5-day business hours / Where we'll be (calendar or hand entry) | hours | calendar | hours | — | F, M |
 | 6 | Events | ✓ | — (step 5 covered it) | ✓ | — | M |
-| 7 | Photos and video, including the creator upload link | ✓ | ✓ | ✓ | — | G, J |
+| 7 | Photos: gallery upload first, then Your Carousel (slides, crop, tap-through link under the crop controls), then the creator upload link | ✓ | ✓ | ✓ | — | G, J |
 | 8 | Links (third pill: Tap list / Press kit / Catalog) | ✓ | ✓ | ✓ | — | R |
 | 9 | Member discount and supplies | — | — | ✓ | — | /admin/discount |
-| 10 | Pick your colour | ✓ | ✓ | ✓ | — | K |
+| 10 | Pick your color | ✓ | ✓ | ✓ | — | K |
 
 Steps after 3 are optional. A skipped step isn't stored anywhere. Whether a step is done is worked out from whether its data is empty, so the Review checklist and the portal's Finish card can't drift from the real profile.
 
@@ -394,16 +405,16 @@ A member's profile can have three kinds of people. The role lives in `member_use
 | --- | --- | --- | --- |
 | Go through the setup wizard | yes | yes, if setup isn't done | never |
 | Basics & hours, Logo & cover, Links, Discount, Theme | yes | yes | no, sections hidden |
-| Photos & video: upload, crop, reorder, tap-through links, creator upload links, approve or reject creator uploads | yes | yes | yes |
+| Photos: upload, crop, reorder, tap-through links, creator upload links, approve or reject creator uploads | yes | yes | yes |
 | Events: add, edit, hide, set Postponed / Rescheduled / Canceled, Refresh now | yes | yes | yes |
 | Connect or disconnect the Google / Apple calendar | yes | no | no |
-| Preview | whole draft | whole draft | live page plus their Photos & video draft |
-| Publish | everything | everything | Photos & video only |
-| Discard changes | everything | everything | Photos & video only |
+| Preview | whole draft | whole draft | live page plus their Photos draft |
+| Publish | everything | everything | Photos only |
+| Discard changes | everything | everything | Photos only |
 | Request a type change | yes | yes | no |
 | People: invite, resend, cancel invite, remove | yes | no | no |
 
-- **Cover and logo are not part of Photos & video** for this purpose. They stay with the owner and full editors.
+- **Cover and logo are not part of Photos** for this purpose. They stay with the owner and full editors.
 - Only the owner connects the calendar, so sync doesn't break when an editor leaves or used their own Google account.
 - A Photos & events editor never sees the wizard. If the member's setup isn't done yet, they still land on their two sections.
 - One owner per member. Changing who the owner is is a Guild admin job, from the roster. The owner can't remove themselves.
@@ -411,7 +422,7 @@ A member's profile can have three kinds of people. The role lives in `member_use
 
 #### The People section
 
-A portal section only the owner sees. It lists everyone on the member with their role, plus pending invites. To invite, the owner enters an email address and picks **Photos & events** or **Full editor**. The invitee gets an email with a Member Portal sign-in link. When they sign in with that address, the invite is accepted and a `member_users` row is created with the invited role. Invites expire after 14 days and can be resent or cancelled. Removing someone deletes their `member_users` row and ends their access on their next request. Changing someone's role is remove-and-reinvite, for now. The Guild admin can do all of this from the roster too.
+A portal section only the owner sees. It lists everyone on the member with their role, plus pending invites. To invite, the owner enters an email address and picks **Photos & events** or **Full editor**. The invitee gets an email with a Member Portal sign-in link. When they sign in with that address, the invite is accepted and a `member_users` row is created with the invited role. Invites expire after 14 days and can be resent (at most once every 5 minutes per invite) or cancelled. Removing someone deletes their `member_users` row and ends their access on their next request. Changing someone's role is remove-and-reinvite, for now. The Guild admin can do all of this from the roster too.
 
 Invites go through the same server path the Guild admin's create-member invite already uses, not a client-side Supabase call.
 
@@ -419,7 +430,7 @@ Invites go through the same server path the Guild admin's create-member invite a
 
 This refines Drafts above. The draft is split into sections so a limited editor can publish their part without pushing anyone else's unfinished work.
 
-- `member_drafts.data` is keyed by section: `basics` (member fields, hours, special hours, cover, logo), `media` (carousel slides and crops), `links`, `discount` (discount fields and categories), `theme`.
+- `member_drafts.data` is keyed by section: `basics` (member fields, hours, special hours, cover, logo), `media` (carousel slides and crops), `links`, `discount` (discount fields and categories), `theme`. A Mobile member's categories also live in `discount` even though they're edited on Basics & hours, so the two types share one category store.
 - `member_drafts.dirty_sections text[]` replaces the single `is_dirty` flag. Saving a section adds its key; publishing or discarding a section removes it.
 - `publish_member_draft(member_id, sections text[])` publishes only the sections named, in one transaction. The owner's and full editor's **Publish changes** passes every dirty section. The Photos & events editor's **Publish photos** passes only `media`.
 - **Discard** works the same way: a Photos & events editor's Discard resets only `media` to live.
@@ -434,6 +445,10 @@ This refines Drafts above. The draft is split into sections so a limited editor 
 - `events` writes and `media_assets` / `upload_tokens` writes allow all three roles. `calendar_connections` writes allow `owner` only. **Refresh now** runs in a Worker that allows all three roles.
 - People actions (invite, cancel, remove) are owner-only, checked in the Worker.
 - Impersonation still logs against the real actor. A Guild admin impersonating acts with owner rights, but still can't change sign-in settings.
+
+### Portal shell
+
+The menu is headed "[Business name] Profile" in the display font, so editors always see whose profile they're editing. On a phone, the name sits in the top bar.
 
 ### Routes
 
@@ -536,7 +551,7 @@ It is also materially less to build and less to get wrong. No focus trap, no scr
 
 **Routes:**
 
-- `/members` — the existing Members page, map and card grid. Not being rebuilt.
+- `/members` — the Members page, map and card grid. Lists every published member from the database, one card per business, alphabetical, with pins from stored coordinates. It replaced the hard-coded list.
 - `/members/[slug]` — a member profile.
 - `/admin` — member admin, behind auth.
 - `/guild` — Guild admin, behind auth and `is_guild_admin`.
@@ -745,7 +760,7 @@ Unique on (calendar\_connection\_id, external\_event\_id). **A re-sync reconcile
 
 ### categories and member\_categories
 
-`categories` holds the Allied Member supply categories as `(id, name, slug, sort_order)`; `member_categories` joins `(member_id, category_id)`. A join table rather than a text array, so the directory can filter by category later without a migration.
+`categories` holds member categories as `(id, name, slug, sort_order, member_type)`, where `member_type` is `allied` (supply categories) or `mobile` (Entertainment, Food Truck, Pop-up Food Vendor, …), checked in (`allied`, `mobile`). A member may pick any number of categories of their own type. The Guild Categories page has Allied and Mobile tabs; `member_categories` joins `(member_id, category_id)`. A join table rather than a text array, so the directory can filter by category later without a migration.
 
 ### Trail hooks — not built
 
@@ -814,7 +829,7 @@ Every module needs a defined absence. The rule is that a module with nothing in 
 | Mobile member, no upcoming events | "No dates announced yet" with the booking button still present — never an empty list |
 | Calendar sync failing | Nothing on the public page. The admin shows the failure and the last successful sync. |
 | Allied Member, no discount set | Block omitted entirely |
-| Allied Member, no categories | Module omitted |
+| Allied or Mobile member, no categories | Module omitted |
 | An image fails to load | Theme-coloured block in its place, never a broken-image icon or alt text alone |
 | Profile is a draft or still an application | 404 to the public, preview banner to its own members |
 | Slug not found | The directory's own 404, offering the member list — not a bare error |
@@ -833,11 +848,12 @@ The general principle: a member who has filled in almost nothing should still ge
 - [x] Media — 4:5 portrait, originals plus crop rectangles, creator upload links
 - [x] Events — all member types, calendar sync with member status overlays
 - [x] Trail — deferred, hooks only, nothing about visitors stored
-- [x] Naming — Allied Member, and no "brewery" in member-facing copy
+- [x] Naming — Allied Member, and no "brewery" in member-facing copy; US spelling ("color") in all member-facing copy
 - [x] Setup wizard — steps 1–3 required (welcome, confirm type, basics), the rest skippable; never shown again once setup completes
 - [x] Member type — confirmed once in the wizard, then locked; changes by request to the Guild admin
 - [x] Drafts — all edits save to a draft; Publish pushes live in one transaction; Discard resets to live; events and overlays stay live
 - [x] Portal entry — Member Portal link under Member sign in; `/admin` kept as fallback until tested
-- [x] Photos & events editor — owner-invited role; edits Photos & video and Events only; publishes and discards Photos & video only; can't connect a calendar
+- [x] Photos & events editor — owner-invited role; edits Photos and Events only; publishes and discards Photos only; can't connect a calendar
+- [x] Synced with staging, 27 September 2026 — Photos (not "Photos & video") until video uploads exist; Mobile categories; Members page from the database; address suggestions and geocode on publish; 2 MB logo limit; staging Guild mail to a test inbox
 
 Nothing is open. This is ready to hand to Claude Code.
