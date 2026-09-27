@@ -262,9 +262,9 @@ Supabase Auth, magic link only. No passwords — these are small-business owners
 
 ### One sign-in, in the footer
 
-A single **Member sign in** link in the site footer, and a real `/signin` route so it can go in emails. While the new portal is tested, a **Member Portal** link sits directly under it (see Setup wizard, member portal and drafts). Not in the header: two dozen members against thousands of visitors, and a Sign In button in the header of a public directory tells every visitor they ought to have an account.
+A single **Member Portal** link in the site footer, and a real `/signin` route so it can go in emails. (During testing a separate **Member sign in** link sat above it and led to the old `/admin` editor; it was removed on 27 September 2026.) Not in the header: two dozen members against thousands of visitors, and a Sign In button in the header of a public directory tells every visitor they ought to have an account.
 
-**The magic link routes by role, not by URL.** One form for everyone; where you land is decided by the account. A member lands in `/admin` on their own profile, a Guild admin in `/guild`. No separate admin login to find, nothing extra to lock down, and no way to probe which addresses are admins. A second admin login is strictly more attack surface for strictly less convenience.
+**The magic link routes by role, not by URL.** One form for everyone; where you land is decided by the account. A member lands in the Member Portal (`/portal`) on their own profile, a Guild admin in `/guild`. That holds whether they came through the footer link or reached `/signin` some other way. No separate admin login to find, nothing extra to lock down, and no way to probe which addresses are admins. A second admin login is strictly more attack surface for strictly less convenience.
 
 ### Joining, for now
 
@@ -394,8 +394,8 @@ The member's own profile admin, meaning the owner or an editor in `member_users`
 
 ### Getting in
 
-- The site footer gets a **Member Portal** link directly under **Member sign in**. Both use the same magic-link sign-in process that exists today.
-- **While this is being tested, both paths exist side by side.** Member sign in keeps landing on the current `/admin`, as the fallback. Member Portal lands on the new `/portal`, which holds the wizard and the portal. Once the owner has tested it, `/portal` replaces `/admin` and the second link goes away. Don't delete or rewire `/admin` until then.
+- The site footer has one link, **Member Portal**, using the same magic-link sign-in process as before.
+- **The testing period is over (27 September 2026).** The old **Member sign in** link, which landed on `/admin`, is gone. Every member sign-in now lands on `/portal`, with or without `next`; a Guild admin still lands on `/guild`. `/admin` itself still exists but is no longer a landing page; retiring it is a separate step.
 - Implement Member Portal as the existing sign-in form with a destination (`/signin?next=/portal`), not a second sign-in form. Check `next` against a short allowlist of internal paths so it can't be used as an open redirect.
 - The Guild's invite email links to `/portal` too.
 
@@ -923,6 +923,8 @@ The general principle: a member who has filled in almost nothing should still ge
 - [x] Member type — confirmed once in the wizard, then locked; changes by request to the Guild admin
 - [x] Drafts — all edits save to a draft; Publish pushes live in one transaction; Discard resets to live; events and overlays stay live
 - [x] Portal entry — Member Portal link under Member sign in; `/admin` kept as fallback until tested
+- [x] Old Member sign in link removed; every member sign-in lands on `/portal` (27 September 2026)
+- [ ] Retire `/admin`
 - [x] Photos & events editor — owner-invited role; edits Photos and Events only; publishes and discards Photos only; can't connect a calendar
 - [x] Synced with staging, 27 September 2026 — Photos (not "Photos & video") until video uploads exist; Mobile categories; Members page from the database; address suggestions and geocode on publish; 2 MB logo limit; staging Guild mail to a test inbox
 - [x] Super admin — separate account boblelle77+sa@gmail.com, seeded only; owns Brand & theme, Delete member, sign-in email changes, Guild admins, Audit log, Trail switch and category delete; enforced on the server and in the database

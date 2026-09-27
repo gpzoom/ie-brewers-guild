@@ -2,14 +2,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type RoleRoutingResult =
   | { role: "guild_admin"; redirectTo: "/guild" }
-  | { role: "member_editor"; memberId: string; redirectTo: "/admin" }
+  | { role: "member_editor"; memberId: string; redirectTo: "/portal" }
   | { role: "none"; redirectTo: "/signin" };
 
 /**
  * The one place "where does this signed-in user land" is decided (spec:
  * "The magic link routes by role, not by URL"). /auth/callback and the
  * /admin route's own auth guard both call this rather than reimplementing
- * the check a second way.
+ * the check a second way. Members land in the Member Portal; the old
+ * /admin editor is no longer a landing page (2026-09-27).
  *
  * Precedence: if a user has both a profiles.is_guild_admin row and a
  * member_users row, Guild-admin routing wins (this plan's Decision 2 --
@@ -38,7 +39,7 @@ export async function resolveUserRoleAndTarget(
     .maybeSingle();
 
   if (memberUser?.member_id) {
-    return { role: "member_editor", memberId: memberUser.member_id, redirectTo: "/admin" };
+    return { role: "member_editor", memberId: memberUser.member_id, redirectTo: "/portal" };
   }
 
   return { role: "none", redirectTo: "/signin" };
@@ -49,14 +50,15 @@ export async function resolveUserRoleAndTarget(
  * already have passed safeNextPath. A valid `next` wins for members and for
  * people with no member link yet (/portal is where pending invites are
  * accepted); a Guild admin follows it only while editing as a member,
- * otherwise they go to /guild as always. No `next` → plain role routing.
+ * otherwise they go to /guild as always. No `next` is treated as the Member
+ * Portal (/portal), so a plain sign-in behaves exactly like the footer's
+ * Member Portal link.
  */
 export function resolveCallbackRedirect(
   routing: RoleRoutingResult,
   next: string | undefined,
   isImpersonating: boolean,
 ): string {
-  if (!next) return routing.redirectTo;
-  if (routing.role === "guild_admin" && !isImpersonating) return routing.redirectTo;
-  return next;
+  if (routing.role === "guild_admin" && (!next || !isImpersonating)) return routing.redirectTo;
+  return next ?? "/portal";
 }

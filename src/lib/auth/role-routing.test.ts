@@ -33,12 +33,12 @@ describe("resolveUserRoleAndTarget", () => {
     expect(await resolveUserRoleAndTarget(supabase, "u1")).toEqual({ role: "guild_admin", redirectTo: "/guild" });
   });
 
-  it("routes a member editor to /admin with their member_id", async () => {
+  it("routes a member editor to the Member Portal with their member_id", async () => {
     const supabase = fakeSupabase({ profile: null, memberUser: { member_id: "m1" } });
     expect(await resolveUserRoleAndTarget(supabase, "u1")).toEqual({
       role: "member_editor",
       memberId: "m1",
-      redirectTo: "/admin",
+      redirectTo: "/portal",
     });
   });
 
@@ -47,7 +47,7 @@ describe("resolveUserRoleAndTarget", () => {
     expect(await resolveUserRoleAndTarget(supabase, "u1")).toEqual({
       role: "member_editor",
       memberId: "m1",
-      redirectTo: "/admin",
+      redirectTo: "/portal",
     });
   });
 
@@ -59,14 +59,14 @@ describe("resolveUserRoleAndTarget", () => {
 
 describe("resolveCallbackRedirect", () => {
   const admin = { role: "guild_admin", redirectTo: "/guild" } as const;
-  const member = { role: "member_editor", memberId: "m1", redirectTo: "/admin" } as const;
+  const member = { role: "member_editor", memberId: "m1", redirectTo: "/portal" } as const;
   const none = { role: "none", redirectTo: "/signin" } as const;
 
-  it("without next, routes by role exactly as before", () => {
+  it("without next, sends a Guild admin to /guild and everyone else to the Member Portal", () => {
     expect(resolveCallbackRedirect(admin, undefined, false)).toBe("/guild");
     expect(resolveCallbackRedirect(admin, undefined, true)).toBe("/guild");
-    expect(resolveCallbackRedirect(member, undefined, false)).toBe("/admin");
-    expect(resolveCallbackRedirect(none, undefined, false)).toBe("/signin");
+    expect(resolveCallbackRedirect(member, undefined, false)).toBe("/portal");
+    expect(resolveCallbackRedirect(none, undefined, false)).toBe("/portal");
   });
 
   it("sends a member to next", () => {

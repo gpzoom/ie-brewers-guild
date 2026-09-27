@@ -60,7 +60,7 @@
     "q3": {
       "fill": "green",
       "size": 24,
-      "text": "DECIDED — Getting in & when the wizard shows\n'Member Portal' link sits under 'Member Sign In' in the footer, same magic link. Old path = fallback while testing.\n\nWizard runs until the member confirms type AND clicks Continue on The Basics. After that: portal only, forever, for everyone on that member.",
+      "text": "DECIDED — Getting in & when the wizard shows\n'Member Portal' is the only sign-in link in the footer (the old 'Member Sign In' link was removed 27 Sep). Every member sign-in lands in the wizard/portal.\n\nWizard runs until the member confirms type AND clicks Continue on The Basics. After that: portal only, forever, for everyone on that member.",
       "w": 400,
       "x": 2470,
       "y": 760
