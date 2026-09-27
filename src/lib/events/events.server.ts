@@ -7,10 +7,13 @@ export const listEvents = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => data)
   .handler(async ({ data }) => {
     const supabase = await getSupabaseServerClientForRequest();
+    // Events only: food vendors from the food calendar live in the same
+    // table (kind 'food') and have their own preview.
     const { data: events, error } = await supabase
       .from("events")
       .select("*")
       .eq("member_id", data.memberId)
+      .eq("kind", "event")
       .order("starts_at");
     if (error) throw new Error(error.message);
     return events as EventRow[];

@@ -41,6 +41,7 @@ function makeConnections(count: number): CalendarConnectionRow[] {
     id: `conn-${i}`,
     member_id: `member-${i}`,
     provider: "ics" as const,
+    purpose: "events" as const,
     google_calendar_id: null,
     ics_url: "https://example.com/feed.ics",
     sync_tag: "guild",

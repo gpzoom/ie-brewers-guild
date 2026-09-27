@@ -3,6 +3,8 @@ import { ProfileHero } from "@/components/profile/ProfileHero";
 import { StatusBlock } from "@/components/profile/StatusBlock";
 import { ScheduleChips } from "@/components/profile/ScheduleChips";
 import { EventsModule } from "@/components/profile/EventsModule";
+import { FoodCalendarModule } from "@/components/profile/FoodCalendarModule";
+import { toSpecialHoursDay, toWeekdayHours } from "@/lib/hours/hours-rows";
 import { DiscountBlock } from "@/components/profile/DiscountBlock";
 import { CategoryChips } from "@/components/profile/CategoryChips";
 import { LinkPills } from "@/components/profile/LinkPills";
@@ -12,8 +14,7 @@ import { CrossLinkCard } from "@/components/profile/CrossLinkCard";
 import { HeaderNav } from "@/components/profile/HeaderNav";
 import type { MemberProfileData, ProfileMediaMode } from "@/lib/members/profile-object";
 import type { DirectorySearch } from "@/lib/directory/search-params";
-import { getZonedNow, type SpecialHoursDay, type WeekdayHours } from "@/lib/hours/open-now";
-import type { HoursRow, SpecialHoursRow } from "@/lib/supabase/types";
+import { getZonedNow } from "@/lib/hours/open-now";
 import { isHttpUrl } from "@/lib/links/url-safety";
 
 
@@ -25,30 +26,9 @@ type MemberProfileTemplateProps = {
 
 // The profile object (buildProfileObject) carries the raw snake_case DB rows;
 // computeOpenNow/StatusBlock/ScheduleChips (Task 7/13/14) were built
-// against the camelCase WeekdayHours/SpecialHoursDay shapes. This
-// template is the one place those two sides meet, so it's the one place
-// that has to bridge them.
-function toWeekdayHours(rows: HoursRow[]): WeekdayHours[] {
-  return rows.map((row) => ({
-    weekday: row.weekday,
-    opensAt: row.opens_at,
-    closesAt: row.closes_at,
-    closesNextDay: row.closes_next_day,
-    isClosed: row.is_closed,
-  }));
-}
-
-function toSpecialHoursDay(rows: SpecialHoursRow[]): SpecialHoursDay[] {
-  return rows.map((row) => ({
-    date: row.date,
-    isClosed: row.is_closed,
-    opensAt: row.opens_at,
-    closesAt: row.closes_at,
-    closesNextDay: row.closes_next_day,
-    note: row.note,
-  }));
-}
-
+// against the camelCase WeekdayHours/SpecialHoursDay shapes. The bridge
+// (toWeekdayHours/toSpecialHoursDay) lives in src/lib/hours/hours-rows.ts,
+// shared with the member's "Food this week" preview.
 /**
  * ONE template, switched by member_type at the module level -- never
  * forked into three templates (spec, "Member types": "Build it that way
@@ -86,6 +66,10 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
   const scheduleVisible = member.member_type !== "mobile" && weekdayHours.length > 0;
   const visibleEventsCount = events.filter((event) => !event.is_hidden).length;
   const eventsVisible = member.member_type === "mobile" || visibleEventsCount > 0;
+  // "Food this week": a producer with a food calendar connected (docs/member-profiles.md,
+  // "Events" > "Food calendar") -- never a week of "Bring your own food" for a
+  // taproom that hasn't set one up.
+  const foodVisible = member.member_type === "producer" && data.hasFoodCalendar;
   const linksVisible = links.some((link) => isHttpUrl(link.url));
   const contactLocationText = member.member_type === "mobile" ? member.service_area : member.street_address;
   const contactHasEmail = member.member_type === "allied" && Boolean(member.contact_email);
@@ -99,7 +83,13 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
   // between the right column's own modules. Set as a CSS custom property
   // read by an `lg:`-scoped utility (the count is only known at render
   // time), so it's inert below lg, where the grid is one plain column.
-  const contentRows = 1 + Number(scheduleVisible) + Number(eventsVisible) + Number(linksVisible) + Number(contactVisible);
+  const contentRows =
+    1 +
+    Number(scheduleVisible) +
+    Number(foodVisible) +
+    Number(eventsVisible) +
+    Number(linksVisible) +
+    Number(contactVisible);
 
   // Candidates for "next"/"tonight": excludes postponed and canceled (a
   // postponed event has no new date to show, and a canceled one is never
@@ -217,6 +207,18 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
                 hoursConfirmedAt={member.hours_confirmed_at}
                 timezone={member.timezone}
                 now={now}
+              />
+            </div>
+          )}
+
+          {foodVisible && (
+            <div className={col2}>
+              <FoodCalendarModule
+                slots={data.foodSlots}
+                now={now}
+                timezone={member.timezone}
+                hours={weekdayHours}
+                specialHours={specialHoursDays}
               />
             </div>
           )}

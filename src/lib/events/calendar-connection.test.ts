@@ -93,6 +93,7 @@ const CONNECTION: CalendarConnectionRow = {
   id: "conn-1",
   member_id: "member-1",
   provider: "ics",
+  purpose: "events",
   google_calendar_id: null,
   ics_url: "https://example.com/feed.ics",
   sync_tag: "guild",

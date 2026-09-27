@@ -3,7 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { buildEventUpsertRows, parseIcsFeedForTag, staleSyncedEventIds } from "@/lib/events/ics-sync";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
-import type { CalendarConnectionRow } from "@/lib/supabase/types";
+import { foodCalendarProblem, parseCalendarPurpose } from "@/lib/events/calendar-purpose";
+import type { CalendarConnectionRow, MemberType } from "@/lib/supabase/types";
 
 /**
  * This is the first place in this repo where the server fetches an
@@ -124,8 +125,13 @@ function toFriendlyFetchError(err: unknown): Error {
   return err instanceof Error ? err : new Error(String(err));
 }
 
+// Each member has at most one ICS connection per purpose (events, food);
+// every lookup names the purpose, since maybeSingle() fails on two rows.
 export const getCalendarConnection = createServerFn({ method: "GET" })
-  .inputValidator((data: { memberId: string }) => data)
+  .inputValidator((data: { memberId: string; purpose?: "events" | "food" }) => ({
+    memberId: data.memberId,
+    purpose: parseCalendarPurpose(data.purpose),
+  }))
   .handler(async ({ data }) => {
     const supabase = await getSupabaseServerClientForRequest();
     const { data: connection } = await supabase
@@ -133,12 +139,20 @@ export const getCalendarConnection = createServerFn({ method: "GET" })
       .select("*")
       .eq("member_id", data.memberId)
       .eq("provider", "ics")
+      .eq("purpose", data.purpose)
       .maybeSingle();
     return (connection as CalendarConnectionRow | null) ?? null;
   });
 
 export const saveIcsConnection = createServerFn({ method: "POST" })
-  .inputValidator((data: { memberId: string; icsUrl: string; syncTag: string }) => data)
+  .inputValidator(
+    (data: { memberId: string; icsUrl: string; syncTag: string; purpose?: "events" | "food" }) => ({
+      memberId: data.memberId,
+      icsUrl: data.icsUrl,
+      syncTag: data.syncTag,
+      purpose: parseCalendarPurpose(data.purpose),
+    }),
+  )
   .handler(async ({ data }) => {
     // Must happen before anything is stored -- see validateIcsUrl's own
     // doc comment above for why this is the first real gap in this file.
@@ -146,11 +160,35 @@ export const saveIcsConnection = createServerFn({ method: "POST" })
     if (!urlCheck.valid) throw new Error(urlCheck.reason);
 
     const supabase = await getSupabaseServerClientForRequest();
+
+    // The food calendar is for producers only, with a tag of its own
+    // (foodCalendarProblem). Read through the session client, so RLS
+    // already limits both reads to people who can edit this member.
+    if (data.purpose === "food") {
+      const [{ data: member }, { data: eventsConnection }] = await Promise.all([
+        supabase.from("members").select("member_type").eq("id", data.memberId).maybeSingle(),
+        supabase
+          .from("calendar_connections")
+          .select("sync_tag")
+          .eq("member_id", data.memberId)
+          .eq("provider", "ics")
+          .eq("purpose", "events")
+          .maybeSingle(),
+      ]);
+      const problem = foodCalendarProblem({
+        memberType: (member?.member_type as MemberType | undefined) ?? null,
+        syncTag: data.syncTag,
+        eventsTag: (eventsConnection?.sync_tag as string | null | undefined) ?? null,
+      });
+      if (problem) throw new Error(problem);
+    }
+
     const { data: existing } = await supabase
       .from("calendar_connections")
       .select("id")
       .eq("member_id", data.memberId)
       .eq("provider", "ics")
+      .eq("purpose", data.purpose)
       .maybeSingle();
 
     if (existing) {
@@ -184,7 +222,13 @@ export const saveIcsConnection = createServerFn({ method: "POST" })
 
     const { data: created, error } = await supabase
       .from("calendar_connections")
-      .insert({ member_id: data.memberId, provider: "ics", ics_url: data.icsUrl, sync_tag: data.syncTag })
+      .insert({
+        member_id: data.memberId,
+        provider: "ics",
+        purpose: data.purpose,
+        ics_url: data.icsUrl,
+        sync_tag: data.syncTag,
+      })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -285,7 +329,12 @@ export async function syncOneIcsConnection(supabase: SupabaseClient, connection:
     }
 
     const parsedEvents = parseIcsFeedForTag(icsText, connection.sync_tag);
-    const rows = buildEventUpsertRows(connection.member_id, connection.id, parsedEvents);
+    const rows = buildEventUpsertRows(
+      connection.member_id,
+      connection.id,
+      parsedEvents,
+      connection.purpose === "food" ? "food" : "event",
+    );
 
     if (rows.length > 0) {
       const { error: upsertError } = await supabase.from("events").upsert(rows, { onConflict: "calendar_connection_id,external_event_id" });

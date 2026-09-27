@@ -70,14 +70,14 @@ export function formatDurationLabel(totalMinutes: number): string {
   return `${hrs} hr ${mins} min`;
 }
 
-function addDays(dateStr: string, days: number): string {
+export function addDays(dateStr: string, days: number): string {
   const [year, month, day] = dateStr.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
 }
 
-function weekdayOf(dateStr: string): number {
+export function weekdayOf(dateStr: string): number {
   const [year, month, day] = dateStr.split("-").map(Number);
   return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
 }

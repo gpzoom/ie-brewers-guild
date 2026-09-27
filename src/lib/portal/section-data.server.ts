@@ -7,6 +7,8 @@ import {
   type MemberDraftBundle,
 } from "@/lib/drafts/drafts.server";
 import { logoStoragePathPattern } from "@/lib/media/logo-path";
+import { toSpecialHoursDay, toWeekdayHours } from "@/lib/hours/hours-rows";
+import type { SpecialHoursDay, WeekdayHours } from "@/lib/hours/open-now";
 import { fetchMemberEmail } from "@/lib/members/member-email.server";
 import { isSuperAdminSession } from "@/lib/auth/super-admin";
 import type { PortalRole } from "@/lib/portal/portal-destination";
@@ -15,9 +17,11 @@ import type {
   CalendarConnectionRow,
   CategoryRow,
   EventRow,
+  HoursRow,
   MediaAssetRow,
   MemberStatus,
   MemberType,
+  SpecialHoursRow,
   UploadTokenRow,
 } from "@/lib/supabase/types";
 
@@ -126,11 +130,16 @@ async function listTokens(supabase: SessionClient, memberId: string): Promise<Up
   return (data ?? []) as UploadTokenRow[];
 }
 
-async function listMemberEvents(supabase: SessionClient, memberId: string): Promise<EventRow[]> {
+async function listMemberEvents(
+  supabase: SessionClient,
+  memberId: string,
+  kind: "event" | "food" = "event",
+): Promise<EventRow[]> {
   const { data, error } = await supabase
     .from("events")
     .select("*")
     .eq("member_id", memberId)
+    .eq("kind", kind)
     .order("starts_at");
   if (error) throw new Error(error.message);
   return (data ?? []) as EventRow[];
@@ -139,25 +148,34 @@ async function listMemberEvents(supabase: SessionClient, memberId: string): Prom
 async function readCalendarConnection(
   supabase: SessionClient,
   memberId: string,
+  purpose: "events" | "food" = "events",
 ): Promise<CalendarConnectionRow | null> {
   const { data } = await supabase
     .from("calendar_connections")
     .select("*")
     .eq("member_id", memberId)
     .eq("provider", "ics")
+    .eq("purpose", purpose)
     .maybeSingle();
   return (data as CalendarConnectionRow | null) ?? null;
 }
 
-/** The LIVE time zone -- what EventsEditor uses on /admin/events too (getMemberBasics). */
-async function readLiveTimezone(supabase: SessionClient, memberId: string): Promise<string> {
+/**
+ * The LIVE time zone -- what EventsEditor uses on /admin/events too
+ * (getMemberBasics) -- and member type (a producer gets the food calendar).
+ */
+async function readLiveMember(
+  supabase: SessionClient,
+  memberId: string,
+): Promise<{ timezone: string; memberType: MemberType }> {
   const { data, error } = await supabase
     .from("members")
-    .select("timezone")
+    .select("timezone, member_type")
     .eq("id", memberId)
     .single();
   if (error || !data) throw new Error("Member not found.");
-  return (data as { timezone: string }).timezone;
+  const row = data as { timezone: string; member_type: MemberType };
+  return { timezone: row.timezone, memberType: row.member_type };
 }
 
 async function listCategories(supabase: SessionClient): Promise<CategoryRow[]> {
@@ -166,19 +184,49 @@ async function listCategories(supabase: SessionClient): Promise<CategoryRow[]> {
   return (data ?? []) as CategoryRow[];
 }
 
+/**
+ * A producer's food calendar (docs/member-profiles.md, "Events" > "Food
+ * calendar"): its connection, its vendors, and the live hours "Food this
+ * week" reads for Closed days -- so the member's preview matches the profile.
+ */
+export type FoodCalendarData = {
+  connection: CalendarConnectionRow | null;
+  slots: EventRow[];
+  hours: WeekdayHours[];
+  specialHours: SpecialHoursDay[];
+};
+
 export type ScheduleData = {
   events: EventRow[];
   memberTimezone: string;
   calendarConnection: CalendarConnectionRow | null;
+  /** Producers only; null for everyone else. */
+  food: FoodCalendarData | null;
 };
 
+async function loadFoodCalendar(supabase: SessionClient, memberId: string): Promise<FoodCalendarData> {
+  const [connection, slots, hours, specialHours] = await Promise.all([
+    readCalendarConnection(supabase, memberId, "food"),
+    listMemberEvents(supabase, memberId, "food"),
+    supabase.from("hours").select("*").eq("member_id", memberId),
+    supabase.from("special_hours").select("*").eq("member_id", memberId),
+  ]);
+  return {
+    connection,
+    slots,
+    hours: toWeekdayHours((hours.data ?? []) as HoursRow[]),
+    specialHours: toSpecialHoursDay((specialHours.data ?? []) as SpecialHoursRow[]),
+  };
+}
+
 async function loadSchedule(supabase: SessionClient, memberId: string): Promise<ScheduleData> {
-  const [events, memberTimezone, calendarConnection] = await Promise.all([
+  const [events, live, calendarConnection] = await Promise.all([
     listMemberEvents(supabase, memberId),
-    readLiveTimezone(supabase, memberId),
+    readLiveMember(supabase, memberId),
     readCalendarConnection(supabase, memberId),
   ]);
-  return { events, memberTimezone, calendarConnection };
+  const food = live.memberType === "producer" ? await loadFoodCalendar(supabase, memberId) : null;
+  return { events, memberTimezone: live.timezone, calendarConnection, food };
 }
 
 /** Wizard step 3, The basics: the draft, plus the category list for a Mobile member's picker. */
@@ -293,7 +341,11 @@ export async function loadBasicsSection(
 export async function loadCompletenessData(supabase: SessionClient, memberId: string) {
   const [draft, eventCountResult, calendarConnection] = await Promise.all([
     loadMemberDraftBundle(supabase, memberId),
-    supabase.from("events").select("id", { count: "exact", head: true }).eq("member_id", memberId),
+    supabase
+      .from("events")
+      .select("id", { count: "exact", head: true })
+      .eq("member_id", memberId)
+      .eq("kind", "event"),
     readCalendarConnection(supabase, memberId),
   ]);
   if (eventCountResult.error) throw new Error(eventCountResult.error.message);

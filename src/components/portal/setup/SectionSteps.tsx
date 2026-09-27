@@ -6,6 +6,7 @@ import { LogoCoverSection } from "@/components/admin/LogoCoverSection";
 import { HoursEditor } from "@/components/admin/HoursEditor";
 import { EventsEditor } from "@/components/admin/EventsEditor";
 import { CalendarConnectionPanel } from "@/components/admin/CalendarConnectionPanel";
+import { FoodCalendarSection } from "@/components/admin/FoodCalendarSection";
 import { CarouselEditor } from "@/components/admin/CarouselEditor";
 import { MediaGallery } from "@/components/admin/MediaGallery";
 import { CreatorLinkPanel } from "@/components/admin/CreatorLinkPanel";
@@ -150,6 +151,14 @@ export function EventsStep({
         initialEvents={schedule.events}
         memberTimezone={schedule.memberTimezone}
       />
+      {schedule.food && (
+        <FoodCalendarSection
+          memberId={shell.memberId}
+          food={schedule.food}
+          memberTimezone={schedule.memberTimezone}
+          canEdit={canConnectCalendar(shell)}
+        />
+      )}
     </WizardStep>
   );
 }

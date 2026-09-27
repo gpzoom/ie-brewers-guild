@@ -198,6 +198,7 @@ function event(partial: Partial<EventRow>): EventRow {
     member_id: "m1",
     calendar_connection_id: null,
     source: "manual",
+    kind: "event",
     external_event_id: null,
     title: "Gig",
     description: null,
@@ -322,6 +323,30 @@ describe("buildProfileObject", () => {
     expect(buildProfileObject(input({ rows })).ogImageUrl).toBe(
       "https://site.test/api/member-media/og-1",
     );
+  });
+
+  it("keeps food vendors apart from events, and shows the food week only for a producer with a food calendar", () => {
+    const now = "2026-09-25T12:00:00Z";
+    const data = buildProfileObject(
+      input({
+        hasFoodCalendar: true,
+        events: [
+          event({ id: "gig", kind: "event", starts_at: "2026-09-26T02:00:00Z" }),
+          event({ id: "tacos", kind: "food", starts_at: "2026-09-26T01:00:00Z" }),
+          event({ id: "old-tacos", kind: "food", starts_at: "2026-09-20T01:00:00Z" }),
+        ],
+        now: new Date(now),
+      }),
+    );
+    expect(data.events.map((e) => e.id)).toEqual(["gig"]);
+    expect(data.foodSlots.map((e) => e.id)).toEqual(["tacos"]);
+    expect(data.hasFoodCalendar).toBe(true);
+
+    const allied = { ...LIVE, member: { ...MEMBER, member_type: "allied" as const } };
+    expect(buildProfileObject(input({ rows: allied, hasFoodCalendar: true })).hasFoodCalendar).toBe(
+      false,
+    );
+    expect(buildProfileObject(input()).hasFoodCalendar).toBe(false);
   });
 
   it("has no header position when the member isn't in the published list", () => {

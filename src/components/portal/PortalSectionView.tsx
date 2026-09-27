@@ -10,6 +10,7 @@ import { CreatorLinkPanel } from "@/components/admin/CreatorLinkPanel";
 import { ReviewTray } from "@/components/admin/ReviewTray";
 import { EventsEditor } from "@/components/admin/EventsEditor";
 import { CalendarConnectionPanel } from "@/components/admin/CalendarConnectionPanel";
+import { FoodCalendarSection } from "@/components/admin/FoodCalendarSection";
 import { LinksContactEditor } from "@/components/admin/LinksContactEditor";
 import { DiscountEditor } from "@/components/admin/DiscountEditor";
 import { SupplyCategoriesPicker } from "@/components/admin/SupplyCategoriesPicker";
@@ -172,6 +173,14 @@ export function PortalSectionView({ data, shell }: { data: PortalSectionData; sh
             initialEvents={data.events}
             memberTimezone={data.memberTimezone}
           />
+          {data.food && (
+            <FoodCalendarSection
+              memberId={shell.memberId}
+              food={data.food}
+              memberTimezone={data.memberTimezone}
+              canEdit={canConnectCalendar(shell)}
+            />
+          )}
         </div>
       );
 

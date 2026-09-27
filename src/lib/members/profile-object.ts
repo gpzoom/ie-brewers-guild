@@ -35,6 +35,10 @@ export type MemberProfileData = {
   carouselSlides: (CarouselSlideRow & { asset: MediaAssetRow })[];
   links: MemberLinkRow[];
   events: EventRow[];
+  /** Food vendors from a producer's food calendar ("Food this week"); empty otherwise. */
+  foodSlots: EventRow[];
+  /** Whether "Food this week" shows: a producer with a food calendar connected. */
+  hasFoodCalendar: boolean;
   categories: CategoryRow[];
   logoAsset: MediaAssetRow | null;
   coverAsset: MediaAssetRow | null;
@@ -195,6 +199,22 @@ export function referencedAssetIds(rows: ProfileRows): string[] {
  * are left for the template to filter (and RLS already drops them for
  * anon).
  */
+/**
+ * Food vendors for "Food this week": kind 'food', not hidden, not canceled,
+ * ending no earlier than a day ago (the week is cut to seven local days
+ * where it's drawn, in the member's own time zone).
+ */
+export function upcomingFoodSlots(events: EventRow[], now: Date): EventRow[] {
+  const dayAgo = now.getTime() - 24 * 60 * 60 * 1000;
+  return events.filter(
+    (event) =>
+      event.kind === "food" &&
+      !event.is_hidden &&
+      event.overlay_status !== "canceled" &&
+      new Date(event.ends_at ?? event.starts_at).getTime() >= dayAgo,
+  );
+}
+
 export function upcomingOrCanceledEvents(events: EventRow[], now: Date): EventRow[] {
   return events.filter((event) => {
     if (event.overlay_status === "canceled") return true;
@@ -220,6 +240,8 @@ export type BuildProfileInput = {
   siblingEntries: DirectoryEntry[];
   crossLinkLogoUrl: string | null;
   crossLinkLogoBackground: string | null;
+  /** A producer with a food calendar connected (member_has_food_calendar). */
+  hasFoodCalendar?: boolean;
   siteOrigin: string;
   now: Date;
   flags: {
@@ -269,7 +291,14 @@ export function buildProfileObject(input: BuildProfileInput): MemberProfileData 
       })
       .filter((slide): slide is CarouselSlideRow & { asset: MediaAssetRow } => slide !== null),
     links: [...rows.links].sort((a, b) => a.sort_order - b.sort_order),
-    events: upcomingOrCanceledEvents(input.events, now),
+    // The same rows carry the member's events and, for a producer with a
+    // food calendar, its food vendors (kind 'food'): kept apart here.
+    events: upcomingOrCanceledEvents(
+      input.events.filter((event) => (event.kind ?? "event") === "event"),
+      now,
+    ),
+    foodSlots: upcomingFoodSlots(input.events, now),
+    hasFoodCalendar: member.member_type === "producer" && input.hasFoodCalendar === true,
     categories: input.categories,
     logoAsset: member.logo_asset_id ? (assetsById.get(member.logo_asset_id) ?? null) : null,
     coverAsset: member.cover_asset_id ? (assetsById.get(member.cover_asset_id) ?? null) : null,

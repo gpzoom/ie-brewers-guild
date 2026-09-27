@@ -1,8 +1,7 @@
-import { useState } from "react";
 import type { EventRow, MemberType } from "@/lib/supabase/types";
 import { SectionLabel } from "@/components/profile/SectionLabel";
 import { cn } from "@/lib/utils";
-import { linkifyText } from "@/lib/text/linkify";
+import { EventDescription } from "@/components/profile/EventDescription";
 
 type EventsModuleProps = {
   events: EventRow[];
@@ -22,11 +21,16 @@ const HEADINGS: Record<MemberType, string> = {
   allied: "Coming up",
 };
 
-function dateParts(iso: string, timezone: string): { weekday: string; day: string } {
+export function dateParts(
+  iso: string,
+  timezone: string,
+): { weekday: string; day: string; month: string } {
   const date = new Date(iso);
   return {
     weekday: date.toLocaleDateString("en-US", { weekday: "short", timeZone: timezone }),
     day: date.toLocaleDateString("en-US", { day: "numeric", timeZone: timezone }),
+    // Under the day (owner, 2026-09-27), so a date weeks out reads right.
+    month: date.toLocaleDateString("en-US", { month: "short", timeZone: timezone }),
   };
 }
 
@@ -39,7 +43,7 @@ function formatTime(iso: string, timezone: string): string {
 // "6:00 pm", or "6:00 – 9:00 pm" when the event has an end on the same
 // local day (artboard E). A rescheduled event has no overlay end time, so
 // it shows its new start only.
-function formatTimeRange(startIso: string, endIso: string | null, timezone: string): string {
+export function formatTimeRange(startIso: string, endIso: string | null, timezone: string): string {
   const start = formatTime(startIso, timezone);
   if (!endIso) return start;
   const sameDay =
@@ -65,58 +69,6 @@ const BADGE_STYLES: Record<NonNullable<EventRow["overlay_status"]>, string> = {
   postponed: "bg-[#F5E2D0] text-[#7A4413]",
   canceled: "bg-[#F0DBD4] text-[#7A2E1C]",
 };
-
-// A description longer than this, or with more than two line breaks, starts
-// clamped to three lines with a "More" button.
-const LONG_DESCRIPTION = 140;
-
-/**
- * The event's description (from the member's calendar, as plain text --
- * cleanEventDescription in ics-sync.ts). Line breaks are kept; React
- * escapes the text, so nothing in it is ever treated as HTML. Web addresses
- * in it become links (linkifyText: http(s) only), opening in a new tab.
- */
-function EventDescription({ text, muted }: { text: string; muted: boolean }) {
-  const [open, setOpen] = useState(false);
-  const long = text.length > LONG_DESCRIPTION || text.split("\n").length > 3;
-  return (
-    <div className="flex flex-col items-start gap-0.5 pt-0.5">
-      <p
-        className={cn(
-          "whitespace-pre-line break-words text-xs leading-[1.45] lg:text-[13px]",
-          muted ? "text-ink-subtle" : "text-[#3A332C]",
-          long && !open && "line-clamp-3",
-        )}
-      >
-        {linkifyText(text).map((part, index) =>
-          part.kind === "link" ? (
-            <a
-              key={index}
-              href={part.href}
-              target="_blank"
-              rel="noopener noreferrer nofollow ugc"
-              className="break-all font-medium text-brand underline underline-offset-2 hover:text-brand-hover"
-            >
-              {part.text}
-            </a>
-          ) : (
-            <span key={index}>{part.text}</span>
-          ),
-        )}
-      </p>
-      {long && (
-        <button
-          type="button"
-          onClick={() => setOpen((value) => !value)}
-          aria-expanded={open}
-          className="min-h-8 text-xs font-semibold text-brand underline-offset-2 hover:underline lg:text-[13px]"
-        >
-          {open ? "Less" : "More"}
-        </button>
-      )}
-    </div>
-  );
-}
 
 /**
  * Every member type gets this module (spec, "Events": "Every member type
@@ -171,7 +123,7 @@ export function EventsModule({ events, memberType, timezone }: EventsModuleProps
           // A rescheduled event's date column shows its NEW date; the
           // original is what a postponed/canceled row strikes.
           const shownStart = isRescheduled ? (event.overlay_starts_at as string) : event.starts_at;
-          const { weekday, day } = dateParts(shownStart, timezone);
+          const { weekday, day, month } = dateParts(shownStart, timezone);
           const time = isRescheduled
             ? `now ${formatTime(shownStart, timezone)}`
             : formatTimeRange(event.starts_at, event.ends_at, timezone);
@@ -217,6 +169,14 @@ export function EventsModule({ events, memberType, timezone }: EventsModuleProps
                   )}
                 >
                   {day}
+                </span>
+                <span
+                  className={cn(
+                    "text-[9px] uppercase tracking-[0.1em] lg:text-[10px]",
+                    isCanceled ? "text-ink-subtle" : "text-ink-muted",
+                  )}
+                >
+                  {month}
                 </span>
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-[3px] lg:gap-1">

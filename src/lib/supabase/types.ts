@@ -181,6 +181,8 @@ export type EventRow = {
   member_id: string;
   calendar_connection_id: string | null;
   source: "google" | "ics" | "manual";
+  /** An event, or a food vendor's day from the food calendar (20260927190000_food_calendar.sql). */
+  kind: "event" | "food";
   external_event_id: string | null;
   // Added by the final-review-fixes migration
   // (20260922153458_final_review_fixes.sql, finding #1) -- not present in
@@ -247,10 +249,14 @@ export type MemberUserRow = {
   created_at: string;
 };
 
+export type CalendarPurpose = "events" | "food";
+
 export type CalendarConnectionRow = {
   id: string;
   member_id: string;
   provider: "google" | "ics";
+  /** Which calendar this is: the member's events, or their food vendors (producers only). */
+  purpose: CalendarPurpose;
   google_calendar_id: string | null;
   ics_url: string | null;
   sync_tag: string | null;

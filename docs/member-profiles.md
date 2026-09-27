@@ -218,6 +218,18 @@ A mobile member's "Next appearance" block skips anything postponed or canceled a
 
 Sync is tag-based opt-in: only events matching the member's chosen tag are imported. Most members' calendars contain private entries, and pulling everything would publish them.
 
+On the profile each event's date column reads weekday, day and **month** ("THU / 24 / OCT"), in the member's time zone (owner, 27 September 2026).
+
+### Food calendar
+
+Decided with the owner on 27 September 2026. **Producers only.** A taproom can connect a **second** calendar for the food trucks and pop-ups parked there, with **its own ICS link and its own tag** (for example `#food`; it must differ from their events tag). It's set up under the events calendar, on the portal's Events section and in wizard step 6, and only the owner connects it, like the events calendar.
+
+- Each entry is a **vendor's day**: the vendor's name in the title, the time, and anything else (a menu or Instagram link) in the description. Title and description are cleaned the same way as events (tag taken out, links clickable).
+- The profile shows **Food this week** directly above "Coming up": the next **7 days**, today first, in the member's time zone, each with the weekday, day and month. A day lists its vendors (name, time, description; several in time order). A day with no vendor says **"Bring your own food"**, or **"Closed"** when their posted hours (weekly, or a holiday) say they're closed that day, the same rule "open now" uses. With no hours posted, no day is Closed.
+- It shows only once a food calendar is connected, so a taproom without one never gets a week of "Bring your own food". Visitors can't read calendar links, so `member_has_food_calendar(member_id)` (security definer) answers only yes or no, for a published producer (or for someone who can see the unpublished profile).
+- Below the connection box, the member sees **Next 7 days on your profile**, drawn the same way; Refresh now reloads it.
+- Food entries are stored in `events` with `kind = 'food'`, so the sync, the removal of deleted or untagged entries, hiding, the public read policy and the super admin's sync timer all apply unchanged. Everything that means "events" (the Events list, "Coming up", "Tonight", "Next appearance", the publish check, the Finish-your-profile check) reads `kind = 'event'` only.
+
 ## Layout and breakpoints
 
 Mobile-first, genuinely: the phone layout is the design and the wide layout is the adaptation. Build the single column first and let it widen.
@@ -457,7 +469,7 @@ One step per screen. Every step has **Back**, **Skip for now** (except steps 2 a
 | 3 | The basics: name, city, tagline, phone, member since, plus the type's location fields (address with suggestions and ZIP; an Allied Member's is their business address); Mobile members also pick "What you offer" categories here, and their Booking phone notes that more booking links go on Links & contact | ✓ | ✓ | ✓ | name and city | F |
 | 4 | Logo and cover (the cover hint suggests using your Facebook cover photo) | ✓ | ✓ | ✓ | — | G |
 | 5 | When you're open: 7-day hours / 5-day business hours / Where we'll be (calendar or hand entry) | hours | calendar | hours | — | F, M |
-| 6 | Events | ✓ | — (step 5 covered it) | ✓ | — | M |
+| 6 | Events (producers also: the food truck calendar) | ✓ | — (step 5 covered it) | ✓ | — | M |
 | 7 | Photos: gallery upload first, then Your Carousel (slides, crop, tap-through link under the crop controls), then the creator upload link | ✓ | ✓ | ✓ | — | G, J |
 | 8 | Links: link buttons (third button: Tap list / Press kit / Catalog; Mobile members can add Instagram DM and WhatsApp booking links) | ✓ | ✓ | ✓ | — | R |
 | 9 | Member discount and supplies | — | — | ✓ | — | /admin/discount |
@@ -819,6 +831,7 @@ Holiday and one-off overrides. A row here wins over the weekly row for that date
 | --- | --- | --- |
 | member\_id | uuid not null |  |
 | provider | text not null | check in (google, ics) |
+| purpose | text not null default 'events' | check in (events, food); unique on (member\_id, provider, purpose). `food` is a producer's food calendar |
 | google\_refresh\_token | text | store in Supabase Vault, not plaintext |
 | google\_calendar\_id | text |  |
 | ics\_url | text |  |
@@ -836,6 +849,7 @@ Every member type uses this table. Venue fields are nullable — null means the 
 | member\_id | uuid not null |  |
 | calendar\_connection\_id | uuid | fk, null for hand-entered |
 | source | text not null | check in (google, ics, manual) |
+| kind | text not null default 'event' | check in (event, food); `food` rows come from a food calendar and show only in "Food this week" |
 | external\_event\_id | text | the provider's event id, null for manual |
 | starts\_at | timestamptz not null |  |
 | ends\_at | timestamptz |  |
@@ -963,6 +977,7 @@ The general principle: a member who has filled in almost nothing should still ge
 - [ ] Retire `/admin`
 - [x] Photos & events editor — owner-invited role; edits Photos and Events only; publishes and discards Photos only; can't connect a calendar
 - [x] Synced with staging, 27 September 2026 — Photos (not "Photos & video") until video uploads exist; Mobile categories; Members page from the database; address suggestions and geocode on publish; 2 MB logo limit; staging Guild mail to a test inbox
+- [x] Food calendar — producers only; own ICS link and tag; "Food this week" (7 days, Bring your own food / Closed); event dates show the month (27 September 2026)
 - [x] Help button — bug report or feature request to the site owner from every portal, /admin and Guild screen; saved in `support_messages`; subject by type; super admin bell and Help messages screen (27 September 2026)
 - [x] Super admin — separate account boblelle77+sa@gmail.com, seeded only; owns Brand & theme, Delete member, sign-in email changes, Guild admins, Audit log, Trail switch and category delete; enforced on the server and in the database
 

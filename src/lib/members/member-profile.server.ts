@@ -121,6 +121,7 @@ async function assembleProfile(args: {
     directoryResult,
     sameTypeResult,
     siblingResult,
+    foodCalendarResult,
   ] = await Promise.all([
     assetIds.length
       ? supabase.from("media_assets").select("*").in("id", assetIds)
@@ -145,6 +146,12 @@ async function assembleProfile(args: {
       .eq("status", "published")
       .eq("business_name", member.business_name)
       .order("city"),
+    // "Food this week" shows only for a producer with a food calendar
+    // connected; visitors can't read calendar_connections, so a yes/no
+    // function answers it (20260927190000_food_calendar.sql).
+    member.member_type === "producer"
+      ? supabase.rpc("member_has_food_calendar", { target_member_id: member.id })
+      : Promise.resolve({ data: false }),
   ]);
 
   const assets = (assetsResult.data ?? []) as MediaAssetRow[];
@@ -192,6 +199,7 @@ async function assembleProfile(args: {
     siblingEntries: toEntries(siblingResult.data),
     crossLinkLogoUrl,
     crossLinkLogoBackground,
+    hasFoodCalendar: foodCalendarResult.data === true,
     siteOrigin: args.siteOrigin,
     now: args.now,
     flags: args.flags,

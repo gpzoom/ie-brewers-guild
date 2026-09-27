@@ -208,6 +208,14 @@ describe("buildEventUpsertRows", () => {
     expect(rows).toHaveLength(2);
   });
 
+  it("marks rows as events by default, and as food for a food calendar", () => {
+    const events = parseIcsFeedForTag(SAMPLE_ICS, "guild");
+    expect(buildEventUpsertRows("m", "c", events).every((row) => row.kind === "event")).toBe(true);
+    expect(buildEventUpsertRows("m", "c", events, "food").every((row) => row.kind === "food")).toBe(
+      true,
+    );
+  });
+
   it("carries the title without the tag, and the place from LOCATION", () => {
     const rows = buildEventUpsertRows(
       "member-1",

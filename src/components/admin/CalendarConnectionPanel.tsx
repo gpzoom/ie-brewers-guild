@@ -3,7 +3,7 @@ import {
   refreshIcsConnectionNow,
   saveIcsConnection,
 } from "@/lib/events/calendar-connection.server";
-import type { CalendarConnectionRow } from "@/lib/supabase/types";
+import type { CalendarConnectionRow, CalendarPurpose } from "@/lib/supabase/types";
 
 const inputClass =
   "h-[46px] w-full rounded-[9px] border border-canvas-border bg-white px-[13px] text-sm text-ink placeholder:text-ink-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30";
@@ -78,15 +78,46 @@ function relativeTime(iso: string, now: number): string {
  * status and Refresh now, which every role may use, but loses Edit link;
  * before anything is connected it just says who can connect one.
  */
+// The words that differ between the events calendar and a producer's food
+// calendar (docs/member-profiles.md, "Events" > "Food calendar").
+const COPY = {
+  events: {
+    label: "Calendar connection",
+    connectedTitle: "Calendar subscription",
+    addTitle: "Add an Apple or other calendar",
+    importing: "importing events tagged",
+    tagPlaceholder: "e.g. #guild",
+    nobody: "No calendar is connected. Only the profile's owner can connect one. You can still add dates by hand below.",
+    hint: "Paste your calendar's ICS subscription URL. Only events with your sync tag (for example #guild) in their title or description are imported; the tag is left off on your profile. Each event's description shows on your profile too, so keep private notes out of tagged events. Deleting an event, or taking its tag off, removes it here too.",
+  },
+  food: {
+    label: "Food truck calendar",
+    connectedTitle: "Food truck calendar",
+    addTitle: "Add a food truck calendar",
+    importing: "importing vendors tagged",
+    tagPlaceholder: "e.g. #food",
+    nobody: "No food truck calendar is connected. Only the profile's owner can connect one.",
+    hint: "Keep your food trucks and pop-ups on their own calendar (or give them their own tag), and paste its ICS subscription URL. Use a different tag from your events calendar, for example #food, in the title or description of each vendor's day. Put the vendor's name in the title, and anything else (their menu or Instagram link) in the description. Your profile shows the next 7 days; a day with no vendor says \"Bring your own food\", or \"Closed\" when your hours say you're closed.",
+  },
+} as const;
+
 export function CalendarConnectionPanel({
   memberId,
   initialConnection,
   canEdit = true,
+  purpose = "events",
+  onRefreshed,
 }: {
   memberId: string;
   initialConnection: CalendarConnectionRow | null;
   canEdit?: boolean;
+  /** The events calendar, or a producer's food calendar ("Food this week"). */
+  purpose?: CalendarPurpose;
+  /** Called after Refresh now, so a caller can reload what the sync changed. */
+  onRefreshed?: () => void;
 }) {
+  const copy = COPY[purpose];
+  const fieldId = (name: string) => (purpose === "food" ? `food-${name}` : name);
   const [connection, setConnection] = useState(initialConnection);
   const [icsUrl, setIcsUrl] = useState(initialConnection?.ics_url ?? "");
   const [syncTag, setSyncTag] = useState(initialConnection?.sync_tag ?? "");
@@ -127,11 +158,12 @@ export function CalendarConnectionPanel({
     if (icsUrl.trim() === "" && syncTag.trim() === "") return;
     setError(null);
     try {
-      const { id } = await saveIcsConnection({ data: { memberId, icsUrl, syncTag } });
+      const { id } = await saveIcsConnection({ data: { memberId, icsUrl, syncTag, purpose } });
       setConnection((prev) => ({
         id,
         member_id: memberId,
         provider: "ics",
+        purpose,
         google_calendar_id: null,
         ics_url: icsUrl,
         sync_tag: syncTag,
@@ -173,6 +205,7 @@ export function CalendarConnectionPanel({
     try {
       const refreshed = await refreshIcsConnectionNow({ data: { connectionId: connection.id } });
       setConnection(refreshed);
+      onRefreshed?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Refresh failed — try again.");
     } finally {
@@ -186,11 +219,10 @@ export function CalendarConnectionPanel({
   if (!connected && !canEdit) {
     return (
       <section
-        aria-label="Calendar connection"
+        aria-label={copy.label}
         className="rounded-[14px] border border-dashed border-[#D3CBBD] px-6 py-4 text-[13px] text-ink-muted max-md:px-4"
       >
-        No calendar is connected. Only the profile's owner can connect one. You can still add dates
-        by hand below.
+        {copy.nobody}
       </section>
     );
   }
@@ -219,7 +251,7 @@ export function CalendarConnectionPanel({
   // inputs and steal focus mid-typing.
   return (
     <section
-      aria-label="Calendar connection"
+      aria-label={copy.label}
       className={
         connected
           ? "flex flex-col gap-3.5 rounded-[14px] border border-canvas-border bg-white px-6 py-[22px] max-md:px-4"
@@ -232,13 +264,13 @@ export function CalendarConnectionPanel({
             <CalendarIcon />
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-[5px]">
-            <h2 className="font-sans text-base font-semibold text-ink">Calendar subscription</h2>
+            <h2 className="font-sans text-base font-semibold text-ink">{copy.connectedTitle}</h2>
             <p className="break-words text-[13px] text-ink-muted">
               {host ?? "Subscription link"}
               {tag ? (
                 <>
                   {" "}
-                  · importing events tagged{" "}
+                  · {copy.importing}{" "}
                   <strong className="font-semibold text-ink">{tag}</strong>
                 </>
               ) : (
@@ -278,9 +310,7 @@ export function CalendarConnectionPanel({
       ) : (
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div className="flex flex-col gap-1">
-            <h2 className="font-sans text-sm font-semibold text-ink">
-              Add an Apple or other calendar
-            </h2>
+            <h2 className="font-sans text-sm font-semibold text-ink">{copy.addTitle}</h2>
             <p className="text-xs leading-[1.45] text-ink-muted">
               Calendars connect by subscription link (ICS), which your calendar app updates on its
               own schedule — expect dates to appear here a little behind your calendar.
@@ -308,19 +338,14 @@ export function CalendarConnectionPanel({
 
       {showFields && (
         <div className="flex flex-col gap-3.5 border-t border-canvas-2 pt-3.5">
-          <p className="text-xs leading-[1.45] text-ink-muted">
-            Paste your calendar's ICS subscription URL. Only events with your sync tag (for example
-            #guild) in their title or description are imported; the tag is left off on your
-            profile. Each event's description shows on your profile too, so keep private notes out
-            of tagged events. Deleting an event, or taking its tag off, removes it here too.
-          </p>
+          <p className="text-xs leading-[1.45] text-ink-muted">{copy.hint}</p>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <div className="flex flex-col gap-[7px]">
-              <label htmlFor="ics-url" className="text-[13px] font-medium text-ink">
+              <label htmlFor={fieldId("ics-url")} className="text-[13px] font-medium text-ink">
                 ICS subscription URL
               </label>
               <input
-                id="ics-url"
+                id={fieldId("ics-url")}
                 type="url"
                 inputMode="url"
                 value={icsUrl}
@@ -331,15 +356,15 @@ export function CalendarConnectionPanel({
               />
             </div>
             <div className="flex flex-col gap-[7px]">
-              <label htmlFor="sync-tag" className="text-[13px] font-medium text-ink">
+              <label htmlFor={fieldId("sync-tag")} className="text-[13px] font-medium text-ink">
                 Sync tag
               </label>
               <input
-                id="sync-tag"
+                id={fieldId("sync-tag")}
                 value={syncTag}
                 onChange={(e) => setSyncTag(e.target.value)}
                 onBlur={onSave}
-                placeholder="e.g. guild"
+                placeholder={copy.tagPlaceholder}
                 className={inputClass}
               />
             </div>

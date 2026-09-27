@@ -57,7 +57,7 @@ export async function loadPublishGateData(
       .eq("id", data.memberId)
       .single(),
     supabase.rpc("ensure_member_draft", { p_member_id: data.memberId }),
-    supabase.from("events").select("starts_at").eq("member_id", data.memberId),
+    supabase.from("events").select("starts_at").eq("member_id", data.memberId).eq("kind", "event"),
   ]);
 
   if (memberResult.error || !memberResult.data) {

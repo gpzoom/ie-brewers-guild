@@ -10,8 +10,8 @@
       "y": 2300
     },
     "AdminEvents.dc.html": {
-      "h": 1100,
-      "title": "M · Admin — events & calendar (all member types)",
+      "h": 1640,
+      "title": "M · Admin — events & calendar, plus a producer's food truck calendar",
       "w": 1280,
       "x": 5860,
       "y": 2300
@@ -101,7 +101,7 @@
       "y": 2300
     },
     "MobileProfile.dc.html": {
-      "h": 1555,
+      "h": 1600,
       "title": "E · Mobile member",
       "w": 390,
       "x": 470,
@@ -115,8 +115,8 @@
       "y": 0
     },
     "TaproomProfile.dc.html": {
-      "h": 1645,
-      "title": "D · Taproom profile",
+      "h": 1945,
+      "title": "D · Taproom profile (with Food this week)",
       "w": 390,
       "x": 0,
       "y": 0

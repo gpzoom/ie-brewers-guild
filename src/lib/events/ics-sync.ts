@@ -251,6 +251,7 @@ export type EventUpsertRow = {
   member_id: string;
   calendar_connection_id: string;
   source: "ics";
+  kind: "event" | "food";
   external_event_id: string;
   starts_at: string;
   ends_at: string | null;
@@ -273,11 +274,15 @@ export function buildEventUpsertRows(
   memberId: string,
   calendarConnectionId: string,
   parsedEvents: ParsedIcsEvent[],
+  kind: "event" | "food" = "event",
 ): EventUpsertRow[] {
   return parsedEvents.map((event) => ({
     member_id: memberId,
     calendar_connection_id: calendarConnectionId,
     source: "ics" as const,
+    // A food calendar's entries are food vendors (the profile's "Food this
+    // week"), kept apart from the member's events everywhere.
+    kind,
     external_event_id: event.externalEventId,
     starts_at: event.startsAt,
     ends_at: event.endsAt,
