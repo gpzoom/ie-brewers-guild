@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildEventUpsertRows,
+  cleanEventDescription,
   parseIcsFeedForTag,
   staleSyncedEventIds,
   stripSyncTag,
@@ -208,7 +209,11 @@ describe("buildEventUpsertRows", () => {
   });
 
   it("carries the title without the tag, and the place from LOCATION", () => {
-    const rows = buildEventUpsertRows("member-1", "conn-1", parseIcsFeedForTag(GOOGLE_STYLE_ICS, "#guild"));
+    const rows = buildEventUpsertRows(
+      "member-1",
+      "conn-1",
+      parseIcsFeedForTag(GOOGLE_STYLE_ICS, "#guild"),
+    );
     expect(rows[0]).toMatchObject({
       external_event_id: "g-1@google.com",
       title: "test event",
@@ -250,6 +255,59 @@ describe("parseIcsFeedForTag: the tag in the description", () => {
       "g-1@google.com",
       "g-2@google.com",
     ]);
+  });
+});
+
+describe("cleanEventDescription", () => {
+  it("is null for no description, or one that was only the tag", () => {
+    expect(cleanEventDescription(null, "#guild")).toBeNull();
+    expect(cleanEventDescription("#guild", "#guild")).toBeNull();
+    expect(cleanEventDescription("  #GUILD \n ", "guild")).toBeNull();
+  });
+
+  it("takes the #tag out but leaves the plain word alone", () => {
+    expect(cleanEventDescription("Live music from 7. #guild", "#guild")).toBe("Live music from 7.");
+    expect(cleanEventDescription("Meet the guild brewers [#guild]", "guild")).toBe(
+      "Meet the guild brewers",
+    );
+  });
+
+  it("turns Google's HTML into plain text with line breaks, keeping link text", () => {
+    expect(
+      cleanEventDescription(
+        '<b>Trivia</b> night<br>Teams of 4 &amp; up<br><br><br>Sign up: <a href="https://x.example">here</a>',
+        "#guild",
+      ),
+    ).toBe("Trivia night\nTeams of 4 & up\n\nSign up: here");
+  });
+
+  it("drops Google Meet's joining block", () => {
+    expect(
+      cleanEventDescription(
+        "Brewers meetup\n\n-::~:~::~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~:~::~:~::-\nJoin with Google Meet: https://meet.google.com/abc",
+        "#guild",
+      ),
+    ).toBe("Brewers meetup");
+  });
+
+  it("never lets markup through as markup", () => {
+    expect(cleanEventDescription('<script>alert("x")</script>Hi', "#guild")).toBe('alert("x")Hi');
+  });
+
+  it("caps a long description", () => {
+    const long = cleanEventDescription("x".repeat(5000), "#guild") ?? "";
+    expect(long.length).toBe(1000);
+    expect(long.endsWith("…")).toBe(true);
+  });
+
+  it("comes through the feed onto the row", () => {
+    const rows = buildEventUpsertRows(
+      "member-1",
+      "conn-1",
+      parseIcsFeedForTag(GOOGLE_STYLE_ICS, "#guild"),
+    );
+    // The fixture's description was only the tag.
+    expect(rows[0].description).toBeNull();
   });
 });
 
@@ -299,6 +357,8 @@ describe("staleSyncedEventIds", () => {
   });
 
   it("removes everything this connection imported when nothing carries the tag any more", () => {
-    expect(staleSyncedEventIds([{ id: "row-1", external_event_id: "g-1@google.com" }], [])).toEqual(["row-1"]);
+    expect(staleSyncedEventIds([{ id: "row-1", external_event_id: "g-1@google.com" }], [])).toEqual(
+      ["row-1"],
+    );
   });
 });

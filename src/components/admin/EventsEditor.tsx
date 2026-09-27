@@ -371,6 +371,13 @@ export function EventsEditor({
                     .join(" · ")}
                 </p>
               )}
+              {!isManual && event.description && (
+                // What the profile shows under this event, from the calendar
+                // (edit it there); shortened here to two lines.
+                <p className="line-clamp-2 whitespace-pre-line break-words text-[13px] leading-[1.45] text-[#3A332C]">
+                  {event.description}
+                </p>
+              )}
               {status === "rescheduled" && (
                 <div className="flex flex-wrap items-center gap-2.5">
                   <label htmlFor={`reschedule-${event.id}`} className="text-xs text-ink-muted">

@@ -9,10 +9,69 @@ export type ParsedIcsEvent = {
   title: string | null;
   /** The event's LOCATION, trimmed; null when it has none. */
   location: string | null;
+  /** The event's DESCRIPTION as plain text, without the sync tag; null when nothing is left. */
+  description: string | null;
 };
 
 const TITLE_MAX = 200;
 const LOCATION_MAX = 300;
+export const DESCRIPTION_MAX = 1000;
+
+const HTML_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+  "#39": "'",
+};
+
+/**
+ * An event's description as plain text for the profile. Calendars send it
+ * in different shapes -- Google Calendar sends the HTML its editor makes
+ * ("<b>", "<br>", "<a href>") and appends a block of Google Meet joining
+ * details when the event has a video call -- so this:
+ *  - drops the Google Meet block (it starts with a "-::~:~::~" divider);
+ *  - turns line breaks and paragraph ends into new lines, and removes every
+ *    other tag (keeping a link's text);
+ *  - decodes the common HTML entities;
+ *  - takes the sync tag out, as for the title;
+ *  - tidies spaces and blank lines, and caps the length.
+ * The profile renders the result as text (React escapes it), never as HTML.
+ */
+export function cleanEventDescription(
+  raw: string | null | undefined,
+  syncTag: string,
+): string | null {
+  if (!raw) return null;
+  let text = raw;
+  const meet = text.search(/-::~:~::~/);
+  if (meet >= 0) text = text.slice(0, meet);
+  text = text
+    .replace(/<\s*br\s*\/?>/gi, "\n")
+    .replace(/<\s*\/\s*(p|div|li|h[1-6])\s*>/gi, "\n")
+    .replace(/<\s*li[^>]*>/gi, "• ")
+    .replace(/<[^>]*>/g, "")
+    .replace(
+      /&(#39|[a-z]+);/gi,
+      (match, name: string) => HTML_ENTITIES[name.toLowerCase()] ?? match,
+    )
+    .replace(/&#(\d+);/g, (_match, code: string) => String.fromCharCode(Number(code)));
+  const bare = syncTag.trim().replace(/^#+/, "");
+  if (bare) {
+    text = text.replace(new RegExp(`[\\[(]?#${escapeRegExp(bare)}[\\])]?`, "gi"), "");
+  }
+  const lines = text.split(/\r?\n/).map((line) => line.replace(/[ \t\u00a0]+/g, " ").trim());
+  const tidied = lines
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  if (!tidied) return null;
+  return tidied.length > DESCRIPTION_MAX
+    ? `${tidied.slice(0, DESCRIPTION_MAX - 1).trimEnd()}…`
+    : tidied;
+}
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -137,6 +196,7 @@ export function parseIcsFeedForTag(icsText: string, syncTag: string): ParsedIcsE
         summary: summary ?? "",
         title: stripSyncTag(summary ?? "", syncTag),
         location: place ? place.slice(0, LOCATION_MAX) : null,
+        description: cleanEventDescription(description, syncTag),
       });
     } catch {
       continue;
@@ -154,6 +214,7 @@ export type EventUpsertRow = {
   starts_at: string;
   ends_at: string | null;
   title: string | null;
+  description: string | null;
   venue_name: string | null;
   address: string | null;
 };
@@ -181,6 +242,7 @@ export function buildEventUpsertRows(
     ends_at: event.endsAt,
     // The calendar is the source of truth for these: a re-sync updates them.
     title: event.title,
+    description: event.description,
     venue_name: venueFromLocation(event.location),
     address: event.location,
   }));

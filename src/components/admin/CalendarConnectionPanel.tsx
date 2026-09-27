@@ -310,8 +310,9 @@ export function CalendarConnectionPanel({
         <div className="flex flex-col gap-3.5 border-t border-canvas-2 pt-3.5">
           <p className="text-xs leading-[1.45] text-ink-muted">
             Paste your calendar's ICS subscription URL. Only events with your sync tag (for example
-            #guild) in their title or description are imported; the tag is left off the title on
-            your profile. Deleting an event, or taking its tag off, removes it here too.
+            #guild) in their title or description are imported; the tag is left off on your
+            profile. Each event's description shows on your profile too, so keep private notes out
+            of tagged events. Deleting an event, or taking its tag off, removes it here too.
           </p>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <div className="flex flex-col gap-[7px]">

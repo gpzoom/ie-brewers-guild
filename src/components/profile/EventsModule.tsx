@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { EventRow, MemberType } from "@/lib/supabase/types";
 import { SectionLabel } from "@/components/profile/SectionLabel";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,9 @@ function dateParts(iso: string, timezone: string): { weekday: string; day: strin
 }
 
 function formatTime(iso: string, timezone: string): string {
-  return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: timezone }).toLowerCase();
+  return new Date(iso)
+    .toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: timezone })
+    .toLowerCase();
 }
 
 // "6:00 pm", or "6:00 – 9:00 pm" when the event has an end on the same
@@ -51,7 +54,8 @@ function formatTimeRange(startIso: string, endIso: string | null, timezone: stri
 function syncedLabel(events: EventRow[]): string | null {
   if (events.length === 0) return null;
   if (events.every((event) => event.source === "google")) return "Synced from Google Calendar";
-  if (events.every((event) => event.source === "google" || event.source === "ics")) return "Synced from calendar";
+  if (events.every((event) => event.source === "google" || event.source === "ics"))
+    return "Synced from calendar";
   return null;
 }
 
@@ -61,6 +65,43 @@ const BADGE_STYLES: Record<NonNullable<EventRow["overlay_status"]>, string> = {
   canceled: "bg-[#F0DBD4] text-[#7A2E1C]",
 };
 
+// A description longer than this, or with more than two line breaks, starts
+// clamped to three lines with a "More" button.
+const LONG_DESCRIPTION = 140;
+
+/**
+ * The event's description (from the member's calendar, as plain text --
+ * cleanEventDescription in ics-sync.ts). Line breaks are kept; React
+ * escapes the text, so nothing in it is ever treated as HTML.
+ */
+function EventDescription({ text, muted }: { text: string; muted: boolean }) {
+  const [open, setOpen] = useState(false);
+  const long = text.length > LONG_DESCRIPTION || text.split("\n").length > 3;
+  return (
+    <div className="flex flex-col items-start gap-0.5 pt-0.5">
+      <p
+        className={cn(
+          "whitespace-pre-line break-words text-xs leading-[1.45] lg:text-[13px]",
+          muted ? "text-ink-subtle" : "text-[#3A332C]",
+          long && !open && "line-clamp-3",
+        )}
+      >
+        {text}
+      </p>
+      {long && (
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+          className="min-h-8 text-xs font-semibold text-brand underline-offset-2 hover:underline lg:text-[13px]"
+        >
+          {open ? "Less" : "More"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 /**
  * Every member type gets this module (spec, "Events": "Every member type
  * can list events, not just mobile members"). Status overlays render per
@@ -68,7 +109,8 @@ const BADGE_STYLES: Record<NonNullable<EventRow["overlay_status"]>, string> = {
  * date, rescheduled shows the new date/time, canceled mutes the row and
  * strikes its details but the row stays visible (spec: "a silently
  * vanished row teaches them nothing"). Look: artboards D/E/V/L -- a date
- * column beside a title and a detail line, on white rows.
+ * column beside a title and a detail line, on white rows -- plus the
+ * event's description from the calendar, when it has one.
  */
 export function EventsModule({ events, memberType, timezone }: EventsModuleProps) {
   const visibleEvents = events.filter((event) => !event.is_hidden);
@@ -107,7 +149,8 @@ export function EventsModule({ events, memberType, timezone }: EventsModuleProps
         {visibleEvents.map((event) => {
           const isPostponed = event.overlay_status === "postponed";
           const isCanceled = event.overlay_status === "canceled";
-          const isRescheduled = event.overlay_status === "rescheduled" && Boolean(event.overlay_starts_at);
+          const isRescheduled =
+            event.overlay_status === "rescheduled" && Boolean(event.overlay_starts_at);
 
           // A rescheduled event's date column shows its NEW date; the
           // original is what a postponed/canceled row strikes.
@@ -121,18 +164,28 @@ export function EventsModule({ events, memberType, timezone }: EventsModuleProps
           // line carries the time plus whatever of venue/city isn't already
           // the title (venue null = at the member's own address).
           const title = event.title ?? event.venue_name ?? "Event";
-          const place = [event.title ? event.venue_name : null, event.city].filter(Boolean).join(", ");
+          const place = [event.title ? event.venue_name : null, event.city]
+            .filter(Boolean)
+            .join(", ");
           const struck = isPostponed || isCanceled;
+          const description = event.description?.trim() || null;
 
           return (
             <li
               key={event.id}
               className={cn(
-                "flex min-h-16 items-center gap-[13px] rounded-xl border px-[13px] py-[11px] lg:min-h-[70px] lg:gap-4 lg:rounded-[13px] lg:px-4 lg:py-[13px]",
+                "flex min-h-16 gap-[13px] rounded-xl border px-[13px] py-[11px] lg:min-h-[70px] lg:gap-4 lg:rounded-[13px] lg:px-4 lg:py-[13px]",
                 isCanceled ? "border-canvas-2 bg-[#F2EEE7]" : "border-canvas-border bg-white",
+                // With a description the row grows; the date stays at the top.
+                description ? "items-start" : "items-center",
               )}
             >
-              <div className={cn("flex w-10 shrink-0 flex-col items-center lg:w-[46px]", isPostponed && "line-through")}>
+              <div
+                className={cn(
+                  "flex w-10 shrink-0 flex-col items-center lg:w-[46px]",
+                  isPostponed && "line-through",
+                )}
+              >
                 <span
                   className={cn(
                     "text-[9px] uppercase tracking-[0.1em] lg:text-[10px]",
@@ -171,16 +224,31 @@ export function EventsModule({ events, memberType, timezone }: EventsModuleProps
                     </span>
                   )}
                 </div>
-                <span className={cn("text-xs lg:text-[13px]", isCanceled ? "text-ink-subtle" : "text-ink-muted")}>
-                  <span className={cn(struck && "line-through")}>{/* Where comes first for a mobile member's gigs (artboard E);
+                <span
+                  className={cn(
+                    "text-xs lg:text-[13px]",
+                    isCanceled ? "text-ink-subtle" : "text-ink-muted",
+                  )}
+                >
+                  <span className={cn(struck && "line-through")}>
+                    {/* Where comes first for a mobile member's gigs (artboard E);
                       when comes first at a taproom or supply house (D/V). */}
-                    {(memberType === "mobile" ? [place, time] : [time, place]).filter(Boolean).join(" · ")}</span>
+                    {(memberType === "mobile" ? [place, time] : [time, place])
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
                 </span>
                 {event.overlay_note && (
-                  <span className={cn("text-xs text-ink-muted lg:text-[13px]", isCanceled && "line-through")}>
+                  <span
+                    className={cn(
+                      "text-xs text-ink-muted lg:text-[13px]",
+                      isCanceled && "line-through",
+                    )}
+                  >
                     {event.overlay_note}
                   </span>
                 )}
+                {description && <EventDescription text={description} muted={isCanceled} />}
               </div>
             </li>
           );
