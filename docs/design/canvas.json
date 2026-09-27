@@ -24,8 +24,8 @@
       "y": 2300
     },
     "AdminMedia.dc.html": {
-      "h": 1080,
-      "title": "G · Admin desktop — media & portrait crop",
+      "h": 1760,
+      "title": "G · Admin desktop — Photos: gallery, carousel & crop, cover",
       "w": 1280,
       "x": 1360,
       "y": 2300
@@ -81,21 +81,21 @@
     },
     "GuildBrand.dc.html": {
       "h": 1180,
-      "title": "Q · Guild admin — brand & theme",
+      "title": "Q · Super admin — brand & theme",
       "w": 1280,
       "x": 9940,
       "y": 2300
     },
     "GuildCategories.dc.html": {
       "h": 1000,
-      "title": "S · Guild admin — categories",
+      "title": "S · Guild admin — categories (Allied / Mobile tabs)",
       "w": 1280,
       "x": 12660,
       "y": 2300
     },
     "GuildMembers.dc.html": {
       "h": 1140,
-      "title": "P · Guild admin — members & impersonation",
+      "title": "P · Guild admin — members & impersonation (Delete, Trail: super admin)",
       "w": 1280,
       "x": 8580,
       "y": 2300
@@ -127,6 +127,20 @@
       "w": 390,
       "x": 940,
       "y": 0
+    },
+    "GuildAdmins.dc.html": {
+      "h": 1120,
+      "title": "U · Super admin — Guild admins",
+      "w": 1280,
+      "x": 14020,
+      "y": 2300
+    },
+    "GuildAudit.dc.html": {
+      "h": 1120,
+      "title": "W · Super admin — audit log",
+      "w": 1280,
+      "x": 15380,
+      "y": 2300
     }
   },
   "createdOnFiles": {
@@ -173,7 +187,9 @@
     "GuildBrand.dc.html",
     "SignIn.dc.html",
     "AdminLinks.dc.html",
-    "GuildCategories.dc.html"
+    "GuildCategories.dc.html",
+    "GuildAdmins.dc.html",
+    "GuildAudit.dc.html"
   ],
   "pages": [],
   "title": "IE Brewers Guild — Member Profile"

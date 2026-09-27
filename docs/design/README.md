@@ -52,14 +52,14 @@ Placeholders like `[MEMBER NAME]` in the artboards are stand-ins for real data. 
 | P `GuildMembers` | Guild: members & impersonation (Delete member and the Trail switch: super admin only) | `routes/guild.roster.tsx` → `guild/RosterTable` |
 | Q `GuildBrand` | Brand & theme (super admin only) | `routes/guild.brand.tsx` → `guild/BrandEditor` |
 | S `GuildCategories` | Guild: categories (Allied / Mobile tabs; Delete: super admin only) | `routes/guild.categories.tsx` → `guild/CategoriesEditor` |
-| `GuildAdmins` (repo only, not on the canvas yet) | Guild admins (super admin only) | `routes/guild.admins.tsx` → `guild/GuildAdminsScreen` |
-| `GuildAudit` (repo only, not on the canvas yet) | Audit log (super admin only) | `routes/guild.audit.tsx` → `guild/AuditLogScreen` |
+| U `GuildAdmins` | Guild admins (super admin only) | `routes/guild.admins.tsx` → `guild/GuildAdminsScreen` |
+| W `GuildAudit` | Audit log (super admin only) | `routes/guild.audit.tsx` → `guild/AuditLogScreen` |
 
 Screens with no artboard (e.g. `/admin/discount`) follow the same shell and design language.
 
-### Screens without an artboard on the canvas yet
+### The two newest screens
 
-These two have snapshots drawn from the built screens in [`artboards/GuildAdmins.dc.html`](artboards/GuildAdmins.dc.html) and [`artboards/GuildAudit.dc.html`](artboards/GuildAudit.dc.html), until they're added to the live canvas.
+Artboards U and W were drawn from the built screens (2026-09-27) and added to the live canvas the same day.
 
 - **Guild admins** (`/guild/admins`, super admin only): the Guild shell with the page heading and lede of the inquiries screen; one white table card listing every Guild admin (email, a "Super admin" and a "You" pill, date added, last sign-in, **Remove access**) followed by pending invites ("Invited" pill, expiry line, **Resend** and **Cancel invite**); under it an "Invite a Guild admin" card with an email field and **Send invite**. Removing asks first in the same dialog style as Delete member.
 - **Audit log** (`/guild/audit`, super admin only): heading and lede, then a white filter card (Member, Person, From, To, **Show**, **Clear**), then one white list card, newest first: the time (Pacific) in small muted text, the person's email in semibold, ", editing as [member]" in muted text when the change was made through Edit as them, and a one-line description under it. Read only.
@@ -74,4 +74,4 @@ These two have snapshots drawn from the built screens in [`artboards/GuildAdmins
 
 - **Photos:** the member section is called "Photos" (no video uploads yet). Its order is Your Gallery, then **Your Carousel** (was "Your slides"), then Cover photo, with larger, bold, dark section labels. The slide's tap-through link sits under the crop controls.
 - **Categories:** one Categories page with **Allied categories** and **Mobile categories** tabs. Mobile members pick theirs ("What you offer") on Basics & hours.
-- **Super admin** (docs/member-profiles.md, "Super admin"): a separate super admin account. Its top bar reads **ISC Brewers Guild · Super admin**; a Guild admin's still reads "Guild admin". The sidebar gains a second group, **Super admin**, holding Brand & theme (moved out of the Guild group), **Guild admins** and **Audit log**; a Guild admin doesn't see the group at all. Guild admins also don't see the roster's **Delete member…** or Trail switch, or **Delete** on Categories, and the sign-in email shows read-only while they edit as a member. The Guild artboard snapshots in `artboards/` (N, P, Q, S) and the Photos snapshot (G) were updated to match, and the member admin snapshots' menus say "Photos"; each changed file notes what changed at the top. The live canvas still shows the older versions.
+- **Super admin** (docs/member-profiles.md, "Super admin"): a separate super admin account. Its top bar reads **ISC Brewers Guild · Super admin**; a Guild admin's still reads "Guild admin". The sidebar gains a second group, **Super admin**, holding Brand & theme (moved out of the Guild group), **Guild admins** and **Audit log**; a Guild admin doesn't see the group at all. Guild admins also don't see the roster's **Delete member…** or Trail switch, or **Delete** on Categories, and the sign-in email shows read-only while they edit as a member. The Guild artboards (N, P, Q, S), the Photos artboard (G) and the member admin menus ("Photos") were updated on the live canvas and in `artboards/` on 2026-09-27, and U and W were added.

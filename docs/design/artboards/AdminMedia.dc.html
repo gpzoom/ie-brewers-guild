@@ -1,7 +1,6 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Updated in the repo on 2026-09-27 to match the code: the section is "Photos" (no video uploads yet); order is Your Gallery, then Your Carousel (was "Your slides"; the tap-through link sits under the crop controls, with Reset and Remove slide), then Cover photo, the creator link and the sharing image; section labels are larger, bold and dark. The live canvas still shows the older version. -->
 <meta charset="utf-8">
 <title>Member admin — photos and 9:16 crop</title>
 <script src="./support.js"></script>
@@ -16,7 +15,7 @@ a{color:#B3591F}a:hover{color:#8F4517}
 </style>
 </helmet>
 
-<div style="width: 1280px; height: 1080px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column;">
+<div style="width: 1280px; height: 1760px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column;">
 
   <div style="height: 64px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 28px;">
     <div style="display: flex; align-items: center; gap: 11px;">
@@ -177,7 +176,7 @@ a{color:#B3591F}a:hover{color:#8F4517}
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#B3591F","options":["#B3591F","#4E9A4A","#8C2F1B","#1F5F6B"]},"$preview":{"width":1280,"height":1080}}'>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#B3591F","options":["#B3591F","#4E9A4A","#8C2F1B","#1F5F6B"]},"$preview":{"width":1280,"height":1760}}'>
 class Component extends DCLogic {
   renderVals() {
     return { accent: this.props.accent ?? '#B3591F' };
