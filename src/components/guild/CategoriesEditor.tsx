@@ -2,7 +2,12 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
-import { createCategory, deleteCategory, updateCategory } from "@/lib/categories/categories.server";
+import {
+  createCategory,
+  deleteCategory,
+  getCategoryUsage,
+  updateCategory,
+} from "@/lib/categories/categories.server";
 import type { CategoryMemberType, CategoryRow } from "@/lib/supabase/types";
 import {
   Dialog,
@@ -84,16 +89,21 @@ const TABS: CategoryMemberType[] = ["allied", "mobile"];
  * supply categories and Mobile members' categories (owner's request,
  * 2026-09-26). Rename happens in place on the row; order is changed with
  * the row's up/down buttons (each tab's list is renumbered 0..n so ties
- * can't stick); delete asks first.
+ * can't stick). Delete is the super admin's only (docs/member-profiles.md,
+ * "Super admin"): its confirmation says how many members use the category,
+ * since deleting takes it off all of them. A Guild admin adds, renames and
+ * reorders.
  */
 export function CategoriesEditor({
   categories: allCategories,
   tab,
   onTabChange,
+  isSuperAdmin,
 }: {
   categories: CategoryRow[];
   tab: CategoryMemberType;
   onTabChange: (tab: CategoryMemberType) => void;
+  isSuperAdmin: boolean;
 }) {
   const categories = allCategories.filter((category) => category.member_type === tab);
   const copy = TAB_COPY[tab];
@@ -258,17 +268,19 @@ export function CategoriesEditor({
                     >
                       Rename
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeleteTarget(category);
-                        setDeleteOpen(true);
-                      }}
-                      disabled={busy}
-                      className={`${rowButtonClass} font-normal text-ink-muted`}
-                    >
-                      Delete
-                    </button>
+                    {isSuperAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteTarget(category);
+                          setDeleteOpen(true);
+                        }}
+                        disabled={busy}
+                        className={`${rowButtonClass} font-normal text-ink-muted`}
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </>
               )}
@@ -288,6 +300,7 @@ export function CategoriesEditor({
           <strong className="font-semibold">Rename rather than delete when you can.</strong>{" "}
           Deleting a category also takes it off every member who picked it, so their page
           quietly loses that information. Renaming keeps it on their profiles under the new name.
+          {!isSuperAdmin && " Only the super admin can delete a category."}
         </p>
       </div>
 
@@ -477,10 +490,24 @@ function DeleteCategoryDialog({
 }) {
   const [deleting, setDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // How many members use it, live or in a draft; null while loading or if
+  // the count couldn't be read (the dialog then says it generally).
+  const [memberCount, setMemberCount] = useState<number | null>(null);
 
   useEffect(() => {
-    if (open) setErrorMessage(null);
-  }, [open]);
+    if (!open || !category) return;
+    setErrorMessage(null);
+    setMemberCount(null);
+    let cancelled = false;
+    getCategoryUsage({ data: { id: category.id } })
+      .then((usage) => {
+        if (!cancelled) setMemberCount(usage.memberCount);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [open, category]);
 
   async function confirm() {
     if (!category) return;
@@ -504,8 +531,12 @@ function DeleteCategoryDialog({
             Delete "{category?.name}"?
           </AlertDialogTitle>
           <AlertDialogDescription className="text-[13px] leading-[1.55] text-[#564E45]">
-            It comes off the picker and off every member who has already picked it. This
-            can't be undone.
+            {memberCount === null
+              ? "It comes off the picker and off every member who has already picked it."
+              : memberCount === 0
+                ? "No members use it. It comes off the picker."
+                : `${memberCount} ${memberCount === 1 ? "member uses" : "members use"} it. It comes off the picker and off ${memberCount === 1 ? "that member's" : "each of their"} profiles.`}{" "}
+            This can't be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         {errorMessage && (

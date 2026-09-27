@@ -41,7 +41,7 @@ Placeholders like `[MEMBER NAME]` in the artboards are stand-ins for real data. 
 | O `ContactForm` | Contact & membership inquiry | `routes/contact.tsx` |
 | T `SignIn` | Member sign in | `routes/signin.tsx` |
 | F `AdminBasics` | Basics & hours (one page) | `routes/admin.basics.tsx` → `admin/BasicsForm`, `admin/HoursEditor` |
-| G `AdminMedia` | Photos & video | `routes/admin.media.tsx` → `admin/*` media editors |
+| G `AdminMedia` | Photos (was "Photos & video") | `routes/admin.media.tsx` → `admin/*` media editors |
 | H `AdminPublish` | Publish gate dialog | `admin/PublishGateDialog` |
 | I `AdminPhone` | Member admin on a phone | `admin/AdminShell` (responsive) |
 | J `CreatorUpload` | Creator upload link page | `routes/send.$token.tsx` |
@@ -49,14 +49,27 @@ Placeholders like `[MEMBER NAME]` in the artboards are stand-ins for real data. 
 | M `AdminEvents` | Events & calendar | `routes/admin.events.tsx` |
 | R `AdminLinks` | Links & contact | `routes/admin.links.tsx` → `admin/LinksContactEditor` |
 | N `GuildApprovals` | Guild: inquiries | `routes/guild.inquiries.tsx` |
-| P `GuildMembers` | Guild: members & impersonation | `routes/guild.roster.tsx` → `guild/RosterTable` |
-| Q `GuildBrand` | Guild: brand & theme | `routes/guild.brand.tsx` → `guild/BrandEditor` |
-| S `GuildCategories` | Guild: categories | `routes/guild.categories.tsx` |
+| P `GuildMembers` | Guild: members & impersonation (Delete member and the Trail switch: super admin only) | `routes/guild.roster.tsx` → `guild/RosterTable` |
+| Q `GuildBrand` | Brand & theme (super admin only) | `routes/guild.brand.tsx` → `guild/BrandEditor` |
+| S `GuildCategories` | Guild: categories (Allied / Mobile tabs; Delete: super admin only) | `routes/guild.categories.tsx` → `guild/CategoriesEditor` |
+| — (no artboard) | Guild admins (super admin only) | `routes/guild.admins.tsx` → `guild/GuildAdminsScreen` |
+| — (no artboard) | Audit log (super admin only) | `routes/guild.audit.tsx` → `guild/AuditLogScreen` |
 
 Screens with no artboard (e.g. `/admin/discount`) follow the same shell and design language.
+
+### Screens without an artboard yet
+
+- **Guild admins** (`/guild/admins`, super admin only): the Guild shell with the page heading and lede of the inquiries screen; one white table card listing every Guild admin (email, a "Super admin" and a "You" pill, date added, last sign-in, **Remove access**) followed by pending invites ("Invited" pill, expiry line, **Resend** and **Cancel invite**); under it an "Invite a Guild admin" card with an email field and **Send invite**. Removing asks first in the same dialog style as Delete member.
+- **Audit log** (`/guild/audit`, super admin only): heading and lede, then a white filter card (Member, Person, From, To, **Show**, **Clear**), then one white list card, newest first: the time (Pacific) in small muted text, the person's email in semibold, ", editing as [member]" in muted text when the change was made through Edit as them, and a one-line description under it. Read only.
 
 ## Decisions made after the canvas (owner, 2026-09-25)
 
 - Guild admin uses the artboard's own shell (dark top bar + left sidebar). The earlier strip of Guild links under the public header is removed.
 - Basics and hours are one page, "Basics & hours", as in artboard F.
 - Features added since the canvas (roster Invite/Delete, Preview button, sign-in email change while impersonating, cover Remove/Reset) keep working; they're styled in this design language.
+
+## Decisions made after the canvas (owner, 2026-09-26 and 2026-09-27)
+
+- **Photos:** the member section is called "Photos" (no video uploads yet). Its order is Your Gallery, then **Your Carousel** (was "Your slides"), then Cover photo, with larger, bold, dark section labels. The slide's tap-through link sits under the crop controls.
+- **Categories:** one Categories page with **Allied categories** and **Mobile categories** tabs. Mobile members pick theirs ("What you offer") on Basics & hours.
+- **Super admin** (docs/member-profiles.md, "Super admin"): a separate super admin account. Its top bar reads **ISC Brewers Guild · Super admin**; a Guild admin's still reads "Guild admin". The sidebar gains a second group, **Super admin**, holding Brand & theme (moved out of the Guild group), **Guild admins** and **Audit log**; a Guild admin doesn't see the group at all. Guild admins also don't see the roster's **Delete member…** or Trail switch, or **Delete** on Categories, and the sign-in email shows read-only while they edit as a member. The Guild artboard snapshots in `artboards/` were updated to match; the live canvas still shows the older sidebar.

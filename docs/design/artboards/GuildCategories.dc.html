@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- Updated in the repo on 2026-09-27 to match the code (super admin, docs/member-profiles.md "Super admin"): Brand & theme moved into a "Super admin" sidebar group with Guild admins and Audit log, shown only to the super admin. Delete is super admin only (its confirmation says how many members use the category); Guild admins add, rename and reorder. The live canvas still shows the older version. -->
 <meta charset="utf-8">
 <title>Guild admin — supply categories</title>
 <script src="./support.js"></script>
@@ -32,8 +33,13 @@ a{color:#B3591F}a:hover{color:#8F4517}
       <a href="GuildApprovals.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Inquiries<span style="min-width: 22px; height: 22px; padding: 0 6px; border-radius: 99px; background: #B3591F; font-size: 11px; font-weight: 600; color: #FFFFFF; display: flex; align-items: center; justify-content: center;">3</span></a>
       <a href="GuildMembers.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Members<span style="font-size: 11px; color: #8C8275;">24</span></a>
       <a href="#applications" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; color: #8C8275; font-size: 14px; text-decoration: none;">Applications<span style="font-size: 10px; letter-spacing: 0.08em; color: #A89D8E;">SOON</span></a>
-      <a href="GuildBrand.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Brand &amp; theme</a>
       <a href="#categories" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; background: #241F1A; color: #F9F6F0; font-size: 14px; font-weight: 600; text-decoration: none;">Categories</a>
+      <div style="height: 20px;"></div>
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #8C8275; padding: 0 12px 4px;">SUPER ADMIN</div>
+      <div style="font-size: 11px; color: #A89D8E; padding: 0 12px 8px;">Shown only to the super admin</div>
+      <a href="GuildBrand.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Brand &amp; theme</a>
+      <a href="#admins" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Guild admins</a>
+      <a href="#audit" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Audit log</a>
     </div>
 
     <div style="flex-grow: 1; padding: 30px 36px; display: flex; flex-direction: column; gap: 22px;">

@@ -32,6 +32,8 @@ import { Route as GuildRosterRouteImport } from './routes/guild.roster'
 import { Route as GuildInquiriesRouteImport } from './routes/guild.inquiries'
 import { Route as GuildCategoriesRouteImport } from './routes/guild.categories'
 import { Route as GuildBrandRouteImport } from './routes/guild.brand'
+import { Route as GuildAuditRouteImport } from './routes/guild.audit'
+import { Route as GuildAdminsRouteImport } from './routes/guild.admins'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminPreviewRouteImport } from './routes/admin_.preview'
 import { Route as AdminThemeRouteImport } from './routes/admin.theme'
@@ -163,6 +165,16 @@ const GuildBrandRoute = GuildBrandRouteImport.update({
   path: '/brand',
   getParentRoute: () => GuildRoute,
 } as any)
+const GuildAuditRoute = GuildAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => GuildRoute,
+} as any)
+const GuildAdminsRoute = GuildAdminsRouteImport.update({
+  id: '/admins',
+  path: '/admins',
+  getParentRoute: () => GuildRoute,
+} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
@@ -260,6 +272,8 @@ export interface FileRoutesByFullPath {
   '/admin/theme': typeof AdminThemeRoute
   '/admin/preview': typeof AdminPreviewRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/guild/admins': typeof GuildAdminsRoute
+  '/guild/audit': typeof GuildAuditRoute
   '/guild/brand': typeof GuildBrandRoute
   '/guild/categories': typeof GuildCategoriesRoute
   '/guild/inquiries': typeof GuildInquiriesRoute
@@ -298,6 +312,8 @@ export interface FileRoutesByTo {
   '/admin/theme': typeof AdminThemeRoute
   '/admin/preview': typeof AdminPreviewRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/guild/admins': typeof GuildAdminsRoute
+  '/guild/audit': typeof GuildAuditRoute
   '/guild/brand': typeof GuildBrandRoute
   '/guild/categories': typeof GuildCategoriesRoute
   '/guild/inquiries': typeof GuildInquiriesRoute
@@ -337,6 +353,8 @@ export interface FileRoutesById {
   '/admin/theme': typeof AdminThemeRoute
   '/admin_/preview': typeof AdminPreviewRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/guild/admins': typeof GuildAdminsRoute
+  '/guild/audit': typeof GuildAuditRoute
   '/guild/brand': typeof GuildBrandRoute
   '/guild/categories': typeof GuildCategoriesRoute
   '/guild/inquiries': typeof GuildInquiriesRoute
@@ -379,6 +397,8 @@ export interface FileRouteTypes {
     | '/admin/theme'
     | '/admin/preview'
     | '/auth/callback'
+    | '/guild/admins'
+    | '/guild/audit'
     | '/guild/brand'
     | '/guild/categories'
     | '/guild/inquiries'
@@ -417,6 +437,8 @@ export interface FileRouteTypes {
     | '/admin/theme'
     | '/admin/preview'
     | '/auth/callback'
+    | '/guild/admins'
+    | '/guild/audit'
     | '/guild/brand'
     | '/guild/categories'
     | '/guild/inquiries'
@@ -455,6 +477,8 @@ export interface FileRouteTypes {
     | '/admin/theme'
     | '/admin_/preview'
     | '/auth/callback'
+    | '/guild/admins'
+    | '/guild/audit'
     | '/guild/brand'
     | '/guild/categories'
     | '/guild/inquiries'
@@ -663,6 +687,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuildBrandRouteImport
       parentRoute: typeof GuildRoute
     }
+    '/guild/audit': {
+      id: '/guild/audit'
+      path: '/audit'
+      fullPath: '/guild/audit'
+      preLoaderRoute: typeof GuildAuditRouteImport
+      parentRoute: typeof GuildRoute
+    }
+    '/guild/admins': {
+      id: '/guild/admins'
+      path: '/admins'
+      fullPath: '/guild/admins'
+      preLoaderRoute: typeof GuildAdminsRouteImport
+      parentRoute: typeof GuildRoute
+    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
@@ -796,6 +834,8 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface GuildRouteChildren {
+  GuildAdminsRoute: typeof GuildAdminsRoute
+  GuildAuditRoute: typeof GuildAuditRoute
   GuildBrandRoute: typeof GuildBrandRoute
   GuildCategoriesRoute: typeof GuildCategoriesRoute
   GuildInquiriesRoute: typeof GuildInquiriesRoute
@@ -804,6 +844,8 @@ interface GuildRouteChildren {
 }
 
 const GuildRouteChildren: GuildRouteChildren = {
+  GuildAdminsRoute: GuildAdminsRoute,
+  GuildAuditRoute: GuildAuditRoute,
   GuildBrandRoute: GuildBrandRoute,
   GuildCategoriesRoute: GuildCategoriesRoute,
   GuildInquiriesRoute: GuildInquiriesRoute,

@@ -40,7 +40,7 @@ export const Route = createFileRoute("/admin/basics")({
 
 function BasicsRoute() {
   const { draft, email, categories } = Route.useLoaderData();
-  const { memberId, isImpersonating } = Route.useRouteContext();
+  const { memberId, isImpersonating, isSuperAdmin } = Route.useRouteContext();
   const basics = draft.data.basics;
   return (
     <SameMemberGuard memberId={memberId} dataMemberId={draft.member.id}>
@@ -51,6 +51,7 @@ function BasicsRoute() {
       basics={basics}
       email={email}
       isImpersonating={isImpersonating}
+      canChangeSignInEmail={isSuperAdmin}
       categories={
         draft.member.member_type === "mobile" && (
           <SupplyCategoriesPicker

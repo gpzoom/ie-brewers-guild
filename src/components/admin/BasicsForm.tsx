@@ -53,16 +53,26 @@ const MAX_MEMBER_SINCE_YEAR = new Date().getFullYear() + 1;
 
 
 /**
- * The sign-in email tied to this member's account, shown and editable
- * ONLY while a Guild admin is impersonating this member (product decision,
- * 2026-09-24 -- see member-email.server.ts's own doc comment on
+ * The sign-in email tied to this member's account, shown ONLY while a
+ * Guild admin is editing as this member, and editable only by the super
+ * admin (2026-09-27; a Guild admin sees it read-only) -- product decision
+ * 2026-09-24, see member-email.server.ts's own doc comment on
  * changeMemberEmail for the full reasoning: a departed employee should
  * never be able to permanently lock a member out of, or retain access to,
  * their own account). An explicit "Update email" button, not autosave --
  * unlike every field above, a half-typed value here would otherwise get
  * committed as someone's actual login credential 400ms after a keystroke.
  */
-function SignInEmailEditor({ memberId, email }: { memberId: string; email: string | null }) {
+function SignInEmailEditor({
+  memberId,
+  email,
+  canChange,
+}: {
+  memberId: string;
+  email: string | null;
+  /** Only the super admin may change it (docs/member-profiles.md, "Super admin"). */
+  canChange: boolean;
+}) {
   const [value, setValue] = useState(email ?? "");
   const [status, setStatus] = useState<SaveState>(IDLE);
 
@@ -83,7 +93,7 @@ function SignInEmailEditor({ memberId, email }: { memberId: string; email: strin
     <div className="flex flex-wrap items-center gap-2">
       <span className={sectionLabelClass}>Sign-in email</span>
       <span className="rounded-full bg-canvas-2 px-2 py-0.5 text-[11px] font-medium text-ink-muted">
-        Guild admin only
+        {canChange ? "Super admin only" : "Read only"}
       </span>
     </div>
   );
@@ -101,6 +111,18 @@ function SignInEmailEditor({ memberId, email }: { memberId: string; email: strin
         <p className="text-[13px] leading-[1.5] text-ink">
           This member hasn't been invited yet, so there's no sign-in email to show or change here.
           Use <strong>Invite</strong> from the Guild roster to give them their first one.
+        </p>
+      </section>
+    );
+  }
+
+  if (!canChange) {
+    return (
+      <section className="flex flex-col gap-3 rounded-[12px] border border-canvas-border bg-white px-[17px] py-[15px]">
+        {heading}
+        <p className="break-all text-[14px] text-ink">{email}</p>
+        <p className="text-[12px] leading-[1.45] text-ink-muted">
+          The address this member signs in with. Only the super admin can change it.
         </p>
       </section>
     );
@@ -164,6 +186,7 @@ export function BasicsForm({
   basics,
   email = null,
   isImpersonating = false,
+  canChangeSignInEmail = false,
   logo,
   hours,
   typeChange,
@@ -177,6 +200,8 @@ export function BasicsForm({
   basics: BasicsDraft;
   email?: string | null;
   isImpersonating?: boolean;
+  /** The super admin is editing as this member: the sign-in email is editable (else read-only). */
+  canChangeSignInEmail?: boolean;
   /** The logo row card (LogoUploader), shown at the end of IDENTITY. */
   logo?: ReactNode;
   /** The weekly/special hours editor (HoursEditor), shown after IDENTITY. */
@@ -406,7 +431,9 @@ export function BasicsForm({
         </h1>
       )}
 
-      {isImpersonating && <SignInEmailEditor memberId={memberId} email={email} />}
+      {isImpersonating && (
+        <SignInEmailEditor memberId={memberId} email={email} canChange={canChangeSignInEmail} />
+      )}
 
       <fieldset className="m-0 flex flex-col gap-[9px] border-0 p-0 md:gap-3">
         <legend className={cn(sectionLabelClass, "mb-[9px] p-0 md:mb-3")}>Member type</legend>

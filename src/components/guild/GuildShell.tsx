@@ -28,8 +28,21 @@ function isActivePath(pathname: string, prefix: string) {
  * every /guild/<section> page -- the public header, footer and the old
  * Guild strip under the public header are gone here (owner decision,
  * docs/design/README.md).
+ *
+ * Super admin (docs/member-profiles.md, "Super admin"): the top bar reads
+ * "Super admin" instead of "Guild admin", and a second sidebar group holds
+ * the super-admin-only screens -- Brand & theme, Guild admins, Audit log.
+ * A Guild admin doesn't see that group; the routes refuse them anyway.
  */
-export function GuildShell({ summary, children }: { summary: GuildShellSummary; children: ReactNode }) {
+export function GuildShell({
+  summary,
+  isSuperAdmin,
+  children,
+}: {
+  summary: GuildShellSummary;
+  isSuperAdmin: boolean;
+  children: ReactNode;
+}) {
   const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -42,10 +55,13 @@ export function GuildShell({ summary, children }: { summary: GuildShellSummary; 
   const membersActive = isActivePath(pathname, "/guild/roster");
   const brandActive = isActivePath(pathname, "/guild/brand");
   const categoriesActive = isActivePath(pathname, "/guild/categories");
+  const adminsActive = isActivePath(pathname, "/guild/admins");
+  const auditActive = isActivePath(pathname, "/guild/audit");
+  const roleLabel = isSuperAdmin ? "Super admin" : "Guild admin";
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas text-ink">
-      <AppTopBar label="ISC Brewers Guild · Guild admin" shortLabel="Guild admin">
+      <AppTopBar label={`ISC Brewers Guild · ${roleLabel}`} shortLabel={roleLabel}>
         {summary.adminEmail && (
           <span className="hidden max-w-[18rem] truncate text-[13px] text-text-muted md:inline">
             {summary.adminEmail}
@@ -102,20 +118,40 @@ export function GuildShell({ summary, children }: { summary: GuildShellSummary; 
           </span>
 
           <Link
-            to="/guild/brand"
-            aria-current={brandActive ? "page" : undefined}
-            className={sidebarItemClass(brandActive)}
-          >
-            Brand &amp; theme
-          </Link>
-
-          <Link
             to="/guild/categories"
             aria-current={categoriesActive ? "page" : undefined}
             className={sidebarItemClass(categoriesActive)}
           >
             Categories
           </Link>
+
+          {isSuperAdmin && (
+            <>
+              <div aria-hidden="true" className="hidden md:block md:h-5" />
+              <SidebarGroupLabel>Super admin</SidebarGroupLabel>
+              <Link
+                to="/guild/brand"
+                aria-current={brandActive ? "page" : undefined}
+                className={sidebarItemClass(brandActive)}
+              >
+                Brand &amp; theme
+              </Link>
+              <Link
+                to="/guild/admins"
+                aria-current={adminsActive ? "page" : undefined}
+                className={sidebarItemClass(adminsActive)}
+              >
+                Guild admins
+              </Link>
+              <Link
+                to="/guild/audit"
+                aria-current={auditActive ? "page" : undefined}
+                className={sidebarItemClass(auditActive)}
+              >
+                Audit log
+              </Link>
+            </>
+          )}
 
           <SidebarSignOut onClick={handleSignOut} />
         </nav>

@@ -8,6 +8,7 @@ import {
 } from "@/lib/drafts/drafts.server";
 import { logoStoragePathPattern } from "@/lib/media/logo-path";
 import { fetchMemberEmail } from "@/lib/members/member-email.server";
+import { isSuperAdminSession } from "@/lib/auth/super-admin";
 import type { PortalRole } from "@/lib/portal/portal-destination";
 import type { TypeChangeRequestSummary } from "@/lib/portal/type-change.server";
 import type {
@@ -276,15 +277,16 @@ export async function loadBasicsSection(
   service: SupabaseClient,
   member: { memberId: string; isImpersonating: boolean },
 ) {
-  const [draft, typeChangeRequest, email, categories] = await Promise.all([
+  const [draft, typeChangeRequest, email, categories, canChangeSignInEmail] = await Promise.all([
     loadMemberDraftBundle(supabase, member.memberId),
     loadOpenTypeChangeRequest(supabase, member.memberId),
     member.isImpersonating
       ? fetchMemberEmail(member.memberId, supabase, service).then((r) => r.email)
       : Promise.resolve(null),
     listCategories(supabase),
+    member.isImpersonating ? isSuperAdminSession(supabase) : Promise.resolve(false),
   ]);
-  return { draft, typeChangeRequest, email, categories };
+  return { draft, typeChangeRequest, email, categories, canChangeSignInEmail };
 }
 
 /** What sectionCompleteness needs: the draft plus the live, undrafted events facts. */

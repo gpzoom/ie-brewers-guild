@@ -15,8 +15,10 @@ function CategoriesRoute() {
   const categories = Route.useLoaderData();
   const { type } = Route.useSearch();
   const navigate = Route.useNavigate();
+  const { isSuperAdmin } = Route.useRouteContext();
   return (
     <CategoriesEditor
+      isSuperAdmin={isSuperAdmin}
       categories={categories}
       tab={type ?? "allied"}
       onTabChange={(next) => navigate({ search: next === "mobile" ? { type: next } : {} })}

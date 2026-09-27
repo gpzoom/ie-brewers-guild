@@ -77,6 +77,7 @@ export function PortalSectionView({ data, shell }: { data: PortalSectionData; sh
             basics={basics}
             email={data.email}
             isImpersonating={shell.isImpersonating}
+            canChangeSignInEmail={data.canChangeSignInEmail}
             categories={
               data.draft.member.member_type === "mobile" && (
                 <SupplyCategoriesPicker

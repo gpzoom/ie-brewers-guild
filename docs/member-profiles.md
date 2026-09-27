@@ -320,6 +320,18 @@ This changes three earlier rules:
 - **Remove access:** turns Guild admin access off. It doesn't delete the account, and it takes effect on that person's next request, including an "Edit as them" session they have open. The super admin account can't be removed here.
 - Every invite, resend, cancel, grant and removal is written to the audit log, with the address in `details`.
 
+#### Audit log screen
+
+- Read only, newest first, up to 300 rows at a time (a note says when there are more; narrowing the dates or picking a member shows older ones).
+- Filters: member, person, and a From/To date range, kept in the address (`/guild/audit?member=&person=&from=&to=`). Times show in the Guild's time zone (Pacific).
+- Each row: when, who (their sign-in email), and a one-line description ("Saved a draft change", "Deleted the member Hop House", "Guild admin access removed: name@example.com"). A row about a member written by someone who isn't linked to that member reads "[person], editing as [member]"; a member's own logged action (confirming their type) shows the member in brackets instead.
+- It shows what's logged: every change made while editing as a member, member deletions, type confirmations, and Guild admin invites, grants and removals. Everyday Guild admin actions on the roster (approve, suspend, dues, type) aren't logged; that's unchanged.
+
+#### Menus
+
+- The Guild sidebar gains a second group, **Super admin**, with Brand & theme (moved out of the Guild group), Guild admins and Audit log. Only the super admin sees it; `/guild/brand`, `/guild/admins` and `/guild/audit` send anyone else to the roster.
+- A Guild admin's roster menu has no **Delete member…** and no Trail switch; Categories has no **Delete** (the page says only the super admin can delete one). While a Guild admin edits as a member, the sign-in email shows read-only ("Only the super admin can change it"), in `/admin` and in `/portal`.
+
 #### Enforcement
 
 **Hiding menu items is not the protection.** Every super-admin-only action is checked on the server, and the database enforces it too.

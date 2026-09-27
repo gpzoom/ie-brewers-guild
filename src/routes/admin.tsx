@@ -24,6 +24,7 @@ export const Route = createFileRoute("/admin")({
       memberId: session.memberId,
       userId: session.userId,
       isImpersonating: session.isImpersonating,
+      isSuperAdmin: session.isSuperAdmin,
     };
   },
   loader: async ({ context }) => {

@@ -6,7 +6,7 @@ import { GuildShell } from "@/components/guild/GuildShell";
 export const Route = createFileRoute("/guild")({
   beforeLoad: async () => {
     const session = await requireGuildAdminSession();
-    return { userId: session.userId };
+    return { userId: session.userId, isSuperAdmin: session.isSuperAdmin };
   },
   // Sidebar counts + the admin's email for GuildShell. Re-runs on every
   // /guild navigation and on router.invalidate() (which every Guild editor
@@ -18,8 +18,9 @@ export const Route = createFileRoute("/guild")({
 
 function GuildLayout() {
   const { summary } = Route.useLoaderData();
+  const { isSuperAdmin } = Route.useRouteContext();
   return (
-    <GuildShell summary={summary}>
+    <GuildShell summary={summary} isSuperAdmin={isSuperAdmin}>
       <Outlet />
     </GuildShell>
   );

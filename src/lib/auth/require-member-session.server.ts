@@ -9,6 +9,8 @@ export type MemberSession = {
   userId: string;
   isImpersonating: boolean;
   actorUserId: string;
+  /** The real signed-in person is the super admin (only they can change a member's sign-in email). */
+  isSuperAdmin: boolean;
 };
 
 /**
@@ -49,7 +51,7 @@ export const requireMemberSession = createServerFn({ method: "GET" }).handler(
       // screen); it ends on the next request, "Edit as them" included.
       const { data: actorProfile } = await supabase
         .from("profiles")
-        .select("is_guild_admin")
+        .select("is_guild_admin, is_super_admin")
         .eq("id", user.id)
         .maybeSingle();
       if (!actorProfile?.is_guild_admin) {
@@ -61,6 +63,7 @@ export const requireMemberSession = createServerFn({ method: "GET" }).handler(
         userId: user.id,
         isImpersonating: true,
         actorUserId: impersonation.actorUserId,
+        isSuperAdmin: actorProfile.is_super_admin === true,
       };
     }
 
@@ -73,6 +76,12 @@ export const requireMemberSession = createServerFn({ method: "GET" }).handler(
       throw redirect({ href: "/signin?notice=no-account" });
     }
 
-    return { memberId: routing.memberId, userId: user.id, isImpersonating: false, actorUserId: user.id };
+    return {
+      memberId: routing.memberId,
+      userId: user.id,
+      isImpersonating: false,
+      actorUserId: user.id,
+      isSuperAdmin: false,
+    };
   },
 );

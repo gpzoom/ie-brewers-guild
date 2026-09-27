@@ -115,8 +115,18 @@ const menuItemClass = "min-h-10 cursor-pointer px-3 text-[13px] text-ink";
  * Edit as them), plus Invite when nobody has been invited yet; every other
  * admin action (approve/decline/suspend, Trail, dues, type correction,
  * delete) lives in the row's "More" menu.
+ *
+ * The Trail switch and Delete member are the super admin's only
+ * (docs/member-profiles.md, "Super admin"); a Guild admin's menu doesn't
+ * show them -- Suspend is their reversible alternative to deleting.
  */
-export function RosterTable({ entries }: { entries: RosterEntry[] }) {
+export function RosterTable({
+  entries,
+  isSuperAdmin,
+}: {
+  entries: RosterEntry[];
+  isSuperAdmin: boolean;
+}) {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<MemberType | "all">("all");
   const [claimFilter, setClaimFilter] = useState<RosterEntry["claimState"] | "all">("all");
@@ -394,22 +404,24 @@ export function RosterTable({ entries }: { entries: RosterEntry[] }) {
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuSeparator className="bg-[#F0EBE3]" />
-                      <DropdownMenuItem
-                        className={menuItemClass}
-                        onSelect={() =>
-                          runAction(
-                            () =>
-                              setTrailEligible({
-                                data: { memberId: member.id, eligible: !member.trail_eligible },
-                              }),
-                            member.trail_eligible
-                              ? `Removed ${member.business_name} from the Trail`
-                              : `Added ${member.business_name} to the Trail`,
-                          )
-                        }
-                      >
-                        {member.trail_eligible ? "Remove from Trail" : "Add to Trail"}
-                      </DropdownMenuItem>
+                      {isSuperAdmin && (
+                        <DropdownMenuItem
+                          className={menuItemClass}
+                          onSelect={() =>
+                            runAction(
+                              () =>
+                                setTrailEligible({
+                                  data: { memberId: member.id, eligible: !member.trail_eligible },
+                                }),
+                              member.trail_eligible
+                                ? `Removed ${member.business_name} from the Trail`
+                                : `Added ${member.business_name} to the Trail`,
+                            )
+                          }
+                        >
+                          {member.trail_eligible ? "Remove from Trail" : "Add to Trail"}
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         className={menuItemClass}
                         onSelect={() =>
@@ -459,16 +471,20 @@ export function RosterTable({ entries }: { entries: RosterEntry[] }) {
                           </DropdownMenuRadioGroup>
                         </DropdownMenuSubContent>
                       </DropdownMenuSub>
-                      <DropdownMenuSeparator className="bg-[#F0EBE3]" />
-                      <DropdownMenuItem
-                        className={`${menuItemClass} font-medium text-danger focus:bg-danger/10 focus:text-danger`}
-                        onSelect={() => {
-                          setDeleteTarget(entry);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        Delete member…
-                      </DropdownMenuItem>
+                      {isSuperAdmin && (
+                        <>
+                          <DropdownMenuSeparator className="bg-[#F0EBE3]" />
+                          <DropdownMenuItem
+                            className={`${menuItemClass} font-medium text-danger focus:bg-danger/10 focus:text-danger`}
+                            onSelect={() => {
+                              setDeleteTarget(entry);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            Delete member…
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
