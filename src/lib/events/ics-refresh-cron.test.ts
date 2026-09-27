@@ -3,13 +3,21 @@ import type { CalendarConnectionRow } from "@/lib/supabase/types";
 
 // vi.mock factories are hoisted above imports, so the fakes they close over
 // must be created via vi.hoisted rather than plain top-level consts.
-const { syncOneIcsConnection, listConnections } = vi.hoisted(() => ({
+const { syncOneIcsConnection, listConnections, claimScheduledCalendarSync } = vi.hoisted(() => ({
   syncOneIcsConnection: vi.fn(),
   listConnections: vi.fn(),
+  claimScheduledCalendarSync: vi.fn(async () => true),
 }));
 
 vi.mock("@/lib/events/calendar-connection.server", () => ({
   syncOneIcsConnection,
+}));
+
+// Whether a tick is due is the super admin's setting (calendar-sync-schedule,
+// tested in site-settings.test.ts); here every tick is claimed unless a
+// test says otherwise.
+vi.mock("@/lib/events/calendar-sync-schedule", () => ({
+  claimScheduledCalendarSync,
 }));
 
 // getSupabaseServiceRoleClient is a createServerOnlyFn backed by
@@ -46,6 +54,16 @@ describe("refreshAllIcsConnections", () => {
   afterEach(() => {
     syncOneIcsConnection.mockReset();
     listConnections.mockReset();
+    claimScheduledCalendarSync.mockReset();
+    claimScheduledCalendarSync.mockImplementation(async () => true);
+  });
+
+  it("syncs nothing on a tick that isn't claimed (not due, off, or the other Worker ran it)", async () => {
+    claimScheduledCalendarSync.mockImplementation(async () => false);
+    listConnections.mockReturnValue(makeConnections(3));
+    await refreshAllIcsConnections();
+    expect(syncOneIcsConnection).not.toHaveBeenCalled();
+    expect(listConnections).not.toHaveBeenCalled();
   });
 
   /**

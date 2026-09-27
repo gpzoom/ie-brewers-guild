@@ -46,9 +46,13 @@ insert into _tap (line) select throws_ok(
 
 -- The super admin reads them, but can't change or delete them.
 set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000007","role":"authenticated"}';
-insert into _tap (line) select is((select count(*)::int from public.support_messages), 1, 'super admin: reads the message');
+-- (The shared database may hold real messages too, so these look for the fixture's own.)
 insert into _tap (line) select is(
-  (select count(*)::int from public.support_messages where status = 'waiting'), 1,
+  (select count(*)::int from public.support_messages where id = 'f4000000-0000-4000-8000-000000000001'), 1,
+  'super admin: reads the message');
+insert into _tap (line) select is(
+  (select count(*)::int from public.support_messages
+    where status = 'waiting' and id = 'f4000000-0000-4000-8000-000000000001'), 1,
   'super admin: counts the waiting ones (the bell)');
 update public.support_messages set message = 'changed', status = 'done' where id = 'f4000000-0000-4000-8000-000000000001';
 delete from public.support_messages where id = 'f4000000-0000-4000-8000-000000000001';

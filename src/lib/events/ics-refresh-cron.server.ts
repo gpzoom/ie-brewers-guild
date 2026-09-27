@@ -1,5 +1,7 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { syncOneIcsConnection } from "@/lib/events/calendar-connection.server";
+import { claimScheduledCalendarSync } from "@/lib/events/calendar-sync-schedule";
 import type { CalendarConnectionRow } from "@/lib/supabase/types";
 
 /**
@@ -20,12 +22,23 @@ import type { CalendarConnectionRow } from "@/lib/supabase/types";
 const CONCURRENCY_LIMIT = 5;
 
 /**
- * The scheduled half of ICS sync (spec: "a scheduled refresh every fifteen
- * minutes"). Runs with no user session at all -- the service-role client
- * is correct here, unlike everywhere else in this plan (Decision 5).
+ * The scheduled half of ICS sync. The Worker's cron fires every 15 minutes;
+ * how often calendars actually re-sync is the super admin's setting
+ * (site_settings.calendar_sync_interval_minutes, the Settings screen), so
+ * each tick first claims the run (claimScheduledCalendarSync) and does
+ * nothing when it isn't due, when automatic sync is off, or when the other
+ * Worker (staging and production share the database) already ran it.
+ * Runs with no user session at all -- the service-role client is correct
+ * here, unlike everywhere else in this plan (Decision 5).
  */
 export async function refreshAllIcsConnections(): Promise<void> {
   const supabase = await getSupabaseServiceRoleClient();
+  const claimed = await claimScheduledCalendarSync(supabase, new Date());
+  if (!claimed) return;
+  await syncAllIcsConnections(supabase);
+}
+
+async function syncAllIcsConnections(supabase: SupabaseClient): Promise<void> {
   const { data: connections, error } = await supabase.from("calendar_connections").select("*").eq("provider", "ics");
   if (error || !connections) {
     console.error("refreshAllIcsConnections: failed to list connections", error);

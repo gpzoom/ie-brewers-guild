@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { buildEventUpsertRows, parseIcsFeedForTag } from "@/lib/events/ics-sync";
+import { buildEventUpsertRows, parseIcsFeedForTag, staleSyncedEventIds } from "@/lib/events/ics-sync";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { CalendarConnectionRow } from "@/lib/supabase/types";
 
@@ -290,6 +290,24 @@ export async function syncOneIcsConnection(supabase: SupabaseClient, connection:
     if (rows.length > 0) {
       const { error: upsertError } = await supabase.from("events").upsert(rows, { onConflict: "calendar_connection_id,external_event_id" });
       if (upsertError) throw upsertError;
+    }
+
+    // Events this connection imported before that are no longer in the
+    // feed with the tag (deleted in the calendar, or the tag taken off)
+    // come off the profile. Only reached after a successful fetch and
+    // parse, so a failing feed never removes anything.
+    const { data: existing, error: existingError } = await supabase
+      .from("events")
+      .select("id, external_event_id")
+      .eq("calendar_connection_id", connection.id);
+    if (existingError) throw existingError;
+    const staleIds = staleSyncedEventIds(
+      (existing ?? []) as Array<{ id: string; external_event_id: string | null }>,
+      parsedEvents,
+    );
+    if (staleIds.length > 0) {
+      const { error: deleteError } = await supabase.from("events").delete().in("id", staleIds);
+      if (deleteError) throw deleteError;
     }
 
     await supabase.from("calendar_connections").update({ last_synced_at: new Date().toISOString(), last_sync_error: null, sync_status: "ok" }).eq("id", connection.id);

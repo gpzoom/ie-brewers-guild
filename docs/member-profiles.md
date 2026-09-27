@@ -195,7 +195,9 @@ The heading differs to match: "Coming up" for producers and Allied Members, "Whe
 
 An event's venue fields are nullable. Null means the event is at the member's own address, which is the normal case for a producer or Allied Member — don't make them retype their own name as the venue.
 
-Events come from a connected calendar, not hand entry. Hand entry is the fallback for members with no calendar. These are two different integrations: Google is OAuth against the Calendar API and reflects edits within seconds; Apple has no equivalent, so it is an ICS subscription URL the member pastes in, which is read-only and lags behind their actual calendar by however long Apple takes to regenerate the published feed — often tens of minutes, sometimes longer. A scheduled refresh every fifteen minutes fixes our staleness but cannot beat the feed, so the admin also carries a manual **Refresh now** button.
+Events come from a connected calendar, not hand entry. Hand entry is the fallback for members with no calendar. These are two different integrations: Google is OAuth against the Calendar API and reflects edits within seconds; Apple has no equivalent, so it is an ICS subscription URL the member pastes in, which is read-only and lags behind their actual calendar by however long Apple takes to regenerate the published feed — often tens of minutes, sometimes longer. A scheduled refresh fixes our staleness but cannot beat the feed (Google's own ICS links also update only every few hours), so the admin also carries a manual **Refresh now** button. How often the scheduled refresh runs is the super admin's setting (Super admin > Settings), every 15 minutes by default.
+
+**Which events come in.** Only events with the member's sync tag (for example `#guild`) in their **title or description** are imported (a CATEGORIES match also counts, though Google Calendar can't set one). The description is the natural place: it keeps the tag out of the title. The profile shows the event's title **with the tag taken out** ("Trivia night #guild" shows as "Trivia night"; an event titled only with the tag shows its venue, or "Event"), and its **location**: the first part as the venue ("Hop House" from "Hop House, 123 Main St, Riverside…"), the whole thing kept as the address. Title, venue and times follow the calendar on every sync. An event that's **deleted from the calendar, or has its tag taken off**, is removed from the profile on the next successful sync (with any status overlay on it); a sync that fails removes nothing.
 
 The status overlays are the real escape hatch: when a gig moves and the feed has not caught up, the member sets Rescheduled in the admin and the profile is correct immediately.
 
@@ -304,6 +306,7 @@ Decided with the owner on 27 September 2026. The site's creator gets a **super a
 | **Audit log** (`/guild/audit`, new): read-only list of who did what and when, filterable by member, person and date; changes made while editing as a member show as "[real person], editing as [member]" | Menu item hidden |
 | **Trail eligible** switch on the roster | Hidden until the Trail is built and the owner decides otherwise |
 | **Delete category**: the confirmation says how many members use it, since deleting removes it from all of them | Add, rename and reorder only |
+| **Settings** (`/guild/settings`, new): how often members' calendars re-sync automatically | Menu item hidden |
 | **Help messages** (`/guild/help`, new): the Help button's bug reports and feature requests, with a **bell** in the top bar counting the waiting ones (see Help button) | Menu item and bell hidden |
 
 Everything else in the Guild admin stays with Guild admins: inquiries; the roster (search, create, invite, view, Edit as them); approve, decline and suspend; dues; changing member type; member requests; categories add, rename and reorder; and Applications when it's built.
@@ -330,9 +333,17 @@ This changes three earlier rules:
 
 #### Menus
 
-- The Guild sidebar gains a second group, **Super admin**, with Brand & theme (moved out of the Guild group), Guild admins, Audit log and Help messages (with the waiting count). Only the super admin sees it; `/guild/brand`, `/guild/admins`, `/guild/audit` and `/guild/help` send anyone else to the roster.
+- The Guild sidebar gains a second group, **Super admin**, with Brand & theme (moved out of the Guild group), Guild admins, Audit log, Help messages (with the waiting count) and Settings. Only the super admin sees it; `/guild/brand`, `/guild/admins`, `/guild/audit`, `/guild/help` and `/guild/settings` send anyone else to the roster.
 - The super admin's top bar has a **bell** that opens Help messages, with a number when any are waiting (no number when none are; "99+" past 99).
 - A Guild admin's roster menu has no **Delete member…** and no Trail switch; Categories has no **Delete** (the page says only the super admin can delete one). While a Guild admin edits as a member, the sign-in email shows read-only ("Only the super admin can change it"), in `/admin` and in `/portal`.
+
+#### Settings
+
+Added 27 September 2026. One screen of site-wide settings (artboard Z); for now just one:
+
+- **Calendar sync: Check members' calendars** — Every 15 minutes (the default), 30 minutes, hour, 3, 6 or 12 hours, once a day, or **Off** (members' Refresh now still works). The screen shows the last automatic check and roughly when the next one is, in Pacific time, and notes that Google's links update only every few hours.
+- How it works: the Worker's cron still fires every 15 minutes. Each tick reads the setting from `site_settings` and syncs every calendar only when that much time has passed since the last run (two minutes of slack, so "every 15 minutes" doesn't slip to 30). It records the run with a conditional update, so when staging and production (same database) fire on the same tick only one of them syncs.
+- `site_settings` (new): exactly one row (`id boolean primary key default true check (id)`); `calendar_sync_interval_minutes` (one of 0, 15, 30, 60, 180, 360, 720, 1440; default 15), `calendar_sync_last_run_at`, `updated_at`, `updated_by_user_id`. Only the super admin can read or update it; nobody can insert or delete through the API. The screen's server functions check for the super admin first and write through the session client, so the table's policy checks again.
 
 #### Enforcement
 
@@ -811,7 +822,7 @@ Holiday and one-off overrides. A row here wins over the weekly row for that date
 | google\_refresh\_token | text | store in Supabase Vault, not plaintext |
 | google\_calendar\_id | text |  |
 | ics\_url | text |  |
-| sync\_tag | text | only events whose title or category contains this are imported |
+| sync\_tag | text | only events whose title, description or category contains this are imported; the tag is taken out of the title shown |
 | last\_synced\_at | timestamptz |  |
 | last\_sync\_error | text |  |
 | sync\_status | text not null default 'ok' | check in (ok, failing, disconnected) |

@@ -155,6 +155,13 @@
       "w": 1280,
       "x": 18100,
       "y": 2300
+    },
+    "GuildSettings.dc.html": {
+      "h": 1120,
+      "title": "Z · Super admin — Settings (calendar sync timing)",
+      "w": 1280,
+      "x": 19460,
+      "y": 2300
     }
   },
   "createdOnFiles": {
@@ -205,7 +212,8 @@
     "GuildAdmins.dc.html",
     "GuildAudit.dc.html",
     "SupportHelp.dc.html",
-    "GuildHelp.dc.html"
+    "GuildHelp.dc.html",
+    "GuildSettings.dc.html"
   ],
   "pages": [],
   "title": "IE Brewers Guild — Member Profile"

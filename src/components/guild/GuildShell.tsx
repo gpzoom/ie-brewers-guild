@@ -74,7 +74,8 @@ function isActivePath(pathname: string, prefix: string) {
  * Super admin (docs/member-profiles.md, "Super admin"): the top bar reads
  * "Super admin" instead of "Guild admin", and a second sidebar group holds
  * the super-admin-only screens -- Brand & theme, Guild admins, Audit log,
- * Help messages -- and a bell in the top bar counts waiting Help messages.
+ * Help messages, Settings -- and a bell in the top bar counts waiting Help
+ * messages.
  * A Guild admin doesn't see that group; the routes refuse them anyway.
  */
 export function GuildShell({
@@ -101,6 +102,7 @@ export function GuildShell({
   const adminsActive = isActivePath(pathname, "/guild/admins");
   const auditActive = isActivePath(pathname, "/guild/audit");
   const helpActive = isActivePath(pathname, "/guild/help");
+  const settingsActive = isActivePath(pathname, "/guild/settings");
   const roleLabel = isSuperAdmin ? "Super admin" : "Guild admin";
 
   return (
@@ -210,6 +212,13 @@ export function GuildShell({
                     {summary.waitingHelpCount}
                   </span>
                 )}
+              </Link>
+              <Link
+                to="/guild/settings"
+                aria-current={settingsActive ? "page" : undefined}
+                className={sidebarItemClass(settingsActive)}
+              >
+                Settings
               </Link>
             </>
           )}

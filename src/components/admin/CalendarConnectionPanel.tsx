@@ -200,7 +200,7 @@ export function CalendarConnectionPanel({
   const tag = connection?.sync_tag?.trim() ?? "";
 
   let statusDot = "bg-ink-subtle";
-  let statusText = "Not yet synced · refreshes automatically every 15 minutes";
+  let statusText = "Not yet synced · the site checks it automatically";
   if (connection?.sync_status === "failing") {
     statusDot = "bg-danger";
     statusText = `Last sync failed: ${connection.last_sync_error ?? "unknown error"}`;
@@ -210,7 +210,7 @@ export function CalendarConnectionPanel({
       now === null
         ? new Date(connection.last_synced_at).toLocaleString()
         : relativeTime(connection.last_synced_at, now);
-    statusText = `Last synced ${when} · refreshes automatically every 15 minutes`;
+    statusText = `Last synced ${when} · the site checks it automatically`;
   }
 
   // One wrapper whose look changes (white card once connected, dashed row
@@ -309,8 +309,9 @@ export function CalendarConnectionPanel({
       {showFields && (
         <div className="flex flex-col gap-3.5 border-t border-canvas-2 pt-3.5">
           <p className="text-xs leading-[1.45] text-ink-muted">
-            Paste your calendar's public ICS subscription URL. Only events whose title or category
-            contains your sync tag are imported.
+            Paste your calendar's ICS subscription URL. Only events with your sync tag (for example
+            #guild) in their title or description are imported; the tag is left off the title on
+            your profile. Deleting an event, or taking its tag off, removes it here too.
           </p>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <div className="flex flex-col gap-[7px]">

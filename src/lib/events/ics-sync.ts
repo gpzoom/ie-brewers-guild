@@ -5,12 +5,56 @@ export type ParsedIcsEvent = {
   startsAt: string;
   endsAt: string | null;
   summary: string;
+  /** The title as shown on the profile: the summary with the sync tag taken out; null if nothing is left. */
+  title: string | null;
+  /** The event's LOCATION, trimmed; null when it has none. */
+  location: string | null;
 };
 
+const TITLE_MAX = 200;
+const LOCATION_MAX = 300;
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /**
- * Sync is tag-based opt-in (spec, "Events"): only events whose title or
- * category contains the member's chosen sync_tag are imported, since most
- * calendars contain private entries pulling everything would publish.
+ * The event's title without the sync tag, so "Trivia night #guild" shows as
+ * "Trivia night". Takes the tag out with or without its "#", and with any
+ * brackets around it ("[guild]", "(#guild)"); tidies the spaces and stray
+ * separators left behind. Null when nothing is left (the title was only the tag).
+ */
+export function stripSyncTag(summary: string, syncTag: string): string | null {
+  const bare = syncTag.trim().replace(/^#+/, "");
+  let title = summary;
+  if (bare) {
+    const tag = new RegExp(`[\\[(]?\\s*#?${escapeRegExp(bare)}\\s*[\\])]?`, "gi");
+    title = title.replace(tag, " ");
+  }
+  title = title
+    .replace(/\s+/g, " ")
+    .replace(/^[\s\-–—|:·,]+|[\s\-–—|:·,]+$/g, "")
+    .trim();
+  return title ? title.slice(0, TITLE_MAX) : null;
+}
+
+/**
+ * The venue from an event's LOCATION: its first part, since calendars write
+ * "Hop House, 123 Main St, Riverside, CA 92501, USA". The whole location is
+ * kept as the address.
+ */
+export function venueFromLocation(location: string | null): string | null {
+  if (!location) return null;
+  const first = location.split(",")[0]?.trim() ?? "";
+  return first ? first.slice(0, TITLE_MAX) : null;
+}
+
+/**
+ * Sync is tag-based opt-in (spec, "Events"): only events whose title,
+ * description or category contains the member's chosen sync_tag are
+ * imported, since most calendars contain private entries pulling everything
+ * would publish. The description counts because Google Calendar has no
+ * categories and a tag in the description keeps the title clean.
  *
  * LIMITATION -- recurring events (an `RRULE` on the VEVENT, e.g. a weekly
  * Thursday trivia night) are read via `ICAL.Event#startDate`/`endDate`,
@@ -70,23 +114,29 @@ export function parseIcsFeedForTag(icsText: string, syncTag: string): ParsedIcsE
       // a syntactically invalid DTSTART/DTEND/UID throws the moment it's
       // read (not lazily later), so anything that can throw must be read
       // here rather than after the tag-match check below.
-      const { uid, startDate, endDate, summary } = event;
+      const { uid, startDate, endDate, summary, description, location } = event;
       if (!uid || !startDate) continue;
 
       const summaryLower = (summary ?? "").toLowerCase();
+      const descriptionLower = (description ?? "").toLowerCase();
       const categoriesProp = event.component.getFirstProperty("categories");
       const categories: string[] = categoriesProp
         ? (categoriesProp.getValues() as string[]).map((c) => c.toLowerCase())
         : [];
       const matchesTag =
-        summaryLower.includes(needle) || categories.some((category) => category.includes(needle));
+        summaryLower.includes(needle) ||
+        descriptionLower.includes(needle) ||
+        categories.some((category) => category.includes(needle));
       if (!matchesTag) continue;
 
+      const place = (location ?? "").replace(/\s+/g, " ").trim();
       parsedEvents.push({
         externalEventId: uid,
         startsAt: startDate.toJSDate().toISOString(),
         endsAt: endDate ? endDate.toJSDate().toISOString() : null,
         summary: summary ?? "",
+        title: stripSyncTag(summary ?? "", syncTag),
+        location: place ? place.slice(0, LOCATION_MAX) : null,
       });
     } catch {
       continue;
@@ -103,10 +153,14 @@ export type EventUpsertRow = {
   external_event_id: string;
   starts_at: string;
   ends_at: string | null;
+  title: string | null;
+  venue_name: string | null;
+  address: string | null;
 };
 
 /**
- * Builds exactly the columns a re-sync is allowed to write. Deliberately
+ * Builds exactly the columns a re-sync is allowed to write: the times, and
+ * the title and place from the calendar. Deliberately
  * excludes overlay_status/overlay_starts_at/overlay_note/overlay_set_at --
  * a re-sync must reconcile on (calendar_connection_id, external_event_id)
  * and never touch those columns (spec, "Events": "A re-sync must reconcile
@@ -125,5 +179,25 @@ export function buildEventUpsertRows(
     external_event_id: event.externalEventId,
     starts_at: event.startsAt,
     ends_at: event.endsAt,
+    // The calendar is the source of truth for these: a re-sync updates them.
+    title: event.title,
+    venue_name: venueFromLocation(event.location),
+    address: event.location,
   }));
+}
+
+/**
+ * The synced events a re-sync should remove: the ones this connection
+ * imported before that are no longer in the feed with the tag (deleted in
+ * the calendar, or the tag taken off). Only called after the feed was
+ * fetched and parsed successfully, so a failed fetch never removes anything.
+ */
+export function staleSyncedEventIds(
+  existing: Array<{ id: string; external_event_id: string | null }>,
+  parsedEvents: ParsedIcsEvent[],
+): string[] {
+  const keep = new Set(parsedEvents.map((event) => event.externalEventId));
+  return existing
+    .filter((row) => !row.external_event_id || !keep.has(row.external_event_id))
+    .map((row) => row.id);
 }

@@ -427,6 +427,11 @@ export default defineConfig(async ({ command, mode }) => {
             // opened only inside setHelpMessageStatusCore, after the super
             // admin check.
             "src/lib/guild/help-messages.server.ts",
+            // site-settings.server.ts: the super admin's Settings screen
+            // (getSiteSettings, saveCalendarSyncInterval), called from
+            // guild.settings.tsx and SiteSettingsScreen.tsx. Session client
+            // only, after the super admin check.
+            "src/lib/guild/site-settings.server.ts",
           ],
           specifiers: ["server-only"],
         },

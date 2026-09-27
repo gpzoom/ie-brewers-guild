@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildEventUpsertRows, parseIcsFeedForTag } from "./ics-sync";
+import {
+  buildEventUpsertRows,
+  parseIcsFeedForTag,
+  staleSyncedEventIds,
+  stripSyncTag,
+  venueFromLocation,
+} from "./ics-sync";
 
 const SAMPLE_ICS = `BEGIN:VCALENDAR
 VERSION:2.0
@@ -199,5 +205,100 @@ describe("buildEventUpsertRows", () => {
       expect(Object.keys(row)).not.toContain("overlay_set_at");
     }
     expect(rows).toHaveLength(2);
+  });
+
+  it("carries the title without the tag, and the place from LOCATION", () => {
+    const rows = buildEventUpsertRows("member-1", "conn-1", parseIcsFeedForTag(GOOGLE_STYLE_ICS, "#guild"));
+    expect(rows[0]).toMatchObject({
+      external_event_id: "g-1@google.com",
+      title: "test event",
+      venue_name: "Hop House",
+      address: "Hop House, 123 Main St, Riverside, CA 92501, USA",
+    });
+  });
+});
+
+// Google Calendar's own shape: the tag in DESCRIPTION, a LOCATION, no CATEGORIES.
+const GOOGLE_STYLE_ICS = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Google Inc//Google Calendar 70.9054//EN
+BEGIN:VEVENT
+UID:g-1@google.com
+DTSTART:20261003T230000Z
+DTEND:20261004T000000Z
+SUMMARY:test event
+DESCRIPTION:#guild
+LOCATION:Hop House\\, 123 Main St\\, Riverside\\, CA 92501\\, USA
+END:VEVENT
+BEGIN:VEVENT
+UID:g-2@google.com
+DTSTART:20261005T230000Z
+SUMMARY:Private dinner
+DESCRIPTION:not for the guild page
+END:VEVENT
+END:VCALENDAR`;
+
+describe("parseIcsFeedForTag: the tag in the description", () => {
+  it("imports an event whose tag is only in its description", () => {
+    const events = parseIcsFeedForTag(GOOGLE_STYLE_ICS, "#guild");
+    expect(events.map((e) => e.externalEventId)).toEqual(["g-1@google.com"]);
+    expect(events[0].title).toBe("test event");
+  });
+
+  it("a tag without # still matches the word in a description (substring, as for titles)", () => {
+    expect(parseIcsFeedForTag(GOOGLE_STYLE_ICS, "guild").map((e) => e.externalEventId)).toEqual([
+      "g-1@google.com",
+      "g-2@google.com",
+    ]);
+  });
+});
+
+describe("stripSyncTag", () => {
+  it("takes the tag out of the title, with or without # and brackets", () => {
+    expect(stripSyncTag("Trivia night #guild", "#guild")).toBe("Trivia night");
+    expect(stripSyncTag("Trivia Night [guild]", "guild")).toBe("Trivia Night");
+    expect(stripSyncTag("#GUILD - Release party", "#guild")).toBe("Release party");
+    expect(stripSyncTag("Open house (#guild)", "guild")).toBe("Open house");
+  });
+
+  it("leaves a title without the tag alone", () => {
+    expect(stripSyncTag("test event", "#guild")).toBe("test event");
+  });
+
+  it("is null when the title was only the tag", () => {
+    expect(stripSyncTag("#guild", "#guild")).toBeNull();
+    expect(stripSyncTag("", "#guild")).toBeNull();
+  });
+
+  it("treats a tag with regex characters as plain text", () => {
+    expect(stripSyncTag("Tap takeover c++", "c++")).toBe("Tap takeover");
+  });
+});
+
+describe("venueFromLocation", () => {
+  it("takes the first part of the location", () => {
+    expect(venueFromLocation("Hop House, 123 Main St, Riverside")).toBe("Hop House");
+    expect(venueFromLocation("Riverside Park")).toBe("Riverside Park");
+    expect(venueFromLocation(null)).toBeNull();
+  });
+});
+
+describe("staleSyncedEventIds", () => {
+  it("removes what's no longer in the feed with the tag, and keeps the rest", () => {
+    const parsed = parseIcsFeedForTag(GOOGLE_STYLE_ICS, "#guild");
+    expect(
+      staleSyncedEventIds(
+        [
+          { id: "row-1", external_event_id: "g-1@google.com" },
+          { id: "row-2", external_event_id: "deleted@google.com" },
+          { id: "row-3", external_event_id: null },
+        ],
+        parsed,
+      ),
+    ).toEqual(["row-2", "row-3"]);
+  });
+
+  it("removes everything this connection imported when nothing carries the tag any more", () => {
+    expect(staleSyncedEventIds([{ id: "row-1", external_event_id: "g-1@google.com" }], [])).toEqual(["row-1"]);
   });
 });

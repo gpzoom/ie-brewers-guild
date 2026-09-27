@@ -28,6 +28,7 @@ import { Route as PortalSetupRouteImport } from './routes/portal.setup'
 import { Route as PortalPreviewRouteImport } from './routes/portal.preview'
 import { Route as PortalSectionsRouteImport } from './routes/portal._sections'
 import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
+import { Route as GuildSettingsRouteImport } from './routes/guild.settings'
 import { Route as GuildRosterRouteImport } from './routes/guild.roster'
 import { Route as GuildInquiriesRouteImport } from './routes/guild.inquiries'
 import { Route as GuildHelpRouteImport } from './routes/guild.help'
@@ -145,6 +146,11 @@ const MembersSlugRoute = MembersSlugRouteImport.update({
   id: '/members_/$slug',
   path: '/members/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const GuildSettingsRoute = GuildSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => GuildRoute,
 } as any)
 const GuildRosterRoute = GuildRosterRouteImport.update({
   id: '/roster',
@@ -285,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/guild/help': typeof GuildHelpRoute
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
+  '/guild/settings': typeof GuildSettingsRoute
   '/members/$slug': typeof MembersSlugRoute
   '/portal': typeof PortalSectionsRouteWithChildren
   '/portal/preview': typeof PortalPreviewRoute
@@ -326,6 +333,7 @@ export interface FileRoutesByTo {
   '/guild/help': typeof GuildHelpRoute
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
+  '/guild/settings': typeof GuildSettingsRoute
   '/members/$slug': typeof MembersSlugRoute
   '/portal': typeof PortalIndexRoute
   '/portal/preview': typeof PortalPreviewRoute
@@ -368,6 +376,7 @@ export interface FileRoutesById {
   '/guild/help': typeof GuildHelpRoute
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
+  '/guild/settings': typeof GuildSettingsRoute
   '/members_/$slug': typeof MembersSlugRoute
   '/portal/_sections': typeof PortalSectionsRouteWithChildren
   '/portal/preview': typeof PortalPreviewRoute
@@ -413,6 +422,7 @@ export interface FileRouteTypes {
     | '/guild/help'
     | '/guild/inquiries'
     | '/guild/roster'
+    | '/guild/settings'
     | '/members/$slug'
     | '/portal'
     | '/portal/preview'
@@ -454,6 +464,7 @@ export interface FileRouteTypes {
     | '/guild/help'
     | '/guild/inquiries'
     | '/guild/roster'
+    | '/guild/settings'
     | '/members/$slug'
     | '/portal'
     | '/portal/preview'
@@ -495,6 +506,7 @@ export interface FileRouteTypes {
     | '/guild/help'
     | '/guild/inquiries'
     | '/guild/roster'
+    | '/guild/settings'
     | '/members_/$slug'
     | '/portal/_sections'
     | '/portal/preview'
@@ -670,6 +682,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/members/$slug'
       preLoaderRoute: typeof MembersSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/guild/settings': {
+      id: '/guild/settings'
+      path: '/settings'
+      fullPath: '/guild/settings'
+      preLoaderRoute: typeof GuildSettingsRouteImport
+      parentRoute: typeof GuildRoute
     }
     '/guild/roster': {
       id: '/guild/roster'
@@ -860,6 +879,7 @@ interface GuildRouteChildren {
   GuildHelpRoute: typeof GuildHelpRoute
   GuildInquiriesRoute: typeof GuildInquiriesRoute
   GuildRosterRoute: typeof GuildRosterRoute
+  GuildSettingsRoute: typeof GuildSettingsRoute
   GuildIndexRoute: typeof GuildIndexRoute
 }
 
@@ -871,6 +891,7 @@ const GuildRouteChildren: GuildRouteChildren = {
   GuildHelpRoute: GuildHelpRoute,
   GuildInquiriesRoute: GuildInquiriesRoute,
   GuildRosterRoute: GuildRosterRoute,
+  GuildSettingsRoute: GuildSettingsRoute,
   GuildIndexRoute: GuildIndexRoute,
 }
 
