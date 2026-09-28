@@ -17,7 +17,7 @@ Each step says who does it. "Claude" steps happen only when the owner says go.
   - [ ] **Homepage:** "Coming up at our members" shows the next two weeks' member events as calendar pages; Pause, Previous/Next and swiping work; "Upcoming events" in the hero jumps to it.
 - [ ] **Owner: the hero image.** Upload the Guild-supplied photo on Settings (staging and production share it, so it shows on both), or go live with the built-in one for now.
 - [ ] **Owner: decide on the test profiles.** Published profiles appear in the live directory the moment the site goes live.
-  - **Published:** Test 3, Test 4, Test 7, Wizard Test.
+  - **Published:** Test 3, Test 4, Test 7, Wizard Test, Bob's Brewery (made for the how-to videos; its events calendar feeds the homepage carousel).
   - **Drafts:** Test 6, Test 8, Test2.
   - Delete them (super admin → roster → **Delete member…**) or keep a hidden one for future testing. Tell Claude which.
 - [ ] **Owner: Mars Brewing Co.'s food calendar.** A test calendar ("Jones Bones" entries, tag `#food`) is connected to this real member. At go-live their public page will show **Food this week** from it. Either confirm Mars really uses it, or disconnect it.
