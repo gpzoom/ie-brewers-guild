@@ -1,4 +1,3 @@
-import { useRouter } from "@tanstack/react-router";
 import { CalendarConnectionPanel } from "@/components/admin/CalendarConnectionPanel";
 import { FoodCalendarModule } from "@/components/profile/FoodCalendarModule";
 import type { FoodCalendarData } from "@/lib/portal/section-data.server";
@@ -24,7 +23,6 @@ export function FoodCalendarSection({
   canEdit: boolean;
   asPage?: boolean;
 }) {
-  const router = useRouter();
   const Heading = asPage ? "h1" : "h2";
   return (
     <div className={asPage ? "flex flex-col gap-[26px]" : "flex flex-col gap-3.5"}>
@@ -48,7 +46,6 @@ export function FoodCalendarSection({
         initialConnection={food.connection}
         canEdit={canEdit}
         purpose="food"
-        onRefreshed={() => void router.invalidate()}
       />
       {food.connection && (
         <div className="rounded-[14px] border border-canvas-border bg-canvas px-4 py-4 md:px-5">

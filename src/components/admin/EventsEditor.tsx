@@ -118,6 +118,13 @@ export function EventsEditor({
   memberTimezone: string;
 }) {
   const [events, setEvents] = useState(initialEvents);
+  // New events from the page's loader (after Refresh now reloads it)
+  // replace the list; edits are saved as they're made, so nothing is lost.
+  const [loadedEvents, setLoadedEvents] = useState(initialEvents);
+  if (initialEvents !== loadedEvents) {
+    setLoadedEvents(initialEvents);
+    setEvents(initialEvents);
+  }
   const [error, setError] = useState<string | null>(null);
   // Frozen per mount so an event doesn't hop between Upcoming and Past
   // while the member is editing it.

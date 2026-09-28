@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 import {
   refreshIcsConnectionNow,
   saveIcsConnection,
@@ -113,10 +114,11 @@ export function CalendarConnectionPanel({
   canEdit?: boolean;
   /** The events calendar, or a producer's food calendar ("Food this week"). */
   purpose?: CalendarPurpose;
-  /** Called after Refresh now, so a caller can reload what the sync changed. */
+  /** Called after Refresh now (the page's data is reloaded either way). */
   onRefreshed?: () => void;
 }) {
   const copy = COPY[purpose];
+  const router = useRouter();
   const fieldId = (name: string) => (purpose === "food" ? `food-${name}` : name);
   const [connection, setConnection] = useState(initialConnection);
   const [icsUrl, setIcsUrl] = useState(initialConnection?.ics_url ?? "");
@@ -205,6 +207,10 @@ export function CalendarConnectionPanel({
     try {
       const refreshed = await refreshIcsConnectionNow({ data: { connectionId: connection.id } });
       setConnection(refreshed);
+      // Reload the page's data (owner, 2026-09-28), so the events the sync
+      // just brought in show in the list below straight away -- in /admin
+      // (Edit as them), the portal and the wizard alike.
+      await router.invalidate();
       onRefreshed?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Refresh failed — try again.");
