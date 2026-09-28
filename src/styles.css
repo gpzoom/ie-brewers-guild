@@ -253,3 +253,27 @@
     text-transform: uppercase;
   }
 }
+
+/* Homepage events carousel (src/components/home/MemberEventsCarousel.tsx):
+   the page tears off upward; the timer bar fills over the dwell time. With
+   reduced motion the carousel doesn't auto-play and pages only fade. */
+@keyframes calendar-tear-off {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-38%) rotate(-7deg); opacity: 0; }
+}
+@keyframes calendar-page-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes carousel-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.calendar-tear-off {
+  animation: calendar-tear-off 650ms cubic-bezier(0.4, 0, 0.6, 1) forwards;
+  transform-origin: 15% 0%;
+}
+.calendar-page-in { animation: calendar-page-in 350ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .calendar-tear-off { animation: calendar-page-in 250ms ease-out reverse forwards; }
+}

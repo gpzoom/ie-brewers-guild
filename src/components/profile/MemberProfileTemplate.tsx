@@ -224,7 +224,8 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
           )}
 
           {eventsVisible && (
-            <div className={col2}>
+            // id="events": the homepage carousel's cards link here.
+            <div id="events" className={`${col2} scroll-mt-24`}>
               <EventsModule events={events} memberType={member.member_type} timezone={member.timezone} />
             </div>
           )}

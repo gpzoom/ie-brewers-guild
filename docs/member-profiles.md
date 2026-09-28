@@ -234,6 +234,30 @@ Decided with the owner on 27 September 2026. **Producers only.** A taproom can c
 - Below the connection box, the member sees **Next 7 days on your profile**, drawn the same way; Refresh now reloads it.
 - Food entries are stored in `events` with `kind = 'food'`, so the sync, the removal of deleted or untagged entries, hiding, the public read policy and the super admin's sync timer all apply unchanged. Everything that means "events" (the Events list, "Upcoming events", "Tonight", "Next appearance", the publish check, the Finish-your-profile check) reads `kind = 'event'` only.
 
+## Homepage
+
+Decided with the owner on 28 September 2026 (artboards A, A2, A3). The three placeholder pillars (Advocacy, Education, Events) and the Featured Event section are gone. In their place, right under the hero:
+
+### Coming up at our members
+
+A carousel of member events drawn as **tear-off calendar pages**, built only from what members already have, so nobody uploads anything new:
+
+- **The page:** a strip in the member's theme color with their logo (on the tile color they chose) and name; a dashed tear line; the month, a big date number in the theme color and the weekday, in the member's time zone; the time (or "All day", or "Now 7:30 pm" with a **Rescheduled** badge); the title (two lines at most); the place and city; the description (three lines at most, web addresses clickable); and "See their events →". The whole page links to the member's profile at its Upcoming events (`/members/<slug>#events`).
+- **Behind the page:** the member's cover photo, blurred, or a warm paper tone when they have none.
+- **Which events:** published members' events (not food calendar entries) starting in the **next 14 days**, or going on now. Hidden, canceled and postponed events are left out; a rescheduled one counts at its new time. **Round-robin:** each member's soonest event first, then everyone's second, and so on, soonest first within a round, so a taproom with weekly trivia gets one page per turn. At most 24 pages. (`src/lib/home/member-events.ts`, `selectCarouselEvents`.)
+- **The Guild's own event** (for now Frontier Beer Fest, kept in `src/data/site.ts` `guildEvents` with its date, poster and tickets link) is pinned first from now until its date passes: a wider card with the poster, a big date and **Get tickets**. Add next year's there with its date.
+- **Moving:** every page stays up for the super admin's **dwell time** (Settings; 6 seconds by default), then tears off upward to show the next. It stops on **Pause**, on hover, and while anything in it has keyboard focus; Previous and Next, the arrow keys, swiping and the **Up next** list (the next three) flip by hand. A thin bar shows the time left, and "3 of 18" where you are. With the device's **reduced motion** setting it doesn't auto-play (Play starts it) and pages fade instead of tearing.
+- **Nothing coming up:** "No member events in the next two weeks. See who's pouring →" (the Guild event still shows if there is one).
+- The page reads events with the public (anon) key, so the same rules as profile pages apply (published members, not hidden). The dwell time and hero image come from `site_settings` through the server (service role), since that table is super-admin-only; if it can't be read, the defaults are used.
+
+### The hero
+
+**Half its old height** (owner, 28 September 2026). Its image is the one the super admin uploads on **Settings > Homepage hero image**, or the built-in one until then (members asked for a real photo instead of the AI-generated one). **Upcoming events** in the hero jumps down to the carousel.
+
+### No Events page
+
+The **Events** page and its menu and footer links are gone: member and Guild events live in the carousel. `/events` redirects (301) to the homepage's carousel, so old links still land somewhere useful.
+
 ## Layout and breakpoints
 
 Mobile-first, genuinely: the phone layout is the design and the wide layout is the adaptation. Build the single column first and let it widen.
@@ -322,7 +346,7 @@ Decided with the owner on 27 September 2026. The site's creator gets a **super a
 | **Audit log** (`/guild/audit`, new): read-only list of who did what and when, filterable by member, person and date; changes made while editing as a member show as "[real person], editing as [member]" | Menu item hidden |
 | **Trail eligible** switch on the roster | Hidden until the Trail is built and the owner decides otherwise |
 | **Delete category**: the confirmation says how many members use it, since deleting removes it from all of them | Add, rename and reorder only |
-| **Settings** (`/guild/settings`, new): how often members' calendars re-sync automatically | Menu item hidden |
+| **Settings** (`/guild/settings`, new): how often members' calendars re-sync automatically, the homepage carousel's dwell time, the homepage hero image | Menu item hidden |
 | **Help messages** (`/guild/help`, new): the Help button's bug reports and feature requests, with a **bell** in the top bar counting the waiting ones (see Help button) | Menu item and bell hidden |
 
 Everything else in the Guild admin stays with Guild admins: inquiries; the roster (search, create, invite, view, Edit as them); approve, decline and suspend; dues; changing member type; member requests; categories add, rename and reorder; and Applications when it's built.
@@ -355,11 +379,13 @@ This changes three earlier rules:
 
 #### Settings
 
-Added 27 September 2026. One screen of site-wide settings (artboard Z); for now just one:
+Added 27 September 2026. One screen of site-wide settings (artboard Z):
 
 - **Calendar sync: Check members' calendars** — Every 15 minutes (the default), 30 minutes, hour, 3, 6 or 12 hours, once a day, or **Off** (members' Refresh now still works). The screen shows the last automatic check and roughly when the next one is, in Pacific time, and notes that Google's links update only every few hours.
+- **Homepage events carousel: Show each event for** — 4, 6 (the default), 8, 10 or 15 seconds (added 28 September 2026; see "Homepage").
+- **Homepage hero image** (added 28 September 2026) — shows the current image, **Upload an image** / **Replace image** (JPEG or PNG, up to 10 MB, a landscape photo at least 2000 pixels wide recommended; location data is stripped), and **Use the built-in image**. It goes live on the homepage straight away; the replaced file is deleted.
 - How it works: the Worker's cron still fires every 15 minutes. Each tick reads the setting from `site_settings` and syncs every calendar only when that much time has passed since the last run (two minutes of slack, so "every 15 minutes" doesn't slip to 30). It records the run with a conditional update, so when staging and production (same database) fire on the same tick only one of them syncs.
-- `site_settings` (new): exactly one row (`id boolean primary key default true check (id)`); `calendar_sync_interval_minutes` (one of 0, 15, 30, 60, 180, 360, 720, 1440; default 15), `calendar_sync_last_run_at`, `updated_at`, `updated_by_user_id`. Only the super admin can read or update it; nobody can insert or delete through the API. The screen's server functions check for the super admin first and write through the session client, so the table's policy checks again.
+- `site_settings` (new): exactly one row (`id boolean primary key default true check (id)`); `calendar_sync_interval_minutes` (one of 0, 15, 30, 60, 180, 360, 720, 1440; default 15), `calendar_sync_last_run_at`, `carousel_dwell_seconds` (4, 6, 8, 10 or 15; default 6), `hero_image_path` (a file in `site-images/hero/`, or null for the built-in image), `updated_at`, `updated_by_user_id`. Only the super admin can read or update it; nobody can insert or delete through the API. The screen's server functions check for the super admin first and write through the session client, so the table's policy checks again.
 
 #### Enforcement
 
@@ -905,7 +931,7 @@ Nothing in the current build writes visitor data of any kind.
 
 ### Storage buckets
 
-`member-media` private, served through a Worker that applies the crop and resize. `member-logos` may be public since logos are published anyway. Strip EXIF on ingest for both.
+`member-media` private, served through a Worker that applies the crop and resize. `member-logos` may be public since logos are published anyway. Strip EXIF on ingest for both. `site-images` (28 September 2026) is public and holds the homepage hero (`hero/…`); only the super admin can add, replace or delete files in it; JPEG or PNG, up to 10 MB.
 
 ### inquiries
 

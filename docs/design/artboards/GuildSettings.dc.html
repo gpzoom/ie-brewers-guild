@@ -15,7 +15,7 @@ a{color:#B3591F}a:hover{color:#8F4517}
 </style>
 </helmet>
 
-<div style="width: 1280px; height: 1120px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column;">
+<div style="width: 1280px; height: 1560px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column;">
 
   <div style="height: 64px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 28px;">
     <div style="display: flex; align-items: center; gap: 11px;">
@@ -56,12 +56,25 @@ a{color:#B3591F}a:hover{color:#8F4517}
         <div style="display: flex; flex-direction: column; gap: 2px; border-top: 1px solid #EFEAE1; padding-top: 12px; font-size: 12px; color: #6B6156;"><span>Last automatic check: [DATE], [TIME]</span><span>Next: around [TIME]</span><span style="padding-top: 4px;">Google updates a calendar's link only every few hours, so a new event can take a while to show up however often the site checks.</span></div>
       </div>
 
+      <div style="max-width: 640px; display: flex; flex-direction: column; gap: 16px; padding: 20px 24px; border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF;">
+        <div style="display: flex; flex-direction: column; gap: 4px;"><div style="font-size: 16px; font-weight: 600; color: #241F1A;">Homepage events carousel</div><div style="font-size: 13px; line-height: 1.5; color: #6B6156;">How long each calendar page stays up before the next one tears off. Visitors can always pause it or flip through by hand.</div></div>
+        <label style="display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 13px; font-weight: 500; color: #241F1A;">Show each event for</span><div style="display: flex; gap: 8px;"><select style="height: 44px; flex-grow: 1; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;"><option>4 seconds</option><option selected="selected">6 seconds</option><option>8 seconds</option><option>10 seconds</option><option>15 seconds</option></select><button type="button" style="height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #241F1A; background: #241F1A; font-family: inherit; font-size: 13px; font-weight: 600; color: #F9F6F0;">Save</button></div></label>
+        <div style="border-top: 1px solid #EFEAE1; padding-top: 12px; font-size: 12px; color: #6B6156;">Shows member events from the next 14 days, taking turns between members.</div>
+      </div>
+
+      <div style="max-width: 640px; display: flex; flex-direction: column; gap: 16px; padding: 20px 24px; border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF;">
+        <div style="display: flex; flex-direction: column; gap: 4px;"><div style="font-size: 16px; font-weight: 600; color: #241F1A;">Homepage hero image</div><div style="font-size: 13px; line-height: 1.5; color: #6B6156;">The wide photo behind the welcome message at the top of the homepage. Use a landscape photo at least 2000 pixels wide; the middle of it always shows. JPEG or PNG, up to 10 MB.</div></div>
+        <div style="height: 222px; border-radius: 11px; border: 1px solid #DED7CB; background: #EFEAE1; display: flex; align-items: center; justify-content: center; font-size: 11px; letter-spacing: 0.14em; color: #6B6156;">[CURRENT HERO IMAGE]</div>
+        <div style="font-size: 12px; color: #6B6156;">Showing your uploaded image.</div>
+        <div style="display: flex; gap: 8px;"><button type="button" style="height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #241F1A; background: #241F1A; font-family: inherit; font-size: 13px; font-weight: 600; color: #F9F6F0;">Replace image</button><button type="button" style="height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #D3CBBD; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Use the built-in image</button></div>
+      </div>
+
     </div>
   </div>
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1120}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1560}}'>
 class Component extends DCLogic {
   renderVals() {
     return {};

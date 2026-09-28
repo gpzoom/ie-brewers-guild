@@ -4,6 +4,8 @@ import {
   isCalendarSyncDue,
   saveCalendarSyncIntervalCore,
   getSiteSettingsCore,
+  saveCarouselDwellCore,
+  setHeroImageCore,
   toSiteSettingsView,
 } from "./site-settings";
 import { claimScheduledCalendarSync } from "@/lib/events/calendar-sync-schedule";
@@ -72,6 +74,8 @@ function fakeSession(isSuperAdmin: boolean) {
               data: {
                 calendar_sync_interval_minutes: 60,
                 calendar_sync_last_run_at: null,
+                carousel_dwell_seconds: 6,
+                hero_image_path: "hero/old-photo.jpg",
                 updated_at: null,
               },
               error: null,
@@ -85,8 +89,11 @@ function fakeSession(isSuperAdmin: boolean) {
               return {
                 data: [
                   {
-                    calendar_sync_interval_minutes: values.calendar_sync_interval_minutes,
+                    calendar_sync_interval_minutes: values.calendar_sync_interval_minutes ?? 60,
                     calendar_sync_last_run_at: null,
+                    carousel_dwell_seconds: values.carousel_dwell_seconds ?? 6,
+                    hero_image_path:
+                      "hero_image_path" in values ? values.hero_image_path : "hero/old-photo.jpg",
                     updated_at: values.updated_at,
                   },
                 ],
@@ -137,6 +144,60 @@ describe("Settings: super admin only", () => {
   it("reads the settings for the super admin", async () => {
     const settings = await getSiteSettingsCore(fakeSession(true).client);
     expect(settings.calendarSyncIntervalMinutes).toBe(60);
+  });
+});
+
+describe("Homepage settings", () => {
+  it("defaults to 6 seconds and the built-in hero for a missing row or bad values", () => {
+    expect(toSiteSettingsView(null)).toMatchObject({ carouselDwellSeconds: 6, heroImagePath: null });
+    expect(
+      toSiteSettingsView({
+        calendar_sync_interval_minutes: 15,
+        calendar_sync_last_run_at: null,
+        carousel_dwell_seconds: 7,
+        hero_image_path: "../member-media/x.jpg",
+        updated_at: null,
+      }),
+    ).toMatchObject({ carouselDwellSeconds: 6, heroImagePath: null });
+  });
+
+  it("the super admin saves an offered dwell time; anything else is refused", async () => {
+    const session = fakeSession(true);
+    const saved = await saveCarouselDwellCore(session.client, 10, now);
+    expect(saved.carouselDwellSeconds).toBe(10);
+    expect(session.updates[0]).toMatchObject({ carousel_dwell_seconds: 10, updated_by_user_id: "user-1" });
+    await expect(saveCarouselDwellCore(session.client, 5, now)).rejects.toThrow(
+      "Choose one of the options.",
+    );
+    expect(session.updates).toHaveLength(1);
+  });
+
+  it("a Guild admin can't change the dwell time or the hero", async () => {
+    const session = fakeSession(false);
+    await expect(saveCarouselDwellCore(session.client, 8, now)).rejects.toThrow(
+      "Only the super admin",
+    );
+    await expect(setHeroImageCore(session.client, "hero/new.jpg", now)).rejects.toThrow(
+      "Only the super admin",
+    );
+    expect(session.updates).toEqual([]);
+  });
+
+  it("sets a new hero and reports the one it replaced; null goes back to the built-in image", async () => {
+    const session = fakeSession(true);
+    const result = await setHeroImageCore(session.client, "hero/new-photo.jpg", now);
+    expect(result.settings.heroImagePath).toBe("hero/new-photo.jpg");
+    expect(result.previousPath).toBe("hero/old-photo.jpg");
+    const cleared = await setHeroImageCore(session.client, null, now);
+    expect(cleared.settings.heroImagePath).toBeNull();
+  });
+
+  it("refuses a path outside hero/", async () => {
+    const session = fakeSession(true);
+    await expect(setHeroImageCore(session.client, "member-media/x.jpg", now)).rejects.toThrow(
+      "That isn't a hero image.",
+    );
+    expect(session.updates).toEqual([]);
   });
 });
 

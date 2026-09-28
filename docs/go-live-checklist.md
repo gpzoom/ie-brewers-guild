@@ -13,7 +13,9 @@ Each step says who does it. "Claude" steps happen only when the owner says go.
   - [ ] Test an **Allied Member**: business address, and Discount & supplies.
   - [ ] **Edit as them** from the Guild roster on a member who has never signed in.
   - [ ] Send a **Help** message. Check it arrives at boblelle77@gmail.com with "[Staging]" in the subject, and that the super admin's bell counts it.
-  - [ ] **Super admin → Settings:** the calendar sync interval saves.
+  - [ ] **Super admin → Settings:** the calendar sync interval and the carousel's dwell time save; upload a hero image, then try "Use the built-in image".
+  - [ ] **Homepage:** "Coming up at our members" shows the next two weeks' member events as calendar pages; Pause, Previous/Next and swiping work; "Upcoming events" in the hero jumps to it.
+- [ ] **Owner: the hero image.** Upload the Guild-supplied photo on Settings (staging and production share it, so it shows on both), or go live with the built-in one for now.
 - [ ] **Owner: decide on the test profiles.** Published profiles appear in the live directory the moment the site goes live.
   - **Published:** Test 3, Test 4, Test 7, Wizard Test.
   - **Drafts:** Test 6, Test 8, Test2.
@@ -62,12 +64,13 @@ Set these on the **production** Worker, `ie-brewers-guild` (Cloudflare → Worke
 - [ ] **What turns on with it:**
   - the calendar sync (every 15 minutes, paced by Super admin → Settings; staging and production share one timer, so they never sync twice);
   - the daily "confirm your hours" email at 6 am Pacific (5 am in winter), which only goes to members who have signed in and whose hours are over 90 days old;
+  - the new homepage: a shorter hero, the member events carousel instead of the three pillars and the Featured Event, and no Events page (old `/events` links go to the carousel);
   - contact-form and type-change emails to the **real** Guild inbox, iscbrewersguild@gmail.com (staging sends these to the test inbox).
 - [ ] **Staging stays** for future work, on the same database.
 
 ## 5. Check the live site (owner, right after the build)
 
-- [ ] `iscbrewersguild.org` shows the real homepage, not "under construction".
+- [ ] `iscbrewersguild.org` shows the real homepage, not "under construction", with the hero image and the "Coming up at our members" carousel.
 - [ ] The **Members** directory and map list the right members, and a profile page opens.
 - [ ] The footer's **Member Portal** link emails a sign-in link, and clicking it lands in the portal (or the wizard).
 - [ ] **Edit as them** works from the Guild roster.

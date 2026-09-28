@@ -432,6 +432,10 @@ export default defineConfig(async ({ command, mode }) => {
             // guild.settings.tsx and SiteSettingsScreen.tsx. Session client
             // only, after the super admin check.
             "src/lib/guild/site-settings.server.ts",
+            // homepage.server.ts: getHomepageData, the homepage route's
+            // loader (member events carousel, dwell time, hero image). Anon
+            // client for events; service role only for site_settings.
+            "src/lib/home/homepage.server.ts",
             // food-calendar.server.ts: getFoodCalendar, the old
             // /admin/events screen's loader for a producer's food calendar
             // (session client; RLS limits it to the member's editors).

@@ -1,3 +1,4 @@
+import type { GuildEvent } from "@/lib/home/member-events";
 export type Location = {
   city: string;
   address: string;
@@ -293,17 +294,23 @@ export const members: Member[] = [
   },
 ];
 
-export const events = [
+/**
+ * The Guild's own events. The next one from today on is pinned first in the
+ * homepage carousel (src/lib/home/member-events.ts, nextGuildEvent); once
+ * it's passed, it drops off. Add next year's here with its date.
+ */
+export const guildEvents: readonly GuildEvent[] = [
   {
-    slug: "frontier-beer-fest",
+    slug: "frontier-beer-fest-2026",
     title: "Frontier Beer Fest",
-    date: "Saturday, May 30",
+    date: "2026-05-30",
     location: "Idyllwild",
     excerpt:
       "Our flagship beer festival brings independent breweries together for an afternoon of tastings, food, and live music in the mountains.",
-    featured: true,
+    image: "/events/frontier-beer-fest.png",
+    ticketsUrl: "https://iebrewers.ticketspice.com/2026-iebg-beer-fest",
   },
-] as const;
+];
 
 export const news = [
   {
