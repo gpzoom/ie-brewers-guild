@@ -11,10 +11,13 @@ import { linkifyText } from "@/lib/text/linkify";
  * members already have (logo, theme color, cover photo, event text). A
  * Guild event, when one is coming up, is pinned first.
  *
- * It advances every `dwellSeconds` (Super admin > Settings) and stops on
- * Pause, on hover, and while anything in it has keyboard focus. Arrows,
- * swipe and the Up next list flip by hand. With reduced motion it doesn't
- * auto-play and pages fade instead of tearing.
+ * It plays from page load and keeps looping when scrolled out of view
+ * (owner, 2026-09-28: the motion invites exploring), advancing every
+ * `dwellSeconds` (Super admin > Settings). It stops on Pause, while the
+ * mouse is over the calendar page, and while keyboard focus is inside it
+ * (a mouse click on a control doesn't count). Arrows, swipe and the Up next
+ * list flip by hand. With reduced motion pages fade instead of tearing
+ * (styles.css).
  */
 
 type Slide = { kind: "guild"; event: GuildEvent } | { kind: "member"; card: HomeEventCard };
@@ -27,16 +30,19 @@ function slideKey(slide: Slide): string {
   return slide.kind === "guild" ? `guild:${slide.event.slug}` : slide.card.id;
 }
 
-function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(query.matches);
-    const onChange = () => setReduced(query.matches);
-    query.addEventListener("change", onChange);
-    return () => query.removeEventListener("change", onChange);
-  }, []);
-  return reduced;
+/** Whether focus arrived by keyboard (a mouse click on a button doesn't pause the carousel). */
+function isKeyboardFocus(target: EventTarget): boolean {
+  try {
+    // The Play/Pause button itself doesn't count, or pressing Play from the
+    // keyboard would leave it stopped.
+    return (
+      target instanceof Element &&
+      target.matches(":focus-visible") &&
+      !target.hasAttribute("data-carousel-toggle")
+    );
+  } catch {
+    return false;
+  }
 }
 
 function Description({ text }: { text: string }) {
@@ -271,17 +277,14 @@ export function MemberEventsCarousel({
     ...cards.map((card) => ({ kind: "member" as const, card })),
   ];
   const count = slides.length;
-  const reducedMotion = usePrefersReducedMotion();
   const [index, setIndex] = useState(0);
   const [userPaused, setUserPaused] = useState(false);
-  const [userPlayed, setUserPlayed] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [leaving, setLeaving] = useState<{ slide: Slide; id: number } | null>(null);
   const pointerStart = useRef<number | null>(null);
 
-  // Reduced motion: no auto-play until the visitor presses Play.
-  const playing = count > 1 && !userPaused && (!reducedMotion || userPlayed);
+  const playing = count > 1 && !userPaused;
   const running = playing && !hovered && !focused;
 
   const slidesRef = useRef(slides);
@@ -351,7 +354,14 @@ export function MemberEventsCarousel({
         aria-atomic="true"
       >
         <div key={slideKey(current)} className="calendar-page-in flex w-full justify-center">
-          <SlideView slide={current} />
+          {/* Hovering the page itself pauses, so it can be read. */}
+          <div
+            className="flex w-full justify-center"
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+          >
+            <SlideView slide={current} />
+          </div>
         </div>
         {leaving && (
           <div
@@ -374,9 +384,7 @@ export function MemberEventsCarousel({
       aria-label="Coming up at our members"
       className="grid grid-cols-[minmax(0,1fr)] gap-8 [grid-template-areas:'head'_'stage'_'rest'] md:grid-cols-[minmax(0,420px)_minmax(0,1fr)] md:gap-x-16 md:gap-y-9 md:[grid-template-areas:'head_stage'_'rest_stage']"
       onKeyDown={onKeyDown}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onFocus={() => setFocused(true)}
+      onFocus={(event) => setFocused(isKeyboardFocus(event.target))}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
       }}
@@ -400,15 +408,11 @@ export function MemberEventsCarousel({
               </button>
               <button
                 type="button"
+                data-carousel-toggle=""
                 aria-label={playing ? "Pause" : "Play"}
                 className={controlClass}
                 onClick={() => {
-                  if (playing) {
-                    setUserPaused(true);
-                  } else {
-                    setUserPaused(false);
-                    setUserPlayed(true);
-                  }
+                  setUserPaused(playing);
                 }}
               >
                 {playing ? (
