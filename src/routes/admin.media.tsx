@@ -8,6 +8,7 @@ import { CarouselEditor } from "@/components/admin/CarouselEditor";
 import { CoverEditor } from "@/components/admin/CoverEditor";
 import { SocialImageEditor } from "@/components/admin/SocialImageEditor";
 import { CreatorLinkPanel } from "@/components/admin/CreatorLinkPanel";
+import { CameraRollHint } from "@/components/admin/CameraRollHint";
 import { ReviewTray } from "@/components/admin/ReviewTray";
 import { SameMemberGuard } from "@/components/admin/SameMemberGuard";
 
@@ -56,7 +57,11 @@ function MediaRoute() {
         </p>
       </header>
 
-      <MediaGallery memberId={memberId} assets={assets} />
+      <div className="flex flex-col gap-3">
+        <MediaGallery memberId={memberId} assets={assets} />
+        {/* /admin has no People page; Edit as them sessions reach the portal's. */}
+        <CameraRollHint peopleHref="/portal/people" />
+      </div>
 
       <CarouselEditor
         memberId={memberId}

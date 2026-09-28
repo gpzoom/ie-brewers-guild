@@ -76,6 +76,8 @@ Files enter the gallery two ways:
 
 The outbound link on a slide is a plain text field the member types. Pasting a post URL there makes the slide tap through to the post — no fetching involved, and it is optional.
 
+**The camera roll hint.** Directly under the gallery upload box (portal Photos, the wizard's Photos step, `/admin/media`), a short info box says: "Posted it on Instagram or Facebook? The original photo is probably still in your phone's camera roll. Upload that one for the sharpest result." Members' best photos are often ones they've already posted, and the original in their camera roll beats the compressed image the platform keeps. A second line depends on the viewer: the owner (and a Guild admin editing as them) reads "Someone else takes your photos? Invite them as a Photos & events editor, or send them a creator upload link", linking to People and to the creator link panel on the same page; a full editor or Photos & events editor gets only the creator link half, since only the owner sees People. In the setup wizard, which has no People page yet, "Photos & events editor" isn't a link and says it's in People once setup is done. The hint is always shown and can't be dismissed. It deliberately replaces any idea of importing from a post link: the rule above stands.
+
 ### The creator upload link
 
 This is not only a convenience. It is where permission gets captured. A videographer who shot a brewery's Reel owns that footage, and the brewery putting it on their profile without asking is a real exposure. Uploading through the link is an explicit, timestamped grant.

@@ -7,6 +7,7 @@ import { SocialImageEditor } from "@/components/admin/SocialImageEditor";
 import { CarouselEditor } from "@/components/admin/CarouselEditor";
 import { MediaGallery } from "@/components/admin/MediaGallery";
 import { CreatorLinkPanel } from "@/components/admin/CreatorLinkPanel";
+import { CameraRollHint } from "@/components/admin/CameraRollHint";
 import { ReviewTray } from "@/components/admin/ReviewTray";
 import { EventsEditor } from "@/components/admin/EventsEditor";
 import { CalendarConnectionPanel } from "@/components/admin/CalendarConnectionPanel";
@@ -132,7 +133,10 @@ export function PortalSectionView({ data, shell }: { data: PortalSectionData; sh
             lede="Up to four slides. Visitors swipe through them on your page, so lead with your best one."
           />
           {notice}
-          <MediaGallery memberId={shell.memberId} assets={data.assets} />
+          <div className="flex flex-col gap-3">
+            <MediaGallery memberId={shell.memberId} assets={data.assets} />
+            <CameraRollHint peopleHref="/portal/people" />
+          </div>
           <CarouselEditor
             memberId={shell.memberId}
             initialSlides={data.draft.data.media.slides}

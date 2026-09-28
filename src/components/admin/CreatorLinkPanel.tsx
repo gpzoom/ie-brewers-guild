@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createUploadToken, revokeUploadToken } from "@/lib/media/upload-tokens.server";
 import type { UploadTokenRow } from "@/lib/supabase/types";
+import { CREATOR_LINK_ANCHOR } from "@/components/admin/CameraRollHint";
 const outlineButtonClass =
   "inline-flex h-[46px] shrink-0 items-center justify-center rounded-[9px] border border-[#D3CBBD] bg-canvas px-[17px] text-[13px] font-medium text-ink transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50";
 const darkButtonClass =
@@ -90,8 +91,9 @@ export function CreatorLinkPanel({
 
   return (
     <section
+      id={CREATOR_LINK_ANCHOR}
       aria-labelledby="creator-link-heading"
-      className="flex flex-col gap-[11px] rounded-[13px] bg-canvas-2 p-5"
+      className="flex scroll-mt-20 flex-col gap-[11px] rounded-[13px] bg-canvas-2 p-5"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-3.5 gap-y-1">
         <h2

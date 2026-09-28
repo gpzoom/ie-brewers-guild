@@ -10,6 +10,7 @@ import { FoodCalendarSection } from "@/components/admin/FoodCalendarSection";
 import { CarouselEditor } from "@/components/admin/CarouselEditor";
 import { MediaGallery } from "@/components/admin/MediaGallery";
 import { CreatorLinkPanel } from "@/components/admin/CreatorLinkPanel";
+import { CameraRollHint } from "@/components/admin/CameraRollHint";
 import { ReviewTray } from "@/components/admin/ReviewTray";
 import { LinksContactEditor } from "@/components/admin/LinksContactEditor";
 import { DiscountEditor } from "@/components/admin/DiscountEditor";
@@ -183,7 +184,10 @@ export function PhotosStep({
       lede="Up to four slides. Visitors swipe through them on your page, so lead with your best one."
       skipNote="No photos yet? Skip it, or make a link for your photographer to send them straight to you."
     >
-      <MediaGallery memberId={memberId} assets={assets} />
+      <div className="flex flex-col gap-3">
+        <MediaGallery memberId={memberId} assets={assets} />
+        <CameraRollHint peopleHref={null} />
+      </div>
       <CarouselEditor
         memberId={memberId}
         initialSlides={draft.data.media.slides}

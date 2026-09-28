@@ -69,6 +69,14 @@ a{color:#B3591F}a:hover{color:#8F4517}
           <div style="height: 96px; border-radius: 9px; background: #EFEAE1; border: 1px solid #DED7CB;"></div>
           <div style="height: 96px; border-radius: 9px; background: #EFEAE1; border: 1px solid #DED7CB;"></div>
         </div>
+        <!-- Camera roll hint (owner view; editors see only the creator link line). Always shown, not dismissible. -->
+        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 15px 17px; border-radius: 11px; background: #EFEAE1; color: #6B6156;">
+          <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0; margin-top: 1px;" aria-hidden="true"><circle cx="8" cy="8" r="6.4" stroke="currentColor" stroke-width="1.4"/><path d="M8 7.2v4M8 4.9v.9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <div style="font-size: 13px; line-height: 1.5; color: #3A332C;">
+            <div>Posted it on Instagram or Facebook? The original photo is probably still in your phone's camera roll. Upload that one for the sharpest result.</div>
+            <div style="margin-top: 6px;">Someone else takes your photos? Invite them as a <a href="#people" style="font-weight: 500; color: #241F1A; text-decoration: underline; text-underline-offset: 2px; padding: 13px 0;">Photos &amp; events editor</a>, or send them a <a href="#creator-link" style="font-weight: 500; color: #241F1A; text-decoration: underline; text-underline-offset: 2px; padding: 13px 0;">creator upload link</a>.</div>
+          </div>
+        </div>
       </div>
 
       <!-- 2. Your Carousel: crop panel on the left with the tap-through link under it; slides on the right. -->
@@ -155,7 +163,7 @@ a{color:#B3591F}a:hover{color:#8F4517}
       </div>
 
       <!-- Creator upload link and review tray. -->
-      <div style="display: flex; flex-direction: column; gap: 11px; padding: 20px; border-radius: 13px; background: #EFEAE1;">
+      <div id="creator-link" style="display: flex; flex-direction: column; gap: 11px; padding: 20px; border-radius: 13px; background: #EFEAE1;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
           <div style="font-size: 14px; font-weight: 600; color: #241F1A;">Didn't shoot it yourself?</div>
           <a href="#pending" style="font-size: 12px; font-weight: 500;">2 waiting for review →</a>
