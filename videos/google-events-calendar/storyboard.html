@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Storyboard v2 — Your events calendar, Google</title>
+<style>
+@font-face { font-family: "Bricolage Grotesque"; src: url("assets/fonts/BricolageGrotesque-latin.woff2") format("woff2"); font-weight: 200 800; }
+@font-face { font-family: "Chivo"; src: url("assets/fonts/Chivo-latin.woff2") format("woff2"); font-weight: 100 900; }
+:root {
+  --bg: #171410; --surface: #211C17; --surface2: #2A241E; --border: #3A332C;
+  --fg: #F7F3EC; --muted: #B6AC9D; --accent: #E8913A; --accent-deep: #B3591F;
+  --paper: #FBF8F2; --canvas2: #EFEAE1; --cborder: #DED7CB; --ink: #241F1A; --ink-muted: #6B6156;
+  --good: #4E9A4A; --bad: #8C2F1B; --amber-theme: #B45309;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f0d0a; color: var(--fg); font-family: Chivo, system-ui, sans-serif; padding: 40px 32px 64px; }
+header.sheet { max-width: 1680px; margin: 0 auto 28px; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
+header.sheet h1 { font-family: "Bricolage Grotesque"; font-weight: 800; font-size: 34px; letter-spacing: -0.01em; }
+header.sheet h1 span { color: var(--accent); font-size: 18px; vertical-align: middle; margin-left: 10px; border: 1px solid var(--border); border-radius: 99px; padding: 3px 10px; }
+header.sheet p { color: var(--muted); font-size: 15px; margin-top: 6px; max-width: 900px; }
+.tag { font-size: 13px; color: var(--muted); border: 1px solid var(--border); border-radius: 99px; padding: 6px 12px; }
+.grid { max-width: 1680px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px 24px; }
+@media (max-width: 1100px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.act { grid-column: 1 / -1; font-size: 12px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-top: 8px; }
+.cell { display: flex; flex-direction: column; gap: 8px; }
+.labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); letter-spacing: 0.06em; }
+.labels b { color: var(--fg); letter-spacing: 0.1em; }
+.note { font-size: 13px; line-height: 1.5; color: #D8CFC2; }
+.note b { color: var(--fg); }
+.chip { align-self: flex-start; font-size: 11px; letter-spacing: 0.08em; color: var(--muted); border: 1px solid var(--border); border-radius: 99px; padding: 3px 9px; }
+.vo { font-size: 12.5px; line-height: 1.45; color: var(--muted); font-style: italic; }
+
+/* ---- the 16:9 frame; every size inside is in cqw so the sheet matches 1920x1080 ---- */
+.f { position: relative; aspect-ratio: 16 / 9; container-type: inline-size; background: var(--bg); border-radius: 10px; overflow: hidden; border: 1px solid #2a241e; }
+.glow { position: absolute; width: 60cqw; height: 60cqw; border-radius: 50%; background: radial-gradient(circle, rgba(232,145,58,0.22), rgba(232,145,58,0) 65%); pointer-events: none; }
+.ko { position: absolute; left: 0; right: 0; top: 83%; border-top: 0.1cqw dashed rgba(182,172,157,0.28); }
+.cap { position: absolute; left: 50%; bottom: 3cqw; transform: translateX(-50%); white-space: nowrap; font: 600 1.75cqw Chivo; color: var(--fg); background: rgba(15,13,10,0.78); padding: 0.55cqw 1.3cqw; border-radius: 0.6cqw; }
+.step { position: absolute; left: 6.25cqw; top: 4.4cqw; font: 700 1.1cqw Chivo; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); border: 0.12cqw solid var(--border); border-radius: 99px; padding: 0.55cqw 1.1cqw; background: rgba(33,28,23,0.6); }
+.eyebrow { font: 700 1.05cqw Chivo; letter-spacing: 0.24em; text-transform: uppercase; color: var(--accent); }
+.h { font-family: "Bricolage Grotesque"; font-weight: 800; text-transform: uppercase; color: var(--fg); line-height: 1.02; letter-spacing: 0.01em; }
+.sub { font: 400 1.9cqw/1.4 Chivo; color: var(--muted); }
+.ring { box-shadow: 0 0 0 0.35cqw var(--accent); }
+
+/* calendar page (the hero prop) */
+.page { position: absolute; background: var(--paper); color: var(--ink); border-radius: 0.5cqw; overflow: hidden; box-shadow: 0 1.2cqw 2.6cqw rgba(0,0,0,0.45); }
+.page .strip { display: flex; align-items: center; gap: 0.9cqw; height: 4cqw; padding: 0 1.8cqw; color: #fff; font: 600 1.05cqw Chivo; }
+.page .logo { width: 2.6cqw; height: 2.6cqw; border-radius: 0.5cqw; background: #fff; color: var(--ink-muted); display: flex; align-items: center; justify-content: center; font: 700 1cqw Chivo; }
+.page .tear { margin: 0 0.7cqw; border-top: 0.14cqw dashed #D3CBBD; }
+.page .date { display: flex; flex-direction: column; align-items: center; padding: 1.1cqw 0 1.3cqw; }
+.page .m, .page .w { font: 700 0.95cqw Chivo; letter-spacing: 0.3em; color: var(--ink-muted); }
+.page .d { font-family: "Bricolage Grotesque"; font-weight: 800; font-size: 8.4cqw; line-height: 0.95; letter-spacing: -0.03em; }
+.page .body { border-top: 0.08cqw solid #E6DFD2; margin: 0 1.8cqw; padding: 1cqw 0 1.4cqw; display: flex; flex-direction: column; gap: 0.5cqw; }
+.page .time { font: 600 1.05cqw Chivo; }
+.page .title { font-family: "Bricolage Grotesque"; font-weight: 800; font-size: 1.7cqw; line-height: 1.1; }
+.page .desc { font: 400 0.95cqw/1.45 Chivo; color: #3A332C; }
+
+/* simplified UI panels (Google sketch + portal) */
+.panel { position: absolute; background: var(--paper); color: var(--ink); border-radius: 1cqw; overflow: hidden; box-shadow: 0 1.2cqw 3cqw rgba(0,0,0,0.4); }
+.panel .bar { height: 3.2cqw; display: flex; align-items: center; justify-content: space-between; padding: 0 1.6cqw; background: var(--canvas2); font: 600 1.05cqw Chivo; color: var(--ink-muted); border-bottom: 0.1cqw solid var(--cborder); }
+.panel .bar i { font-style: normal; font-weight: 700; letter-spacing: 0.14em; font-size: 0.85cqw; text-transform: uppercase; color: var(--ink-muted); border: 0.1cqw solid var(--cborder); border-radius: 99px; padding: 0.25cqw 0.7cqw; background: var(--paper); }
+.lbl { font: 700 1.25cqw Chivo; color: var(--ink); }
+.small { font: 400 1.05cqw/1.4 Chivo; color: var(--ink-muted); }
+.field { border: 0.12cqw solid var(--cborder); background: #fff; border-radius: 0.6cqw; padding: 0.8cqw 1cqw; font: 400 1.1cqw Chivo; color: var(--ink); }
+.mono { font-family: ui-monospace, Consolas, monospace; }
+.btn { display: inline-flex; align-items: center; gap: 0.6cqw; height: 3cqw; padding: 0 1.3cqw; border-radius: 0.6cqw; border: 0.12cqw solid #D3CBBD; background: var(--paper); font: 600 1.05cqw Chivo; color: var(--ink); }
+.cursor { position: absolute; width: 2.2cqw; height: 2.2cqw; }
+.check { display: inline-flex; width: 1.7cqw; height: 1.7cqw; border-radius: 0.35cqw; align-items: center; justify-content: center; background: var(--ink); color: #fff; font: 700 1.1cqw Chivo; }
+.browser { position: absolute; border-radius: 1cqw; overflow: hidden; background: var(--surface); box-shadow: 0 1.4cqw 3.4cqw rgba(0,0,0,0.5); border: 0.12cqw solid var(--border); }
+.browser .top { height: 2.4cqw; display: flex; align-items: center; gap: 0.5cqw; padding: 0 1cqw; background: #2a241e; }
+.browser .top span { width: 0.7cqw; height: 0.7cqw; border-radius: 50%; background: #4a4238; }
+.browser .top em { margin-left: 1cqw; font: 400 0.9cqw Chivo; font-style: normal; color: var(--muted); background: #1d1914; border-radius: 99px; padding: 0.25cqw 1cqw; }
+.browser img { display: block; width: 100%; }
+
+/* closing cells */
+.seams { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; }
+.seams span { border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; color: var(--muted); }
+.seams span b { color: var(--fg); }
+.tokens { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 12px; font-size: 12.5px; color: var(--muted); }
+.sw { display: flex; flex-wrap: wrap; gap: 8px; }
+.sw div { display: flex; align-items: center; gap: 6px; }
+.sw i { width: 18px; height: 18px; border-radius: 4px; border: 1px solid #3a332c; display: inline-block; }
+</style>
+</head>
+<body>
+
+<header class="sheet">
+  <div>
+    <h1>Your events calendar, Google <span>v2</span></h1>
+    <p>Still layouts for review: placement, wording and look. No motion yet. Dashed line = caption area (bottom 17%). Scenes 3–7 draw Google Calendar simplified; scene 8 is rebuilt from the real portal screen; scenes 9–10 are real staging screenshots. <b style="color:#E8913A">v2:</b> new scene 3 (a calendar just for events); scenes 2, 4 and 7 adjusted.</p>
+  </div>
+  <div class="tag">1920×1080 · ~2:07 · 11 scenes · narrated (My Clone v2) · captions on</div>
+</header>
+
+<div class="grid">
+
+  <div class="act">Act 1 · The promise</div>
+
+  <!-- 01 -->
+  <div class="cell">
+    <div class="f" id="frame-01">
+      <div class="glow" style="right:-14cqw; top:-18cqw"></div>
+      <div style="position:absolute; left:6.25cqw; top:12cqw; width:50cqw; display:flex; flex-direction:column; gap:1.6cqw">
+        <div class="eyebrow">ISC Brewers Guild · Member how-to</div>
+        <div class="h" style="font-size:5.4cqw">Your events.<br><span style="color:var(--accent)">On the Guild homepage.</span></div>
+        <div class="sub">Set it up once with Google Calendar.</div>
+      </div>
+      <!-- next page underneath -->
+      <div class="page" style="right:8cqw; top:8.5cqw; width:21cqw">
+        <div class="strip" style="background:#9A3412"><span class="logo">M</span>Mars Brewing Co.</div>
+        <div class="tear"></div>
+        <div class="date"><span class="m">OCTOBER</span><span class="d" style="color:#9A3412">3</span><span class="w">SATURDAY</span></div>
+        <div class="body"><div class="time">4:00 – 9:00 pm</div><div class="title">Halloween Costume Contest</div></div>
+      </div>
+      <!-- top page tearing away -->
+      <div class="page" style="right:11cqw; top:3.5cqw; width:21cqw; transform:rotate(-8deg); transform-origin:15% 0">
+        <div class="strip" style="background:var(--amber-theme)"><span class="logo">B</span>Bob's Brewery</div>
+        <div class="tear"></div>
+        <div class="date"><span class="m">OCTOBER</span><span class="d" style="color:var(--amber-theme)">1</span><span class="w">THURSDAY</span></div>
+        <div class="body"><div class="time">5:00 – 11:00 pm</div><div class="title">VIP Members Party</div></div>
+      </div>
+      <div class="ko"></div>
+      <div class="cap">Your events can show up on the Guild homepage.</div>
+    </div>
+    <div class="labels"><b>01 · PROMISE</b><span>frame-01 · 0:00–0:08</span></div>
+    <div class="note"><b>Moves first:</b> the top calendar page tears up and away (the carousel's own move), revealing the next page; the headline rises in word by word. Hero prop introduced.</div>
+    <div class="vo">"Your events can show up on the Guild homepage. And it happens on its own. Here's how to set it up with Google Calendar."</div>
+    <div class="chip">seam out → crossfade</div>
+  </div>
+
+  <!-- 02 -->
+  <div class="cell">
+    <div class="f" id="frame-02">
+      <div class="glow" style="left:-20cqw; top:-26cqw"></div>
+      <div class="h" style="position:absolute; left:6.25cqw; top:6.5cqw; font-size:4.6cqw">Three steps.</div>
+      <div style="position:absolute; left:6.25cqw; right:6.25cqw; top:17.5cqw; display:grid; grid-template-columns:repeat(3,1fr); gap:2.6cqw">
+        <div style="background:var(--surface); border:0.14cqw solid var(--border); border-radius:1.2cqw; padding:2.2cqw; height:24cqw; display:flex; flex-direction:column; gap:1.2cqw">
+          <div class="h" style="font-size:6.4cqw; color:var(--accent); line-height:0.9">1</div>
+          <div style="font:700 2.3cqw/1.15 Chivo">Make an events calendar</div>
+          <div style="font:400 1.35cqw/1.4 Chivo; color:var(--muted)">New, public, all event details</div>
+        </div>
+        <div style="background:var(--surface); border:0.14cqw solid var(--border); border-radius:1.2cqw; padding:2.2cqw; height:24cqw; display:flex; flex-direction:column; gap:1.2cqw">
+          <div class="h" style="font-size:6.4cqw; color:var(--accent); line-height:0.9">2</div>
+          <div style="font:700 2.3cqw/1.15 Chivo">Tag your events</div>
+          <div style="font:400 1.35cqw/1.4 Chivo; color:var(--muted)">Add <span class="mono" style="color:var(--fg)">#guild</span> to the ones to show</div>
+        </div>
+        <div style="background:var(--surface); border:0.14cqw solid var(--border); border-radius:1.2cqw; padding:2.2cqw; height:24cqw; display:flex; flex-direction:column; gap:1.2cqw">
+          <div class="h" style="font-size:6.4cqw; color:var(--accent); line-height:0.9">3</div>
+          <div style="font:700 2.3cqw/1.15 Chivo">Paste one link</div>
+          <div style="font:400 1.35cqw/1.4 Chivo; color:var(--muted)">In the Member Portal, once</div>
+        </div>
+      </div>
+      <div class="ko"></div>
+      <div class="cap">It takes three steps.</div>
+    </div>
+    <div class="labels"><b>02 · THREE STEPS</b><span>frame-02 · 0:08–0:16</span></div>
+    <div class="note"><b>Moves first:</b> the three cards assemble left to right, each landing on its spoken word ("Make… Tag… paste"). The whole recipe is on screen by 0:16.</div>
+    <div class="vo">"It takes three steps. Make an events calendar. Tag your events. Then paste one link."</div>
+    <div class="chip">seam out → card 1 grows into scene 3</div>
+  </div>
+
+  <div class="act">Act 2 · Step 1 — make an events calendar (Google, simplified)</div>
+
+  <!-- 03 -->
+  <div class="cell">
+    <div class="f" id="frame-03">
+      <div class="glow" style="right:-24cqw; top:-28cqw"></div>
+      <div class="step">Step 1 of 3 · Make an events calendar</div>
+      <div style="position:absolute; left:6.25cqw; top:12cqw; width:26cqw; display:flex; flex-direction:column; gap:1.4cqw">
+        <div class="h" style="font-size:3.9cqw">A calendar just for events</div>
+        <div class="sub" style="font-size:1.6cqw">Keep it separate from your own calendar.</div>
+        <div style="display:flex; gap:0.9cqw; align-items:flex-start; background:var(--surface); border:0.14cqw solid var(--accent); border-radius:0.8cqw; padding:1cqw 1.2cqw; font:500 1.35cqw/1.4 Chivo; color:var(--fg)">
+          <span style="color:var(--accent); font-weight:700">!</span><span>Anyone with its link can see everything on it.</span>
+        </div>
+      </div>
+      <div class="panel" style="left:36cqw; top:8.5cqw; width:57.75cqw; height:37cqw">
+        <div class="bar"><span>Google Calendar</span><i>simplified</i></div>
+        <div style="display:flex; height:calc(100% - 3.2cqw)">
+          <div style="width:21cqw; border-right:0.1cqw solid var(--cborder); padding:1.6cqw 1.2cqw; display:flex; flex-direction:column; gap:0.9cqw; position:relative">
+            <div class="small" style="font-weight:700; letter-spacing:0.1em; font-size:0.85cqw; text-transform:uppercase">My calendars</div>
+            <div class="small" style="opacity:0.6">Personal</div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:0.6cqw">
+              <span class="small" style="font-weight:700; letter-spacing:0.1em; font-size:0.85cqw; text-transform:uppercase">Other calendars</span>
+              <span class="ring" style="width:2.2cqw; height:2.2cqw; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; font:700 1.5cqw Chivo; color:var(--ink)">+</span>
+            </div>
+            <div style="margin-left:2.5cqw; background:#fff; border-radius:0.5cqw; box-shadow:0 0.6cqw 1.4cqw rgba(0,0,0,0.15); display:flex; flex-direction:column; font:500 1.05cqw Chivo">
+              <div class="small" style="padding:0.55cqw 0.9cqw; opacity:0.55">Subscribe to calendar</div>
+              <div style="padding:0.55cqw 0.9cqw; background:#FCE7D2; font-weight:700">Create new calendar</div>
+              <div class="small" style="padding:0.55cqw 0.9cqw; opacity:0.55">Browse calendars of interest</div>
+            </div>
+          </div>
+          <div style="flex:1; padding:1.8cqw 2cqw; display:flex; flex-direction:column; gap:1.2cqw">
+            <div class="lbl" style="font-size:1.5cqw">Create new calendar</div>
+            <div style="display:flex; flex-direction:column; gap:0.45cqw">
+              <div class="small" style="color:var(--ink); font-weight:600">Name</div>
+              <div class="field ring">Bob's Brewery Events<span style="border-left:0.15cqw solid var(--ink); margin-left:0.2cqw"></span></div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:0.45cqw; opacity:0.55">
+              <div class="small">Description</div>
+              <div class="field">&nbsp;</div>
+            </div>
+            <div><span class="btn" style="background:var(--ink); color:#fff; border-color:var(--ink)">Create calendar</span></div>
+          </div>
+        </div>
+        <svg class="cursor" style="left:14.6cqw; top:11.2cqw" viewBox="0 0 24 24"><path d="M4 2l16 10-7 1.5L9.5 21z" fill="#241F1A" stroke="#fff" stroke-width="1.5"/></svg>
+      </div>
+      <div class="ko"></div>
+      <div class="cap">Start with a new calendar just for your events.</div>
+    </div>
+    <div class="labels"><b>03 · A CALENDAR JUST FOR EVENTS</b><span>frame-03 · 0:16–0:34</span></div>
+    <div class="note"><b>Moves first:</b> the warning card settles on the left and holds while "anyone with its link can see everything" lands (held beat). Then the pointer presses the + by "Other calendars", picks "Create new calendar", the name types in and "Create calendar" presses. <b>Why:</b> the #guild tag decides what the Guild site shows, not what Google shares.</div>
+    <div class="vo">"Start with a new calendar just for your events. Anyone with its link can see everything on it. So keep it separate from your own calendar. In Google Calendar press the plus next to Other calendars. Choose Create new calendar. Name it and press Create calendar."</div>
+    <div class="chip">seam out → panel slides to its settings</div>
+  </div>
+
+  <!-- 04 -->
+  <div class="cell">
+    <div class="f" id="frame-04">
+      <div class="glow" style="left:-24cqw; bottom:-30cqw"></div>
+      <div class="step">Step 1 of 3 · Make an events calendar</div>
+      <div style="position:absolute; left:6.25cqw; top:12cqw; width:26cqw; display:flex; flex-direction:column; gap:1.4cqw">
+        <div class="h" style="font-size:3.9cqw">Make it public</div>
+        <div class="sub" style="font-size:1.6cqw">Settings and sharing →<br>Access permissions for events</div>
+      </div>
+      <div class="panel" style="left:36cqw; top:8.5cqw; width:57.75cqw; height:37cqw">
+        <div class="bar"><span>Google Calendar · Settings</span><i>simplified</i></div>
+        <div style="display:flex; height:calc(100% - 3.2cqw)">
+          <div style="width:19cqw; border-right:0.1cqw solid var(--cborder); padding:1.6cqw 1.2cqw; display:flex; flex-direction:column; gap:0.9cqw; position:relative">
+            <div class="small" style="font-weight:700; letter-spacing:0.1em; font-size:0.85cqw; text-transform:uppercase">My calendars</div>
+            <div style="display:flex; align-items:center; gap:0.7cqw; background:var(--canvas2); border-radius:0.5cqw; padding:0.6cqw 0.7cqw; font:600 1.05cqw Chivo">
+              <span style="width:1cqw; height:1cqw; border-radius:0.2cqw; background:var(--amber-theme)"></span>Bob's Brewery Events<span style="margin-left:auto; color:var(--ink-muted)">⋮</span>
+            </div>
+            <div class="ring" style="margin-left:2cqw; background:#fff; border-radius:0.5cqw; padding:0.6cqw 0.9cqw; font:600 1.05cqw Chivo; box-shadow:0 0 0 0.3cqw var(--accent), 0 0.6cqw 1.4cqw rgba(0,0,0,0.15)">Settings and sharing</div>
+            <div class="small" style="opacity:0.55">Work</div>
+            <div class="small" style="opacity:0.55">Family</div>
+          </div>
+          <div style="flex:1; padding:1.8cqw 2cqw; display:flex; flex-direction:column; gap:1.4cqw">
+            <div class="lbl" style="font-size:1.5cqw">Access permissions for events</div>
+            <div class="ring" style="display:flex; align-items:center; gap:1cqw; padding:1cqw 1.2cqw; border-radius:0.7cqw; background:#fff">
+              <span class="check">✓</span><span style="font:600 1.3cqw Chivo">Make available to public</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:1cqw; opacity:0.55">
+              <div class="field" style="flex:1">See only free/busy (hide details) ▾</div>
+            </div>
+            <div class="small" style="opacity:0.55">Share with specific people or groups</div>
+          </div>
+        </div>
+        <svg class="cursor" style="left:36cqw; top:15.5cqw" viewBox="0 0 24 24"><path d="M4 2l16 10-7 1.5L9.5 21z" fill="#241F1A" stroke="#fff" stroke-width="1.5"/></svg>
+      </div>
+      <div class="ko"></div>
+      <div class="cap">Under Access permissions for events tick Make available to public.</div>
+    </div>
+    <div class="labels"><b>04 · MAKE IT PUBLIC</b><span>frame-04 · 0:34–0:47</span></div>
+    <div class="note"><b>Moves first:</b> the pointer travels to the new calendar's name → "Settings and sharing" highlights → the panel shifts to Access permissions and the box ticks with an amber ring, on the word "public". The free/busy menu is visible but dimmed (it's scene 4's subject).</div>
+    <div class="vo">"Now point at the new calendar's name and open Settings and sharing. Under Access permissions for events tick Make available to public."</div>
+    <div class="chip">seam out → push in on the menu</div>
+  </div>
+
+  <!-- 05 -->
+  <div class="cell">
+    <div class="f" id="frame-05">
+      <div class="glow" style="right:-22cqw; top:-26cqw"></div>
+      <div class="step">Step 1 of 3 · Make an events calendar</div>
+      <div class="h" style="position:absolute; left:6.25cqw; top:10cqw; font-size:3.9cqw">Pick <span style="color:var(--accent)">See all event details</span></div>
+      <div style="position:absolute; left:6.25cqw; right:6.25cqw; top:18.5cqw; display:grid; grid-template-columns:1fr 1fr; gap:3cqw">
+        <div style="background:var(--surface); border:0.14cqw solid var(--border); border-radius:1.2cqw; padding:2cqw; opacity:0.72; display:flex; flex-direction:column; gap:1.2cqw">
+          <div style="font:700 1.25cqw Chivo; color:var(--muted)">See only free/busy (hide details)</div>
+          <div style="background:#3A332C; border-radius:0.7cqw; padding:1.4cqw 1.6cqw">
+            <div style="font:700 2cqw Chivo; color:var(--fg)">Busy</div>
+            <div style="font:400 1.2cqw Chivo; color:var(--muted)">5:00 – 11:00 pm</div>
+          </div>
+          <div style="font:700 1.4cqw Chivo; color:#E0896B">✕ Nothing comes through</div>
+        </div>
+        <div style="background:var(--surface); border:0.25cqw solid var(--accent); border-radius:1.2cqw; padding:2cqw; display:flex; flex-direction:column; gap:1.2cqw">
+          <div style="font:700 1.25cqw Chivo; color:var(--accent)">See all event details</div>
+          <div style="background:var(--paper); color:var(--ink); border-radius:0.7cqw; padding:1.4cqw 1.6cqw">
+            <div style="font:700 2cqw Chivo">VIP Members Party</div>
+            <div style="font:400 1.2cqw Chivo; color:var(--ink-muted)">5:00 – 11:00 pm</div>
+            <div style="font:400 1.1cqw Chivo; color:#3A332C; margin-top:0.5cqw">RSVP: bobsbrewery.com/vip · <span class="mono" style="font-weight:700">#guild</span></div>
+          </div>
+          <div style="font:700 1.4cqw Chivo; color:var(--accent)">✓ Your events come through</div>
+        </div>
+      </div>
+      <div class="ko"></div>
+      <div class="cap">Change See only free busy to See all event details.</div>
+    </div>
+    <div class="labels"><b>05 · ALL EVENT DETAILS</b><span>frame-05 · 0:47–1:00</span></div>
+    <div class="note"><b>Moves first:</b> the two cards open like a book from the center; on "This one matters" the left card dims and the right card's amber border and check spring in. Held beat: nothing moves while "nothing comes through" lands.</div>
+    <div class="vo">"Right next to it is a menu. Change See only free busy to See all event details. This one matters. Without it Google hides your event names and nothing comes through."</div>
+    <div class="chip">seam out → crossfade</div>
+  </div>
+
+  <!-- 06 -->
+  <div class="cell">
+    <div class="f" id="frame-06">
+      <div class="glow" style="left:-22cqw; top:-28cqw"></div>
+      <div class="step">Step 1 of 3 · Make an events calendar</div>
+      <div style="position:absolute; left:6.25cqw; top:12cqw; width:26cqw; display:flex; flex-direction:column; gap:1.4cqw">
+        <div class="h" style="font-size:3.9cqw">Copy the iCal link</div>
+        <div class="sub" style="font-size:1.6cqw">Integrate calendar →<br>Public address in iCal format</div>
+      </div>
+      <div class="panel" style="left:36cqw; top:9.5cqw; width:57.75cqw; height:34cqw">
+        <div class="bar"><span>Google Calendar · Settings</span><i>simplified</i></div>
+        <div style="padding:2cqw 2.2cqw; display:flex; flex-direction:column; gap:1.3cqw">
+          <div class="lbl" style="font-size:1.5cqw">Integrate calendar</div>
+          <div style="display:flex; flex-direction:column; gap:0.5cqw; opacity:0.5">
+            <div class="small">Public URL to this calendar</div>
+            <div class="field">https://calendar.google.com/calendar/embed?src=…</div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:0.5cqw">
+            <div class="small" style="color:var(--ink); font-weight:600">Public address in iCal format</div>
+            <div style="display:flex; gap:0.8cqw; align-items:center">
+              <div class="field mono ring" style="flex:1; font-size:1.05cqw">https://calendar.google.com/calendar/ical/…/public/basic.ics</div>
+              <div class="btn" style="background:var(--ink); color:#fff; border-color:var(--ink)">Copy</div>
+            </div>
+          </div>
+          <div class="small" style="opacity:0.5">Secret address in iCal format</div>
+        </div>
+        <svg class="cursor" style="left:53cqw; top:24.3cqw" viewBox="0 0 24 24"><path d="M4 2l16 10-7 1.5L9.5 21z" fill="#241F1A" stroke="#fff" stroke-width="1.5"/></svg>
+      </div>
+      <div class="ko"></div>
+      <div class="cap">Copy the Public address in iCal format.</div>
+    </div>
+    <div class="labels"><b>06 · COPY THE LINK</b><span>frame-06 · 1:00–1:09</span></div>
+    <div class="note"><b>Moves first:</b> the settings panel scrolls up to "Integrate calendar"; the iCal field rings amber, the pointer presses Copy, and a small "Copied" tag pops. Not the secret address.</div>
+    <div class="vo">"Now scroll down to Integrate calendar. Copy the Public address in iCal format."</div>
+    <div class="chip">seam out → crossfade</div>
+  </div>
+
+  <div class="act">Act 3 · Steps 2 and 3 — tag, then paste</div>
+
+  <!-- 07 -->
+  <div class="cell">
+    <div class="f" id="frame-07">
+      <div class="glow" style="right:-24cqw; bottom:-32cqw"></div>
+      <div class="step">Step 2 of 3 · Tag your events</div>
+      <div style="position:absolute; left:6.25cqw; top:12cqw; width:26cqw; display:flex; flex-direction:column; gap:1.4cqw">
+        <div class="h" style="font-size:3.9cqw">Add <span class="mono" style="color:var(--accent); text-transform:none">#guild</span></div>
+        <div class="sub" style="font-size:1.6cqw">In each title or description.<br>Only tagged events come through.</div>
+      </div>
+      <div class="panel" style="left:36cqw; top:8.5cqw; width:57.75cqw; height:24.5cqw">
+        <div class="bar"><span>Google Calendar · Event</span><i>simplified</i></div>
+        <div style="padding:1.6cqw 2.2cqw; display:flex; flex-direction:column; gap:0.9cqw">
+          <div style="font:700 1.9cqw Chivo">VIP Members Party</div>
+          <div class="small">Thursday, October 1 · 5:00 – 11:00 pm</div>
+          <div class="field" style="line-height:1.55">VIP Members ONLY party!<br>RSVP: https://bobsbrewery.com/vip<br><span class="mono ring" style="background:#FCE7D2; border-radius:0.3cqw; padding:0 0.4cqw; font-weight:700">#guild</span><span style="border-left:0.15cqw solid var(--ink); margin-left:0.2cqw"></span></div>
+        </div>
+      </div>
+      <div style="position:absolute; left:36cqw; top:35cqw; width:57.75cqw; display:grid; grid-template-columns:1fr 1fr; gap:1.4cqw">
+        <div style="background:var(--surface); border:0.14cqw solid var(--accent); border-radius:0.8cqw; padding:1cqw 1.3cqw">
+          <div style="font:700 1.3cqw Chivo">VIP Members Party · <span class="mono">#guild</span></div>
+          <div style="font:600 1.1cqw Chivo; color:var(--accent)">✓ On your profile</div>
+        </div>
+        <div style="background:var(--surface); border:0.14cqw solid var(--border); border-radius:0.8cqw; padding:1cqw 1.3cqw; opacity:0.6">
+          <div style="font:700 1.3cqw Chivo">Staff meeting</div>
+          <div style="font:600 1.1cqw Chivo; color:var(--muted)">No tag · stays off</div>
+        </div>
+      </div>
+      <div class="ko"></div>
+      <div class="cap">Type #guild in each event's title or description.</div>
+    </div>
+    <div class="labels"><b>07 · TAG YOUR EVENTS</b><span>frame-07 · 1:09–1:20</span></div>
+    <div class="note"><b>Moves first:</b> "#guild" types into the description letter by letter with a blinking caret; then the two result chips slide up: the tagged event goes amber, the untagged one stays gray.</div>
+    <div class="vo">"Step two. Add your events to this calendar. Type #guild in each event's title or description. Only tagged events come through."</div>
+    <div class="chip">seam out → crossfade</div>
+  </div>
+
+  <!-- 08 -->
+  <div class="cell">
+    <div class="f" id="frame-08">
+      <div class="glow" style="left:-26cqw; top:-30cqw"></div>
+      <div class="step">Step 3 of 3 · Paste one link</div>
+      <div class="panel" style="left:6.25cqw; top:9cqw; width:87.5cqw; height:36.5cqw; background:#F9F6F0">
+        <div style="height:3cqw; background:#171410; display:flex; align-items:center; justify-content:space-between; padding:0 1.6cqw; font:600 0.9cqw Chivo; letter-spacing:0.14em; color:#B6AC9D">ISC BREWERS GUILD · MEMBER PORTAL<span style="letter-spacing:0; font-weight:500; color:#F7F3EC">Bob's Brewery</span></div>
+        <div style="display:flex; height:calc(100% - 3cqw)">
+          <div style="width:15cqw; border-right:0.1cqw solid #EFEAE1; padding:1.4cqw 1cqw; display:flex; flex-direction:column; gap:0.35cqw; font:400 1cqw Chivo">
+            <div style="padding:0.55cqw 0.8cqw">Basics &amp; hours</div>
+            <div style="padding:0.55cqw 0.8cqw">Logo &amp; cover</div>
+            <div style="padding:0.55cqw 0.8cqw">Photos</div>
+            <div style="padding:0.55cqw 0.8cqw; background:#241F1A; color:#F9F6F0; border-radius:0.5cqw; font-weight:600">Events</div>
+            <div style="padding:0.55cqw 0.8cqw">Food</div>
+            <div style="padding:0.55cqw 0.8cqw">Links &amp; contact</div>
+            <div style="padding:0.55cqw 0.8cqw">Theme</div>
+            <div style="padding:0.55cqw 0.8cqw">People</div>
+          </div>
+          <div style="flex:1; padding:1.8cqw 2.2cqw; display:flex; flex-direction:column; gap:1.2cqw">
+            <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:2.3cqw">Events</div>
+            <div style="background:#fff; border:0.1cqw solid var(--cborder); border-radius:1cqw; padding:1.6cqw 1.8cqw; display:flex; flex-direction:column; gap:1.2cqw">
+              <div style="display:flex; align-items:center; gap:1.4cqw">
+                <div style="width:3cqw; height:3cqw; border-radius:0.7cqw; background:var(--canvas2); display:flex; align-items:center; justify-content:center; font:700 1.2cqw Chivo; color:var(--ink-muted)">▦</div>
+                <div style="flex:1; display:flex; flex-direction:column; gap:0.3cqw">
+                  <div style="font:600 1.3cqw Chivo">Calendar subscription</div>
+                  <div class="small">calendar.google.com · importing events tagged <b style="color:var(--ink)">#guild</b></div>
+                  <div class="small" style="display:flex; align-items:center; gap:0.5cqw"><span style="width:0.6cqw; height:0.6cqw; border-radius:50%; background:var(--good)"></span>Last synced just now · the site checks it automatically</div>
+                </div>
+                <div class="btn ring">↻ Refresh now</div>
+                <div class="small" style="padding:0 0.8cqw">Edit link</div>
+              </div>
+              <div style="border-top:0.1cqw solid var(--canvas2); padding-top:1.1cqw; display:grid; grid-template-columns:2fr 1fr; gap:1.2cqw">
+                <div style="display:flex; flex-direction:column; gap:0.45cqw"><div class="small" style="color:var(--ink); font-weight:600">ICS subscription URL</div><div class="field mono" style="font-size:0.95cqw">https://calendar.google.com/calendar/ical/…/public/basic.ics</div></div>
+                <div style="display:flex; flex-direction:column; gap:0.45cqw"><div class="small" style="color:var(--ink); font-weight:600">Sync tag</div><div class="field mono" style="font-size:0.95cqw">#guild</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <svg class="cursor" style="left:67.5cqw; top:17.5cqw" viewBox="0 0 24 24"><path d="M4 2l16 10-7 1.5L9.5 21z" fill="#241F1A" stroke="#fff" stroke-width="1.5"/></svg>
+      </div>
+      <div class="ko"></div>
+      <div class="cap">Paste your link and type the same tag. Then press Refresh now.</div>
+    </div>
+    <div class="labels"><b>08 · PASTE AND REFRESH</b><span>frame-08 · 1:20–1:35</span></div>
+    <div class="note"><b>Moves first:</b> pointer on "Add calendar" → the two fields open → the link pastes in, "#guild" types into Sync tag → the card becomes "Calendar subscription · importing events tagged #guild" → Refresh now presses and the green "Last synced just now" appears. Rebuilt from the real portal screen (shown here at its end state).</div>
+    <div class="vo">"Step three. Sign in to the Member Portal and open Events. Press Add calendar. Paste your link and type the same tag. Then press Refresh now."</div>
+    <div class="chip">seam out → zoom out to the profile</div>
+  </div>
+
+  <div class="act">Act 4 · The payoff</div>
+
+  <!-- 09 -->
+  <div class="cell">
+    <div class="f" id="frame-09">
+      <div class="glow" style="right:-20cqw; top:-24cqw"></div>
+      <div style="position:absolute; left:6.25cqw; top:12cqw; width:26cqw; display:flex; flex-direction:column; gap:1.4cqw">
+        <div class="eyebrow">Right away</div>
+        <div class="h" style="font-size:3.9cqw">On your profile</div>
+        <div class="sub" style="font-size:1.6cqw">Time, place and your description.</div>
+      </div>
+      <div class="browser" style="left:36cqw; top:6cqw; width:57.75cqw; height:39cqw">
+        <div class="top"><span></span><span></span><span></span><em>iscbrewersguild.org/members/bob-s-brewery</em></div>
+        <div style="height:calc(100% - 2.4cqw); overflow:hidden"><img src="assets/screens/profile-top.png" alt="Bob's Brewery profile: Upcoming events" style="width:100%; transform:translateY(-6%)"></div>
+      </div>
+      <div class="ko"></div>
+      <div class="cap">Your events show up on your profile right away.</div>
+    </div>
+    <div class="labels"><b>09 · ON YOUR PROFILE</b><span>frame-09 · 1:35–1:44</span></div>
+    <div class="note"><b>Moves first:</b> the browser window rises in; a slow push toward the Upcoming events list, with an amber ring on the first event. Real staging screenshot.</div>
+    <div class="vo">"Your events show up on your profile right away. With the time and the place and your description."</div>
+    <div class="chip">seam out → crossfade</div>
+  </div>
+
+  <!-- 10 -->
+  <div class="cell">
+    <div class="f" id="frame-10">
+      <div class="glow" style="left:-22cqw; bottom:-30cqw"></div>
+      <div style="position:absolute; left:6.25cqw; top:12cqw; width:26cqw; display:flex; flex-direction:column; gap:1.4cqw">
+        <div class="eyebrow">Next two weeks</div>
+        <div class="h" style="font-size:3.9cqw">On the Guild homepage</div>
+        <div class="sub" style="font-size:1.6cqw">Your own calendar page.<br>Your logo. Your color.</div>
+      </div>
+      <div class="browser" style="left:36cqw; top:6cqw; width:57.75cqw; height:39cqw">
+        <div class="top"><span></span><span></span><span></span><em>iscbrewersguild.org</em></div>
+        <div style="height:calc(100% - 2.4cqw); overflow:hidden"><img src="assets/screens/home-carousel-1.png" alt="Homepage carousel showing Bob's Brewery's calendar page" style="width:100%"></div>
+      </div>
+      <div class="ko"></div>
+      <div class="cap">Each one gets its own calendar page with your logo and your color.</div>
+    </div>
+    <div class="labels"><b>10 · ON THE HOMEPAGE</b><span>frame-10 · 1:44–1:55</span></div>
+    <div class="note"><b>Moves first:</b> push in on the calendar page; on "its own calendar page" it tears off to the next member's page (second real screenshot). <b>Callback</b> to scene 1's tearing page, now for real.</div>
+    <div class="vo">"Events in the next two weeks also appear on the Guild homepage. Each one gets its own calendar page with your logo and your color."</div>
+    <div class="chip">seam out → crossfade to end card</div>
+  </div>
+
+  <!-- 11 -->
+  <div class="cell">
+    <div class="f" id="frame-11">
+      <div class="glow" style="left:22cqw; top:-10cqw; width:70cqw; height:70cqw"></div>
+      <div style="position:absolute; left:6.25cqw; top:11cqw; width:58cqw; display:flex; flex-direction:column; gap:1.8cqw">
+        <div class="h" style="font-size:4.6cqw">Add events to that calendar.<br><span style="color:var(--accent)">The site keeps up.</span></div>
+        <div style="display:flex; flex-direction:column; gap:0.8cqw; font:400 1.7cqw/1.45 Chivo; color:var(--muted)">
+          <div>Google can take a few hours to update its link.</div>
+          <div>Need help? Press <b style="color:var(--fg)">Help</b> in the Member Portal.</div>
+        </div>
+      </div>
+      <div class="page" style="right:9cqw; top:9cqw; width:17cqw">
+        <div class="strip" style="background:var(--amber-theme)"><span class="logo">B</span>Bob's Brewery</div>
+        <div class="tear"></div>
+        <div class="date"><span class="m">OCTOBER</span><span class="d" style="color:var(--amber-theme); font-size:6.8cqw">10</span><span class="w">SATURDAY</span></div>
+      </div>
+      <div style="position:absolute; left:6.25cqw; top:40cqw; font:700 1.1cqw Chivo; letter-spacing:0.22em; color:var(--muted)">ISC BREWERS GUILD</div>
+      <div class="ko"></div>
+      <div class="cap">From now on just add events to that calendar.</div>
+    </div>
+    <div class="labels"><b>11 · KEEP IT GOING</b><span>frame-11 · 1:55–2:07</span></div>
+    <div class="note"><b>Moves first:</b> one restrained slide-up of the two lines, then a still hold to the end. The small calendar page quietly flips to the next date once. Ends on the Guild name.</div>
+    <div class="vo">"From now on just add events to that calendar. The site checks for changes on its own. Google can take a few hours to update so give it a little time. Need help? Press Help in the Member Portal."</div>
+    <div class="chip">end</div>
+  </div>
+
+  <!-- seam map -->
+  <div class="cell">
+    <div class="tokens">
+      <b style="color:var(--fg); font-size:13px; letter-spacing:0.12em">SEAM MAP</b>
+      <div class="seams">
+        <span><b>01</b> tear-off → crossfade</span><span><b>02</b> card 1 grows</span><span><b>03</b> panel slides to settings</span><span><b>04</b> push in on menu</span>
+        <span><b>05</b> crossfade</span><span><b>06</b> crossfade</span><span><b>07</b> crossfade</span>
+        <span><b>08</b> zoom out</span><span><b>09</b> crossfade</span><span><b>10</b> tear-off → end card</span>
+      </div>
+      <div>One direction for the whole film: content enters from the right, leaves to the left. The tearing calendar page opens (01) and returns (10).</div>
+    </div>
+  </div>
+
+  <!-- tokens -->
+  <div class="cell">
+    <div class="tokens">
+      <b style="color:var(--fg); font-size:13px; letter-spacing:0.12em">TOKENS (from the site)</b>
+      <div class="sw">
+        <div><i style="background:#171410"></i>bg #171410</div><div><i style="background:#211C17"></i>surface #211C17</div>
+        <div><i style="background:#F7F3EC"></i>text #F7F3EC</div><div><i style="background:#B6AC9D"></i>muted #B6AC9D</div>
+        <div><i style="background:#E8913A"></i>accent #E8913A</div><div><i style="background:#FBF8F2"></i>paper #FBF8F2</div>
+        <div><i style="background:#241F1A"></i>ink #241F1A</div>
+      </div>
+      <div><b style="color:var(--fg)">Type:</b> Bricolage Grotesque 800 uppercase (headlines) · Chivo 400–700 (everything else) · monospace only for links and #guild.</div>
+      <div><b style="color:var(--fg)">Bans:</b> no gradient text or neon; no copies of Google's screens (simplified, labeled); no slideshow (every beat has a move that means something); no screensaver drift.</div>
+      <div><b style="color:var(--fg)">Held beats:</b> scene 3, "anyone with its link can see everything"; scene 5, "nothing comes through".</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

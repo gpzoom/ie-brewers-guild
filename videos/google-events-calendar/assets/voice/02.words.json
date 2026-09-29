@@ -1,0 +1,92 @@
+[
+  {
+    "id": "w0",
+    "text": "It",
+    "start": 0.2,
+    "end": 0.3
+  },
+  {
+    "id": "w1",
+    "text": "takes",
+    "start": 0.36,
+    "end": 0.68
+  },
+  {
+    "id": "w2",
+    "text": "three",
+    "start": 0.72,
+    "end": 0.9
+  },
+  {
+    "id": "w3",
+    "text": "steps.",
+    "start": 1.06,
+    "end": 1.42
+  },
+  {
+    "id": "w4",
+    "text": "Make",
+    "start": 2.32,
+    "end": 2.54
+  },
+  {
+    "id": "w5",
+    "text": "an",
+    "start": 2.58,
+    "end": 2.62
+  },
+  {
+    "id": "w6",
+    "text": "events",
+    "start": 2.66,
+    "end": 2.96
+  },
+  {
+    "id": "w7",
+    "text": "calendar.",
+    "start": 3.06,
+    "end": 3.54
+  },
+  {
+    "id": "w8",
+    "text": "Tag",
+    "start": 4.1,
+    "end": 4.38
+  },
+  {
+    "id": "w9",
+    "text": "your",
+    "start": 4.42,
+    "end": 4.52
+  },
+  {
+    "id": "w10",
+    "text": "events.",
+    "start": 4.56,
+    "end": 5
+  },
+  {
+    "id": "w11",
+    "text": "Then",
+    "start": 6,
+    "end": 6.22
+  },
+  {
+    "id": "w12",
+    "text": "paste",
+    "start": 6.28,
+    "end": 6.58
+  },
+  {
+    "id": "w13",
+    "text": "one",
+    "start": 6.78,
+    "end": 6.92
+  },
+  {
+    "id": "w14",
+    "text": "link.",
+    "start": 7.02,
+    "end": 7.34
+  }
+]

@@ -1,0 +1,9 @@
+# Video tool caches and generated output
+.hyperframes/
+.media/
+.thumbnails/
+.waveform-cache/
+snapshots/
+renders/
+*.mp4
+node_modules/

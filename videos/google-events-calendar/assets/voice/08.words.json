@@ -1,0 +1,158 @@
+[
+  {
+    "id": "w0",
+    "text": "Step",
+    "start": 0.28,
+    "end": 0.48
+  },
+  {
+    "id": "w1",
+    "text": "three.",
+    "start": 0.54,
+    "end": 0.88
+  },
+  {
+    "id": "w2",
+    "text": "Sign",
+    "start": 1.74,
+    "end": 2
+  },
+  {
+    "id": "w3",
+    "text": "in",
+    "start": 2.06,
+    "end": 2.26
+  },
+  {
+    "id": "w4",
+    "text": "to",
+    "start": 2.3,
+    "end": 2.36
+  },
+  {
+    "id": "w5",
+    "text": "the",
+    "start": 2.4,
+    "end": 2.48
+  },
+  {
+    "id": "w6",
+    "text": "Member",
+    "start": 2.52,
+    "end": 2.78
+  },
+  {
+    "id": "w7",
+    "text": "Portal",
+    "start": 2.92,
+    "end": 3.24
+  },
+  {
+    "id": "w8",
+    "text": "and",
+    "start": 3.36,
+    "end": 3.46
+  },
+  {
+    "id": "w9",
+    "text": "open",
+    "start": 3.58,
+    "end": 3.78
+  },
+  {
+    "id": "w10",
+    "text": "Events.",
+    "start": 3.82,
+    "end": 4.26
+  },
+  {
+    "id": "w11",
+    "text": "Press",
+    "start": 4.88,
+    "end": 5.16
+  },
+  {
+    "id": "w12",
+    "text": "Add",
+    "start": 5.38,
+    "end": 5.56
+  },
+  {
+    "id": "w13",
+    "text": "calendar.",
+    "start": 5.66,
+    "end": 6.12
+  },
+  {
+    "id": "w14",
+    "text": "Paste",
+    "start": 6.78,
+    "end": 7.08
+  },
+  {
+    "id": "w15",
+    "text": "your",
+    "start": 7.12,
+    "end": 7.22
+  },
+  {
+    "id": "w16",
+    "text": "link",
+    "start": 7.28,
+    "end": 7.52
+  },
+  {
+    "id": "w17",
+    "text": "and",
+    "start": 7.66,
+    "end": 7.74
+  },
+  {
+    "id": "w18",
+    "text": "type",
+    "start": 7.86,
+    "end": 8.119
+  },
+  {
+    "id": "w19",
+    "text": "the",
+    "start": 8.18,
+    "end": 8.28
+  },
+  {
+    "id": "w20",
+    "text": "same",
+    "start": 8.34,
+    "end": 8.56
+  },
+  {
+    "id": "w21",
+    "text": "tag.",
+    "start": 8.66,
+    "end": 9
+  },
+  {
+    "id": "w22",
+    "text": "Then",
+    "start": 9.54,
+    "end": 9.74
+  },
+  {
+    "id": "w23",
+    "text": "press",
+    "start": 9.78,
+    "end": 10.1
+  },
+  {
+    "id": "w24",
+    "text": "Refresh",
+    "start": 10.32,
+    "end": 10.78
+  },
+  {
+    "id": "w25",
+    "text": "now.",
+    "start": 11.02,
+    "end": 11.28
+  }
+]

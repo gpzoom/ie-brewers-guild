@@ -1,0 +1,134 @@
+[
+  {
+    "id": "w0",
+    "text": "Step",
+    "start": 0.28,
+    "end": 0.48
+  },
+  {
+    "id": "w1",
+    "text": "two.",
+    "start": 0.58,
+    "end": 0.88
+  },
+  {
+    "id": "w2",
+    "text": "Add",
+    "start": 1.54,
+    "end": 1.72
+  },
+  {
+    "id": "w3",
+    "text": "your",
+    "start": 1.78,
+    "end": 1.88
+  },
+  {
+    "id": "w4",
+    "text": "events",
+    "start": 1.92,
+    "end": 2.34
+  },
+  {
+    "id": "w5",
+    "text": "to",
+    "start": 2.4,
+    "end": 2.48
+  },
+  {
+    "id": "w6",
+    "text": "this",
+    "start": 2.52,
+    "end": 2.72
+  },
+  {
+    "id": "w7",
+    "text": "calendar.",
+    "start": 2.78,
+    "end": 3.18
+  },
+  {
+    "id": "w8",
+    "text": "Type",
+    "start": 3.62,
+    "end": 3.88
+  },
+  {
+    "id": "w9",
+    "text": "hashtag",
+    "start": 4.059,
+    "end": 4.6
+  },
+  {
+    "id": "w10",
+    "text": "guild",
+    "start": 4.76,
+    "end": 5.1
+  },
+  {
+    "id": "w11",
+    "text": "in",
+    "start": 5.36,
+    "end": 5.5
+  },
+  {
+    "id": "w12",
+    "text": "each",
+    "start": 5.56,
+    "end": 5.72
+  },
+  {
+    "id": "w13",
+    "text": "event's",
+    "start": 5.78,
+    "end": 6.16
+  },
+  {
+    "id": "w14",
+    "text": "title",
+    "start": 6.2,
+    "end": 6.48
+  },
+  {
+    "id": "w15",
+    "text": "or",
+    "start": 6.52,
+    "end": 6.6
+  },
+  {
+    "id": "w16",
+    "text": "description.",
+    "start": 6.66,
+    "end": 7.2
+  },
+  {
+    "id": "w17",
+    "text": "Only",
+    "start": 7.8,
+    "end": 8.16
+  },
+  {
+    "id": "w18",
+    "text": "tagged",
+    "start": 8.24,
+    "end": 8.52
+  },
+  {
+    "id": "w19",
+    "text": "events",
+    "start": 8.58,
+    "end": 8.92
+  },
+  {
+    "id": "w20",
+    "text": "come",
+    "start": 9.04,
+    "end": 9.28
+  },
+  {
+    "id": "w21",
+    "text": "through.",
+    "start": 9.32,
+    "end": 9.64
+  }
+]

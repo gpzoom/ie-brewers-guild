@@ -1,0 +1,80 @@
+[
+  {
+    "id": "w0",
+    "text": "Now",
+    "start": 0.22,
+    "end": 0.4
+  },
+  {
+    "id": "w1",
+    "text": "scroll",
+    "start": 0.62,
+    "end": 0.94
+  },
+  {
+    "id": "w2",
+    "text": "down",
+    "start": 0.98,
+    "end": 1.3
+  },
+  {
+    "id": "w3",
+    "text": "to",
+    "start": 1.36,
+    "end": 1.68
+  },
+  {
+    "id": "w4",
+    "text": "Integrate",
+    "start": 1.74,
+    "end": 2.1
+  },
+  {
+    "id": "w5",
+    "text": "calendar.",
+    "start": 2.2,
+    "end": 2.6
+  },
+  {
+    "id": "w6",
+    "text": "Copy",
+    "start": 3.02,
+    "end": 3.34
+  },
+  {
+    "id": "w7",
+    "text": "the",
+    "start": 3.38,
+    "end": 3.46
+  },
+  {
+    "id": "w8",
+    "text": "Public",
+    "start": 3.5,
+    "end": 3.8
+  },
+  {
+    "id": "w9",
+    "text": "address",
+    "start": 3.86,
+    "end": 4.46
+  },
+  {
+    "id": "w10",
+    "text": "in",
+    "start": 4.56,
+    "end": 4.74
+  },
+  {
+    "id": "w11",
+    "text": "iCal",
+    "start": 4.82,
+    "end": 5.14
+  },
+  {
+    "id": "w12",
+    "text": "format.",
+    "start": 5.26,
+    "end": 5.62
+  }
+]

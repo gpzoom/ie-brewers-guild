@@ -1,0 +1,1 @@
+Now scroll down to Integrate calendar. Copy the Public address in iCal format.
