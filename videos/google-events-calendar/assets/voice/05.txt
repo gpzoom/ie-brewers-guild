@@ -1,1 +1,1 @@
-When you check the box, the dropdown selector becomes clickable. Click the selector to change it from "See only free busy" to "See all event details". This one is important. If you don't choose to see all the details then nothing will show up on your profile or the homepage.
+Now scroll down to "Integrate calendar". Copy the "Public address in iCal format". This will be used in Step three, so you may want to paste it somewhere you can grab it when you get there.

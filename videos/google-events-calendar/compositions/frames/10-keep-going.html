@@ -46,25 +46,22 @@
 #s10 .browser .top em { margin-left: 19px; font: 400 17px "Chivo"; font-style: normal; color: #B6AC9D; background: #1D1914; border-radius: 99px; padding: 5px 19px; }
 </style>
       <div id="s10" data-composition-id="s10" data-width="1920" data-height="1080">
-<div class="glow" data-layout-allow-overflow style="left:-420px; bottom:-560px"></div>
+<div class="glow" data-layout-allow-overflow style="left:420px; top:-190px; width:1340px; height:1340px"></div>
 <div class="stage">
-  <div class="left">
-    <div class="eyebrow">Next two weeks</div>
-    <div class="h head">On the Guild homepage</div>
-    <div class="sub path">Your own calendar page. Your logo. Your color.</div>
-  </div>
-  <div class="browser win" style="left:690px; top:150px; width:1110px; height:740px">
-    <div class="top"><span></span><span></span><span></span><em>iscbrewersguild.org</em></div>
-    <div style="position:relative; height:694px; overflow:hidden">
-      <div class="push" data-layout-allow-overflow style="position:absolute; left:0; top:0; width:1110px; height:694px">
-        <img class="shot2" src="assets/screens/home-carousel-2.png" alt="Homepage carousel, next member's calendar page" style="position:absolute; left:0; top:0; width:1110px; height:694px">
-        <img class="shot1" src="assets/screens/home-carousel-1.png" alt="Homepage carousel showing Bob's Brewery's calendar page" style="position:absolute; left:0; top:0; width:1110px; height:694px">
-        <div class="tearpiece" style="position:absolute; left:574px; top:148px; width:382px; height:412px; overflow:hidden; border-radius:9px">
-          <div data-layout-allow-overflow style="position:absolute; left:-574px; top:-148px; width:1110px; height:694px; background:url('assets/screens/home-carousel-1.png') 0 0 / 1110px 694px no-repeat"></div>
-        </div>
-      </div>
+  <div style="position:absolute; left:120px; top:200px; width:1130px; display:flex; flex-direction:column; gap:36px">
+    <div class="h" style="font-size:88px"><div class="l1">Add events to that calendar.</div><div class="l2 accent">The site keeps up.</div></div>
+    <div style="display:flex; flex-direction:column; gap:14px; font:400 33px/1.45 'Chivo'; color:#B6AC9D">
+      <div class="n1">Google can take a few hours to update its link.</div>
+      <div class="n2">Need help? Press <b style="color:#F7F3EC">Help</b> in the Member Portal.</div>
     </div>
   </div>
+  <div class="page" style="right:170px; top:170px; width:340px">
+  <div class="strip" style="background:#B45309"><span class="logo">B</span>Bob's Brewery</div>
+  <div class="tear"></div>
+  <div class="date"><span class="m">OCTOBER</span><span class="d" style="color:#B45309">10</span><span class="w">SATURDAY</span></div>
+  <div class="body"><div class="time">6:00 – 10:00 pm</div><div class="title">Halloween Costume Contest</div></div>
+</div>
+  <div class="mark" style="position:absolute; left:120px; top:780px; font:700 21px 'Chivo'; letter-spacing:0.22em; color:#B6AC9D">ISC BREWERS GUILD</div>
 </div>
       </div>
       <script>
@@ -72,17 +69,15 @@
           const tl = gsap.timeline({ paused: true });
 
 tl.fromTo("#s10 .stage", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power1.out" }, 0);
-tl.fromTo("#s10 .stage", { opacity: 1 }, { opacity: 0, duration: 0.4, ease: "power1.in", immediateRender: false }, 11.70);
-tl.fromTo("#s10 .glow", { scale: 1 }, { scale: 1.12, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: 2 }, 0);
-tl.fromTo("#s10 .eyebrow", { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 0.50);
-tl.fromTo("#s10 .head", { opacity: 0, x: -50 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 0.60);
-tl.fromTo("#s10 .path", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 6.44);
-tl.fromTo("#s10 .win", { opacity: 0, y: 80 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 0.35);
-tl.set("#s10 .push", { transformOrigin: "765px 354px" }, 0);
-tl.fromTo("#s10 .push", { scale: 1 }, { scale: 1.06, duration: 3.2, ease: "power2.inOut" }, 0.9);
-tl.set("#s10 .shot1", { opacity: 1 }, 0); tl.set("#s10 .shot1", { opacity: 0 }, 7.35);
-tl.set("#s10 .tearpiece", { transformOrigin: "15% 0%" }, 0);
-tl.fromTo("#s10 .tearpiece", { rotation: 0, y: 0, opacity: 1 }, { rotation: -11, y: -300, opacity: 0, duration: 0.75, ease: "power2.in", immediateRender: false }, 7.35);
+tl.fromTo("#s10 .stage", { opacity: 1 }, { opacity: 0, duration: 0.9, ease: "power1.in", immediateRender: false }, 17.05);
+tl.fromTo("#s10 .glow", { scale: 1 }, { scale: 1.12, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: 4 }, 0);
+tl.fromTo("#s10 .l1", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.50);
+tl.fromTo("#s10 .l2", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 4.96);
+tl.fromTo("#s10 .n1", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 7.99);
+tl.fromTo("#s10 .n2", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 12.11);
+tl.fromTo("#s10 .page", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 0.60);
+tl.fromTo("#s10 .page", { rotation: 0 }, { rotation: -2.5, duration: 4, ease: "sine.inOut", yoyo: true, repeat: 1, immediateRender: false }, 2);
+tl.fromTo("#s10 .mark", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power1.inOut", immediateRender: false }, 1.20);
 
           window.__timelines["s10"] = tl;
         })();

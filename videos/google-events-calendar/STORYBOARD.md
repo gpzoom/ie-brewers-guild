@@ -12,6 +12,16 @@ music: none (voice only, unless the owner asks for a quiet bed)
 
 - Owner, 28 September 2026: "tell/show them that they need to add a new calendar that is dedicated to events and then proceed from there." New frame 3 (a calendar just for events), with the privacy reason: anyone with a public calendar's link sees everything on it, tagged or not. Step 1 becomes "Make an events calendar". Frames after it renumber (old 3–10 → 4–11); frame 4 and frame 7 narration adjusted to follow on. Length ~2:07.
 
+## Changes after the ElevenLabs re-voice (owner, 2026-09-30)
+
+- **Frames 4 and 5 merged into one scene 4, "Make it public and show all details".** The comparison slide is gone. The whole setting now happens in Google's own screen:
+  1. Settings and sharing is pressed, and the right half appears with the dropdown grayed out.
+  2. The box is ticked, and Google's "Make this calendar public?" box appears at once. The pointer presses OK.
+  3. The dropdown turns clickable. It opens and "See all event details" is picked.
+  4. On "important", the choice glows and a card on the left says "Don't skip this. Otherwise nothing shows up."
+- **The video is now 10 scenes.** Frames 6–11 below are scenes 5–10.
+- **Frame 2's third card** reads "On your profile, through the Member Portal".
+
 ## Locked
 
 - Owner approved sheet v2 on 28 September 2026 ("looks good - go!"): all 11 layouts, their on-screen wording and narration as drawn in storyboard.html v2.

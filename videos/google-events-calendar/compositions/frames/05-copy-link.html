@@ -46,21 +46,29 @@
 #s05 .browser .top em { margin-left: 19px; font: 400 17px "Chivo"; font-style: normal; color: #B6AC9D; background: #1D1914; border-radius: 99px; padding: 5px 19px; }
 </style>
       <div id="s05" data-composition-id="s05" data-width="1920" data-height="1080">
-<div class="glow" data-layout-allow-overflow style="right:-420px; top:-500px"></div>
+<div class="glow" data-layout-allow-overflow style="left:-420px; top:-540px"></div>
 <div class="stage">
   <div class="step">Step 1 of 3 · Make an events calendar</div>
-  <div class="h head" style="position:absolute; left:120px; top:190px; font-size:76px">Pick <span class="accent">See all event details</span></div>
-  <div style="position:absolute; left:120px; right:120px; top:350px; display:grid; grid-template-columns:1fr 1fr; gap:58px; perspective:1400px">
-    <div class="bad" style="background:#211C17; border:3px solid #3A332C; border-radius:24px; padding:40px; display:flex; flex-direction:column; gap:24px">
-      <div style="font:700 25px 'Chivo'; color:#B6AC9D">See only free/busy (hide details)</div>
-      <div style="background:#3A332C; border-radius:14px; padding:28px 32px"><div style="font:700 40px 'Chivo'">Busy</div><div style="font:400 24px 'Chivo'; color:#B6AC9D">5:00 – 11:00 pm</div></div>
-      <div class="badline" style="font:700 28px 'Chivo'; color:#E0896B">✕ Nothing comes through</div>
+  <div class="left">
+    <div class="h head">Copy the iCal link</div>
+    <div class="sub path">Integrate calendar → Public address in iCal format</div>
+  </div>
+  <div class="panel gp" style="left:690px; top:182px; width:1110px; height:653px">
+    <div class="bar"><span>Google Calendar · Settings</span><span class="badge">simplified</span></div>
+    <div class="scroll" data-layout-allow-overflow style="padding:38px 42px; display:flex; flex-direction:column; gap:26px">
+      <div class="lbl">Integrate calendar</div>
+      <div style="display:flex; flex-direction:column; gap:10px; opacity:0.8"><div class="small">Public URL to this calendar</div><div class="field">https://calendar.google.com/calendar/embed?src=…</div></div>
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div class="small" style="color:#241F1A; font-weight:600">Public address in iCal format</div>
+        <div style="display:flex; gap:15px; align-items:center">
+          <div class="field mono ical" style="flex:1; font-size:20px">https://calendar.google.com/calendar/ical/…/public/basic.ics</div>
+          <span class="btn dark copy">Copy</span>
+        </div>
+        <div class="copied" style="align-self:flex-end; font:700 18px 'Chivo'; color:#fff; background:#2F6B33; border-radius:99px; padding:6px 16px">Copied</div>
+      </div>
+      <div class="small" style="opacity:0.8">Secret address in iCal format</div>
     </div>
-    <div class="good" style="background:#211C17; border:3px solid #3A332C; border-radius:24px; padding:40px; display:flex; flex-direction:column; gap:24px">
-      <div style="font:700 25px 'Chivo'; color:#E8913A">See all event details</div>
-      <div style="background:#FBF8F2; color:#241F1A; border-radius:14px; padding:28px 32px"><div style="font:700 40px 'Chivo'">VIP Members Party</div><div style="font:400 24px 'Chivo'; color:#6B6156">5:00 – 11:00 pm</div><div style="font:400 21px 'Chivo'; color:#3A332C; margin-top:10px">RSVP: bobsbrewery.com/vip · <span class="mono" style="font-weight:700">#guild</span></div></div>
-      <div class="goodline" style="font:700 28px 'Chivo'; color:#E8913A">✓ Your events come through</div>
-    </div>
+    <div class="cursor"><svg viewBox="0 0 24 24"><path d="M4 2l16 10-7 1.5L9.5 21z" fill="#241F1A" stroke="#fff" stroke-width="1.5"/></svg></div>
   </div>
 </div>
       </div>
@@ -69,18 +77,19 @@
           const tl = gsap.timeline({ paused: true });
 
 tl.fromTo("#s05 .stage", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power1.out" }, 0);
-tl.fromTo("#s05 .stage", { opacity: 1 }, { opacity: 0, duration: 0.4, ease: "power1.in", immediateRender: false }, 21.59);
-tl.fromTo("#s05 .glow", { scale: 1 }, { scale: 1.12, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: 5 }, 0);
+tl.fromTo("#s05 .stage", { opacity: 1 }, { opacity: 0, duration: 0.4, ease: "power1.in", immediateRender: false }, 13.78);
+tl.fromTo("#s05 .glow", { scale: 1 }, { scale: 1.12, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: 3 }, 0);
 tl.fromTo("#s05 .step", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power1.inOut", immediateRender: false }, 0.30);
 tl.fromTo("#s05 .head", { opacity: 0, x: -50 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 0.50);
-tl.fromTo("#s05 .bad", { opacity: 0, rotationY: 28, x: -60 }, { opacity: 1, rotationY: 0, x: 0, duration: 0.8, ease: "power3.out" }, 7.27);
-tl.fromTo("#s05 .good", { opacity: 0, rotationY: -28, x: 60 }, { opacity: 1, rotationY: 0, x: 0, duration: 0.8, ease: "power3.out" }, 9.48);
-tl.fromTo("#s05 .bad", { opacity: 1 }, { opacity: 0.75, duration: 0.5, ease: "power1.inOut", immediateRender: false }, 13.21);
-tl.fromTo("#s05 .good", { borderColor: "#3A332C", scale: 1 }, { borderColor: "#E8913A", scale: 1.03, duration: 0.5, ease: "back.out(2)", immediateRender: false }, 13.21);
-tl.fromTo("#s05 .goodline", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.55, ease: "back.out(2.2)" }, 13.41);
-tl.set("#s05 .goodline", { opacity: 0 }, 0);
-tl.fromTo("#s05 .badline", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 17.51);
-tl.set("#s05 .badline", { opacity: 0 }, 0);
+tl.fromTo("#s05 .path", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 1.93);
+tl.fromTo("#s05 .gp", { opacity: 0, y: 70 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 0.40);
+tl.fromTo("#s05 .scroll", { y: 120 }, { y: 0, duration: 1.0, ease: "power2.inOut" }, 0.78);
+tl.fromTo("#s05 .ical", { boxShadow: "0 0 0 0px #E8913A" }, { boxShadow: "0 0 0 7px #E8913A", duration: 0.3 }, 3.91);
+tl.fromTo("#s05 .copied", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.55, ease: "back.out(2.2)" }, 6.51);
+tl.set("#s05 .copied", { opacity: 0 }, 0);
+tl.fromTo("#s05 .cursor", { opacity: 0, x: 700, y: 520 }, { opacity: 1, duration: 0.3 }, 3.31);
+tl.fromTo("#s05 .cursor", { x: 700, y: 520 }, { x: 985, y: 322, duration: 2.89, ease: "power2.inOut", immediateRender: false }, 3.36);
+tl.fromTo("#s05 .cursor svg", { scale: 1 }, { scale: 0.8, duration: 0.1, ease: "power1.in", yoyo: true, repeat: 1, immediateRender: false }, 6.31);
 
           window.__timelines["s05"] = tl;
         })();

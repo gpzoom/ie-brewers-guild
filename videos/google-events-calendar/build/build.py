@@ -16,12 +16,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(ROOT)
 
 LEAD = 0.5  # seconds of picture before the voice starts in every scene
-TAIL = {1: 0.9, 2: 0.9, 3: 1.0, 4: 0.9, 5: 1.2, 6: 1.0, 7: 0.9, 8: 1.1, 9: 1.0, 10: 1.2, 11: 2.4}
+TAIL = {1: 0.9, 2: 0.9, 3: 1.0, 4: 1.3, 5: 1.0, 6: 0.9, 7: 1.1, 8: 1.0, 9: 1.2, 10: 2.4}
 
 SCENES = [
     (1, "promise"), (2, "three-steps"), (3, "new-calendar"), (4, "make-public"),
-    (5, "all-details"), (6, "copy-link"), (7, "tag-events"), (8, "paste-refresh"),
-    (9, "profile"), (10, "homepage"), (11, "keep-going"),
+    (5, "copy-link"), (6, "tag-events"), (7, "paste-refresh"),
+    (8, "profile"), (9, "homepage"), (10, "keep-going"),
 ]
 
 
@@ -301,6 +301,9 @@ def scene3(s, d):
 
 
 def scene4(s, d):
+    """Make it public and show all details: one continuous pass through Google's settings.
+    Settings and sharing -> tick Make available to public -> confirm popup (OK) ->
+    dropdown turns clickable -> open it -> pick See all event details."""
     c = cue
     html = f"""
 <div class="glow" data-layout-allow-overflow style="left:-460px; bottom:-580px"></div>
@@ -309,13 +312,14 @@ def scene4(s, d):
   <div class="left">
     <div class="h head">Make it public</div>
     <div class="sub path">Settings and sharing → Access permissions for events</div>
+    <div class="must" style="display:flex; gap:17px; align-items:flex-start; background:#211C17; border:3px solid #E8913A; border-radius:16px; padding:20px 24px; font:500 27px/1.4 'Chivo'; color:#F7F3EC"><span style="color:#E8913A; font-weight:800">!</span><span>Don't skip this. Otherwise nothing shows up.</span></div>
   </div>
   <div class="panel gp" style="left:690px; top:163px; width:1110px; height:700px">
     {gpanel_bar("Google Calendar · Settings")}
     <div style="display:flex; height:638px">
       <div style="width:400px; border-right:2px solid #DED7CB; padding:32px 24px; display:flex; flex-direction:column; gap:17px">
         <div class="caps">Other calendars</div>
-        <div class="row" style="display:flex; align-items:center; gap:13px; border-radius:10px; padding:12px 14px; font:600 20px 'Chivo'"><span style="width:19px; height:19px; border-radius:4px; background:#B45309"></span>Bob's Brewery Events<span style="margin-left:auto; color:#6B6156">⋮</span></div>
+        <div class="row" style="display:flex; align-items:center; gap:13px; border-radius:10px; padding:12px 14px; font:600 20px 'Chivo'; background:#EFEAE1"><span style="width:19px; height:19px; border-radius:4px; background:#B45309"></span>Bob's Brewery Events<span style="margin-left:auto; color:#6B6156">⋮</span></div>
         <div class="sas" style="margin-left:40px; background:#fff; border-radius:10px; padding:12px 17px; font:600 20px 'Chivo'; box-shadow:0 12px 28px rgba(0,0,0,0.16)">Settings and sharing</div>
       </div>
       <div style="flex:1; position:relative">
@@ -325,8 +329,18 @@ def scene4(s, d):
             <span class="box" style="width:34px; height:34px; border-radius:7px; border:3px solid #6B6156; display:flex; align-items:center; justify-content:center; position:relative"><span class="tick" style="position:absolute; inset:-3px; border-radius:7px; background:#241F1A; color:#fff; display:flex; align-items:center; justify-content:center; font:700 22px 'Chivo'">✓</span></span>
             <span style="font:600 25px 'Chivo'">Make available to public</span>
           </div>
-          <div class="field" data-layout-allow-overlap style="opacity:0.8">See only free/busy (hide details) ▾</div>
-          <div class="small" style="opacity:0.8">Share with specific people or groups</div>
+          <div class="dd" style="position:relative">
+            <div class="field ddfield" data-layout-allow-overlap style="position:relative; display:flex; justify-content:space-between; align-items:center">
+              <span class="v1" data-layout-allow-overlap>See only free/busy (hide details)</span>
+              <span class="v2" data-layout-allow-overlap style="position:absolute; left:19px; font-weight:700">See all event details</span>
+              <span>▾</span>
+            </div>
+            <div class="menu" data-layout-allow-overlap style="position:absolute; left:0; right:0; top:66px; z-index:5; background:#fff; border-radius:12px; box-shadow:0 18px 40px rgba(0,0,0,0.22); overflow:hidden; font:400 21px 'Chivo'">
+              <div style="padding:15px 19px">See only free/busy (hide details)</div>
+              <div class="opt2" style="padding:15px 19px; font-weight:700">See all event details</div>
+            </div>
+          </div>
+          <div class="small others" data-layout-allow-overlap>Share with specific people or groups</div>
         </div>
       </div>
     </div>
@@ -342,66 +356,52 @@ def scene4(s, d):
     <div class="cursor">{CURSOR_SVG}</div>
   </div>
 </div>"""
+    sas, tick, ok = c(4, "Settings"), c(4, "Make"), c(4, ("OK", "okay"))
+    open_dd, hover, pick, imp = c(4, "Click", 2), c(4, "See", 2), c(4, "details"), c(4, "important")
+    ring = lambda sel, at, w=7: f'tl.fromTo("#{s} {sel}", {{ boxShadow: "0 0 0 0px #E8913A" }}, {{ boxShadow: "0 0 0 {w}px #E8913A", duration: 0.3, immediateRender: false }}, {at:.2f});\n'
+    unring = lambda sel, at: f'tl.to("#{s} {sel}", {{ boxShadow: "0 0 0 0px #E8913A", duration: 0.3 }}, {at:.2f});\n'
     js = common_js(s, d)
     js += fade(f"#{s} .step", 0.3)
     js += slide(f"#{s} .head", c(4, "Next"), -50)
-    js += rise(f"#{s} .path", c(4, "Settings"), 24)
+    js += rise(f"#{s} .path", sas, 24)
     js += rise(f"#{s} .gp", 0.45, 70, 0.8)
-    name, openw, under, tick = c(4, "calendar's"), c(4, "open"), c(4, "Scroll"), c(4, "Make")
-    warn, ok = c(4, "warning"), c(4, ("OK", "okay"))
-    js += f'tl.fromTo("#{s} .row", {{ backgroundColor: "rgba(239,234,225,0)" }}, {{ backgroundColor: "rgba(239,234,225,1)", duration: 0.3 }}, {name + 0.2:.2f});\n'
-    js += pop(f"#{s} .sas", openw) + f'tl.set("#{s} .sas", {{ opacity: 0 }}, 0);\n'
-    js += f'tl.fromTo("#{s} .sas", {{ boxShadow: "0 0 0 0px #E8913A" }}, {{ boxShadow: "0 0 0 7px #E8913A", duration: 0.3, immediateRender: false }}, {c(4, "Settings"):.2f});\n'
-    js += fade(f"#{s} .perm", under - 0.4, 1, 0, 0.45) + f'tl.set("#{s} .perm", {{ opacity: 0 }}, 0);\n'
-    js += pop(f"#{s} .tick", tick + 0.1, 0.4) + f'tl.set("#{s} .tick", {{ opacity: 0 }}, 0);\n'
-    js += f'tl.fromTo("#{s} .pubrow", {{ boxShadow: "0 0 0 0px #E8913A" }}, {{ boxShadow: "0 0 0 7px #E8913A", duration: 0.3 }}, {tick + 0.1:.2f});\n'
-    js += cursor_path(s, [(name - 0.9, 700, 500), (name + 0.1, 330, 150), (openw - 0.2, 330, 150), (c(4, "Settings") + 0.1, 220, 222),
-                          (tick - 0.9, 500, 330), (tick - 0.05, 450, 300), (ok - 0.7, 912, 382)],
-                      press_at=(name + 0.2, c(4, "Settings") + 0.4, tick + 0.05, ok + 0.05))
-    # The confirm box appears as the warning is mentioned and closes when OK is pressed.
-    js += f'tl.set("#{s} .dim", {{ opacity: 0 }}, 0);\ntl.set("#{s} .modal", {{ opacity: 0 }}, 0);\n'
-    js += fade(f"#{s} .dim", warn, 1, 0, 0.3)
-    js += f'tl.fromTo("#{s} .modal", {{ opacity: 0, scale: 0.92 }}, {{ opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.8)", immediateRender: false }}, {warn + 0.05:.2f});\n'
-    js += f'tl.fromTo("#{s} .okbtn", {{ boxShadow: "0 0 0 0px #E8913A" }}, {{ boxShadow: "0 0 0 6px #E8913A", duration: 0.25, immediateRender: false }}, {ok:.2f});\n'
+    # hidden until their moment
+    for sel in (".perm", ".tick", ".dim", ".modal", ".menu", ".v2", ".must"):
+        js += f'tl.set("#{s} {sel}", {{ opacity: 0 }}, 0);\n'
+    # 1. press Settings and sharing; the right half appears with the dropdown grayed out
+    js += ring(".sas", sas + 0.05)
+    js += fade(f"#{s} .perm", sas + 0.45, 1, 0, 0.45)
+    js += f'tl.set("#{s} .dd", {{ opacity: 0.4 }}, 0);\n'
+    # 2. tick the box; Google's confirm box appears at once
+    js += pop(f"#{s} .tick", tick + 0.1, 0.4)
+    js += ring(".pubrow", tick + 0.1)
+    js += fade(f"#{s} .dim", tick + 0.4, 1, 0, 0.3)
+    js += f'tl.fromTo("#{s} .modal", {{ opacity: 0, scale: 0.92 }}, {{ opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.8)", immediateRender: false }}, {tick + 0.45:.2f});\n'
+    # 3. OK closes it and the dropdown becomes clickable
+    js += ring(".okbtn", ok, 6)
     js += f'tl.fromTo("#{s} .modal", {{ opacity: 1 }}, {{ opacity: 0, duration: 0.3, immediateRender: false }}, {ok + 0.45:.2f});\n'
     js += f'tl.fromTo("#{s} .dim", {{ opacity: 1 }}, {{ opacity: 0, duration: 0.3, immediateRender: false }}, {ok + 0.45:.2f});\n'
+    js += unring(".pubrow", ok + 0.45)
+    js += f'tl.fromTo("#{s} .dd", {{ opacity: 0.4 }}, {{ opacity: 1, duration: 0.4, immediateRender: false }}, {ok + 0.8:.2f});\n'
+    # 4. open the dropdown, point at See all event details, pick it
+    js += ring(".ddfield", open_dd + 0.05, 5)
+    js += f'tl.fromTo("#{s} .menu", {{ opacity: 0, y: -8 }}, {{ opacity: 1, y: 0, duration: 0.25, immediateRender: false }}, {open_dd + 0.15:.2f});\n'
+    js += f'tl.fromTo("#{s} .opt2", {{ backgroundColor: "rgba(252,231,210,0)" }}, {{ backgroundColor: "rgba(252,231,210,1)", duration: 0.25, immediateRender: false }}, {hover:.2f});\n'
+    js += f'tl.fromTo("#{s} .menu", {{ opacity: 1 }}, {{ opacity: 0, duration: 0.2, immediateRender: false }}, {pick + 0.35:.2f});\n'
+    js += f'tl.fromTo("#{s} .v1", {{ opacity: 1 }}, {{ opacity: 0, duration: 0.2, immediateRender: false }}, {pick + 0.35:.2f});\n'
+    js += f'tl.fromTo("#{s} .v2", {{ opacity: 0 }}, {{ opacity: 1, duration: 0.25, immediateRender: false }}, {pick + 0.4:.2f});\n'
+    # 5. "This one is important": the choice glows and the warning card lands
+    js += f'tl.fromTo("#{s} .ddfield", {{ borderColor: "#DED7CB" }}, {{ borderColor: "#E8913A", duration: 0.3, immediateRender: false }}, {imp - 0.2:.2f});\n'
+    js += ring(".ddfield", imp - 0.2, 7)
+    js += pop(f"#{s} .must", imp)
+    js += cursor_path(s, [(sas - 1.0, 700, 520), (sas - 0.1, 223, 216), (tick - 1.0, 223, 216), (tick - 0.1, 475, 191),
+                          (ok - 0.9, 475, 191), (ok - 0.1, 912, 382), (open_dd - 1.0, 912, 382), (open_dd - 0.05, 600, 290),
+                          (hover - 0.5, 600, 290), (hover + 0.1, 600, 400)],
+                      press_at=(sas + 0.05, tick + 0.05, ok + 0.05, open_dd + 0.05, pick + 0.25))
     return html, js
 
 
 def scene5(s, d):
-    c = cue
-    html = f"""
-<div class="glow" data-layout-allow-overflow style="right:-420px; top:-500px"></div>
-<div class="stage">
-  <div class="step">Step 1 of 3 · Make an events calendar</div>
-  <div class="h head" style="position:absolute; left:120px; top:190px; font-size:76px">Pick <span class="accent">See all event details</span></div>
-  <div style="position:absolute; left:120px; right:120px; top:350px; display:grid; grid-template-columns:1fr 1fr; gap:58px; perspective:1400px">
-    <div class="bad" style="background:#211C17; border:3px solid #3A332C; border-radius:24px; padding:40px; display:flex; flex-direction:column; gap:24px">
-      <div style="font:700 25px 'Chivo'; color:#B6AC9D">See only free/busy (hide details)</div>
-      <div style="background:#3A332C; border-radius:14px; padding:28px 32px"><div style="font:700 40px 'Chivo'">Busy</div><div style="font:400 24px 'Chivo'; color:#B6AC9D">5:00 – 11:00 pm</div></div>
-      <div class="badline" style="font:700 28px 'Chivo'; color:#E0896B">✕ Nothing comes through</div>
-    </div>
-    <div class="good" style="background:#211C17; border:3px solid #3A332C; border-radius:24px; padding:40px; display:flex; flex-direction:column; gap:24px">
-      <div style="font:700 25px 'Chivo'; color:#E8913A">See all event details</div>
-      <div style="background:#FBF8F2; color:#241F1A; border-radius:14px; padding:28px 32px"><div style="font:700 40px 'Chivo'">VIP Members Party</div><div style="font:400 24px 'Chivo'; color:#6B6156">5:00 – 11:00 pm</div><div style="font:400 21px 'Chivo'; color:#3A332C; margin-top:10px">RSVP: bobsbrewery.com/vip · <span class="mono" style="font-weight:700">#guild</span></div></div>
-      <div class="goodline" style="font:700 28px 'Chivo'; color:#E8913A">✓ Your events come through</div>
-    </div>
-  </div>
-</div>"""
-    js = common_js(s, d)
-    js += fade(f"#{s} .step", 0.3)
-    js += slide(f"#{s} .head", c(5, "When"), -50)
-    js += f'tl.fromTo("#{s} .bad", {{ opacity: 0, rotationY: 28, x: -60 }}, {{ opacity: 1, rotationY: 0, x: 0, duration: 0.8, ease: "power3.out" }}, {c(5, "See") - 0.1:.2f});\n'
-    js += f'tl.fromTo("#{s} .good", {{ opacity: 0, rotationY: -28, x: 60 }}, {{ opacity: 1, rotationY: 0, x: 0, duration: 0.8, ease: "power3.out" }}, {c(5, "See", 2) - 0.1:.2f});\n'
-    m = c(5, "important")
-    js += fade(f"#{s} .bad", m - 0.2, 0.75, 1, 0.5)
-    js += f'tl.fromTo("#{s} .good", {{ borderColor: "#3A332C", scale: 1 }}, {{ borderColor: "#E8913A", scale: 1.03, duration: 0.5, ease: "back.out(2)", immediateRender: false }}, {m - 0.2:.2f});\n'
-    js += pop(f"#{s} .goodline", m) + f'tl.set("#{s} .goodline", {{ opacity: 0 }}, 0);\n'
-    js += rise(f"#{s} .badline", c(5, "nothing"), 16, 0.5) + f'tl.set("#{s} .badline", {{ opacity: 0 }}, 0);\n'
-    return html, js
-
-
-def scene6(s, d):
     c = cue
     html = f"""
 <div class="glow" data-layout-allow-overflow style="left:-420px; top:-540px"></div>
@@ -431,19 +431,19 @@ def scene6(s, d):
 </div>"""
     js = common_js(s, d)
     js += fade(f"#{s} .step", 0.3)
-    js += slide(f"#{s} .head", c(6, "Now"), -50)
-    js += rise(f"#{s} .path", c(6, "Integrate"), 24)
+    js += slide(f"#{s} .head", c(5, "Now"), -50)
+    js += rise(f"#{s} .path", c(5, "Integrate"), 24)
     js += rise(f"#{s} .gp", 0.4, 70, 0.7)
-    js += f'tl.fromTo("#{s} .scroll", {{ y: 120 }}, {{ y: 0, duration: 1.0, ease: "power2.inOut" }}, {c(6, "scroll"):.2f});\n'
-    cp = c(6, "Copy")
+    js += f'tl.fromTo("#{s} .scroll", {{ y: 120 }}, {{ y: 0, duration: 1.0, ease: "power2.inOut" }}, {c(5, "scroll"):.2f});\n'
+    cp = c(5, "Copy")
     js += f'tl.fromTo("#{s} .ical", {{ boxShadow: "0 0 0 0px #E8913A" }}, {{ boxShadow: "0 0 0 7px #E8913A", duration: 0.3 }}, {cp:.2f});\n'
-    press = c(6, "format") - 0.1
+    press = c(5, "format") - 0.1
     js += pop(f"#{s} .copied", press + 0.2) + f'tl.set("#{s} .copied", {{ opacity: 0 }}, 0);\n'
     js += cursor_path(s, [(cp - 0.6, 700, 520), (press - 0.05, 985, 322)], press_at=(press,))
     return html, js
 
 
-def scene7(s, d):
+def scene6(s, d):
     c = cue
     html = f"""
 <div class="glow" data-layout-allow-overflow style="right:-460px; bottom:-600px"></div>
@@ -478,21 +478,21 @@ def scene7(s, d):
 </div>"""
     js = common_js(s, d)
     js += fade(f"#{s} .step", 0.3)
-    js += slide(f"#{s} .head", c(7, "Step"), -50)
-    js += rise(f"#{s} .path", c(7, "Add"), 24)
+    js += slide(f"#{s} .head", c(6, "Step"), -50)
+    js += rise(f"#{s} .path", c(6, "Add"), 24)
     js += rise(f"#{s} .gp", 0.45, 70, 0.7)
-    ty = c(7, "hashtag")
+    ty = c(6, "hashtag")
     js += typing(f"#{s} .tag", "#guild", ty, 0.7)
     js += f'tl.fromTo("#{s} .desc", {{ boxShadow: "0 0 0 0px #E8913A" }}, {{ boxShadow: "0 0 0 7px #E8913A", duration: 0.3 }}, {ty:.2f});\n'
     blinks = max(0, int((d - 1) // 0.5) - 1)
     js += f'tl.fromTo("#{s} .caret", {{ opacity: 1 }}, {{ opacity: 0, duration: 0.25, ease: "steps(1)", yoyo: true, repeat: {blinks} }}, 0.6);\n'
-    only = c(7, "Only")
+    only = c(6, "Only")
     js += rise(f"#{s} .r1", only, 40, 0.55)
     js += rise(f"#{s} .r2", only + 0.35, 40, 0.55)
     return html, js
 
 
-def scene8(s, d):
+def scene7(s, d):
     c = cue
     side = "".join(
         f'<div style="padding:10px 15px;{" background:#241F1A; color:#F9F6F0; border-radius:10px; font-weight:600;" if n == "Events" else ""}">{n}</div>'
@@ -540,7 +540,7 @@ def scene8(s, d):
     js = common_js(s, d)
     js += fade(f"#{s} .step", 0.3)
     js += rise(f"#{s} .portal", 0.4, 70, 0.8)
-    addc, paste, typ, then, refresh = c(8, "Add"), c(8, "Paste"), c(8, "type"), c(8, "Then"), c(8, "Refresh")
+    addc, paste, typ, then, refresh = c(7, "Add"), c(7, "Paste"), c(7, "type"), c(7, "Then"), c(7, "Refresh")
     js += f'tl.set("#{s} .conn", {{ opacity: 0 }}, 0); tl.set("#{s} .fields", {{ opacity: 0 }}, 0); tl.set("#{s} .st2", {{ opacity: 0 }}, 0);\n'
     js += f'tl.fromTo("#{s} .addbtn", {{ boxShadow: "0 0 0 0px #E8913A" }}, {{ boxShadow: "0 0 0 7px #E8913A", duration: 0.3 }}, {addc:.2f});\n'
     js += rise(f"#{s} .fields", addc + 0.45, 20, 0.45)
@@ -557,7 +557,7 @@ def scene8(s, d):
     return html, js
 
 
-def scene9(s, d):
+def scene8(s, d):
     c = cue
     html = f"""
 <div class="glow" data-layout-allow-overflow style="right:-380px; top:-460px"></div>
@@ -578,17 +578,17 @@ def scene9(s, d):
   </div>
 </div>"""
     js = common_js(s, d)
-    js += slide(f"#{s} .eyebrow", c(9, "Your"), -40)
-    js += slide(f"#{s} .head", c(9, "Your") + 0.1, -50)
-    js += rise(f"#{s} .path", c(9, "With"), 24)
+    js += slide(f"#{s} .eyebrow", c(8, "Your"), -40)
+    js += slide(f"#{s} .head", c(8, "Your") + 0.1, -50)
+    js += rise(f"#{s} .path", c(8, "With"), 24)
     js += rise(f"#{s} .win", 0.35, 80, 0.8)
     js += f'tl.set("#{s} .push", {{ transformOrigin: "65% 45%" }}, 0);\n'
     js += f'tl.fromTo("#{s} .push", {{ scale: 1 }}, {{ scale: 1.1, duration: {d - 1.2:.2f}, ease: "sine.inOut" }}, 0.8);\n'
-    js += pop(f"#{s} .evring", c(9, "right"), 0.5) + f'tl.set("#{s} .evring", {{ opacity: 0 }}, 0);\n'
+    js += pop(f"#{s} .evring", c(8, "right"), 0.5) + f'tl.set("#{s} .evring", {{ opacity: 0 }}, 0);\n'
     return html, js
 
 
-def scene10(s, d):
+def scene9(s, d):
     c = cue
     # carousel screenshots are 1281x801; shown 1110 wide -> scale 0.8665
     k = 1110 / 1281
@@ -615,20 +615,20 @@ def scene10(s, d):
   </div>
 </div>"""
     js = common_js(s, d)
-    js += slide(f"#{s} .eyebrow", c(10, "Events"), -40)
-    js += slide(f"#{s} .head", c(10, "Events") + 0.1, -50)
-    js += rise(f"#{s} .path", c(10, "Each"), 24)
+    js += slide(f"#{s} .eyebrow", c(9, "Events"), -40)
+    js += slide(f"#{s} .head", c(9, "Events") + 0.1, -50)
+    js += rise(f"#{s} .path", c(9, "Each"), 24)
     js += rise(f"#{s} .win", 0.35, 80, 0.8)
     js += f'tl.set("#{s} .push", {{ transformOrigin: "{px + pw // 2}px {py + ph // 2}px" }}, 0);\n'
     js += f'tl.fromTo("#{s} .push", {{ scale: 1 }}, {{ scale: 1.06, duration: 3.2, ease: "power2.inOut" }}, 0.9);\n'
-    tear = c(10, "own") - 0.2
+    tear = c(9, "own") - 0.2
     js += f'tl.set("#{s} .shot1", {{ opacity: 1 }}, 0); tl.set("#{s} .shot1", {{ opacity: 0 }}, {tear:.2f});\n'
     js += f'tl.set("#{s} .tearpiece", {{ transformOrigin: "15% 0%" }}, 0);\n'
     js += f'tl.fromTo("#{s} .tearpiece", {{ rotation: 0, y: 0, opacity: 1 }}, {{ rotation: -11, y: -300, opacity: 0, duration: 0.75, ease: "power2.in", immediateRender: false }}, {tear:.2f});\n'
     return html, js
 
 
-def scene11(s, d):
+def scene10(s, d):
     c = cue
     html = f"""
 <div class="glow" data-layout-allow-overflow style="left:420px; top:-190px; width:1340px; height:1340px"></div>
@@ -644,10 +644,10 @@ def scene11(s, d):
   <div class="mark" style="position:absolute; left:120px; top:780px; font:700 21px 'Chivo'; letter-spacing:0.22em; color:#B6AC9D">ISC BREWERS GUILD</div>
 </div>"""
     js = common_js(s, d).replace(f"{d - 0.4:.2f});", f"{d - 0.9:.2f});").replace("duration: 0.4, ease: \"power1.in\"", "duration: 0.9, ease: \"power1.in\"")
-    js += rise(f"#{s} .l1", c(11, "From"), 50)
-    js += rise(f"#{s} .l2", c(11, "The"), 50)
-    js += rise(f"#{s} .n1", c(11, "Google"), 24)
-    js += rise(f"#{s} .n2", c(11, "Need"), 24)
+    js += rise(f"#{s} .l1", c(10, "From"), 50)
+    js += rise(f"#{s} .l2", c(10, "The"), 50)
+    js += rise(f"#{s} .n1", c(10, "Google"), 24)
+    js += rise(f"#{s} .n2", c(10, "Need"), 24)
     js += rise(f"#{s} .page", 0.6, 60, 0.8)
     js += f'tl.fromTo("#{s} .page", {{ rotation: 0 }}, {{ rotation: -2.5, duration: 4, ease: "sine.inOut", yoyo: true, repeat: 1, immediateRender: false }}, 2);\n'
     js += fade(f"#{s} .mark", 1.2, 1, 0, 0.6)
@@ -655,7 +655,7 @@ def scene11(s, d):
 
 
 BUILDERS = {1: scene1, 2: scene2, 3: scene3, 4: scene4, 5: scene5, 6: scene6, 7: scene7,
-            8: scene8, 9: scene9, 10: scene10, 11: scene11}
+            8: scene8, 9: scene9, 10: scene10}
 
 
 def write_scene(n, name):

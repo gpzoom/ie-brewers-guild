@@ -46,19 +46,22 @@
 #s09 .browser .top em { margin-left: 19px; font: 400 17px "Chivo"; font-style: normal; color: #B6AC9D; background: #1D1914; border-radius: 99px; padding: 5px 19px; }
 </style>
       <div id="s09" data-composition-id="s09" data-width="1920" data-height="1080">
-<div class="glow" data-layout-allow-overflow style="right:-380px; top:-460px"></div>
+<div class="glow" data-layout-allow-overflow style="left:-420px; bottom:-560px"></div>
 <div class="stage">
   <div class="left">
-    <div class="eyebrow">Right away</div>
-    <div class="h head">On your profile</div>
-    <div class="sub path">Time, place and your description.</div>
+    <div class="eyebrow">Next two weeks</div>
+    <div class="h head">On the Guild homepage</div>
+    <div class="sub path">Your own calendar page. Your logo. Your color.</div>
   </div>
-  <div class="browser win" style="left:690px; top:115px; width:1110px; height:750px">
-    <div class="top"><span></span><span></span><span></span><em>iscbrewersguild.org/members/bob-s-brewery</em></div>
-    <div style="position:relative; height:704px; overflow:hidden">
+  <div class="browser win" style="left:690px; top:150px; width:1110px; height:740px">
+    <div class="top"><span></span><span></span><span></span><em>iscbrewersguild.org</em></div>
+    <div style="position:relative; height:694px; overflow:hidden">
       <div class="push" data-layout-allow-overflow style="position:absolute; left:0; top:0; width:1110px; height:694px">
-        <img src="assets/screens/profile-top.png" alt="Bob's Brewery profile with its upcoming events" style="display:block; width:1110px; height:694px">
-        <div class="ring evring" style="left:500px; top:252px; width:450px; height:90px"></div>
+        <img class="shot2" src="assets/screens/home-carousel-2.png" alt="Homepage carousel, next member's calendar page" style="position:absolute; left:0; top:0; width:1110px; height:694px">
+        <img class="shot1" src="assets/screens/home-carousel-1.png" alt="Homepage carousel showing Bob's Brewery's calendar page" style="position:absolute; left:0; top:0; width:1110px; height:694px">
+        <div class="tearpiece" style="position:absolute; left:574px; top:148px; width:382px; height:412px; overflow:hidden; border-radius:9px">
+          <div data-layout-allow-overflow style="position:absolute; left:-574px; top:-148px; width:1110px; height:694px; background:url('assets/screens/home-carousel-1.png') 0 0 / 1110px 694px no-repeat"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -69,16 +72,17 @@
           const tl = gsap.timeline({ paused: true });
 
 tl.fromTo("#s09 .stage", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power1.out" }, 0);
-tl.fromTo("#s09 .stage", { opacity: 1 }, { opacity: 0, duration: 0.4, ease: "power1.in", immediateRender: false }, 7.09);
-tl.fromTo("#s09 .glow", { scale: 1 }, { scale: 1.12, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0);
+tl.fromTo("#s09 .stage", { opacity: 1 }, { opacity: 0, duration: 0.4, ease: "power1.in", immediateRender: false }, 11.70);
+tl.fromTo("#s09 .glow", { scale: 1 }, { scale: 1.12, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: 2 }, 0);
 tl.fromTo("#s09 .eyebrow", { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 0.50);
 tl.fromTo("#s09 .head", { opacity: 0, x: -50 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 0.60);
-tl.fromTo("#s09 .path", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 3.77);
+tl.fromTo("#s09 .path", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 6.44);
 tl.fromTo("#s09 .win", { opacity: 0, y: 80 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 0.35);
-tl.set("#s09 .push", { transformOrigin: "65% 45%" }, 0);
-tl.fromTo("#s09 .push", { scale: 1 }, { scale: 1.1, duration: 6.29, ease: "sine.inOut" }, 0.8);
-tl.fromTo("#s09 .evring", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(2.2)" }, 2.61);
-tl.set("#s09 .evring", { opacity: 0 }, 0);
+tl.set("#s09 .push", { transformOrigin: "765px 354px" }, 0);
+tl.fromTo("#s09 .push", { scale: 1 }, { scale: 1.06, duration: 3.2, ease: "power2.inOut" }, 0.9);
+tl.set("#s09 .shot1", { opacity: 1 }, 0); tl.set("#s09 .shot1", { opacity: 0 }, 7.35);
+tl.set("#s09 .tearpiece", { transformOrigin: "15% 0%" }, 0);
+tl.fromTo("#s09 .tearpiece", { rotation: 0, y: 0, opacity: 1 }, { rotation: -11, y: -300, opacity: 0, duration: 0.75, ease: "power2.in", immediateRender: false }, 7.35);
 
           window.__timelines["s09"] = tl;
         })();
