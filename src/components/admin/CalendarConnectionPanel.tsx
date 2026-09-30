@@ -5,6 +5,8 @@ import {
   saveIcsConnection,
 } from "@/lib/events/calendar-connection.server";
 import type { CalendarConnectionRow, CalendarPurpose } from "@/lib/supabase/types";
+import { HELP_VIDEOS } from "@/data/help-videos";
+import { HelpVideoButton } from "@/components/admin/HelpVideoButton";
 
 const inputClass =
   "h-[46px] w-full rounded-[9px] border border-canvas-border bg-white px-[13px] text-sm text-ink placeholder:text-ink-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30";
@@ -340,6 +342,13 @@ export function CalendarConnectionPanel({
             </button>
           )}
         </div>
+      )}
+
+      {purpose === "events" && (
+        <HelpVideoButton
+          video={HELP_VIDEOS.googleEventsCalendar}
+          label="Watch how to connect Google Calendar"
+        />
       )}
 
       {showFields && (
