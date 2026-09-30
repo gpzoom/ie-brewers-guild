@@ -347,7 +347,7 @@ export function CalendarConnectionPanel({
       {purpose === "events" && (
         <HelpVideoButton
           video={HELP_VIDEOS.googleEventsCalendar}
-          label="Watch how to connect Google Calendar"
+          label="Watch how to connect a Google Calendar for EVENTS"
         />
       )}
 

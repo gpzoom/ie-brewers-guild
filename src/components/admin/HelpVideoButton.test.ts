@@ -9,10 +9,10 @@ describe("HelpVideoButton", () => {
     const html = renderToStaticMarkup(
       createElement(HelpVideoButton, {
         video: HELP_VIDEOS.googleEventsCalendar,
-        label: "Watch how to connect Google Calendar",
+        label: "Watch how to connect a Google Calendar for EVENTS",
       }),
     );
-    expect(html).toContain("Watch how to connect Google Calendar");
+    expect(html).toContain("Watch how to connect a Google Calendar for EVENTS");
     expect(html).toContain("(2:47)");
     expect(html).not.toContain("<iframe");
   });
