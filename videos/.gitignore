@@ -7,3 +7,6 @@ snapshots/
 renders/
 *.mp4
 node_modules/
+
+# Cleaned voice-training audio (too large for git)
+voice-clone/clean/
