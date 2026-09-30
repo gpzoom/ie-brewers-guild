@@ -6,6 +6,7 @@ import {
 } from "@/lib/events/calendar-connection.server";
 import type { CalendarConnectionRow, CalendarPurpose } from "@/lib/supabase/types";
 import { HELP_VIDEOS } from "@/data/help-videos";
+import { canonicalTag } from "@/lib/events/calendar-purpose";
 import { HelpVideoButton } from "@/components/admin/HelpVideoButton";
 
 const inputClass =
@@ -100,7 +101,7 @@ const COPY = {
     importing: "importing vendors tagged",
     tagPlaceholder: "e.g. #food",
     nobody: "No food calendar is connected. Only the profile's owner can connect one.",
-    hint: "Keep your food trucks and pop-ups on their own calendar (or give them their own tag), and paste its ICS subscription URL. Use a different tag from your events calendar, for example #food, in the title or description of each vendor's day. Put the vendor's name in the title, and anything else (their menu or Instagram link) in the description. Your profile shows the next 7 days; a day with no vendor says \"Bring your own food\", or \"Closed\" when your hours say you're closed.",
+    hint: "Use the same calendar link as your Events page, with a different tag, for example #food, on each vendor's visit: the vendor's name in the title, and their menu or Instagram link in the description. (If someone else books your vendors, a separate calendar works too.) Your profile shows the next 7 days; a day with no vendor says \"Bring your own food\", or \"Closed\" when your hours say you're closed.",
   },
 } as const;
 
@@ -163,6 +164,9 @@ export function CalendarConnectionPanel({
     setError(null);
     try {
       const { id } = await saveIcsConnection({ data: { memberId, icsUrl, syncTag, purpose } });
+      // The server saves the tag with its "#" ("food" -> "#food"); show it that way.
+      const savedTag = canonicalTag(syncTag);
+      setSyncTag(savedTag);
       setConnection((prev) => ({
         id,
         member_id: memberId,
@@ -170,7 +174,7 @@ export function CalendarConnectionPanel({
         purpose,
         google_calendar_id: null,
         ics_url: icsUrl,
-        sync_tag: syncTag,
+        sync_tag: savedTag,
         last_synced_at: prev?.last_synced_at ?? null,
         last_sync_error: null,
         sync_status: "ok",

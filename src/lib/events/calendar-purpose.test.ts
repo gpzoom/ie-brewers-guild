@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canHaveFoodCalendar, foodCalendarProblem, parseCalendarPurpose } from "./calendar-purpose";
+import { canHaveFoodCalendar, canonicalTag, foodCalendarProblem, parseCalendarPurpose } from "./calendar-purpose";
 
 describe("calendar purpose", () => {
   it("anything but 'food' is the events calendar", () => {
@@ -39,5 +39,19 @@ describe("foodCalendarProblem", () => {
     expect(
       foodCalendarProblem({ memberType: "producer", syncTag: "#food", eventsTag: null }),
     ).toBeNull();
+  });
+});
+
+describe("canonicalTag", () => {
+  it("saves a tag with exactly one # in front", () => {
+    expect(canonicalTag("food")).toBe("#food");
+    expect(canonicalTag("  #food ")).toBe("#food");
+    expect(canonicalTag("##Food")).toBe("#Food");
+  });
+
+  it("leaves a blank tag blank", () => {
+    expect(canonicalTag("")).toBe("");
+    expect(canonicalTag("  # ")).toBe("");
+    expect(canonicalTag(null)).toBe("");
   });
 });

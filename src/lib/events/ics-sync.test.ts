@@ -5,6 +5,7 @@ import {
   parseIcsFeedForTag,
   staleSyncedEventIds,
   stripSyncTag,
+  syncTagPattern,
   venueFromLocation,
   zonedMidnightUtc,
 } from "./ics-sync";
@@ -259,10 +260,9 @@ describe("parseIcsFeedForTag: the tag in the description", () => {
     expect(events[0].title).toBe("test event");
   });
 
-  it("a tag without # still matches the word in a description (substring, as for titles)", () => {
+  it("a tag saved without # still means #guild, and the plain word never matches", () => {
     expect(parseIcsFeedForTag(GOOGLE_STYLE_ICS, "guild").map((e) => e.externalEventId)).toEqual([
       "g-1@google.com",
-      "g-2@google.com",
     ]);
   });
 });
@@ -359,7 +359,7 @@ describe("stripSyncTag", () => {
   });
 
   it("treats a tag with regex characters as plain text", () => {
-    expect(stripSyncTag("Tap takeover c++", "c++")).toBe("Tap takeover");
+    expect(stripSyncTag("Tap takeover #c++", "c++")).toBe("Tap takeover");
   });
 });
 
@@ -425,5 +425,60 @@ describe("all-day entries", () => {
     expect(zonedMidnightUtc("2026-12-25", "America/Los_Angeles")).toBe("2026-12-25T08:00:00.000Z");
     expect(zonedMidnightUtc("2026-07-04", "America/Los_Angeles")).toBe("2026-07-04T07:00:00.000Z");
     expect(zonedMidnightUtc("2026-11-01", "America/Los_Angeles")).toBe("2026-11-01T07:00:00.000Z");
+  });
+});
+
+// One calendar with both tags (docs/member-profiles.md, "Food calendar").
+const SHARED_ICS = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:s-1@google.com
+DTSTART:20261003T010000Z
+SUMMARY:Trivia night
+DESCRIPTION:Food by El Gordo all night. #guild
+END:VEVENT
+BEGIN:VEVENT
+UID:s-2@google.com
+DTSTART:20261004T010000Z
+SUMMARY:Tacos El Gordo
+DESCRIPTION:Menu: https://example.com/menu #food
+END:VEVENT
+BEGIN:VEVENT
+UID:s-3@google.com
+DTSTART:20261005T010000Z
+SUMMARY:Rolling Smoke BBQ #FoodTruck
+END:VEVENT
+BEGIN:VEVENT
+UID:s-4@google.com
+DTSTART:20261006T010000Z
+SUMMARY:Taco Tuesday (#food) #guild
+END:VEVENT
+END:VCALENDAR`;
+
+describe("whole tags only", () => {
+  const ids = (tag: string) => parseIcsFeedForTag(SHARED_ICS, tag).map((e) => e.externalEventId);
+
+  it("splits one calendar between #guild and #food", () => {
+    expect(ids("#guild")).toEqual(["s-1@google.com", "s-4@google.com"]);
+    expect(ids("#food")).toEqual(["s-2@google.com", "s-4@google.com"]);
+  });
+
+  it("doesn't count #food inside a longer tag, or the plain word", () => {
+    expect(ids("food")).not.toContain("s-1@google.com");
+    expect(ids("#food")).not.toContain("s-3@google.com");
+  });
+
+  it("matches whatever the case, and next to punctuation", () => {
+    expect(ids("#FOOD")).toEqual(["s-2@google.com", "s-4@google.com"]);
+    expect(stripSyncTag("Open house #guild, all welcome", "#guild")).toBe("Open house, all welcome");
+  });
+
+  it("keeps the plain word in a title", () => {
+    expect(stripSyncTag("Brewers Guild meetup #guild", "#guild")).toBe("Brewers Guild meetup");
+  });
+
+  it("finds nothing for a blank tag", () => {
+    expect(syncTagPattern("  ")).toBeNull();
+    expect(syncTagPattern("#")).toBeNull();
   });
 });

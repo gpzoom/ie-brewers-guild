@@ -15,6 +15,16 @@ export function canHaveFoodCalendar(memberType: MemberType | null | undefined): 
   return memberType === "producer";
 }
 
+/**
+ * A sync tag as it's saved: trimmed, with exactly one "#" in front ("food"
+ * and "##food" both become "#food"), so a plain word in an event can never
+ * count as the tag. Blank stays "".
+ */
+export function canonicalTag(tag: string | null | undefined): string {
+  const bare = (tag ?? "").trim().replace(/^#+/, "").trim();
+  return bare ? `#${bare}` : "";
+}
+
 function normalizeTag(tag: string | null | undefined): string {
   return (tag ?? "").trim().replace(/^#+/, "").toLowerCase();
 }

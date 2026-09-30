@@ -129,10 +129,8 @@ export function cleanEventDescription(
       (match, name: string) => HTML_ENTITIES[name.toLowerCase()] ?? match,
     )
     .replace(/&#(\d+);/g, (_match, code: string) => String.fromCharCode(Number(code)));
-  const bare = syncTag.trim().replace(/^#+/, "");
-  if (bare) {
-    text = text.replace(new RegExp(`[\\[(]?#${escapeRegExp(bare)}[\\])]?`, "gi"), "");
-  }
+  const tag = syncTagPattern(syncTag, "gi");
+  if (tag) text = text.replace(tag, "");
   const lines = text.split(/\r?\n/).map((line) => line.replace(/[ \t\u00a0]+/g, " ").trim());
   const tidied = lines
     .join("\n")
@@ -154,20 +152,37 @@ function escapeRegExp(value: string): string {
 }
 
 /**
+ * The sync tag as it may appear in a title or description: "#food" as a
+ * whole tag (so not inside "#foodtruck" or "#foodie"), or in brackets,
+ * "[food]", "[#food]", "(#food)". A plain word never counts, so an event
+ * that merely mentions food isn't a food vendor (docs/member-profiles.md,
+ * "Food calendar": one calendar can carry both tags). Case-insensitive;
+ * null for a blank tag.
+ */
+export function syncTagPattern(syncTag: string, flags = "i"): RegExp | null {
+  const bare = syncTag.trim().replace(/^#+/, "");
+  if (!bare) return null;
+  const tag = escapeRegExp(bare);
+  return new RegExp(
+    `(?<![\\w#])(?:\\[\\s*#?${tag}\\s*\\]|\\(\\s*#?${tag}\\s*\\)|#${tag}(?![\\w-]))`,
+    flags,
+  );
+}
+
+/**
  * The event's title without the sync tag, so "Trivia night #guild" shows as
- * "Trivia night". Takes the tag out with or without its "#", and with any
- * brackets around it ("[guild]", "(#guild)"); tidies the spaces and stray
- * separators left behind. Null when nothing is left (the title was only the tag).
+ * "Trivia night". Takes the tag out as `syncTagPattern` finds it ("#guild",
+ * "[guild]", "(#guild)") but never the plain word, so "Brewers Guild meetup
+ * #guild" keeps its "Guild"; tidies the spaces and stray separators left
+ * behind. Null when nothing is left (the title was only the tag).
  */
 export function stripSyncTag(summary: string, syncTag: string): string | null {
-  const bare = syncTag.trim().replace(/^#+/, "");
+  const tag = syncTagPattern(syncTag, "gi");
   let title = summary;
-  if (bare) {
-    const tag = new RegExp(`[\\[(]?\\s*#?${escapeRegExp(bare)}\\s*[\\])]?`, "gi");
-    title = title.replace(tag, " ");
-  }
+  if (tag) title = title.replace(tag, " ");
   title = title
     .replace(/\s+/g, " ")
+    .replace(/ ([,.;:!?])/g, "$1")
     .replace(/^[\s\-–—|:·,]+|[\s\-–—|:·,]+$/g, "")
     .trim();
   return title ? title.slice(0, TITLE_MAX) : null;
@@ -235,10 +250,11 @@ export function parseIcsFeedForTag(
   syncTag: string,
   timeZone = "America/Los_Angeles",
 ): ParsedIcsEvent[] {
-  const needle = syncTag.trim().toLowerCase();
-  if (!needle) {
+  const tag = syncTagPattern(syncTag);
+  if (!tag) {
     return [];
   }
+  const bareTag = syncTag.trim().replace(/^#+/, "").toLowerCase();
 
   const jcalData = ICAL.parse(icsText);
   const component = new ICAL.Component(jcalData);
@@ -256,16 +272,16 @@ export function parseIcsFeedForTag(
       const { uid, startDate, endDate, summary, description, location } = event;
       if (!uid || !startDate) continue;
 
-      const summaryLower = (summary ?? "").toLowerCase();
-      const descriptionLower = (description ?? "").toLowerCase();
       const categoriesProp = event.component.getFirstProperty("categories");
       const categories: string[] = categoriesProp
-        ? (categoriesProp.getValues() as string[]).map((c) => c.toLowerCase())
+        ? (categoriesProp.getValues() as string[]).map((c) =>
+            String(c).trim().replace(/^#+/, "").toLowerCase(),
+          )
         : [];
       const matchesTag =
-        summaryLower.includes(needle) ||
-        descriptionLower.includes(needle) ||
-        categories.some((category) => category.includes(needle));
+        tag.test(summary ?? "") ||
+        tag.test(description ?? "") ||
+        categories.includes(bareTag);
       if (!matchesTag) continue;
 
       const place = (location ?? "").replace(/\s+/g, " ").trim();

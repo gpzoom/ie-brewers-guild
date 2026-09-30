@@ -4,36 +4,24 @@ For recording with your ElevenLabs voice clone. One block per scene.
 This is a draft: edit anything, then push it. Keep the `## NN — Title` lines
 as they are, since the build reads them.
 
-For taprooms (producers). It explains the **Food** page's calendar, which fills
-"Food this week" on their profile. Scenes 3–5 reuse the events video's pictures.
-Scene 5 also reuses its voice, so change its text only if you want it re-recorded.
+For taprooms (producers). It explains the **Food** page, which fills
+"Food this week" on their profile. The taught way is **one calendar, two tags**:
+vendor visits go on the same Google calendar as their events, tagged #food.
 
 ## 01 — The promise
-Want visitors to know which food vendors are at your taproom this week? Here's how to set it up with Google Calendar and have it run on autopilot.
+Want visitors to know which food vendors are at your taproom this week? If your events calendar is already connected, it only takes two steps.
 
-## 02 — Three steps
-It takes three steps. Create a dedicated food calendar. Add each vendor's visit and tag it. Then paste one link in your Profile page.
+## 02 — Two steps
+Add each vendor's visit to your events calendar, with its own tag. Then paste the same link on your Food page.
 
-## 03 — A calendar just for food
-Step one starts with a new calendar just for your food vendors. Anyone with its link can see everything on it, so keep it separate from your events calendar and your personal calendar. Open Google Calendar and press the plus next to "Other" calendars. Choose Create new calendar. Name it and press "Create calendar".
+## 03 — Add your vendors
+Step one. Add each vendor's visit to the calendar you use for events. Put the vendor's name in the title, and their menu or Instagram link in the description. Then type hashtag food in the title or description. Only visits tagged hashtag food show up as food vendors, and your events stay events.
 
-## 04 — Make it public and show all details
-Next, select the new calendar's name and open "Settings and sharing". Scroll down to "Access permissions for events" and check: "Make available to public". If a warning window pops up, just hit "OK". After you click OK, the dropdown selector becomes clickable. Click the selector to change it from "See only free busy" to "See all event details". This one is important. If you don't choose to see all the details then nothing will show up on your profile.
+## 04 — Paste the same link
+Step two. Sign in to your Member Portal and open Food. Press Add calendar. Paste the same link you used for your events calendar. You'll find it on your Events page under Edit link. Type hashtag food as the tag, then press Refresh now.
 
-## 05 — Copy the iCal link
-Now scroll down to "Integrate calendar". Copy the "Public address in iCal format". This will be used in Step three, so you may want to paste it somewhere you can grab it when you get there.
+## 05 — Food this week
+Your profile now shows Food this week. Today comes first, and one tap shows the next six days. Each day lists its vendors with their times and descriptions. A day with no vendor says Bring your own food. And if your posted hours say you're closed that day, it says Closed.
 
-## 06 — Add your vendors
-Step two. Add each vendor's visit to this new calendar. Put the vendor's name in the title, and their menu or Instagram link in the description. Then type hashtag food in the title or description. Only tagged visits will show up on your profile.
-
-## 07 — Paste the link and refresh
-Step three. Grab the link you copied at the end of step one. Sign in to your Member Portal and open Food. Press Add calendar. Paste your link and type the same tag you used for your vendors (hashtag food). Then press Refresh now.
-
-## 08 — Food this week
-Your profile now shows Food this week. Today comes first, and one tap shows the next six days. Each day lists its vendors with their times and descriptions.
-
-## 09 — Empty days
-A day with no vendor says Bring your own food. And if your posted hours say you're closed that day, it says Closed.
-
-## 10 — Keep it going
-From now on just add vendor visits to your food calendar. The site checks for changes on its own. Google can take a few hours to update so give it a little time. Need help? Press Help in the Member Portal.
+## 06 — Keep it going
+From now on just add vendor visits to your calendar with hashtag food. The site checks for changes on its own. Haven't connected your events calendar yet? Watch that video first. Need help? Press Help in the Member Portal.

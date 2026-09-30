@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { buildEventUpsertRows, parseIcsFeedForTag, staleSyncedEventIds } from "@/lib/events/ics-sync";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
-import { foodCalendarProblem, parseCalendarPurpose } from "@/lib/events/calendar-purpose";
+import { canonicalTag, foodCalendarProblem, parseCalendarPurpose } from "@/lib/events/calendar-purpose";
 import type { CalendarConnectionRow, MemberType } from "@/lib/supabase/types";
 
 /**
@@ -149,7 +149,8 @@ export const saveIcsConnection = createServerFn({ method: "POST" })
     (data: { memberId: string; icsUrl: string; syncTag: string; purpose?: "events" | "food" }) => ({
       memberId: data.memberId,
       icsUrl: data.icsUrl,
-      syncTag: data.syncTag,
+      // Always saved with its "#", so only the tag itself matches (ics-sync's syncTagPattern).
+      syncTag: canonicalTag(data.syncTag),
       purpose: parseCalendarPurpose(data.purpose),
     }),
   )
