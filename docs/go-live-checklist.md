@@ -1,6 +1,6 @@
 # Go-live checklist: staging → production
 
-Drafted 27 September 2026. Production (`iscbrewersguild.org`, the `main` branch, Worker `ie-brewers-guild`) still runs the 18 September code: the public pages behind an **"under construction"** page, with no Member Portal, admin screens, calendar sync or scheduled jobs. Staging (`staging` branch, Worker `ie-brewers-guild-staging`) has everything since, 228 commits ahead. Both use the **same Supabase database**, which already has every staging change applied.
+Drafted 27 September 2026, updated 30 September 2026. Production (`iscbrewersguild.org`, the `main` branch, Worker `ie-brewers-guild`) still runs the 18 September code: the public pages behind an **"under construction"** page, with no Member Portal, admin screens, calendar sync or scheduled jobs. Staging (`staging` branch, Worker `ie-brewers-guild-staging`) has everything since, 259 commits ahead. Both use the **same Supabase database**, which already has every staging change applied.
 
 Each step says who does it. "Claude" steps happen only when the owner says go.
 
@@ -15,13 +15,27 @@ Each step says who does it. "Claude" steps happen only when the owner says go.
   - [ ] Send a **Help** message. Check it arrives at boblelle77@gmail.com with "[Staging]" in the subject, and that the super admin's bell counts it.
   - [ ] **Super admin → Settings:** the calendar sync interval and the carousel's dwell time save; upload a hero image, then try "Use the built-in image".
   - [ ] **Homepage:** "Coming up at our members" shows the next two weeks' member events as calendar pages; Pause, Previous/Next and swiping work; "Upcoming events" in the hero jumps to it.
+  - [ ] **How-to videos:** on the Events page, **Watch how to connect a Google Calendar for EVENTS** opens a pop-up and plays (on its own, or with one tap on a phone). On the Food page, both the FOOD VENDORS video and the "watch this video first" events link play. Try one on your phone too.
+  - [ ] **One calendar, two tags:** Bob's Brewery's #food vendor visits show only in "Food for the next week", its #guild events only under "Upcoming events", and an event that just mentions food (or says #foodtruck) stays out of the food week.
+  - [ ] **Tags save with #:** type `food` as a sync tag and it saves as `#food`.
+  - [ ] **Remove calendar:** on a test profile, Edit link → **Remove calendar** asks first, then takes that calendar's entries off the profile; hand-added events stay. (Paste the link again afterwards if you want it back.)
 - [ ] **Owner: the hero image.** Upload the Guild-supplied photo on Settings (staging and production share it, so it shows on both), or go live with the built-in one for now.
 - [ ] **Owner: decide on the test profiles.** Published profiles appear in the live directory the moment the site goes live.
-  - **Published:** Test 3, Test 4, Test 7, Wizard Test, Bob's Brewery (made for the how-to videos; its events calendar feeds the homepage carousel).
+  - **Published:** Test 3, Test 4, Test 7, Wizard Test, Bob's Brewery (made for the how-to videos; its calendar feeds the homepage carousel and its "Food for the next week", and its hours show Wednesday closed). Both videos show Bob's Brewery, so keeping it published is fine, as long as you're happy for visitors to see it in the directory.
   - **Drafts:** Test 6, Test 8, Test2.
   - Delete them (super admin → roster → **Delete member…**) or keep a hidden one for future testing. Tell Claude which.
 - [ ] **Owner: Mars Brewing Co.'s food calendar.** A test calendar ("Jones Bones" entries, tag `#food`) is connected to this real member. At go-live their public page will show **Food for the next week** from it. Either confirm Mars really uses it, or disconnect it.
+- [ ] **Owner: livid.com video settings.** If livid.com has an "allowed domains" (embed privacy) setting, add `iscbrewersguild.org` and `www.iscbrewersguild.org` next to the staging address for **both** videos, or the pop-ups will be blank on the live site.
 - [ ] **Claude: bring production's 2 small changes into staging** (the map button "Website" wording, and the "under construction" page name). Staging already has the same or newer versions, so staging's are kept. Run all tests and push to staging.
+
+## 1b. Optional fixes before go-live (owner decides; Claude builds each on staging)
+
+None of these block going live. Say which you want and Claude does them on staging first.
+
+- [ ] **Frontier Beer Fest's date.** The homepage pins the Guild's own event first, but the only one listed is **30 May 2026**, already past, so nothing is pinned now. **Owner:** send the next date, place, ticket link and poster when known. Claude updates it (`src/data/site.ts`, `guildEvents`).
+- [ ] **Warning for "free/busy only" calendars.** Test 3's event didn't show because its Google calendar was shared as "See only free/busy", so every event came through as "Busy". Claude can make the portal spot that and say "Change it to See all event details in Google Calendar". The how-to video already covers it, but the warning catches members who skip the video.
+- [ ] **Long links in carousel descriptions.** A web address in an event's description can break in the middle of a word on the homepage calendar pages. Claude can make long links wrap cleanly.
+- [ ] **Balance the desktop profile.** With seven food rows under the photos, the left column can run longer than the right. Claude can make the "Bring your own food" rows more compact, if it bothers you.
 
 ## 2. Production settings (Cloudflare and Supabase, before the merge)
 
@@ -76,10 +90,12 @@ Set these on the **production** Worker, `ie-brewers-guild` (Cloudflare → Worke
 - [ ] **Edit as them** works from the Guild roster.
 - [ ] A **Help** message arrives without "[Staging]" in the subject.
 - [ ] A **contact form** message reaches iscbrewersguild@gmail.com.
+- [ ] Both **Watch how** videos play from the Events and Food pages on the live site (see the livid.com step in section 1).
 
 **If something's badly wrong:** Cloudflare → ie-brewers-guild → Deployments → roll back to the previous version. The database changes were all additions, so the 18 September site keeps working against the database. Then tell Claude what broke.
 
 ## 6. After
 
-- [ ] **Owner: send the member guide PDF** (`docs/member-guide/ISC-Brewers-Guild-Member-Profile-Guide.pdf`).
+- [ ] **Owner: send the member guide PDF** (`docs/member-guide/ISC-Brewers-Guild-Member-Profile-Guide.pdf`). It now includes the livid.com watch links for both how-to videos.
+- [ ] **Later, owner's call: more how-to videos.** The video projects in `videos/` (events and food) can be reused for other topics (photos, hours, Links & contact) with the same look and your ElevenLabs voice.
 - [ ] **Later, owner's call:** retiring the old `/admin` editor. It stays for now, because **Edit as them** uses it.
