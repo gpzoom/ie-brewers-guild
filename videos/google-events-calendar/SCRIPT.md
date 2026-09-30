@@ -1,6 +1,6 @@
 # Narration script — "Your events calendar, Google"
 
-For recording in HeyGen with your voice clone. One block per scene.
+For recording with your ElevenLabs voice clone. One block per scene.
 Export **one audio file per scene**, named `01` to `11` (MP3 or WAV).
 If you change any wording, send the final text back too, so the captions match.
 
@@ -17,7 +17,7 @@ Step one starts with a new calendar just for your events. Just so you know, anyo
 Next, select the new calendar's name and open "Settings and sharing". Scroll down to "Access permissions for events" and check: "Make available to public". If a warning window pops up, just hit "OK".
 
 ## 05 — See all event details
-When you check the box, the dropdown selector becomes clickable. Click the the selector to change it from "See only free busy" to "See all event details". This one is important. If you don't choose to see all the details then nothing will show up on your profile or the homepage.
+When you check the box, the dropdown selector becomes clickable. Click the selector to change it from "See only free busy" to "See all event details". This one is important. If you don't choose to see all the details then nothing will show up on your profile or the homepage.
 
 ## 06 — Copy the iCal link
 Now scroll down to "Integrate calendar". Copy the "Public address in iCal format". This will be used in Step three, so you may want to paste it somewhere you can grab it when you get there.

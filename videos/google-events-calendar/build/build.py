@@ -7,6 +7,7 @@ lengths and word timings (assets/voice/NN.wav + NN.words.json).
 Run from the project root:  python build/build.py
 """
 import json
+import re
 import os
 import subprocess
 import wave
@@ -41,10 +42,12 @@ TOTAL = round(t, 2)
 
 
 def cue(n, word, occurrence=1):
-    """Scene-local time a spoken word starts (LEAD + its start in the clip)."""
+    """Scene-local time a spoken word starts (LEAD + its start in the clip).
+    word may be a tuple of alternatives, e.g. ("OK", "okay")."""
+    alts = {re.sub(r"[^\w']", "", a).lower() for a in (word if isinstance(word, tuple) else (word,))}
     seen = 0
     for w in WORDS[n]:
-        if w["text"].strip(".,?!").lower() == word.lower():
+        if re.sub(r"[^\w']", "", w["text"]).lower() in alts:
             seen += 1
             if seen == occurrence:
                 return round(LEAD + w["start"], 2)
@@ -186,7 +189,7 @@ def scene1(s, d):
     js += rise(f"#{s} .l2", c(1, "Guild"), 50)
     js += rise(f"#{s} .sub", c(1, "Here's"), 30)
     js += rise(f"#{s} .tearwrap", 0.35, 60, 0.7)
-    tear = c(1, "happens") - 0.1
+    tear = c(1, "autopilot") - 0.1
     js += f'tl.fromTo("#{s} .tearwrap", {{ rotation: 0, y: 0, opacity: 1 }}, {{ rotation: -11, y: -330, opacity: 0, duration: 0.75, ease: "power2.in", immediateRender: false }}, {tear:.2f});\n'
     js += f'tl.set("#{s} .tearwrap", {{ transformOrigin: "15% 0%" }}, 0);\n'
     # The next page stays hidden under the top one until the tear (they'd overlap).
@@ -196,9 +199,9 @@ def scene1(s, d):
 
 def scene2(s, d):
     c = cue
-    cards = [("1", "Make an events calendar", "New, public, all event details", "Make"),
-             ("2", "Tag your events", 'Add <span class="mono" style="color:#F7F3EC">#guild</span> to the ones to show', "Tag"),
-             ("3", "Paste one link", "In the Member Portal, once", "paste")]
+    cards = [("1", "Make an events calendar", "New, public, all event details", ("Create", 1)),
+             ("2", "Tag your events", 'Add <span class="mono" style="color:#F7F3EC">#guild</span> to the ones to show', ("Create", 2)),
+             ("3", "Paste one link", "On your profile, through the Member Portal", ("paste", 1))]
     cells = ""
     for num, title, line, _ in cards:
         cells += f"""<div class="card c{num}" style="background:#211C17; border:3px solid #3A332C; border-radius:24px; padding:42px; height:460px; display:flex; flex-direction:column; gap:24px">
@@ -215,7 +218,7 @@ def scene2(s, d):
     js = common_js(s, d)
     js += slide(f"#{s} .title", c(2, "It"), -50)
     for num, _, _, word in cards:
-        at = c(2, word)
+        at = c(2, *word)
         js += rise(f"#{s} .c{num}", at - 0.15, 70, 0.6)
         js += pop(f"#{s} .c{num} .num", at)
     return html, js
@@ -276,7 +279,7 @@ def scene3(s, d):
 </div>"""
     js = common_js(s, d)
     js += fade(f"#{s} .step", 0.3)
-    js += slide(f"#{s} .head", c(3, "Start"), -50)
+    js += slide(f"#{s} .head", c(3, "starts"), -50)
     js += pop(f"#{s} .warn", c(3, "Anyone") - 0.1)
     js += rise(f"#{s} .keep", c(3, "So"), 24)
     js += rise(f"#{s} .gp", 0.9, 70, 0.8)
@@ -327,15 +330,25 @@ def scene4(s, d):
         </div>
       </div>
     </div>
+    <div class="dim" style="position:absolute; inset:62px 0 0 0; background:rgba(36,31,26,0.38); z-index:14"></div>
+    <div class="modal" style="position:absolute; left:440px; top:190px; width:560px; z-index:15; background:#fff; border-radius:16px; padding:30px 32px; box-shadow:0 24px 60px rgba(0,0,0,0.28); display:flex; flex-direction:column; gap:16px">
+      <div style="font:700 27px 'Chivo'">Make this calendar public?</div>
+      <div style="font:400 20px/1.45 'Chivo'; color:#6B6156">Everyone will be able to see all events on it, including in Google search.</div>
+      <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:6px">
+        <span style="font:600 20px 'Chivo'; padding:11px 20px; color:#6B6156">Cancel</span>
+        <span class="okbtn" style="font:700 20px 'Chivo'; padding:11px 26px; border-radius:9px; background:#241F1A; color:#fff">OK</span>
+      </div>
+    </div>
     <div class="cursor">{CURSOR_SVG}</div>
   </div>
 </div>"""
     js = common_js(s, d)
     js += fade(f"#{s} .step", 0.3)
-    js += slide(f"#{s} .head", c(4, "Now"), -50)
+    js += slide(f"#{s} .head", c(4, "Next"), -50)
     js += rise(f"#{s} .path", c(4, "Settings"), 24)
     js += rise(f"#{s} .gp", 0.45, 70, 0.8)
-    name, openw, under, tick = c(4, "calendar's"), c(4, "open"), c(4, "Under"), c(4, "Make")
+    name, openw, under, tick = c(4, "calendar's"), c(4, "open"), c(4, "Scroll"), c(4, "Make")
+    warn, ok = c(4, "warning"), c(4, ("OK", "okay"))
     js += f'tl.fromTo("#{s} .row", {{ backgroundColor: "rgba(239,234,225,0)" }}, {{ backgroundColor: "rgba(239,234,225,1)", duration: 0.3 }}, {name + 0.2:.2f});\n'
     js += pop(f"#{s} .sas", openw) + f'tl.set("#{s} .sas", {{ opacity: 0 }}, 0);\n'
     js += f'tl.fromTo("#{s} .sas", {{ boxShadow: "0 0 0 0px #E8913A" }}, {{ boxShadow: "0 0 0 7px #E8913A", duration: 0.3, immediateRender: false }}, {c(4, "Settings"):.2f});\n'
@@ -343,8 +356,15 @@ def scene4(s, d):
     js += pop(f"#{s} .tick", tick + 0.1, 0.4) + f'tl.set("#{s} .tick", {{ opacity: 0 }}, 0);\n'
     js += f'tl.fromTo("#{s} .pubrow", {{ boxShadow: "0 0 0 0px #E8913A" }}, {{ boxShadow: "0 0 0 7px #E8913A", duration: 0.3 }}, {tick + 0.1:.2f});\n'
     js += cursor_path(s, [(name - 0.9, 700, 500), (name + 0.1, 330, 150), (openw - 0.2, 330, 150), (c(4, "Settings") + 0.1, 220, 222),
-                          (tick - 0.9, 500, 330), (tick - 0.05, 450, 300)],
-                      press_at=(name + 0.2, c(4, "Settings") + 0.4, tick + 0.05))
+                          (tick - 0.9, 500, 330), (tick - 0.05, 450, 300), (ok - 0.7, 912, 382)],
+                      press_at=(name + 0.2, c(4, "Settings") + 0.4, tick + 0.05, ok + 0.05))
+    # The confirm box appears as the warning is mentioned and closes when OK is pressed.
+    js += f'tl.set("#{s} .dim", {{ opacity: 0 }}, 0);\ntl.set("#{s} .modal", {{ opacity: 0 }}, 0);\n'
+    js += fade(f"#{s} .dim", warn, 1, 0, 0.3)
+    js += f'tl.fromTo("#{s} .modal", {{ opacity: 0, scale: 0.92 }}, {{ opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.8)", immediateRender: false }}, {warn + 0.05:.2f});\n'
+    js += f'tl.fromTo("#{s} .okbtn", {{ boxShadow: "0 0 0 0px #E8913A" }}, {{ boxShadow: "0 0 0 6px #E8913A", duration: 0.25, immediateRender: false }}, {ok:.2f});\n'
+    js += f'tl.fromTo("#{s} .modal", {{ opacity: 1 }}, {{ opacity: 0, duration: 0.3, immediateRender: false }}, {ok + 0.45:.2f});\n'
+    js += f'tl.fromTo("#{s} .dim", {{ opacity: 1 }}, {{ opacity: 0, duration: 0.3, immediateRender: false }}, {ok + 0.45:.2f});\n'
     return html, js
 
 
@@ -370,10 +390,10 @@ def scene5(s, d):
 </div>"""
     js = common_js(s, d)
     js += fade(f"#{s} .step", 0.3)
-    js += slide(f"#{s} .head", c(5, "Right"), -50)
+    js += slide(f"#{s} .head", c(5, "When"), -50)
     js += f'tl.fromTo("#{s} .bad", {{ opacity: 0, rotationY: 28, x: -60 }}, {{ opacity: 1, rotationY: 0, x: 0, duration: 0.8, ease: "power3.out" }}, {c(5, "See") - 0.1:.2f});\n'
     js += f'tl.fromTo("#{s} .good", {{ opacity: 0, rotationY: -28, x: 60 }}, {{ opacity: 1, rotationY: 0, x: 0, duration: 0.8, ease: "power3.out" }}, {c(5, "See", 2) - 0.1:.2f});\n'
-    m = c(5, "matters")
+    m = c(5, "important")
     js += fade(f"#{s} .bad", m - 0.2, 0.75, 1, 0.5)
     js += f'tl.fromTo("#{s} .good", {{ borderColor: "#3A332C", scale: 1 }}, {{ borderColor: "#E8913A", scale: 1.03, duration: 0.5, ease: "back.out(2)", immediateRender: false }}, {m - 0.2:.2f});\n'
     js += pop(f"#{s} .goodline", m) + f'tl.set("#{s} .goodline", {{ opacity: 0 }}, 0);\n'
