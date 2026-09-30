@@ -1,0 +1,278 @@
+[
+  {
+    "id": "w0",
+    "text": "Your",
+    "start": 0.0,
+    "end": 0.221
+  },
+  {
+    "id": "w1",
+    "text": "profile",
+    "start": 0.279,
+    "end": 0.813
+  },
+  {
+    "id": "w2",
+    "text": "now",
+    "start": 0.871,
+    "end": 1.091
+  },
+  {
+    "id": "w3",
+    "text": "shows",
+    "start": 1.173,
+    "end": 1.474
+  },
+  {
+    "id": "w4",
+    "text": "Food",
+    "start": 1.556,
+    "end": 1.858
+  },
+  {
+    "id": "w5",
+    "text": "for",
+    "start": 1.904,
+    "end": 2.009
+  },
+  {
+    "id": "w6",
+    "text": "the",
+    "start": 2.055,
+    "end": 2.125
+  },
+  {
+    "id": "w7",
+    "text": "next",
+    "start": 2.194,
+    "end": 2.473
+  },
+  {
+    "id": "w8",
+    "text": "week.",
+    "start": 2.554,
+    "end": 3.042
+  },
+  {
+    "id": "w9",
+    "text": "Seven",
+    "start": 3.286,
+    "end": 3.622
+  },
+  {
+    "id": "w10",
+    "text": "days,",
+    "start": 3.68,
+    "end": 4.098
+  },
+  {
+    "id": "w11",
+    "text": "starting",
+    "start": 4.168,
+    "end": 4.563
+  },
+  {
+    "id": "w12",
+    "text": "today.",
+    "start": 4.632,
+    "end": 5.213
+  },
+  {
+    "id": "w13",
+    "text": "Each",
+    "start": 5.909,
+    "end": 6.2
+  },
+  {
+    "id": "w14",
+    "text": "day",
+    "start": 6.269,
+    "end": 6.629
+  },
+  {
+    "id": "w15",
+    "text": "lists",
+    "start": 6.873,
+    "end": 7.163
+  },
+  {
+    "id": "w16",
+    "text": "its",
+    "start": 7.21,
+    "end": 7.338
+  },
+  {
+    "id": "w17",
+    "text": "vendors",
+    "start": 7.407,
+    "end": 7.825
+  },
+  {
+    "id": "w18",
+    "text": "with",
+    "start": 7.883,
+    "end": 8.034
+  },
+  {
+    "id": "w19",
+    "text": "their",
+    "start": 8.081,
+    "end": 8.243
+  },
+  {
+    "id": "w20",
+    "text": "times",
+    "start": 8.301,
+    "end": 8.742
+  },
+  {
+    "id": "w21",
+    "text": "and",
+    "start": 8.777,
+    "end": 8.847
+  },
+  {
+    "id": "w22",
+    "text": "descriptions.",
+    "start": 8.893,
+    "end": 9.729
+  },
+  {
+    "id": "w23",
+    "text": "A",
+    "start": 10.24,
+    "end": 10.333
+  },
+  {
+    "id": "w24",
+    "text": "day",
+    "start": 10.426,
+    "end": 10.612
+  },
+  {
+    "id": "w25",
+    "text": "with",
+    "start": 10.67,
+    "end": 10.809
+  },
+  {
+    "id": "w26",
+    "text": "no",
+    "start": 10.902,
+    "end": 11.076
+  },
+  {
+    "id": "w27",
+    "text": "vendor",
+    "start": 11.192,
+    "end": 11.587
+  },
+  {
+    "id": "w28",
+    "text": "says",
+    "start": 11.761,
+    "end": 12.016
+  },
+  {
+    "id": "w29",
+    "text": "Bring",
+    "start": 12.109,
+    "end": 12.353
+  },
+  {
+    "id": "w30",
+    "text": "your",
+    "start": 12.411,
+    "end": 12.527
+  },
+  {
+    "id": "w31",
+    "text": "own",
+    "start": 12.574,
+    "end": 12.713
+  },
+  {
+    "id": "w32",
+    "text": "food.",
+    "start": 12.783,
+    "end": 13.247
+  },
+  {
+    "id": "w33",
+    "text": "And",
+    "start": 13.758,
+    "end": 13.909
+  },
+  {
+    "id": "w34",
+    "text": "if",
+    "start": 13.955,
+    "end": 14.025
+  },
+  {
+    "id": "w35",
+    "text": "your",
+    "start": 14.071,
+    "end": 14.187
+  },
+  {
+    "id": "w36",
+    "text": "posted",
+    "start": 14.257,
+    "end": 14.652
+  },
+  {
+    "id": "w37",
+    "text": "hours",
+    "start": 14.71,
+    "end": 15.081
+  },
+  {
+    "id": "w38",
+    "text": "say",
+    "start": 15.139,
+    "end": 15.314
+  },
+  {
+    "id": "w39",
+    "text": "you're",
+    "start": 15.348,
+    "end": 15.523
+  },
+  {
+    "id": "w40",
+    "text": "closed",
+    "start": 15.557,
+    "end": 15.94
+  },
+  {
+    "id": "w41",
+    "text": "that",
+    "start": 15.975,
+    "end": 16.126
+  },
+  {
+    "id": "w42",
+    "text": "day,",
+    "start": 16.196,
+    "end": 16.66
+  },
+  {
+    "id": "w43",
+    "text": "it",
+    "start": 16.834,
+    "end": 16.974
+  },
+  {
+    "id": "w44",
+    "text": "says",
+    "start": 17.032,
+    "end": 17.403
+  },
+  {
+    "id": "w45",
+    "text": "Closed.",
+    "start": 17.728,
+    "end": 18.762
+  }
+]
