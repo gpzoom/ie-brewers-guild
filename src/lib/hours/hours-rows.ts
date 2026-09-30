@@ -1,7 +1,7 @@
 import type { SpecialHoursDay, WeekdayHours } from "@/lib/hours/open-now";
 import type { HoursRow, SpecialHoursRow } from "@/lib/supabase/types";
 
-/** hours rows as open-now.ts reads them (the profile template, "Food this week"). */
+/** hours rows as open-now.ts reads them (the profile template, "Food for the next week"). */
 export function toWeekdayHours(rows: HoursRow[]): WeekdayHours[] {
   return rows.map((row) => ({
     weekday: row.weekday,

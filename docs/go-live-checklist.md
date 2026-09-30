@@ -8,7 +8,7 @@ Each step says who does it. "Claude" steps happen only when the owner says go.
 
 - [ ] **Owner: final walk-through on staging**, following the member guide PDF:
   - [ ] Sign in with the **Member Portal** link as a member. Finish the setup wizard, publish, and check the public profile.
-  - [ ] Test a **Producer**: hours, events calendar, the **Food** page with a food calendar, and "Food this week" (collapsed, then opened).
+  - [ ] Test a **Producer**: hours, events calendar, the **Food** page with a food calendar, and "Food for the next week" (all seven days; under the photos on desktop).
   - [ ] Test a **Mobile member**: "Where we'll be" and booking links.
   - [ ] Test an **Allied Member**: business address, and Discount & supplies.
   - [ ] **Edit as them** from the Guild roster on a member who has never signed in.
@@ -20,7 +20,7 @@ Each step says who does it. "Claude" steps happen only when the owner says go.
   - **Published:** Test 3, Test 4, Test 7, Wizard Test, Bob's Brewery (made for the how-to videos; its events calendar feeds the homepage carousel).
   - **Drafts:** Test 6, Test 8, Test2.
   - Delete them (super admin → roster → **Delete member…**) or keep a hidden one for future testing. Tell Claude which.
-- [ ] **Owner: Mars Brewing Co.'s food calendar.** A test calendar ("Jones Bones" entries, tag `#food`) is connected to this real member. At go-live their public page will show **Food this week** from it. Either confirm Mars really uses it, or disconnect it.
+- [ ] **Owner: Mars Brewing Co.'s food calendar.** A test calendar ("Jones Bones" entries, tag `#food`) is connected to this real member. At go-live their public page will show **Food for the next week** from it. Either confirm Mars really uses it, or disconnect it.
 - [ ] **Claude: bring production's 2 small changes into staging** (the map button "Website" wording, and the "under construction" page name). Staging already has the same or newer versions, so staging's are kept. Run all tests and push to staging.
 
 ## 2. Production settings (Cloudflare and Supabase, before the merge)

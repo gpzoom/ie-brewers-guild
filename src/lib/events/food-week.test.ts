@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SpecialHoursDay, WeekdayHours } from "@/lib/hours/open-now";
 import type { EventRow } from "@/lib/supabase/types";
-import { buildFoodWeek, isClosedOnDate, nextFoodVendor } from "./food-week";
+import { buildFoodWeek, isClosedOnDate } from "./food-week";
 
 const TZ = "America/Los_Angeles";
 
@@ -185,25 +185,5 @@ describe("isClosedOnDate", () => {
   it("a weekday marked closed is closed", () => {
     const hours = HOURS.map((row) => (row.weekday === 3 ? { ...row, isClosed: true } : row));
     expect(isClosedOnDate("2026-09-30", hours, [])).toBe(true);
-  });
-});
-
-describe("nextFoodVendor", () => {
-  const base = { now: NOW, timezone: TZ, hours: HOURS, specialHours: [] };
-
-  it("names the next day with a vendor when today has none", () => {
-    const week = buildFoodWeek({
-      ...base,
-      slots: [
-        slot({ id: "a", title: "Tacos El Rey", starts_at: "2026-10-03T01:00:00Z" }),
-        slot({ id: "b", title: "Later Truck", starts_at: "2026-10-04T01:00:00Z" }),
-      ],
-    });
-    expect(nextFoodVendor(week)).toEqual({ date: "2026-10-02", title: "Tacos El Rey" });
-  });
-
-  it("is null when today has a vendor, or nothing is coming", () => {
-    expect(nextFoodVendor(buildFoodWeek({ ...base, slots: [slot({})] }))).toBeNull();
-    expect(nextFoodVendor(buildFoodWeek({ ...base, slots: [] }))).toBeNull();
   });
 });

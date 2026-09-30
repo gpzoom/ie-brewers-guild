@@ -115,7 +115,7 @@ export function CalendarConnectionPanel({
   memberId: string;
   initialConnection: CalendarConnectionRow | null;
   canEdit?: boolean;
-  /** The events calendar, or a producer's food calendar ("Food this week"). */
+  /** The events calendar, or a producer's food calendar ("Food for the next week"). */
   purpose?: CalendarPurpose;
   /** Called after Refresh now (the page's data is reloaded either way). */
   onRefreshed?: () => void;

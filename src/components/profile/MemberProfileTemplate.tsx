@@ -28,7 +28,7 @@ type MemberProfileTemplateProps = {
 // computeOpenNow/StatusBlock/ScheduleChips (Task 7/13/14) were built
 // against the camelCase WeekdayHours/SpecialHoursDay shapes. The bridge
 // (toWeekdayHours/toSpecialHoursDay) lives in src/lib/hours/hours-rows.ts,
-// shared with the member's "Food this week" preview.
+// shared with the member's "Food for the next week" preview.
 /**
  * ONE template, switched by member_type at the module level -- never
  * forked into three templates (spec, "Member types": "Build it that way
@@ -66,7 +66,7 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
   const scheduleVisible = member.member_type !== "mobile" && weekdayHours.length > 0;
   const visibleEventsCount = events.filter((event) => !event.is_hidden).length;
   const eventsVisible = member.member_type === "mobile" || visibleEventsCount > 0;
-  // "Food this week": a producer with a food calendar connected (docs/member-profiles.md,
+  // "Food for the next week": a producer with a food calendar connected (docs/member-profiles.md,
   // "Events" > "Food calendar") -- never a week of "Bring your own food" for a
   // taproom that hasn't set one up.
   const foodVisible = member.member_type === "producer" && data.hasFoodCalendar;
@@ -86,7 +86,8 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
   const contentRows =
     1 +
     Number(scheduleVisible) +
-    Number(foodVisible) +
+    // With a carousel, the food week sits under it in column 1 at lg.
+    Number(foodVisible && !hasCarousel) +
     Number(eventsVisible) +
     Number(linksVisible) +
     Number(contactVisible);
@@ -145,6 +146,16 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
   // With a carousel, every right-column item pins to column 2 at lg.
   const col2 = hasCarousel ? "lg:col-start-2" : undefined;
 
+  const foodWeek = foodVisible ? (
+    <FoodCalendarModule
+      slots={data.foodSlots}
+      now={now}
+      timezone={member.timezone}
+      hours={weekdayHours}
+      specialHours={specialHoursDays}
+    />
+  ) : null;
+
   return (
     // 10px of dark ground either side of the card on a phone (artboards
     // D/E/V); 24px on a tablet; at 1168px and up the card reaches its
@@ -189,13 +200,18 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
             // trailing 1fr one described above. Between md and lg (one
             // column, but tablet-wide) it keeps the desktop's 420px slot,
             // centered, rather than a 4:5 photo taller than the screen.
-            <div className="w-full md:mx-auto md:max-w-[420px] lg:order-first lg:col-start-1 lg:[grid-row:1/-1]">
+            // On desktop the food week sits under the photos (owner,
+            // 2026-09-30), filling the space the carousel leaves below it;
+            // below lg it keeps its place in the one column (the copy
+            // further down).
+            <div className="w-full md:mx-auto md:max-w-[420px] lg:order-first lg:col-start-1 lg:flex lg:flex-col lg:gap-6 lg:[grid-row:1/-1]">
               <MediaCarousel
                 slides={carouselSlides}
                 memberName={member.business_name}
                 theme={member.theme}
                 mediaMode={mediaMode}
               />
+              {foodWeek && <div className="hidden lg:block">{foodWeek}</div>}
             </div>
           )}
 
@@ -211,17 +227,7 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
             </div>
           )}
 
-          {foodVisible && (
-            <div className={col2}>
-              <FoodCalendarModule
-                slots={data.foodSlots}
-                now={now}
-                timezone={member.timezone}
-                hours={weekdayHours}
-                specialHours={specialHoursDays}
-              />
-            </div>
-          )}
+          {foodWeek && <div className={hasCarousel ? "lg:hidden" : undefined}>{foodWeek}</div>}
 
           {eventsVisible && (
             // id="events": the homepage carousel's cards link here.

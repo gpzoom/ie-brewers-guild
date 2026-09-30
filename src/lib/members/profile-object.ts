@@ -35,9 +35,9 @@ export type MemberProfileData = {
   carouselSlides: (CarouselSlideRow & { asset: MediaAssetRow })[];
   links: MemberLinkRow[];
   events: EventRow[];
-  /** Food vendors from a producer's food calendar ("Food this week"); empty otherwise. */
+  /** Food vendors from a producer's food calendar ("Food for the next week"); empty otherwise. */
   foodSlots: EventRow[];
-  /** Whether "Food this week" shows: a producer with a food calendar connected. */
+  /** Whether "Food for the next week" shows: a producer with a food calendar connected. */
   hasFoodCalendar: boolean;
   categories: CategoryRow[];
   logoAsset: MediaAssetRow | null;
@@ -200,7 +200,7 @@ export function referencedAssetIds(rows: ProfileRows): string[] {
  * anon).
  */
 /**
- * Food vendors for "Food this week": kind 'food', not hidden, not canceled,
+ * Food vendors for "Food for the next week": kind 'food', not hidden, not canceled,
  * ending no earlier than a day ago (the week is cut to seven local days
  * where it's drawn, in the member's own time zone).
  */

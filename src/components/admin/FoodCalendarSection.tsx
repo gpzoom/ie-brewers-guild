@@ -5,7 +5,7 @@ import type { FoodCalendarData } from "@/lib/portal/section-data.server";
 /**
  * A producer's food calendar (docs/member-profiles.md, "Events" > "Food
  * calendar"; artboard M2): its own connection box (own link, own tag), and
- * once connected, the next seven days exactly as "Food this week" shows
+ * once connected, the next seven days exactly as "Food for the next week" shows
  * them on the profile. Refresh now reloads the preview. `asPage`: it's the
  * whole "Food" page (portal section, /admin/food), with a page
  * heading; otherwise a block inside wizard step 6.
@@ -37,8 +37,9 @@ export function FoodCalendarSection({
           Food
         </Heading>
         <p className="text-pretty text-[13px] text-ink-muted">
-          Show which food trucks and pop-ups are at your taproom over the next 7 days, from a
-          calendar of their own. Changes show on your page right away.
+          Show which food trucks and pop-ups are at your taproom over the next 7 days, from
+          your events calendar with its own tag (or a calendar of their own). Changes show on your
+          page right away.
         </p>
       </div>
       <CalendarConnectionPanel
@@ -51,8 +52,6 @@ export function FoodCalendarSection({
         <div className="rounded-[14px] border border-canvas-border bg-canvas px-4 py-4 md:px-5">
           <FoodCalendarModule
             label="Next 7 days on your profile"
-            // All seven, open: on the profile only today shows until opened.
-            collapsible={false}
             slots={food.slots}
             now={new Date()}
             timezone={memberTimezone}

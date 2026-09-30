@@ -146,7 +146,7 @@ async function assembleProfile(args: {
       .eq("status", "published")
       .eq("business_name", member.business_name)
       .order("city"),
-    // "Food this week" shows only for a producer with a food calendar
+    // "Food for the next week" shows only for a producer with a food calendar
     // connected; visitors can't read calendar_connections, so a yes/no
     // function answers it (20260927190000_food_calendar.sql).
     member.member_type === "producer"
