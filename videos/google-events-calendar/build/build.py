@@ -698,8 +698,9 @@ def caption_groups():
         while i < len(words):
             w = dict(words[i])
             nxt = words[i + 1]["text"] if i + 1 < len(words) else ""
-            if w["text"].lower() == "hashtag" and nxt.lower().startswith("guild"):
-                w["text"] = "#" + nxt
+            lead = re.match(r"\W*", w["text"]).group()  # keep an opening "(" before "hashtag"
+            if w["text"][len(lead):].lower() == "hashtag" and nxt.lower().startswith("guild"):
+                w["text"] = lead + "#" + nxt
                 w["end"] = words[i + 1]["end"]
                 i += 1
             elif w["text"].lower() == "free" and nxt.lower().startswith("busy"):
