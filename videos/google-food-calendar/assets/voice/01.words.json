@@ -1,320 +1,332 @@
 [
   {
     "id": "w0",
-    "text": "Want",
+    "text": "Do",
     "start": 0.0,
-    "end": 0.279
+    "end": 0.139
   },
   {
     "id": "w1",
-    "text": "visitors",
-    "start": 0.348,
-    "end": 0.789
+    "text": "you",
+    "start": 0.174,
+    "end": 0.244
   },
   {
     "id": "w2",
-    "text": "to",
-    "start": 0.836,
-    "end": 0.906
+    "text": "want",
+    "start": 0.29,
+    "end": 0.441
   },
   {
     "id": "w3",
-    "text": "know",
-    "start": 0.964,
-    "end": 1.161
+    "text": "visitors",
+    "start": 0.499,
+    "end": 0.894
   },
   {
     "id": "w4",
-    "text": "which",
-    "start": 1.277,
-    "end": 1.521
+    "text": "to",
+    "start": 0.94,
+    "end": 1.01
   },
   {
     "id": "w5",
-    "text": "food",
-    "start": 1.602,
-    "end": 1.858
+    "text": "know",
+    "start": 1.068,
+    "end": 1.231
   },
   {
     "id": "w6",
-    "text": "vendors",
-    "start": 1.904,
-    "end": 2.264
+    "text": "which",
+    "start": 1.324,
+    "end": 1.556
   },
   {
     "id": "w7",
-    "text": "are",
-    "start": 2.31,
-    "end": 2.45
+    "text": "food",
+    "start": 1.672,
+    "end": 1.962
   },
   {
     "id": "w8",
-    "text": "at",
-    "start": 2.508,
-    "end": 2.682
+    "text": "vendors",
+    "start": 2.02,
+    "end": 2.392
   },
   {
     "id": "w9",
-    "text": "your",
-    "start": 2.74,
-    "end": 2.856
+    "text": "are",
+    "start": 2.426,
+    "end": 2.531
   },
   {
     "id": "w10",
-    "text": "taproom",
-    "start": 2.902,
-    "end": 3.425
+    "text": "at",
+    "start": 2.566,
+    "end": 2.647
   },
   {
     "id": "w11",
-    "text": "this",
-    "start": 3.495,
-    "end": 3.634
+    "text": "your",
+    "start": 2.705,
+    "end": 2.833
   },
   {
     "id": "w12",
-    "text": "week?",
-    "start": 3.704,
-    "end": 4.11
+    "text": "taproom",
+    "start": 2.902,
+    "end": 3.413
   },
   {
     "id": "w13",
-    "text": "Food",
-    "start": 4.714,
-    "end": 4.969
+    "text": "this",
+    "start": 3.471,
+    "end": 3.611
   },
   {
     "id": "w14",
-    "text": "vendors",
-    "start": 5.016,
-    "end": 5.352
+    "text": "week?",
+    "start": 3.68,
+    "end": 4.122
   },
   {
     "id": "w15",
-    "text": "go",
-    "start": 5.422,
-    "end": 5.55
+    "text": "Food",
+    "start": 4.818,
+    "end": 5.085
   },
   {
     "id": "w16",
-    "text": "on",
-    "start": 5.631,
-    "end": 5.724
+    "text": "vendors",
+    "start": 5.132,
+    "end": 5.596
   },
   {
     "id": "w17",
-    "text": "the",
-    "start": 5.782,
-    "end": 5.851
+    "text": "go",
+    "start": 5.77,
+    "end": 5.909
   },
   {
     "id": "w18",
-    "text": "same",
-    "start": 5.921,
-    "end": 6.246
+    "text": "on",
+    "start": 5.991,
+    "end": 6.06
   },
   {
     "id": "w19",
-    "text": "Google",
-    "start": 6.304,
-    "end": 6.653
+    "text": "the",
+    "start": 6.107,
+    "end": 6.177
   },
   {
     "id": "w20",
-    "text": "calendar",
-    "start": 6.699,
-    "end": 7.233
+    "text": "same",
+    "start": 6.235,
+    "end": 6.525
   },
   {
     "id": "w21",
-    "text": "as",
-    "start": 7.477,
-    "end": 7.697
+    "text": "Google",
+    "start": 6.594,
+    "end": 6.908
   },
   {
     "id": "w22",
-    "text": "your",
-    "start": 7.767,
-    "end": 7.895
+    "text": "calendar",
+    "start": 6.943,
+    "end": 7.419
   },
   {
     "id": "w23",
-    "text": "events,",
-    "start": 7.953,
-    "end": 8.568
+    "text": "as",
+    "start": 7.593,
+    "end": 7.755
   },
   {
     "id": "w24",
-    "text": "so",
-    "start": 8.684,
-    "end": 8.835
+    "text": "your",
+    "start": 7.814,
+    "end": 7.941
   },
   {
     "id": "w25",
-    "text": "this",
-    "start": 8.905,
-    "end": 9.056
+    "text": "events,",
+    "start": 7.999,
+    "end": 8.603
   },
   {
     "id": "w26",
-    "text": "builds",
-    "start": 9.149,
-    "end": 9.462
+    "text": "so",
+    "start": 8.719,
+    "end": 8.87
   },
   {
     "id": "w27",
-    "text": "on",
-    "start": 9.509,
-    "end": 9.578
+    "text": "this",
+    "start": 8.94,
+    "end": 9.102
   },
   {
     "id": "w28",
-    "text": "your",
-    "start": 9.625,
-    "end": 9.729
+    "text": "builds",
+    "start": 9.218,
+    "end": 9.555
   },
   {
     "id": "w29",
-    "text": "events",
-    "start": 9.776,
-    "end": 10.054
+    "text": "on",
+    "start": 9.613,
+    "end": 9.729
   },
   {
     "id": "w30",
-    "text": "calendar.",
-    "start": 10.112,
-    "end": 10.693
+    "text": "your",
+    "start": 9.787,
+    "end": 9.915
   },
   {
     "id": "w31",
-    "text": "Haven't",
-    "start": 11.389,
-    "end": 11.703
+    "text": "events",
+    "start": 9.973,
+    "end": 10.275
   },
   {
     "id": "w32",
-    "text": "connected",
-    "start": 11.749,
-    "end": 12.156
+    "text": "calendar.",
+    "start": 10.321,
+    "end": 10.937
   },
   {
     "id": "w33",
-    "text": "your",
-    "start": 12.202,
-    "end": 12.318
+    "text": "Haven't",
+    "start": 11.447,
+    "end": 11.726
   },
   {
     "id": "w34",
-    "text": "events",
-    "start": 12.365,
-    "end": 12.62
+    "text": "connected",
+    "start": 11.761,
+    "end": 12.144
   },
   {
     "id": "w35",
-    "text": "calendar",
-    "start": 12.666,
-    "end": 13.061
+    "text": "your",
+    "start": 12.19,
+    "end": 12.318
   },
   {
     "id": "w36",
-    "text": "yet?",
-    "start": 13.119,
-    "end": 13.56
+    "text": "events",
+    "start": 12.365,
+    "end": 12.655
   },
   {
     "id": "w37",
-    "text": "Watch",
-    "start": 13.944,
-    "end": 14.245
+    "text": "calendar",
+    "start": 12.713,
+    "end": 13.119
   },
   {
     "id": "w38",
-    "text": "that",
-    "start": 14.292,
-    "end": 14.432
+    "text": "yet?",
+    "start": 13.189,
+    "end": 13.595
   },
   {
     "id": "w39",
-    "text": "video",
-    "start": 14.501,
-    "end": 14.838
+    "text": "Watch",
+    "start": 13.978,
+    "end": 14.257
   },
   {
     "id": "w40",
-    "text": "first,",
-    "start": 14.919,
-    "end": 15.442
+    "text": "that",
+    "start": 14.315,
+    "end": 14.466
   },
   {
     "id": "w41",
-    "text": "then",
-    "start": 15.569,
-    "end": 15.778
+    "text": "video",
+    "start": 14.536,
+    "end": 14.907
   },
   {
     "id": "w42",
-    "text": "come",
-    "start": 15.86,
-    "end": 16.069
+    "text": "first,",
+    "start": 15.023,
+    "end": 15.557
   },
   {
     "id": "w43",
-    "text": "back.",
-    "start": 16.115,
-    "end": 16.626
+    "text": "then",
+    "start": 15.673,
+    "end": 15.894
   },
   {
     "id": "w44",
-    "text": "If",
-    "start": 17.323,
-    "end": 17.473
+    "text": "come",
+    "start": 15.987,
+    "end": 16.219
   },
   {
     "id": "w45",
-    "text": "it's",
-    "start": 17.532,
-    "end": 17.671
+    "text": "back.",
+    "start": 16.254,
+    "end": 16.73
   },
   {
     "id": "w46",
-    "text": "already",
-    "start": 17.706,
-    "end": 18.008
+    "text": "If",
+    "start": 17.009,
+    "end": 17.148
   },
   {
     "id": "w47",
-    "text": "connected,",
-    "start": 18.066,
-    "end": 18.704
+    "text": "it's",
+    "start": 17.206,
+    "end": 17.334
   },
   {
     "id": "w48",
-    "text": "this",
-    "start": 18.797,
-    "end": 18.994
+    "text": "already",
+    "start": 17.368,
+    "end": 17.612
   },
   {
     "id": "w49",
-    "text": "only",
-    "start": 19.064,
-    "end": 19.261
+    "text": "connected,",
+    "start": 17.659,
+    "end": 18.251
   },
   {
     "id": "w50",
-    "text": "takes",
-    "start": 19.319,
-    "end": 19.575
+    "text": "this",
+    "start": 18.46,
+    "end": 18.646
   },
   {
     "id": "w51",
-    "text": "two",
-    "start": 19.633,
-    "end": 19.819
+    "text": "only",
+    "start": 18.715,
+    "end": 18.889
   },
   {
     "id": "w52",
+    "text": "takes",
+    "start": 18.936,
+    "end": 19.168
+  },
+  {
+    "id": "w53",
+    "text": "two",
+    "start": 19.226,
+    "end": 19.412
+  },
+  {
+    "id": "w54",
     "text": "steps.",
-    "start": 19.888,
-    "end": 20.713
+    "start": 19.47,
+    "end": 20.248
   }
 ]

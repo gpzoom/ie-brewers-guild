@@ -9,7 +9,7 @@ For taprooms (producers). It explains the **Food** page, which fills
 vendor visits go on the same Google calendar as their events, tagged #food.
 
 ## 01 — The promise
-Want visitors to know which food vendors are at your taproom this week? Food vendors go on the same Google calendar as your events, so this builds on your events calendar. Haven't connected your events calendar yet? Watch that video first, then come back. If it's already connected, this only takes two steps.
+Do you want visitors to know which food vendors are at your taproom this week? Food vendors go on the same Google calendar as your events, so this builds on your events calendar. Haven't connected your events calendar yet? Watch that video first, then come back. If it's already connected, this only takes two steps.
 
 ## 02 — Two steps
 Add each vendor's visit to your events calendar, with its own tag, such as hashtag food. Then paste the same link on your Food page.
