@@ -53,3 +53,6 @@ scripts/geocoded-members.json
 *.njsproj
 *.sln
 *.sw?
+
+# Browser-check screenshots
+.playwright-mcp/
