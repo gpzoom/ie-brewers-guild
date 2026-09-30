@@ -9,7 +9,7 @@ For taprooms (producers). It explains the **Food** page, which fills
 vendor visits go on the same Google calendar as their events, tagged #food.
 
 ## 01 — The promise
-Want visitors to know which food vendors are at your taproom this week? If your events calendar is already connected, it only takes two steps.
+Want visitors to know which food vendors are at your taproom this week? Food vendors go on the same Google calendar as your events, so this builds on your events calendar. Haven't connected your events calendar yet? Watch that video first, then come back. If it's already connected, this only takes two steps.
 
 ## 02 — Two steps
 Add each vendor's visit to your events calendar, with its own tag. Then paste the same link on your Food page.
@@ -24,4 +24,4 @@ Step two. Sign in to your Member Portal and open Food. Press Add calendar. Paste
 Your profile now shows Food for the next week. Seven days, starting today. Each day lists its vendors with their times and descriptions. A day with no vendor says Bring your own food. And if your posted hours say you're closed that day, it says Closed.
 
 ## 06 — Keep it going
-From now on just add vendor visits to your calendar with hashtag food. The site checks for changes on its own. Haven't connected your events calendar yet? Watch that video first. Need help? Press Help in the Member Portal.
+From now on just add vendor visits to your calendar with hashtag food. The site checks for changes on its own. Need help? Press Help in the Member Portal.

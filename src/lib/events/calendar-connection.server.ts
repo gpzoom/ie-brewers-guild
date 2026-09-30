@@ -245,6 +245,57 @@ export const saveIcsConnection = createServerFn({ method: "POST" })
   });
 
 /**
+ * "Remove calendar" (owner, 30 September 2026): disconnects the calendar
+ * and takes the events it imported off the profile; events added by hand
+ * stay. The database alone would keep them (events.calendar_connection_id
+ * is `on delete set null`, so overlays survive an accidental disconnect --
+ * migration 20260922153458, section 10), leaving rows nothing would ever
+ * update again, so they're removed here, on purpose, after the member
+ * confirmed. Owner-only, like saving: the connection is deleted on the
+ * session client, so RLS decides (a denied delete is zero rows, no error,
+ * and is reported); only then are its events deleted, on the service role.
+ */
+export const removeIcsConnection = createServerFn({ method: "POST" })
+  .inputValidator((data: { connectionId: string }) => ({ connectionId: String(data.connectionId) }))
+  .handler(async ({ data }) => {
+    const supabase = await getSupabaseServerClientForRequest();
+    // Noted before the delete: afterwards their link to it is gone.
+    const { data: imported } = await supabase
+      .from("events")
+      .select("id")
+      .eq("calendar_connection_id", data.connectionId);
+    const { data: removed, error } = await supabase
+      .from("calendar_connections")
+      .delete()
+      .eq("id", data.connectionId)
+      .select("id, member_id");
+    if (error) throw new Error(error.message);
+    const row = removed?.[0];
+    if (!row) throw new Error("Couldn't remove it — only the profile's owner can remove a calendar.");
+
+    const importedIds = (imported ?? []).map((event) => event.id as string);
+    if (importedIds.length > 0) {
+      const service = await getSupabaseServiceRoleClient();
+      const { error: eventsError } = await service
+        .from("events")
+        .delete()
+        .in("id", importedIds)
+        .eq("member_id", row.member_id as string)
+        .is("calendar_connection_id", null);
+      if (eventsError) throw new Error(eventsError.message);
+    }
+
+    await recordAuditLogIfImpersonating({
+      memberId: row.member_id as string,
+      tableName: "calendar_connections",
+      rowId: row.id as string,
+      action: "delete",
+    });
+
+    return { ok: true as const };
+  });
+
+/**
  * Fetches the ICS feed, parses it by tag, and upserts on (calendar_connection_id,
  * external_event_id) -- WITHOUT ever touching overlay_* (buildEventUpsertRows'
  * return type structurally excludes them). Shared verbatim between the

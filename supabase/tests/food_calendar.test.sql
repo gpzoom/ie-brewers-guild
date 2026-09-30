@@ -6,7 +6,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(13);
+insert into _tap (line) select plan(17);
 
 -- m1 (producer, published) is owned by f0..01.
 set local role authenticated;
@@ -68,6 +68,34 @@ insert into _tap (line) select is(
 insert into _tap (line) select is(
   (select count(*)::int from storage.buckets where id = 'event-images' and public),
   0, 'food photo storage is no longer public (20260927210000_remove_event_images.sql)');
+
+-- Remove calendar (owner, 2026-09-30): owner-only. The database keeps the
+-- events it imported, unlinked (on delete set null, so overlays survive);
+-- removeIcsConnection then deletes those on purpose. Hand-added events stay.
+insert into public.events (id, member_id, source, kind, title, starts_at)
+values ('f6000000-0000-4000-8000-000000000003', 'f1000000-0000-4000-8000-000000000001', 'manual', 'event', 'Hand-added', now() + interval '3 days');
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000002","role":"authenticated"}';
+delete from public.calendar_connections where id = 'f5000000-0000-4000-8000-000000000001';
+reset role;
+insert into _tap (line) select is(
+  (select count(*)::int from public.calendar_connections where id = 'f5000000-0000-4000-8000-000000000001'),
+  1, 'editor: cannot remove a calendar');
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000001","role":"authenticated"}';
+delete from public.calendar_connections where id = 'f5000000-0000-4000-8000-000000000001';
+reset role;
+insert into _tap (line) select is(
+  (select count(*)::int from public.calendar_connections where id = 'f5000000-0000-4000-8000-000000000001'),
+  0, 'owner: removes the events calendar');
+insert into _tap (line) select is(
+  (select calendar_connection_id from public.events where id = 'f6000000-0000-4000-8000-000000000002'),
+  null::uuid, 'its imported events are unlinked (the server function then removes them)');
+insert into _tap (line) select is(
+  (select count(*)::int from public.events where id in ('f6000000-0000-4000-8000-000000000001', 'f6000000-0000-4000-8000-000000000003')),
+  2, 'the food calendar''s entries and hand-added events stay');
 
 insert into _tap (line) select * from finish();
 select line as tap from _tap order by n;

@@ -1,5 +1,7 @@
 import { CalendarConnectionPanel } from "@/components/admin/CalendarConnectionPanel";
 import { FoodCalendarModule } from "@/components/profile/FoodCalendarModule";
+import { HelpVideoButton } from "@/components/admin/HelpVideoButton";
+import { HELP_VIDEOS } from "@/data/help-videos";
 import type { FoodCalendarData } from "@/lib/portal/section-data.server";
 
 /**
@@ -41,6 +43,16 @@ export function FoodCalendarSection({
           your events calendar with its own tag (or a calendar of their own). Changes show on your
           page right away.
         </p>
+        {/* The food calendar builds on the events one (owner, 2026-09-30). */}
+        <div className="flex flex-col gap-1 pt-1">
+          <p className="text-[13px] text-ink-muted">
+            If your Events calendar isn't set up yet, watch this video first:
+          </p>
+          <HelpVideoButton
+            video={HELP_VIDEOS.googleEventsCalendar}
+            label="Watch how to connect a Google Calendar for EVENTS"
+          />
+        </div>
       </div>
       <CalendarConnectionPanel
         memberId={memberId}

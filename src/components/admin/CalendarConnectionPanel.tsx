@@ -2,8 +2,19 @@ import { useEffect, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import {
   refreshIcsConnectionNow,
+  removeIcsConnection,
   saveIcsConnection,
 } from "@/lib/events/calendar-connection.server";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import type { CalendarConnectionRow, CalendarPurpose } from "@/lib/supabase/types";
 import { HELP_VIDEOS } from "@/data/help-videos";
 import { canonicalTag } from "@/lib/events/calendar-purpose";
@@ -70,12 +81,12 @@ function relativeTime(iso: string, now: number): string {
 /**
  * The calendar connection block of artboard M (AdminEvents). The app's
  * only connection type is an ICS subscription link (Apple and most other
- * calendars can publish one) -- there is no Google OAuth connect and no
- * disconnect endpoint, so the artboard's "Google Calendar" card and
- * Disconnect button map to: a connected card for the ICS link (feed host,
- * sync tag, sync status, Refresh now, "Edit link"), or, before anything
- * is connected, the dashed "Add a calendar" row, which
- * opens the link and tag fields in place.
+ * calendars can publish one) -- there is no Google OAuth connect, so the
+ * artboard's "Google Calendar" card maps to: a connected card for the ICS
+ * link (feed host, sync tag, sync status, Refresh now, "Edit link"), or,
+ * before anything is connected, the dashed "Add a calendar" row, which
+ * opens the link and tag fields in place. Edit link also offers **Remove
+ * calendar** (owner, 2026-09-30), confirmed first (removeIcsConnection).
  *
  * `canEdit` false (anyone but the owner -- only the owner connects the
  * calendar, spec "People and permissions"): the connected card keeps its
@@ -92,6 +103,7 @@ const COPY = {
     importing: "importing events tagged",
     tagPlaceholder: "e.g. #guild",
     nobody: "No calendar is connected. Only the profile's owner can connect one. You can still add dates by hand below.",
+    removeWhat: "The events it brought in come off your profile. Events you added by hand stay.",
     hint: "Paste your calendar's ICS subscription URL. Only events with your sync tag (for example #guild) in their title or description are imported; the tag is left off on your profile. Each event's description shows on your profile too, so keep private notes out of tagged events. Deleting an event, or taking its tag off, removes it here too.",
   },
   food: {
@@ -101,6 +113,7 @@ const COPY = {
     importing: "importing vendors tagged",
     tagPlaceholder: "e.g. #food",
     nobody: "No food calendar is connected. Only the profile's owner can connect one.",
+    removeWhat: "The vendor visits it brought in come off your profile, and \"Food for the next week\" goes away until you connect one again.",
     hint: "Use the same calendar link as your Events page, with a different tag, for example #food, on each vendor's visit: the vendor's name in the title, and their menu or Instagram link in the description. (If someone else books your vendors, a separate calendar works too.) Your profile shows the next 7 days; a day with no vendor says \"Bring your own food\", or \"Closed\" when your hours say you're closed.",
   },
 } as const;
@@ -127,6 +140,8 @@ export function CalendarConnectionPanel({
   const [icsUrl, setIcsUrl] = useState(initialConnection?.ics_url ?? "");
   const [syncTag, setSyncTag] = useState(initialConnection?.sync_tag ?? "");
   const [refreshing, setRefreshing] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Whether the link/tag fields are open. Stays open after the first
   // successful save (which flips `connection` from null to a row) so the
@@ -222,6 +237,25 @@ export function CalendarConnectionPanel({
       setError(err instanceof Error ? err.message : "Refresh failed — try again.");
     } finally {
       setRefreshing(false);
+    }
+  }
+
+  /** "Remove calendar" (owner, 2026-09-30), confirmed first; then the page reloads without it. */
+  async function onRemove() {
+    if (!connection) return;
+    setError(null);
+    setRemoving(true);
+    try {
+      await removeIcsConnection({ data: { connectionId: connection.id } });
+      setConnection(null);
+      setIcsUrl("");
+      setSyncTag("");
+      setEditing(false);
+      await router.invalidate();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't remove the calendar — try again.");
+    } finally {
+      setRemoving(false);
     }
   }
 
@@ -388,8 +422,48 @@ export function CalendarConnectionPanel({
               />
             </div>
           </div>
+          {connected && (
+            <button
+              type="button"
+              disabled={removing}
+              onClick={() => setConfirmRemove(true)}
+              className="h-11 self-start rounded-[9px] px-[15px] text-[13px] font-medium text-danger hover:bg-canvas-2 disabled:opacity-60"
+            >
+              {removing ? "Removing…" : "Remove calendar"}
+            </button>
+          )}
         </div>
       )}
+
+      <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>
+        <AlertDialogContent className="rounded-[18px] border-0 bg-canvas p-[30px] sm:rounded-[18px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-[25px] font-bold leading-[1.1] text-ink">
+              Remove this calendar?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[14px] leading-[1.5] text-ink-muted">
+              {copy.removeWhat} Your Google Calendar itself isn't changed, and you can connect it
+              again any time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-[46px] rounded-[9px] border-[#D3CBBD] bg-transparent px-[19px] text-[14px] font-medium text-ink hover:bg-canvas-2">
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              className="h-[46px] rounded-[9px] px-6 text-[14px] font-semibold text-white"
+              onClick={() => {
+                setConfirmRemove(false);
+                void onRemove();
+              }}
+            >
+              Remove calendar
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {error && (
         <p role="alert" className="text-xs text-danger">
