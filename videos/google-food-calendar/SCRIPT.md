@@ -12,10 +12,10 @@ vendor visits go on the same Google calendar as their events, tagged #food.
 Want visitors to know which food vendors are at your taproom this week? Food vendors go on the same Google calendar as your events, so this builds on your events calendar. Haven't connected your events calendar yet? Watch that video first, then come back. If it's already connected, this only takes two steps.
 
 ## 02 — Two steps
-Add each vendor's visit to your events calendar, with its own tag. Then paste the same link on your Food page.
+Add each vendor's visit to your events calendar, with its own tag, such as hashtag food. Then paste the same link on your Food page.
 
 ## 03 — Add your vendors
-Step one. Add each vendor's visit to the calendar you use for events. Put the vendor's name in the title, and their menu or Instagram link in the description. Then type hashtag food in the title or description. Only visits tagged hashtag food show up as food vendors, and your events stay events.
+Step one. Add each vendor's visit to the calendar you use for events. Put the vendor's name in the title, and their menu or Instagram link or just a few words in the description. Then type hashtag food in the title or description. Only visits tagged hashtag food show up as food vendors, and your events stay events.
 
 ## 04 — Paste the same link
 Step two. Sign in to your Member Portal and open Food. Press Add calendar. Paste the same link you used for your events calendar. You'll find it on your Events page under Edit link. Type hashtag food as the tag, then press Refresh now.
