@@ -13,7 +13,7 @@ export const HELP_VIDEOS = {
   googleEventsCalendar: {
     title: "Connect your Google Calendar",
     duration: "2:47",
-    embedUrl: "https://livid.com/embed/H1WWGjbnsr9p",
+    embedUrl: "https://livid.com/embed/H1WWGjbnsr9p?autoplay=1",
     watchUrl: "https://livid.com/watch/H1WWGjbnsr9p",
   },
 } satisfies Record<string, HelpVideo>;

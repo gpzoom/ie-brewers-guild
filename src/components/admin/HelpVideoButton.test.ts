@@ -21,7 +21,7 @@ describe("HelpVideoButton", () => {
 describe("HELP_VIDEOS", () => {
   it("points at livid.com embed and watch pages for the same video", () => {
     for (const v of Object.values(HELP_VIDEOS)) {
-      const id = v.embedUrl.match(/^https:\/\/livid\.com\/embed\/([A-Za-z0-9]+)$/)?.[1];
+      const id = v.embedUrl.match(/^https:\/\/livid\.com\/embed\/([A-Za-z0-9]+)(\?autoplay=1)?$/)?.[1];
       expect(id).toBeTruthy();
       expect(v.watchUrl).toBe(`https://livid.com/watch/${id}`);
       expect(v.duration).toMatch(/^\d+:\d\d$/);

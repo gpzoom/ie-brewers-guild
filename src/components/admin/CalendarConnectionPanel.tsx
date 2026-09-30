@@ -73,7 +73,7 @@ function relativeTime(iso: string, now: number): string {
  * disconnect endpoint, so the artboard's "Google Calendar" card and
  * Disconnect button map to: a connected card for the ICS link (feed host,
  * sync tag, sync status, Refresh now, "Edit link"), or, before anything
- * is connected, the dashed "Add an Apple or other calendar" row, which
+ * is connected, the dashed "Add a calendar" row, which
  * opens the link and tag fields in place.
  *
  * `canEdit` false (anyone but the owner -- only the owner connects the
@@ -87,7 +87,7 @@ const COPY = {
   events: {
     label: "Calendar connection",
     connectedTitle: "Calendar subscription",
-    addTitle: "Add an Apple or other calendar",
+    addTitle: "Add a calendar",
     importing: "importing events tagged",
     tagPlaceholder: "e.g. #guild",
     nobody: "No calendar is connected. Only the profile's owner can connect one. You can still add dates by hand below.",
