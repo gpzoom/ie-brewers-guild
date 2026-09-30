@@ -16,6 +16,17 @@ describe("HelpVideoButton", () => {
     expect(html).toContain("(2:47)");
     expect(html).not.toContain("<iframe");
   });
+
+  it("has a food vendor video too", () => {
+    const html = renderToStaticMarkup(
+      createElement(HelpVideoButton, {
+        video: HELP_VIDEOS.googleFoodCalendar,
+        label: "Watch how to connect a Google Calendar for FOOD VENDORS",
+      }),
+    );
+    expect(html).toContain("FOOD VENDORS");
+    expect(html).toContain("(1:52)");
+  });
 });
 
 describe("HELP_VIDEOS", () => {

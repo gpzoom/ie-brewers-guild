@@ -382,12 +382,14 @@ export function CalendarConnectionPanel({
         </div>
       )}
 
-      {purpose === "events" && (
-        <HelpVideoButton
-          video={HELP_VIDEOS.googleEventsCalendar}
-          label="Watch how to connect a Google Calendar for EVENTS"
-        />
-      )}
+      <HelpVideoButton
+        video={purpose === "food" ? HELP_VIDEOS.googleFoodCalendar : HELP_VIDEOS.googleEventsCalendar}
+        label={
+          purpose === "food"
+            ? "Watch how to connect a Google Calendar for FOOD VENDORS"
+            : "Watch how to connect a Google Calendar for EVENTS"
+        }
+      />
 
       {showFields && (
         <div className="flex flex-col gap-3.5 border-t border-canvas-2 pt-3.5">

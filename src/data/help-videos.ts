@@ -16,4 +16,10 @@ export const HELP_VIDEOS = {
     embedUrl: "https://livid.com/embed/H1WWGjbnsr9p?autoplay=1",
     watchUrl: "https://livid.com/watch/H1WWGjbnsr9p",
   },
+  googleFoodCalendar: {
+    title: "Connect your food vendor calendar",
+    duration: "1:52",
+    embedUrl: "https://livid.com/embed/v5XYPWwgyFVb?autoplay=1",
+    watchUrl: "https://livid.com/watch/v5XYPWwgyFVb",
+  },
 } satisfies Record<string, HelpVideo>;
