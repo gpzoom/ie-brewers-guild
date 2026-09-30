@@ -325,13 +325,13 @@ def scene4(s, d):
             <span class="box" style="width:34px; height:34px; border-radius:7px; border:3px solid #6B6156; display:flex; align-items:center; justify-content:center; position:relative"><span class="tick" style="position:absolute; inset:-3px; border-radius:7px; background:#241F1A; color:#fff; display:flex; align-items:center; justify-content:center; font:700 22px 'Chivo'">✓</span></span>
             <span style="font:600 25px 'Chivo'">Make available to public</span>
           </div>
-          <div class="field" style="opacity:0.8">See only free/busy (hide details) ▾</div>
+          <div class="field" data-layout-allow-overlap style="opacity:0.8">See only free/busy (hide details) ▾</div>
           <div class="small" style="opacity:0.8">Share with specific people or groups</div>
         </div>
       </div>
     </div>
     <div class="dim" style="position:absolute; inset:62px 0 0 0; background:rgba(36,31,26,0.38); z-index:14"></div>
-    <div class="modal" style="position:absolute; left:440px; top:190px; width:560px; z-index:15; background:#fff; border-radius:16px; padding:30px 32px; box-shadow:0 24px 60px rgba(0,0,0,0.28); display:flex; flex-direction:column; gap:16px">
+    <div class="modal" data-layout-allow-overlap style="position:absolute; left:440px; top:190px; width:560px; z-index:15; background:#fff; border-radius:16px; padding:30px 32px; box-shadow:0 24px 60px rgba(0,0,0,0.28); display:flex; flex-direction:column; gap:16px">
       <div style="font:700 27px 'Chivo'">Make this calendar public?</div>
       <div style="font:400 20px/1.45 'Chivo'; color:#6B6156">Everyone will be able to see all events on it, including in Google search.</div>
       <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:6px">

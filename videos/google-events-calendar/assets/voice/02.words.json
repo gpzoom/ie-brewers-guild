@@ -2,91 +2,139 @@
   {
     "id": "w0",
     "text": "It",
-    "start": 0.2,
-    "end": 0.3
+    "start": 0.0,
+    "end": 0.151
   },
   {
     "id": "w1",
     "text": "takes",
-    "start": 0.36,
-    "end": 0.68
+    "start": 0.186,
+    "end": 0.441
   },
   {
     "id": "w2",
     "text": "three",
-    "start": 0.72,
-    "end": 0.9
+    "start": 0.499,
+    "end": 0.755
   },
   {
     "id": "w3",
     "text": "steps.",
-    "start": 1.06,
-    "end": 1.42
+    "start": 0.789,
+    "end": 1.428
   },
   {
     "id": "w4",
-    "text": "Make",
-    "start": 2.32,
-    "end": 2.54
+    "text": "Create",
+    "start": 1.869,
+    "end": 2.299
   },
   {
     "id": "w5",
-    "text": "an",
-    "start": 2.58,
-    "end": 2.62
+    "text": "a",
+    "start": 2.345,
+    "end": 2.38
   },
   {
     "id": "w6",
-    "text": "events",
-    "start": 2.66,
-    "end": 2.96
+    "text": "dedicated",
+    "start": 2.496,
+    "end": 3.077
   },
   {
     "id": "w7",
-    "text": "calendar.",
-    "start": 3.06,
-    "end": 3.54
+    "text": "events",
+    "start": 3.135,
+    "end": 3.448
   },
   {
     "id": "w8",
-    "text": "Tag",
-    "start": 4.1,
-    "end": 4.38
+    "text": "calendar.",
+    "start": 3.506,
+    "end": 4.11
   },
   {
     "id": "w9",
-    "text": "your",
-    "start": 4.42,
-    "end": 4.52
+    "text": "Create",
+    "start": 4.551,
+    "end": 4.946
   },
   {
     "id": "w10",
-    "text": "events.",
-    "start": 4.56,
-    "end": 5
+    "text": "your",
+    "start": 4.981,
+    "end": 5.108
   },
   {
     "id": "w11",
-    "text": "Then",
-    "start": 6,
-    "end": 6.22
+    "text": "events",
+    "start": 5.166,
+    "end": 5.538
   },
   {
     "id": "w12",
-    "text": "paste",
-    "start": 6.28,
-    "end": 6.58
+    "text": "and",
+    "start": 5.608,
+    "end": 5.77
   },
   {
     "id": "w13",
-    "text": "one",
-    "start": 6.78,
-    "end": 6.92
+    "text": "tag",
+    "start": 5.828,
+    "end": 6.13
   },
   {
     "id": "w14",
-    "text": "link.",
-    "start": 7.02,
-    "end": 7.34
+    "text": "them.",
+    "start": 6.177,
+    "end": 6.455
+  },
+  {
+    "id": "w15",
+    "text": "Then",
+    "start": 6.896,
+    "end": 7.094
+  },
+  {
+    "id": "w16",
+    "text": "paste",
+    "start": 7.175,
+    "end": 7.512
+  },
+  {
+    "id": "w17",
+    "text": "one",
+    "start": 7.581,
+    "end": 7.802
+  },
+  {
+    "id": "w18",
+    "text": "link",
+    "start": 7.86,
+    "end": 8.057
+  },
+  {
+    "id": "w19",
+    "text": "in",
+    "start": 8.104,
+    "end": 8.15
+  },
+  {
+    "id": "w20",
+    "text": "your",
+    "start": 8.197,
+    "end": 8.301
+  },
+  {
+    "id": "w21",
+    "text": "Profile",
+    "start": 8.348,
+    "end": 8.858
+  },
+  {
+    "id": "w22",
+    "text": "page.",
+    "start": 8.905,
+    "end": 9.613
   }
 ]

@@ -1,1 +1,1 @@
-Right next to it is a menu. Change See only free busy to See all event details. This one matters. Without it Google hides your event names and nothing comes through.
+When you check the box, the dropdown selector becomes clickable. Click the selector to change it from "See only free busy" to "See all event details". This one is important. If you don't choose to see all the details then nothing will show up on your profile or the homepage.

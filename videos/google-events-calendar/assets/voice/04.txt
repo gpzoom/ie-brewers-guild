@@ -1,1 +1,1 @@
-Now point at the new calendar's name and open Settings and sharing. Under Access permissions for events tick Make available to public.
+Next, select the new calendar's name and open "Settings and sharing". Scroll down to "Access permissions for events" and check: "Make available to public". If a warning window pops up, just hit "OK".

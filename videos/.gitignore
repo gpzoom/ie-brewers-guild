@@ -10,3 +10,6 @@ node_modules/
 
 # Cleaned voice-training audio (too large for git)
 voice-clone/clean/
+voice-clone/samples/
+# HeyGen takes (already in git history before the ElevenLabs re-voice)
+google-events-calendar/assets/voice/heygen/
