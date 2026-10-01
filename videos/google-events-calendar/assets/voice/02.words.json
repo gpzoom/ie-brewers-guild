@@ -3,228 +3,234 @@
     "id": "w0",
     "text": "It",
     "start": 0.0,
-    "end": 0.151
+    "end": 0.163
   },
   {
     "id": "w1",
     "text": "takes",
-    "start": 0.186,
-    "end": 0.43
+    "start": 0.209,
+    "end": 0.464
   },
   {
     "id": "w2",
     "text": "three",
-    "start": 0.476,
-    "end": 0.697
+    "start": 0.534,
+    "end": 0.801
   },
   {
     "id": "w3",
     "text": "steps.",
-    "start": 0.731,
-    "end": 1.382
+    "start": 0.848,
+    "end": 1.521
   },
   {
     "id": "w4",
     "text": "Create",
-    "start": 1.765,
-    "end": 2.206
+    "start": 2.125,
+    "end": 2.554
   },
   {
     "id": "w5",
     "text": "a",
-    "start": 2.252,
-    "end": 2.299
+    "start": 2.577,
+    "end": 2.612
   },
   {
     "id": "w6",
     "text": "dedicated",
-    "start": 2.415,
-    "end": 2.972
+    "start": 2.728,
+    "end": 3.332
   },
   {
     "id": "w7",
     "text": "events",
-    "start": 3.03,
-    "end": 3.344
+    "start": 3.379,
+    "end": 3.669
   },
   {
     "id": "w8",
     "text": "calendar.",
-    "start": 3.39,
-    "end": 3.982
+    "start": 3.727,
+    "end": 4.342
   },
   {
     "id": "w9",
     "text": "Create",
-    "start": 4.261,
-    "end": 4.69
+    "start": 4.853,
+    "end": 5.271
   },
   {
     "id": "w10",
     "text": "your",
-    "start": 4.725,
-    "end": 4.853
+    "start": 5.294,
+    "end": 5.41
   },
   {
     "id": "w11",
     "text": "events",
-    "start": 4.911,
-    "end": 5.259
+    "start": 5.457,
+    "end": 5.793
   },
   {
     "id": "w12",
     "text": "and",
-    "start": 5.329,
-    "end": 5.457
+    "start": 5.863,
+    "end": 6.026
   },
   {
     "id": "w13",
     "text": "tag",
-    "start": 5.538,
-    "end": 5.863
+    "start": 6.095,
+    "end": 6.397
   },
   {
     "id": "w14",
     "text": "them.",
-    "start": 5.921,
-    "end": 6.2
+    "start": 6.455,
+    "end": 6.769
   },
   {
     "id": "w15",
     "text": "Then",
-    "start": 6.525,
-    "end": 6.757
+    "start": 7.094,
+    "end": 7.314
   },
   {
     "id": "w16",
     "text": "paste",
-    "start": 6.838,
-    "end": 7.152
+    "start": 7.407,
+    "end": 7.755
   },
   {
     "id": "w17",
     "text": "one",
-    "start": 7.21,
-    "end": 7.454
+    "start": 7.825,
+    "end": 8.104
   },
   {
     "id": "w18",
     "text": "link",
-    "start": 7.5,
-    "end": 7.732
+    "start": 8.162,
+    "end": 8.406
   },
   {
     "id": "w19",
     "text": "in",
-    "start": 7.802,
-    "end": 7.883
+    "start": 8.452,
+    "end": 8.51
   },
   {
     "id": "w20",
     "text": "your",
-    "start": 7.93,
-    "end": 8.022
+    "start": 8.568,
+    "end": 8.684
   },
   {
     "id": "w21",
     "text": "Profile",
-    "start": 8.069,
-    "end": 8.499
+    "start": 8.742,
+    "end": 9.23
   },
   {
     "id": "w22",
     "text": "page.",
-    "start": 8.533,
-    "end": 8.998
+    "start": 9.265,
+    "end": 9.787
   },
   {
     "id": "w23",
     "text": "Do",
-    "start": 9.381,
-    "end": 9.543
+    "start": 10.298,
+    "end": 10.472
   },
   {
     "id": "w24",
     "text": "this",
-    "start": 9.613,
-    "end": 9.764
+    "start": 10.542,
+    "end": 10.693
   },
   {
     "id": "w25",
     "text": "setup",
-    "start": 9.822,
-    "end": 10.182
+    "start": 10.762,
+    "end": 11.111
   },
   {
     "id": "w26",
     "text": "on",
-    "start": 10.263,
-    "end": 10.379
+    "start": 11.169,
+    "end": 11.238
   },
   {
     "id": "w27",
     "text": "a",
-    "start": 10.414,
-    "end": 10.437
+    "start": 11.285,
+    "end": 11.308
   },
   {
     "id": "w28",
-    "text": "computer.",
-    "start": 10.495,
-    "end": 11.122
+    "text": "computer",
+    "start": 11.355,
+    "end": 11.935
   },
   {
     "id": "w29",
-    "text": "Google's",
-    "start": 12.074,
-    "end": 12.492
+    "text": "because",
+    "start": 12.26,
+    "end": 12.585
   },
   {
     "id": "w30",
-    "text": "phone",
-    "start": 12.527,
-    "end": 12.806
+    "text": "Google's",
+    "start": 12.643,
+    "end": 13.015
   },
   {
     "id": "w31",
-    "text": "app",
-    "start": 12.829,
-    "end": 12.992
+    "text": "phone",
+    "start": 13.073,
+    "end": 13.386
   },
   {
     "id": "w32",
-    "text": "doesn't",
-    "start": 13.061,
-    "end": 13.375
-  },
-  {
-    "id": "w33",
-    "text": "show",
-    "start": 13.433,
+    "text": "app",
+    "start": 13.41,
     "end": 13.642
   },
   {
+    "id": "w33",
+    "text": "doesn't",
+    "start": 13.793,
+    "end": 14.153
+  },
+  {
     "id": "w34",
-    "text": "the",
-    "start": 13.7,
-    "end": 13.769
+    "text": "show",
+    "start": 14.199,
+    "end": 14.408
   },
   {
     "id": "w35",
-    "text": "link",
-    "start": 13.827,
-    "end": 14.013
+    "text": "the",
+    "start": 14.478,
+    "end": 14.547
   },
   {
     "id": "w36",
-    "text": "you'll",
-    "start": 14.06,
-    "end": 14.245
+    "text": "link",
+    "start": 14.617,
+    "end": 14.826
   },
   {
     "id": "w37",
+    "text": "you'll",
+    "start": 14.884,
+    "end": 15.081
+  },
+  {
+    "id": "w38",
     "text": "need.",
-    "start": 14.292,
-    "end": 14.907
+    "start": 15.128,
+    "end": 15.79
   }
 ]
