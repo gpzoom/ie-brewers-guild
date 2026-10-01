@@ -727,7 +727,7 @@ def caption_groups():
                 cur = []
         if cur:
             sentences.append(cur)
-        joints = {"and", "so", "next", "to", "with", "in", "on", "for", "then", "also", "under"}
+        joints = {"and", "so", "next", "to", "with", "in", "on", "for", "then", "also", "under", "because"}
         for sent in sentences:
             if len(sent) <= 11:
                 groups.append((n, sent))

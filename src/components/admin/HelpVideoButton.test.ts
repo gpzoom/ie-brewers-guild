@@ -13,7 +13,7 @@ describe("HelpVideoButton", () => {
       }),
     );
     expect(html).toContain("Watch how to connect a Google Calendar for EVENTS");
-    expect(html).toContain("(2:47)");
+    expect(html).toContain("(2:53)");
     expect(html).not.toContain("<iframe");
   });
 
