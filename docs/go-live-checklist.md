@@ -37,6 +37,8 @@ None of these block going live. Say which you want and Claude does them on stagi
 - [ ] **Frontier Beer Fest's date.** The homepage pins the Guild's own event first, but the only one listed is **30 May 2026**, already past, so nothing is pinned now. **Owner:** send the next date, place, ticket link and poster when known. Claude updates it (`src/data/site.ts`, `guildEvents`).
 - [ ] **Warning for "free/busy only" calendars.** Test 3's event didn't show because its Google calendar was shared as "See only free/busy", so every event came through as "Busy". Claude can make the portal spot that and say "Change it to See all event details in Google Calendar". The how-to video already covers it, but the warning catches members who skip the video.
 - [ ] **Long links in carousel descriptions.** A web address in an event's description can break in the middle of a word on the homepage calendar pages. Claude can make long links wrap cleanly.
+- [ ] **The footer's Twitter icon** links nowhere (it's a placeholder). **Owner:** send the Guild's X/Twitter address, or say to remove the icon.
+- [ ] **A real newsletter, later.** The footer's Newsletter box was removed on 1 October 2026, because it said "Subscribed!" but saved nothing. When the Guild starts a newsletter, Claude can bring the box back with sign-ups saved (a list in Guild admin) or sent to Resend or Mailchimp.
 - [ ] **Balance the desktop profile.** With seven food rows under the photos, the left column can run longer than the right. Claude can make the "Bring your own food" rows more compact, if it bothers you.
 
 ## 2. Production settings (Cloudflare and Supabase, before the merge)

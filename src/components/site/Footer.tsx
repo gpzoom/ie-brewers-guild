@@ -1,28 +1,18 @@
 import { Link } from "@tanstack/react-router";
 import { Instagram, Facebook, Twitter } from "lucide-react";
-import { useState, type FormEvent } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
 import logo from "@/assets/logo.svg";
 
+// The Newsletter sign-up box was removed (owner, 1 October 2026): it showed
+// "Subscribed!" but saved the address nowhere. Bring it back only with a
+// real list behind it.
 export function Footer() {
-  const [email, setEmail] = useState("");
-
-  const onSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    toast.success("Subscribed!", { description: `We'll keep ${email} in the loop.` });
-    setEmail("");
-  };
-
   return (
     // theme-site keeps the footer dark on the light "canvas" routes
     // (/signin, /send/...); the background is the same 40% card-over-
     // background tint as before, just mixed opaquely so a light page
     // body behind it can't show through.
     <footer className="theme-site mt-24 border-t border-border/60 bg-[color-mix(in_oklab,var(--card)_40%,var(--background))]">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-4 md:px-6">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-3 md:px-6">
         <div className="md:col-span-2">
           <Link to="/" className="flex items-center gap-2 font-display text-xl tracking-wider">
             <img src={logo} alt="Inland Southern California Brewers Guild" className="h-10 w-10 rounded-sm object-contain" />
@@ -47,22 +37,6 @@ export function Footer() {
             <li><Link to="/news" className="hover:text-primary">News</Link></li>
             <li><Link to="/contact" className="hover:text-primary">Contact</Link></li>
           </ul>
-        </div>
-
-        <div>
-          <h4 className="text-sm tracking-widest text-foreground">Newsletter</h4>
-          <p className="mt-3 text-sm text-muted-foreground">Beer news, events, and member spotlights.</p>
-          <form onSubmit={onSubmit} className="mt-3 flex gap-2">
-            <Input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="bg-background"
-            />
-            <Button type="submit">Join</Button>
-          </form>
         </div>
       </div>
       <div className="flex flex-col items-center justify-between gap-2 border-t border-border/60 py-5 text-center text-xs text-muted-foreground sm:flex-row sm:px-6">
