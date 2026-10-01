@@ -59,6 +59,27 @@ function RefreshIcon() {
   );
 }
 
+/** The one-time-setup-on-a-computer warning (owner, 2026-10-01). */
+export function ComputerOnlyNote() {
+  return (
+    <div
+      role="note"
+      className="flex items-start gap-3 rounded-[11px] border-2 border-[#C2410C] bg-[#FFF4E8] px-4 py-3 text-[13px] leading-[1.5] text-ink"
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="mt-px shrink-0">
+        <rect x="3" y="4" width="18" height="12" rx="1.8" stroke="#C2410C" strokeWidth="1.8" />
+        <path d="M8 20h8M12 16v4" stroke="#C2410C" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+      <p>
+        <strong className="font-semibold">Set up the link on a computer — one time only.</strong> Google
+        Calendar shows a calendar's iCal link (the ICS subscription URL below) only on a computer, never in
+        the phone app. Copy it there once and paste it here. After that, add and change your events on your
+        phone or your computer, whichever you like.
+      </p>
+    </div>
+  );
+}
+
 function feedHost(url: string | null): string | null {
   if (!url) return null;
   try {
@@ -381,6 +402,11 @@ export function CalendarConnectionPanel({
           )}
         </div>
       )}
+
+      {/* Google's phone app never shows a calendar's iCal link, so the link has
+          to be copied on a computer (owner, 2026-10-01). Shown until a link is
+          in, and whenever the link is being edited. */}
+      {(!connected || showFields) && <ComputerOnlyNote />}
 
       <HelpVideoButton
         video={purpose === "food" ? HELP_VIDEOS.googleFoodCalendar : HELP_VIDEOS.googleEventsCalendar}

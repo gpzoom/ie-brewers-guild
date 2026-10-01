@@ -18,6 +18,8 @@ Each step says who does it. "Claude" steps happen only when the owner says go.
   - [ ] **How-to videos:** on the Events page, **Watch how to connect a Google Calendar for EVENTS** opens a pop-up and plays (on its own, or with one tap on a phone). On the Food page, both the FOOD VENDORS video and the "watch this video first" events link play. Try one on your phone too.
   - [ ] **One calendar, two tags:** Bob's Brewery's #food vendor visits show only in "Food for the next week", its #guild events only under "Upcoming events", and an event that just mentions food (or says #foodtruck) stays out of the food week.
   - [ ] **Tags save with #:** type `food` as a sync tag and it saves as `#food`.
+  - [ ] **Computer-only note:** a calendar box with no link yet (or with Edit link open) shows the orange "Set up the link on a computer — one time only" note.
+  - [ ] **Empty links:** add a link with no address on Links & contact and try to publish. The message names the link and says to fix it on Links & contact.
   - [ ] **Remove calendar:** on a test profile, Edit link → **Remove calendar** asks first, then takes that calendar's entries off the profile; hand-added events stay. (Paste the link again afterwards if you want it back.)
 - [ ] **Owner: the hero image.** Upload the Guild-supplied photo on Settings (staging and production share it, so it shows on both), or go live with the built-in one for now.
 - [ ] **Owner: decide on the test profiles.** Published profiles appear in the live directory the moment the site goes live.

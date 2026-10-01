@@ -153,7 +153,8 @@ insert into _tap (line) select lives_ok(
   'a half-typed link (empty URL) can sit in the draft');
 insert into _tap (line) select throws_ok(
   $q$ select public.publish_member_draft('f1000000-0000-4000-8000-000000000001', array['links'], false) $q$,
-  '22023', null, 'but a link without a URL cannot be published');
+  '22023', 'These links have no web address: Website. Open Links & contact and add each address, or remove those links, then publish again.',
+  'but a link without a URL cannot be published, and the message names it and where to fix it');
 insert into _tap (line) select lives_ok(
   $q$ select public.discard_member_draft_sections('f1000000-0000-4000-8000-000000000001', array['links']) $q$,
   'editor: discard links');
