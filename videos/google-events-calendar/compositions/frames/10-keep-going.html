@@ -51,6 +51,7 @@
   <div style="position:absolute; left:120px; top:200px; width:1130px; display:flex; flex-direction:column; gap:36px">
     <div class="h" style="font-size:88px"><div class="l1">Add events to that calendar.</div><div class="l2 accent">The site keeps up.</div></div>
     <div style="display:flex; flex-direction:column; gap:14px; font:400 33px/1.45 'Chivo'; color:#B6AC9D">
+      <div class="n0">Add them on your phone or your computer.</div>
       <div class="n1">Google can take a few hours to update its link.</div>
       <div class="n2">Need help? Press <b style="color:#F7F3EC">Help</b> in the Member Portal.</div>
     </div>
@@ -69,12 +70,13 @@
           const tl = gsap.timeline({ paused: true });
 
 tl.fromTo("#s10 .stage", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power1.out" }, 0);
-tl.fromTo("#s10 .stage", { opacity: 1 }, { opacity: 0, duration: 0.9, ease: "power1.in", immediateRender: false }, 17.05);
+tl.fromTo("#s10 .stage", { opacity: 1 }, { opacity: 0, duration: 0.9, ease: "power1.in", immediateRender: false }, 17.28);
 tl.fromTo("#s10 .glow", { scale: 1 }, { scale: 1.12, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: 4 }, 0);
 tl.fromTo("#s10 .l1", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.50);
-tl.fromTo("#s10 .l2", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 4.96);
-tl.fromTo("#s10 .n1", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 7.99);
-tl.fromTo("#s10 .n2", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 12.11);
+tl.fromTo("#s10 .l2", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 6.51);
+tl.fromTo("#s10 .n0", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 4.75);
+tl.fromTo("#s10 .n1", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 9.17);
+tl.fromTo("#s10 .n2", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 12.92);
 tl.fromTo("#s10 .page", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 0.60);
 tl.fromTo("#s10 .page", { rotation: 0 }, { rotation: -2.5, duration: 4, ease: "sine.inOut", yoyo: true, repeat: 1, immediateRender: false }, 2);
 tl.fromTo("#s10 .mark", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power1.inOut", immediateRender: false }, 1.20);

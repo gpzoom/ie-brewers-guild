@@ -8,7 +8,7 @@ If you change any wording, send the final text back too, so the captions match.
 Want your events to show up on the Guild homepage? Here's how to set it up with Google Calendar and have it run on autopilot.
 
 ## 02 — Three steps
-It takes three steps. Create a dedicated events calendar. Create your events and tag them. Then paste one link in your Profile page.
+It takes three steps. Create a dedicated events calendar. Create your events and tag them. Then paste one link in your Profile page. Do this setup on a computer. Google's phone app doesn't show the link you'll need.
 
 ## 03 — A calendar just for events
 Step one starts with a new calendar just for your events. Just so you know, anyone with its link can see everything on it, so keep it separate from your own personal calendar. Open Google Calendar and press the plus next to "Other" calendars. Choose Create new calendar. Name it and press "Create calendar".
@@ -32,4 +32,4 @@ Your events show up on your profile right away. With the time and the place and 
 Events that are scheduled within the next two weeks also appear on the Guild homepage. Each one gets its own calendar page with your logo and your theme color.
 
 ## 10 — Keep it going
-From now on just add events to your dedicated events calendar. The site checks for changes on its own. Google can take a few hours to update so give it a little time. Need help? Press Help in the Member Portal.
+From now on just add events to your dedicated events calendar, on your phone or your computer. The site checks for changes on its own. Google can take a few hours to update so give it a little time. Need help? Press Help in the Member Portal.

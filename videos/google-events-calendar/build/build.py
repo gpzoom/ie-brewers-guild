@@ -213,6 +213,10 @@ def scene2(s, d):
 <div class="glow" data-layout-allow-overflow style="left:-380px; top:-500px"></div>
 <div class="stage">
   <div class="h title" style="position:absolute; left:120px; top:120px; font-size:88px">Three steps.</div>
+  <div class="pc" style="position:absolute; right:120px; top:128px; display:flex; align-items:center; gap:16px; background:#211C17; border:3px solid #E8913A; border-radius:16px; padding:18px 26px; font:600 28px 'Chivo'; color:#F7F3EC">
+    <svg width="38" height="38" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.8" stroke="#E8913A" stroke-width="1.8"/><path d="M8 20h8M12 16v4" stroke="#E8913A" stroke-width="1.8" stroke-linecap="round"/></svg>
+    One-time setup: use a computer
+  </div>
   <div style="position:absolute; left:120px; right:120px; top:320px; display:grid; grid-template-columns:repeat(3,1fr); gap:50px">{cells}</div>
 </div>"""
     js = common_js(s, d)
@@ -221,6 +225,8 @@ def scene2(s, d):
         at = c(2, *word)
         js += rise(f"#{s} .c{num}", at - 0.15, 70, 0.6)
         js += pop(f"#{s} .c{num} .num", at)
+    # "Do this setup on a computer" (owner, 2026-10-01): Google's phone app hides the link.
+    js += pop(f"#{s} .pc", c(2, "Do"))
     return html, js
 
 
@@ -636,6 +642,7 @@ def scene10(s, d):
   <div style="position:absolute; left:120px; top:200px; width:1130px; display:flex; flex-direction:column; gap:36px">
     <div class="h" style="font-size:88px"><div class="l1">Add events to that calendar.</div><div class="l2 accent">The site keeps up.</div></div>
     <div style="display:flex; flex-direction:column; gap:14px; font:400 33px/1.45 'Chivo'; color:#B6AC9D">
+      <div class="n0">Add them on your phone or your computer.</div>
       <div class="n1">Google can take a few hours to update its link.</div>
       <div class="n2">Need help? Press <b style="color:#F7F3EC">Help</b> in the Member Portal.</div>
     </div>
@@ -646,6 +653,7 @@ def scene10(s, d):
     js = common_js(s, d).replace(f"{d - 0.4:.2f});", f"{d - 0.9:.2f});").replace("duration: 0.4, ease: \"power1.in\"", "duration: 0.9, ease: \"power1.in\"")
     js += rise(f"#{s} .l1", c(10, "From"), 50)
     js += rise(f"#{s} .l2", c(10, "The"), 50)
+    js += rise(f"#{s} .n0", c(10, "phone"), 24)
     js += rise(f"#{s} .n1", c(10, "Google"), 24)
     js += rise(f"#{s} .n2", c(10, "Need"), 24)
     js += rise(f"#{s} .page", 0.6, 60, 0.8)

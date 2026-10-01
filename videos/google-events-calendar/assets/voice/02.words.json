@@ -9,132 +9,222 @@
     "id": "w1",
     "text": "takes",
     "start": 0.186,
-    "end": 0.441
+    "end": 0.43
   },
   {
     "id": "w2",
     "text": "three",
-    "start": 0.499,
-    "end": 0.755
+    "start": 0.476,
+    "end": 0.697
   },
   {
     "id": "w3",
     "text": "steps.",
-    "start": 0.789,
-    "end": 1.428
+    "start": 0.731,
+    "end": 1.382
   },
   {
     "id": "w4",
     "text": "Create",
-    "start": 1.869,
-    "end": 2.299
+    "start": 1.765,
+    "end": 2.206
   },
   {
     "id": "w5",
     "text": "a",
-    "start": 2.345,
-    "end": 2.38
+    "start": 2.252,
+    "end": 2.299
   },
   {
     "id": "w6",
     "text": "dedicated",
-    "start": 2.496,
-    "end": 3.077
+    "start": 2.415,
+    "end": 2.972
   },
   {
     "id": "w7",
     "text": "events",
-    "start": 3.135,
-    "end": 3.448
+    "start": 3.03,
+    "end": 3.344
   },
   {
     "id": "w8",
     "text": "calendar.",
-    "start": 3.506,
-    "end": 4.11
+    "start": 3.39,
+    "end": 3.982
   },
   {
     "id": "w9",
     "text": "Create",
-    "start": 4.551,
-    "end": 4.946
+    "start": 4.261,
+    "end": 4.69
   },
   {
     "id": "w10",
     "text": "your",
-    "start": 4.981,
-    "end": 5.108
+    "start": 4.725,
+    "end": 4.853
   },
   {
     "id": "w11",
     "text": "events",
-    "start": 5.166,
-    "end": 5.538
+    "start": 4.911,
+    "end": 5.259
   },
   {
     "id": "w12",
     "text": "and",
-    "start": 5.608,
-    "end": 5.77
+    "start": 5.329,
+    "end": 5.457
   },
   {
     "id": "w13",
     "text": "tag",
-    "start": 5.828,
-    "end": 6.13
+    "start": 5.538,
+    "end": 5.863
   },
   {
     "id": "w14",
     "text": "them.",
-    "start": 6.177,
-    "end": 6.455
+    "start": 5.921,
+    "end": 6.2
   },
   {
     "id": "w15",
     "text": "Then",
-    "start": 6.896,
-    "end": 7.094
+    "start": 6.525,
+    "end": 6.757
   },
   {
     "id": "w16",
     "text": "paste",
-    "start": 7.175,
-    "end": 7.512
+    "start": 6.838,
+    "end": 7.152
   },
   {
     "id": "w17",
     "text": "one",
-    "start": 7.581,
-    "end": 7.802
+    "start": 7.21,
+    "end": 7.454
   },
   {
     "id": "w18",
     "text": "link",
-    "start": 7.86,
-    "end": 8.057
+    "start": 7.5,
+    "end": 7.732
   },
   {
     "id": "w19",
     "text": "in",
-    "start": 8.104,
-    "end": 8.15
+    "start": 7.802,
+    "end": 7.883
   },
   {
     "id": "w20",
     "text": "your",
-    "start": 8.197,
-    "end": 8.301
+    "start": 7.93,
+    "end": 8.022
   },
   {
     "id": "w21",
     "text": "Profile",
-    "start": 8.348,
-    "end": 8.858
+    "start": 8.069,
+    "end": 8.499
   },
   {
     "id": "w22",
     "text": "page.",
-    "start": 8.905,
-    "end": 9.613
+    "start": 8.533,
+    "end": 8.998
+  },
+  {
+    "id": "w23",
+    "text": "Do",
+    "start": 9.381,
+    "end": 9.543
+  },
+  {
+    "id": "w24",
+    "text": "this",
+    "start": 9.613,
+    "end": 9.764
+  },
+  {
+    "id": "w25",
+    "text": "setup",
+    "start": 9.822,
+    "end": 10.182
+  },
+  {
+    "id": "w26",
+    "text": "on",
+    "start": 10.263,
+    "end": 10.379
+  },
+  {
+    "id": "w27",
+    "text": "a",
+    "start": 10.414,
+    "end": 10.437
+  },
+  {
+    "id": "w28",
+    "text": "computer.",
+    "start": 10.495,
+    "end": 11.122
+  },
+  {
+    "id": "w29",
+    "text": "Google's",
+    "start": 12.074,
+    "end": 12.492
+  },
+  {
+    "id": "w30",
+    "text": "phone",
+    "start": 12.527,
+    "end": 12.806
+  },
+  {
+    "id": "w31",
+    "text": "app",
+    "start": 12.829,
+    "end": 12.992
+  },
+  {
+    "id": "w32",
+    "text": "doesn't",
+    "start": 13.061,
+    "end": 13.375
+  },
+  {
+    "id": "w33",
+    "text": "show",
+    "start": 13.433,
+    "end": 13.642
+  },
+  {
+    "id": "w34",
+    "text": "the",
+    "start": 13.7,
+    "end": 13.769
+  },
+  {
+    "id": "w35",
+    "text": "link",
+    "start": 13.827,
+    "end": 14.013
+  },
+  {
+    "id": "w36",
+    "text": "you'll",
+    "start": 14.06,
+    "end": 14.245
+  },
+  {
+    "id": "w37",
+    "text": "need.",
+    "start": 14.292,
+    "end": 14.907
   }
 ]
