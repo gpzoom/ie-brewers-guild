@@ -12,6 +12,7 @@
 //
 // Reads the service key from .dev.vars and never prints it. No emails are sent.
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
@@ -308,7 +309,14 @@ async function setSetup(mode) {
     "begin; select set_config('app.member_fn', 'on', true); " +
     `update public.members set type_confirmed_at = ${value}, setup_completed_at = ${value} ` +
     `where slug in (${slugs}) and status <> 'published'; commit;`;
-  execFileSync("npx", ["supabase", "db", "query", "--linked", sql], { stdio: "ignore", shell: true });
+  // Through a file: passing the SQL as an argument breaks on Windows quoting.
+  const file = path.join(os.tmpdir(), `sample-setup-${Date.now()}.sql`);
+  fs.writeFileSync(file, sql);
+  try {
+    execFileSync("npx", ["supabase", "db", "query", "--linked", "-f", JSON.stringify(file)], { stdio: "ignore", shell: true });
+  } finally {
+    fs.rmSync(file, { force: true });
+  }
   console.log(`setup ${mode} for the sample members`);
 }
 

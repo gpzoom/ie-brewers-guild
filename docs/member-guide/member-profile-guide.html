@@ -60,7 +60,7 @@
 
   /* Map */
   .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7pt; }
-  .node { border: 1.2pt solid var(--ink); border-radius: 8pt; padding: 7pt 8pt; background: #fff; position: relative; min-height: 66pt; break-inside: avoid; }
+  .node { border: 1.2pt solid var(--ink); border-radius: 8pt; padding: 6pt 8pt; background: #fff; position: relative; min-height: 58pt; break-inside: avoid; }
   .node .n { font-family: "Bricolage Grotesque", Georgia, serif; font-weight: 800; font-size: 15pt; color: var(--brand); line-height: 1; }
   .node .name { font-weight: 700; font-size: 9.6pt; margin-top: 3pt; line-height: 1.2; }
   .node .what { font-size: 8pt; color: var(--muted); margin-top: 2pt; line-height: 1.3; }
@@ -70,24 +70,34 @@
   .node.finish { background: var(--ink); color: var(--canvas); border-color: var(--ink); }
   .node.finish .n { color: #E0A85A; }
   .node.finish .what { color: #D8D0C4; }
-  .arrow-row { display: flex; align-items: center; gap: 6pt; margin: 8pt 0; font-size: 8.5pt; color: var(--muted); }
+  .arrow-row { display: flex; align-items: center; gap: 6pt; margin: 5pt 0; font-size: 8.5pt; color: var(--muted); }
   .arrow-row .line { flex: 1; height: 1.2pt; background: var(--ink); position: relative; }
   .arrow-row .line::after { content: ""; position: absolute; right: -1pt; top: -3.4pt; border-left: 7pt solid var(--ink); border-top: 4pt solid transparent; border-bottom: 4pt solid transparent; }
   .legend { display: flex; flex-wrap: wrap; gap: 10pt; font-size: 8.5pt; color: var(--muted); margin: 6pt 0 10pt; }
   .legend span.box { display: inline-block; width: 14pt; height: 10pt; border-radius: 3pt; vertical-align: -1pt; margin-right: 4pt; border: 1.2pt solid var(--ink); background: #fff; }
   table { width: 100%; border-collapse: collapse; font-size: 9pt; }
-  th, td { text-align: left; padding: 4pt 6pt; border-bottom: 0.6pt solid var(--border); vertical-align: top; }
+  th, td { text-align: left; padding: 3pt 6pt; border-bottom: 0.6pt solid var(--border); vertical-align: top; }
   th { font-size: 8pt; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border-bottom: 1.2pt solid var(--ink); }
   td.c { text-align: center; }
   .yes { color: #2F6B33; font-weight: 700; }
   .no { color: var(--subtle); }
   /* Screens */
-  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 14pt 16pt; align-items: start; }
-  .shots figure { margin: 0; break-inside: avoid; }
-  .shots figure.wide { grid-column: 1 / -1; }
-  .shots img { display: block; width: 100%; border: 0.75pt solid var(--border); border-radius: 5pt; }
-  .shots figcaption { font-size: 9pt; margin-top: 4pt; }
-  .shots figcaption b { font-family: "Bricolage Grotesque", Georgia, serif; color: var(--brand); margin-right: 3pt; }
+  /* Screens: one step at a time, screenshot beside its notes */
+  .step-h { display: flex; align-items: baseline; gap: 8pt; border-bottom: 1.5pt solid var(--ink); padding-bottom: 3pt; margin: 4pt 0 8pt; break-after: avoid; }
+  .step-h .num { font-family: "Bricolage Grotesque", Georgia, serif; font-weight: 800; font-size: 15pt; color: var(--brand); }
+  .step-h h3 { font-size: 14pt; }
+  .shot { display: grid; grid-template-columns: 3.35in 1fr; gap: 14pt; align-items: start; break-inside: avoid; margin-bottom: 14pt; }
+  .shot.wide { grid-template-columns: 1fr; }
+  .shot.wide img { max-height: 7.3in; }
+  .shot img { display: block; width: 100%; max-height: 8.2in; object-fit: contain; object-position: top left; border: 0.75pt solid var(--border); border-radius: 5pt; }
+  .shot .notes { font-size: 9.6pt; display: flex; flex-direction: column; gap: 6pt; padding-top: 26pt; }
+  .shot.wide .notes { padding-top: 0; }
+  .bigtag { display: inline-block; font-size: 10pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4pt 10pt; border-radius: 99pt; margin-bottom: 6pt; }
+  .bigtag.p { background: #F5E2D0; color: #7A4413; }
+  .bigtag.m { background: #DCEDEC; color: #17605F; }
+  .bigtag.a { background: #E6E3F3; color: #3B4B9A; }
+  .bigtag.all { background: var(--ink); color: var(--canvas); }
+  ul.plain { margin: 0; padding-left: 14pt; display: flex; flex-direction: column; gap: 4pt; }
   footer.small { margin-top: 10pt; font-size: 8pt; color: var(--subtle); }
 </style>
 </head>
@@ -101,28 +111,29 @@
     <p class="lede" style="margin-top: 8pt;">Every Guild member has a page on the Guild's member directory at <strong style="color:#fff">iscbrewersguild.org</strong>. This guide lists what to gather before you start, and walks you through each step of the setup.</p>
   </div>
 
-  <div class="grid-2" style="margin-bottom: 14pt;">
-    <div class="card">
-      <h3 style="margin-bottom: 6pt;">How to sign in</h3>
-      <ol class="steps">
-        <li><div>Go to <strong>iscbrewersguild.org</strong> and scroll to the bottom of the page.</div></li>
-        <li><div>Click <strong>Member Portal</strong>.</div></li>
-        <li><div>Enter the email address the Guild has for your business. There's no password.</div></li>
-        <li><div>Open the email we send you and click the sign-in link. Use the same phone or computer.</div></li>
-        <li><div>The setup wizard opens and walks you through each step.</div></li>
-      </ol>
-    </div>
-    <div class="card">
-      <h3 style="margin-bottom: 6pt;">Good to know</h3>
-      <ul class="check dots" style="margin-top: 2pt;">
-        <li><div><strong>About 10 minutes.</strong><span class="note">Longer if you're choosing photos.</span></div></li>
-        <li><div><strong>Only the first three steps are required.</strong><span class="note">Everything after "The basics" can be skipped and finished later.</span></div></li>
-        <li><div><strong>Save &amp; exit any time.</strong><span class="note">Your work is saved as you type. Sign in again to pick up where you left off.</span></div></li>
-        <li><div><strong>Nothing goes live until you publish.</strong><span class="note">Preview your page first, then publish when it looks right.</span></div></li>
-      </ul>
-    </div>
+  <div class="card" style="margin-bottom: 12pt;">
+    <h3 style="margin-bottom: 6pt;">Good to know</h3>
+    <ul class="check dots" style="margin-top: 2pt;">
+      <li><div><strong>About 10 minutes.</strong><span class="note">Longer if you're uploading photos.</span></div></li>
+      <li><div><strong>Photo file formats are important.</strong><span class="note">Your logo must be a PNG file. If you don't have one, you can easily get it converted (step 4 links to a free tool). All other photos can be PNG or JPG.</span></div></li>
+      <li><div><strong>Only the first three steps are required.</strong><span class="note">Everything after "The basics" can be skipped and finished later.</span></div></li>
+      <li><div><strong>Save &amp; exit any time.</strong><span class="note">Your work is saved as you type. Sign in again to pick up where you left off.</span></div></li>
+      <li><div><strong>Nothing goes live until you publish.</strong><span class="note">Preview your page first, then publish when it looks right.</span></div></li>
+    </ul>
   </div>
 
+  <div class="card" style="margin-bottom: 14pt;">
+    <h3 style="margin-bottom: 6pt;">How to sign in</h3>
+    <ol class="steps">
+      <li><div>Go to <strong>iscbrewersguild.org</strong> and scroll to the bottom of the page.</div></li>
+      <li><div>Click <strong>Member Portal</strong>.</div></li>
+      <li><div>Enter the email address the Guild has for your business. There's no password.</div></li>
+      <li><div>Open the email we send you and click the sign-in link. Use the same phone or computer.</div></li>
+      <li><div>The setup wizard opens and walks you through each step.</div></li>
+    </ol>
+  </div>
+
+  <div style="break-inside: avoid;">
   <h2>Which type of member are you?</h2>
   <p class="muted" style="margin-bottom: 8pt;">The Guild has already set your type. You'll confirm it in step 2. It decides which parts of your page appear, so some steps in this guide apply only to one type. Look for these tags:</p>
   <div class="grid-3">
@@ -147,6 +158,7 @@
     <strong>Is the wrong type showing?</strong> Pick the right one in step 2 by choosing <em>That's not right</em>. After that, your type is locked. To change it later, use <strong>Request a type change</strong> on Basics &amp; hours and the Guild will take care of it.
   </div>
 
+  </div>
 </section>
 
 <!-- PAGE 2: CHECKLIST -->
@@ -173,7 +185,7 @@
         <li><div>Business address and ZIP code <span class="tag t-a">Allied</span></div></li>
         <li><div>Service area <span class="tag t-m">Mobile</span> <span class="tag t-a">Allied</span><span class="note">For example, "Riverside and San Bernardino counties".</span></div></li>
         <li><div>Tagline<span class="note">One short line about you.</span></div></li>
-        <li><div>Phone<span class="note">Called "Booking phone" for Mobile members and "Sales phone" for Allied Members. Shown as tap-to-call. Mobile members can add more booking links in step 8.</span></div></li>
+        <li><div>Phone<span class="note">Called "Booking phone" for Mobile members and "Sales phone" for Allied Members. Shown as tap-to-call. Mobile members can add more booking links under Links (step 7).</span></div></li>
         <li><div>Sales email <span class="tag t-a">Allied</span></div></li>
         <li><div>Year you joined the Guild ("Member since")</div></li>
         <li><div>What you offer <span class="tag t-m">Mobile</span><span class="note">Tick all that fit: Entertainment, Food Truck, Pop-up Food Vendor.</span></div></li>
@@ -181,11 +193,14 @@
     </div>
 
     <div class="section">
-      <div class="section-head"><span class="num">4</span><h3>Logo &amp; cover</h3><span class="hint">Step 4</span></div>
+      <div class="section-head"><span class="num">4</span><h3>Logo, Photos &amp; Cover</h3><span class="hint">Step 4</span></div>
       <ul class="check">
-        <li><div>Your logo as a <strong>PNG</strong> file<span class="note">Transparent background, at least 400px tall, up to 2 MB. JPG and SVG files aren't accepted.</span></div></li>
+        <li><div>Your logo as a <strong>PNG</strong> file<span class="note">Transparent background, at least 400px tall, up to 2 MB. Only have a JPG? Step 4 links to Canva's free Background Removal tool to make a PNG.</span></div></li>
         <li><div>Logo background: white, dark, or your theme color<span class="note">You'll see a preview and can pick what looks best.</span></div></li>
-        <li><div>A wide cover photo<span class="note">The band across the top of your page. A landscape shot works best. For example, use your Facebook cover photo. No cover? Your theme color fills the band.</span></div></li>
+        <li><div>A wide cover photo<span class="note">The band across the top of your page, picked from your photos. A landscape shot works best. For example, use your Facebook cover photo. No cover? Your theme color fills the band.</span></div></li>
+        <li><div>Up to four photos for the carousel on your page<span class="note">JPG or PNG, up to 25 MB each. Tall (portrait) photos work best. Lead with your best one. Already posted it on Instagram or Facebook? Upload the original from your phone's camera roll; it's sharper than the posted copy.</span></div></li>
+        <li><div>Optional: a link for each photo<span class="note">For example, the Instagram post it came from.</span></div></li>
+        <li><div>Optional: your photographer's email or phone<span class="note">You can send them an upload link so they add photos straight to your gallery, with credit.</span></div></li>
       </ul>
     </div>
 
@@ -202,21 +217,12 @@
       <div class="section-head"><span class="num">6</span><h3>Events</h3><span class="hint">Step 6</span></div>
       <ul class="check">
         <li><div>Upcoming events, such as trivia nights, releases and open houses <span class="tag t-p">Producer</span> <span class="tag t-a">Allied</span><span class="note">Add them by hand, or connect a calendar (copy its link <b>on a computer</b>: Google's phone app doesn't show it; after that, add events from your phone or computer): put your tag (for example #guild) in the title or description of each event you want shown. Its description shows on your profile too. Events in the next two weeks also appear on the Guild homepage as calendar pages with your logo and color, so a clear title helps. Using Google Calendar? Watch the 3-minute how-to: press <b>Watch how</b> on your Events page, or go to <a href="https://livid.com/watch/H1WWGjbnsr9p">livid.com/watch/H1WWGjbnsr9p</a>.</span></div></li>
-        <li><div>Food (your Food page): food trucks and pop-ups from your events calendar (or a separate one) with their own tag, for example #food. How-to video: press <b>Watch how</b> on your Food page, or go to <a href="https://livid.com/watch/v5XYPWwgyFVb">livid.com/watch/v5XYPWwgyFVb</a> <span class="tag t-p">Producer</span><span class="note">Vendor name in the title, menu link in the description. Your profile shows the next 7 days; days with no vendor say "Bring your own food".</span></div></li>
+        <li><div>Food (your Food page): food trucks, pop-ups and your own kitchen's specials, from your events calendar with their own tag, for example #food. Have your own kitchen? Turn on <b>We have our own kitchen</b> and days with nothing listed say "Kitchen open". How-to video: press <b>Watch how</b> on your Food page, or go to <a href="https://livid.com/watch/v5XYPWwgyFVb">livid.com/watch/v5XYPWwgyFVb</a> (2:04) <span class="tag t-p">Producer</span><span class="note">Vendor name in the title, menu link in the description. Your profile shows the next 7 days; days with no vendor say "Bring your own food".</span></div></li>
       </ul>
     </div>
 
     <div class="section">
-      <div class="section-head"><span class="num">7</span><h3>Photos</h3><span class="hint">Step 7</span></div>
-      <ul class="check">
-        <li><div>Up to four photos for the carousel on your page<span class="note">JPG or PNG, up to 25 MB each. Tall (portrait) photos work best. Lead with your best one. Already posted it on Instagram or Facebook? Upload the original from your phone's camera roll; it's sharper than the posted copy.</span></div></li>
-        <li><div>Optional: a link for each photo<span class="note">For example, the Instagram post it came from.</span></div></li>
-        <li><div>Optional: your photographer's email or phone<span class="note">You can send them an upload link so they add photos straight to your gallery, with credit.</span></div></li>
-      </ul>
-    </div>
-
-    <div class="section">
-      <div class="section-head"><span class="num">8</span><h3>Link buttons</h3><span class="hint">Step 8</span></div>
+      <div class="section-head"><span class="num">7</span><h3>Link buttons</h3><span class="hint">Step 7</span></div>
       <ul class="check">
         <li><div>Website</div></li>
         <li><div>Instagram, Facebook and TikTok pages</div></li>
@@ -228,7 +234,7 @@
     </div>
 
     <div class="section">
-      <div class="section-head"><span class="num">9</span><h3>Member discount &amp; supplies</h3><span class="hint">Step 9</span></div>
+      <div class="section-head"><span class="num">8</span><h3>Member discount &amp; supplies</h3><span class="hint">Step 8</span></div>
       <ul class="check">
         <li><div>Your discount for Guild members, as a percentage <span class="tag t-a">Allied</span><span class="note">If it varies, choose "No fixed percentage" instead.</span></div></li>
         <li><div>How members redeem it <span class="tag t-a">Allied</span><span class="note">For example, "Call us and confirm you're a Guild Member in good standing".</span></div></li>
@@ -237,7 +243,7 @@
     </div>
 
     <div class="section">
-      <div class="section-head"><span class="num">10</span><h3>Pick your color</h3><span class="hint">Step 10</span></div>
+      <div class="section-head"><span class="num">9</span><h3>Pick your theme</h3><span class="hint">Step 9</span></div>
       <ul class="check">
         <li><div>One of eight colors for your page<span class="note">Amber, Rust, Garnet, Plum, Indigo, Teal, Forest or Olive. Skip it and your page stays Amber.</span></div></li>
       </ul>
@@ -263,7 +269,7 @@
 <section class="page">
   <div class="eyebrow">Part 2</div>
   <h2>The setup wizard, step by step</h2>
-  <p class="muted">Each step is one screen with <strong>Back</strong>, <strong>Continue</strong> and, where allowed, <strong>Skip for now</strong>. A progress line shows "Step N of M". Your type decides how many steps you see.</p>
+  <p class="muted">Each step is one screen with <strong>Back</strong> (after Welcome), <strong>Continue</strong> and, where allowed, <strong>Skip for now</strong>. A progress line shows "Step N of M", with a colored tag beside it naming your member type. Your type decides how many steps you see.</p>
   <div class="legend">
     <span><span class="box" style="border-color: var(--brand); background: #FCF3EA;"></span>Required</span>
     <span><span class="box" style="border-style: dashed;"></span>Optional (can be skipped)</span>
@@ -274,7 +280,7 @@
     <div class="node req"><div class="n">1</div><div class="name">Welcome</div><div class="what">What to have handy, and how long it takes.</div></div>
     <div class="node req"><div class="n">2</div><div class="name">Confirm your member type</div><div class="what">"Yes, that's us", or pick the right type.</div></div>
     <div class="node req"><div class="n">3</div><div class="name">The basics</div><div class="what">Name, city, contact details and your location.</div></div>
-    <div class="node opt"><div class="n">4</div><div class="name">Logo &amp; cover</div><div class="what">Your logo, its background and a wide cover photo.</div></div>
+    <div class="node opt"><div class="n">4</div><div class="name">Logo, Photos &amp; Cover</div><div class="what">Logo, gallery, up to four slides and a wide cover, with a live preview.</div></div>
     <div class="node opt"><div class="n">5</div><div class="name">When you're open</div><div class="what">Weekly hours and holidays.</div><div class="who"><span class="tag t-m" style="margin-left:0">Mobile</span> <span style="font-size:7.5pt" class="muted">"Where we'll be" instead</span></div></div>
   </div>
 
@@ -282,10 +288,9 @@
 
   <div class="flow">
     <div class="node opt"><div class="n">6</div><div class="name">Events</div><div class="what">Connect a calendar or add events by hand.</div><div class="who"><span class="tag t-p" style="margin-left:0">Producer</span><span class="tag t-a">Allied</span></div></div>
-    <div class="node opt"><div class="n">7</div><div class="name">Photos</div><div class="what">Gallery, up to four carousel photos, and a photographer upload link.</div></div>
-    <div class="node opt"><div class="n">8</div><div class="name">Links</div><div class="what">Link buttons: website, social pages, plus a tap list, press kit or catalog.</div><div class="who"><span class="tag t-m" style="margin-left:0">Mobile</span> <span style="font-size:7.5pt" class="muted">+ booking links</span></div></div>
-    <div class="node opt"><div class="n">9</div><div class="name">Discount &amp; supplies</div><div class="what">Your member discount and what you supply.</div><div class="who"><span class="tag t-a" style="margin-left:0">Allied only</span></div></div>
-    <div class="node opt"><div class="n">10</div><div class="name">Pick your color</div><div class="what">One of eight colors for your page.</div></div>
+    <div class="node opt"><div class="n">7</div><div class="name">Links</div><div class="what">Link buttons: website, social pages, plus a tap list, press kit or catalog.</div><div class="who"><span class="tag t-m" style="margin-left:0">Mobile</span> <span style="font-size:7.5pt" class="muted">+ booking links</span></div></div>
+    <div class="node opt"><div class="n">8</div><div class="name">Discount &amp; supplies</div><div class="what">Your member discount and what you supply.</div><div class="who"><span class="tag t-a" style="margin-left:0">Allied only</span></div></div>
+    <div class="node opt"><div class="n">9</div><div class="name">Pick your theme</div><div class="what">One of eight colors for your page.</div></div>
   </div>
 
   <div class="arrow-row"><span>then</span><span class="line"></span></div>
@@ -297,17 +302,17 @@
     <div class="node finish"><div class="n">★</div><div class="name">You're live</div><div class="what">Your page is on the directory. Copy the link or share it.</div></div>
   </div>
 
-  <h3 style="margin: 14pt 0 5pt;">Which steps you'll see</h3>
+  <h3 style="margin: 10pt 0 4pt;">Which steps you'll see</h3>
   <table>
     <thead><tr><th>Step</th><th class="c">Producer</th><th class="c">Mobile</th><th class="c">Allied</th></tr></thead>
     <tbody>
-      <tr><td>1–4 &nbsp;Welcome, member type, the basics, logo &amp; cover</td><td class="c yes">Yes</td><td class="c yes">Yes</td><td class="c yes">Yes</td></tr>
+      <tr><td>1–4 &nbsp;Welcome, member type, the basics, logo, photos &amp; cover</td><td class="c yes">Yes</td><td class="c yes">Yes</td><td class="c yes">Yes</td></tr>
       <tr><td>5 &nbsp;When you're open</td><td class="c yes">Weekly hours</td><td class="c yes">Where we'll be</td><td class="c yes">Business hours</td></tr>
       <tr><td>6 &nbsp;Events</td><td class="c yes">Yes</td><td class="c no">Covered in step 5</td><td class="c yes">Yes</td></tr>
-      <tr><td>7–8 &nbsp;Photos, links</td><td class="c yes">Yes</td><td class="c yes">Yes</td><td class="c yes">Yes</td></tr>
-      <tr><td>9 &nbsp;Member discount &amp; supplies</td><td class="c no">—</td><td class="c no">—</td><td class="c yes">Yes</td></tr>
-      <tr><td>10 &nbsp;Pick your color</td><td class="c yes">Yes</td><td class="c yes">Yes</td><td class="c yes">Yes</td></tr>
-      <tr><td><strong>Total steps</strong></td><td class="c"><strong>9</strong></td><td class="c"><strong>8</strong></td><td class="c"><strong>10</strong></td></tr>
+      <tr><td>7 &nbsp;Links</td><td class="c yes">Yes</td><td class="c yes">Yes</td><td class="c yes">Yes</td></tr>
+      <tr><td>8 &nbsp;Member discount &amp; supplies</td><td class="c no">—</td><td class="c no">—</td><td class="c yes">Yes</td></tr>
+      <tr><td>9 &nbsp;Pick your theme</td><td class="c yes">Yes</td><td class="c yes">Yes</td><td class="c yes">Yes</td></tr>
+      <tr><td><strong>Total steps</strong></td><td class="c"><strong>8</strong></td><td class="c"><strong>7</strong></td><td class="c"><strong>9</strong></td></tr>
     </tbody>
   </table>
 
@@ -317,24 +322,43 @@
 <section class="page">
   <div class="eyebrow">Part 3</div>
   <h2>What each screen looks like</h2>
-  <p class="muted" style="margin-bottom: 10pt;">Screens from the setup wizard on a computer; on a phone each one is a single narrow column. The numbers match the steps in this guide. The screens' own "Step N of M" counts only the steps your type sees, so a producer's say "of 9".</p>
-  <div class="shots">
-    <figure><img src="screens/01-welcome.jpg" alt=""><figcaption><b>1</b> Welcome</figcaption></figure>
-    <figure><img src="screens/02-type.jpg" alt=""><figcaption><b>2</b> Confirm your member type</figcaption></figure>
-    <figure><img src="screens/02b-type-not-right.jpg" alt=""><figcaption><b>2</b> After "That's not right"</figcaption></figure>
-    <figure><img src="screens/03-basics.jpg" alt=""><figcaption><b>3</b> The basics <span class="tag t-p">Producer</span></figcaption></figure>
-    <figure><img src="screens/04-logo-cover.jpg" alt=""><figcaption><b>4</b> Logo &amp; cover</figcaption></figure>
-    <figure><img src="screens/05-hours.jpg" alt=""><figcaption><b>5</b> When you're open <span class="tag t-p">Producer</span></figcaption></figure>
-    <figure><img src="screens/05a-hours-allied.jpg" alt=""><figcaption><b>5</b> When you're open <span class="tag t-a">Allied</span></figcaption></figure>
-    <figure><img src="screens/06-events.jpg" alt=""><figcaption><b>6</b> Events, with Food for producers</figcaption></figure>
-    <figure><img src="screens/07-photos.jpg" alt=""><figcaption><b>7</b> Photos</figcaption></figure>
-    <figure><img src="screens/08-links.jpg" alt=""><figcaption><b>8</b> Links <span class="tag t-p">Producer</span></figcaption></figure>
-    <figure><img src="screens/09-discount.jpg" alt=""><figcaption><b>9</b> Member discount &amp; supplies <span class="tag t-a">Allied</span></figcaption></figure>
-    <figure><img src="screens/10-theme.jpg" alt=""><figcaption><b>10</b> Pick your color</figcaption></figure>
-    <figure><img src="screens/11-review.jpg" alt=""><figcaption><b>✓</b> Review</figcaption></figure>
-    <figure><img src="screens/14-live.jpg" alt=""><figcaption><b>★</b> You're live</figcaption></figure>
-    <figure class="wide"><img src="screens/12-preview.jpg" alt=""><figcaption><b>◉</b> Preview: your real page, with Keep editing and Publish at the top</figcaption></figure>
-  </div>
+  <p class="muted" style="margin-bottom: 10pt;">One step at a time. The tag above each screenshot shows which member type it's for; "All members" means everyone sees the same screen. The screens' own "Step N of M" counts only the steps your type sees.</p>
+  <div class="step-h"><span class="num">1</span><h3>Welcome</h3></div>
+  <div class="shot"><div><span class="bigtag p">Producer</span><img src="screens/01-welcome-producer.jpg" alt=""></div><div class="notes"><ul class="plain"><li>What to have handy, and how long it takes.</li><li>Press <b>Get started</b>.</li></ul></div></div>
+  <div class="shot"><div><span class="bigtag m">Mobile member</span><img src="screens/01-welcome-mobile.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Instead of hours, have your calendar link or your upcoming dates ready.</li></ul></div></div>
+  <div class="shot"><div><span class="bigtag a">Allied Member</span><img src="screens/01-welcome-allied.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Also have your member discount and what you supply ready.</li></ul></div></div>
+  <div class="step-h"><span class="num">2</span><h3>Confirm your member type</h3></div>
+  <div class="shot"><div><span class="bigtag p">Producer</span><img src="screens/02-type-producer.jpg" alt=""></div><div class="notes"><ul class="plain"><li>The Guild set your type. If it's right, press <b>Yes, that's us</b>.</li><li>Once you confirm, your type is locked.</li></ul></div></div>
+  <div class="shot"><div><span class="bigtag all">All members</span><img src="screens/02b-type-notright.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Wrong type? Press <b>That's not right</b>, pick the one that fits, and confirm it. The Guild gets a note.</li></ul></div></div>
+  <div class="shot"><div><span class="bigtag m">Mobile member</span><img src="screens/02-type-mobile.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Mobile members see their own type here.</li></ul></div></div>
+  <div class="shot"><div><span class="bigtag a">Allied Member</span><img src="screens/02-type-allied.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Allied Members see their own type here.</li></ul></div></div>
+  <div class="step-h"><span class="num">3</span><h3>The basics</h3></div>
+  <div class="shot"><div><span class="bigtag p">Producer</span><img src="screens/03-basics-producer.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Business name and city are required.</li><li>Start typing your street address and pick it from the list: it places your pin on the Guild map.</li></ul></div></div>
+  <div class="shot"><div><span class="bigtag m">Mobile member</span><img src="screens/03-basics-mobile.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Your service area instead of a street address.</li><li>Tick <b>What you offer</b>: Entertainment, Food Truck or Pop-up Food Vendor.</li><li>Your <b>Booking phone</b> shows as tap-to-call.</li></ul></div></div>
+  <div class="shot"><div><span class="bigtag a">Allied Member</span><img src="screens/03-basics-allied.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Your business address, service area, sales phone and sales email.</li></ul></div></div>
+  <div class="step-h"><span class="num">4</span><h3>Logo, Photos &amp; Cover</h3></div>
+  <div class="shot wide"><div><span class="bigtag all">All members</span><img src="screens/04-logo-photos-cover-a.jpg" alt=""></div><div class="notes"><ul class="plain"><li><b>Logo:</b> upload a PNG. No PNG? The note links to Canva's free Background Removal tool. Then pick the tile behind it.</li><li><b>Gallery:</b> drop all your photos here first.</li><li>The <b>live preview</b> on the right updates as you go.</li></ul></div></div>
+  <div class="shot wide"><div><span class="bigtag all">All members</span><img src="screens/04-logo-photos-cover-b.jpg" alt=""></div><div class="notes"><ul class="plain"><li><b>Carousel:</b> up to four slides, each cropped to portrait. Lead with your best one.</li><li><b>Cover:</b> pick the wide band from your gallery.</li></ul></div></div>
+  <div class="step-h"><span class="num">5</span><h3>When you're open</h3></div>
+  <div class="shot"><div><span class="bigtag p">Producer</span><img src="screens/05-hours-producer.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Set opening and closing times for each day, or tick <b>Closed</b>.</li><li>Add holidays and one-off changes, like Christmas Day.</li></ul></div></div>
+  <div class="shot"><div><span class="bigtag m">Mobile member</span><img src="screens/05-where-mobile.jpg" alt=""></div><div class="notes"><ul class="plain"><li><b>Where we'll be</b>: connect your calendar's link, or add dates by hand.</li><li>Changes show on your page right away.</li></ul></div></div>
+  <div class="shot"><div><span class="bigtag a">Allied Member</span><img src="screens/05-hours-allied.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Your business hours. Open Monday to Friday? Mark Saturday and Sunday closed.</li></ul></div></div>
+  <div class="step-h"><span class="num">6</span><h3>Events (and Food for producers)</h3></div>
+  <div class="shot"><div><span class="bigtag p">Producer</span><img src="screens/06-events-producer-a.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Connect a calendar (only events you tag, for example #guild, come in) or add events by hand.</li><li>Set up the calendar link on a computer, one time only.</li></ul></div></div>
+  <div class="shot"><div><span class="bigtag p">Producer</span><img src="screens/06-events-producer-b.jpg" alt=""></div><div class="notes"><ul class="plain"><li><b>Food:</b> tag food trucks, pop-ups and your kitchen's specials #food.</li><li>Have your own kitchen? Turn on <b>We have our own kitchen</b>.</li></ul></div></div>
+  <div class="shot"><div><span class="bigtag a">Allied Member</span><img src="screens/06-events-allied.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Tastings, open houses and workshops, the same way.</li></ul></div></div>
+  <div class="step-h"><span class="num">7</span><h3>Links</h3></div>
+  <div class="shot"><div><span class="bigtag p">Producer</span><img src="screens/07-links-producer.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Website, social pages and your Tap list, as buttons on your page in this order.</li></ul></div></div>
+  <div class="shot"><div><span class="bigtag m">Mobile member</span><img src="screens/07-links-mobile.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Add booking links: Instagram DM (your @name) and WhatsApp (your number), plus your Press kit.</li></ul></div></div>
+  <div class="shot"><div><span class="bigtag a">Allied Member</span><img src="screens/07-links-allied.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Add your Catalog link.</li></ul></div></div>
+  <div class="step-h"><span class="num">8</span><h3>Member discount &amp; supplies</h3></div>
+  <div class="shot"><div><span class="bigtag a">Allied Member</span><img src="screens/08-discount-allied.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Your discount for Guild members, how they redeem it, and what you supply.</li><li>Allied Members only.</li></ul></div></div>
+  <div class="step-h"><span class="num">9</span><h3>Pick your theme</h3></div>
+  <div class="shot"><div><span class="bigtag all">All members</span><img src="screens/09-theme.jpg" alt=""></div><div class="notes"><ul class="plain"><li>One of eight colors. The preview shows your page as you pick. Skip it and your page stays Amber.</li></ul></div></div>
+  <div class="step-h"><span class="num">✓</span><h3>Review, Preview and One last check</h3></div>
+  <div class="shot"><div><span class="bigtag all">All members</span><img src="screens/10-review.jpg" alt=""></div><div class="notes"><ul class="plain"><li>A checklist of every step. <b>Do it now</b> jumps back to anything still empty.</li></ul></div></div>
+  <div class="shot wide"><div><span class="bigtag all">All members</span><img src="screens/11-preview.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Your real page, before anyone else sees it. <b>Keep editing</b> or <b>Publish</b>.</li></ul></div></div>
+  <div class="shot"><div><span class="bigtag p">Producer</span><img src="screens/12-last-check.jpg" alt=""></div><div class="notes"><ul class="plain"><li>Read your hours back and tick <b>These hours are correct as of today</b>, then <b>Publish</b>. Mobile members check their upcoming dates instead.</li><li>After that, <b>You're live</b>: copy or share the link to your page.</li></ul></div></div>
 </section>
 
 </body>
