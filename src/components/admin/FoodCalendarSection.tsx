@@ -1,4 +1,6 @@
+import { useRouter } from "@tanstack/react-router";
 import { CalendarConnectionPanel } from "@/components/admin/CalendarConnectionPanel";
+import { KitchenSwitch } from "@/components/admin/KitchenSwitch";
 import { FoodCalendarModule } from "@/components/profile/FoodCalendarModule";
 import { HelpVideoButton } from "@/components/admin/HelpVideoButton";
 import { HELP_VIDEOS } from "@/data/help-videos";
@@ -26,6 +28,7 @@ export function FoodCalendarSection({
   asPage?: boolean;
 }) {
   const Heading = asPage ? "h1" : "h2";
+  const router = useRouter();
   return (
     <div className={asPage ? "flex flex-col gap-[26px]" : "flex flex-col gap-3.5"}>
       <div className={asPage ? "flex flex-col gap-1.5" : "flex flex-col gap-1"}>
@@ -39,10 +42,20 @@ export function FoodCalendarSection({
           Food
         </Heading>
         <p className="text-pretty text-[13px] text-ink-muted">
-          Show which food trucks and pop-ups are at your taproom over the next 7 days, from
-          your events calendar with its own tag (or a calendar of their own). Changes show on your
-          page right away.
+          Show what there is to eat at your taproom over the next 7 days: visiting food trucks
+          and pop-ups, and your own kitchen's specials. Tag each one{" "}
+          <strong className="font-semibold text-ink">#food</strong> on your events calendar.
+          Changes show on your page right away.
         </p>
+        {canEdit && (
+          <div className="pt-2">
+            <KitchenSwitch
+              memberId={memberId}
+              initialHasKitchen={food.hasKitchen}
+              onChanged={() => router.invalidate()}
+            />
+          </div>
+        )}
         {/* The food calendar builds on the events one (owner, 2026-09-30). */}
         <div className="flex flex-col gap-1 pt-1">
           <p className="text-[13px] text-ink-muted">
@@ -69,6 +82,7 @@ export function FoodCalendarSection({
             timezone={memberTimezone}
             hours={food.hours}
             specialHours={food.specialHours}
+            hasKitchen={food.hasKitchen}
           />
         </div>
       )}

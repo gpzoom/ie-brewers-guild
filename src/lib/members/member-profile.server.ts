@@ -44,7 +44,7 @@ export type { MemberProfileData } from "@/lib/members/profile-object";
 // anon at the column level, and Postgres expands "*" to every column before
 // checking permission, so "*" would break anon's published-row reads.
 const MEMBER_COLUMNS =
-  "id, slug, member_type, business_name, tagline, city, state, street_address, postal_code, latitude, longitude, service_area, lead_time, phone, contact_email, timezone, theme, logo_asset_id, logo_background, cover_asset_id, cover_crop, og_image_asset_id, member_since_year, discount_percent, discount_no_fixed_percent, discount_redeem_text, status, hours_confirmed_at, published_at, trail_eligible, created_at, updated_at";
+  "id, slug, member_type, business_name, tagline, city, state, street_address, postal_code, latitude, longitude, service_area, lead_time, phone, contact_email, timezone, theme, logo_asset_id, logo_background, cover_asset_id, cover_crop, og_image_asset_id, member_since_year, discount_percent, discount_no_fixed_percent, discount_redeem_text, status, hours_confirmed_at, published_at, trail_eligible, has_kitchen, created_at, updated_at";
 
 function toEntries(rows: unknown[] | null): DirectoryEntry[] {
   return (rows ?? []).map((raw) => {

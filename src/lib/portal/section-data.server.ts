@@ -194,6 +194,8 @@ export type FoodCalendarData = {
   slots: EventRow[];
   hours: WeekdayHours[];
   specialHours: SpecialHoursDay[];
+  /** The "We have our own kitchen" switch (members.has_kitchen). */
+  hasKitchen: boolean;
 };
 
 export type ScheduleData = {
@@ -205,13 +207,15 @@ export type ScheduleData = {
 };
 
 async function loadFoodCalendar(supabase: SessionClient, memberId: string): Promise<FoodCalendarData> {
-  const [connection, slots, hours, specialHours] = await Promise.all([
+  const [connection, slots, hours, specialHours, kitchen] = await Promise.all([
     readCalendarConnection(supabase, memberId, "food"),
     listMemberEvents(supabase, memberId, "food"),
     supabase.from("hours").select("*").eq("member_id", memberId),
     supabase.from("special_hours").select("*").eq("member_id", memberId),
+    supabase.from("members").select("has_kitchen").eq("id", memberId).maybeSingle(),
   ]);
   return {
+    hasKitchen: (kitchen.data as { has_kitchen?: boolean } | null)?.has_kitchen === true,
     connection,
     slots,
     hours: toWeekdayHours((hours.data ?? []) as HoursRow[]),

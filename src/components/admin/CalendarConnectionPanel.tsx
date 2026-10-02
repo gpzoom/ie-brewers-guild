@@ -135,7 +135,7 @@ const COPY = {
     tagPlaceholder: "e.g. #food",
     nobody: "No food calendar is connected. Only the profile's owner can connect one.",
     removeWhat: "The vendor visits it brought in come off your profile, and \"Food for the next week\" goes away until you connect one again.",
-    hint: "Use the same calendar link as your Events page, with a different tag, for example #food, on each vendor's visit: the vendor's name in the title, and their menu or Instagram link in the description. (If someone else books your vendors, a separate calendar works too.) Your profile shows the next 7 days; a day with no vendor says \"Bring your own food\", or \"Closed\" when your hours say you're closed.",
+    hint: "Use the same calendar link as your Events page. Tag each food listing #food: a visiting vendor's name, or your own special (for example \"Brisket Tuesday\"), in the title, and a menu or Instagram link in the description. (If someone else books your vendors, a separate calendar works too.) Your profile shows the next 7 days; a day with nothing listed says \"Bring your own food\" (or \"Kitchen open\" with the switch on), or \"Closed\" when your hours say you're closed.",
   },
 } as const;
 
@@ -412,7 +412,7 @@ export function CalendarConnectionPanel({
         video={purpose === "food" ? HELP_VIDEOS.googleFoodCalendar : HELP_VIDEOS.googleEventsCalendar}
         label={
           purpose === "food"
-            ? "Watch how to connect a Google Calendar for FOOD VENDORS"
+            ? "Watch how to connect a Google Calendar for FOOD"
             : "Watch how to connect a Google Calendar for EVENTS"
         }
       />

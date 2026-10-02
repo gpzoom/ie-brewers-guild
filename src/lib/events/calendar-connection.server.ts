@@ -488,3 +488,23 @@ export const refreshIcsConnectionNow = createServerFn({ method: "POST" })
     if (refetchError || !refreshed) throw new Error("Calendar connection not found.");
     return refreshed as CalendarConnectionRow;
   });
+
+/**
+ * The Food section's "We have our own kitchen" switch (owner, 2026-10-02):
+ * on, an open day with nothing tagged #food reads "Kitchen open". It isn't
+ * drafted -- it changes straight away, like the food calendar -- and
+ * set_member_has_kitchen checks the caller is the owner (or a Guild admin)
+ * and the member a producer.
+ */
+export const setMemberHasKitchen = createServerFn({ method: "POST" })
+  .inputValidator((data: { memberId: string; hasKitchen: boolean }) => data)
+  .handler(async ({ data }) => {
+    const supabase = await getSupabaseServerClientForRequest();
+    const { error } = await supabase.rpc("set_member_has_kitchen", {
+      p_member_id: data.memberId,
+      p_has_kitchen: data.hasKitchen === true,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+

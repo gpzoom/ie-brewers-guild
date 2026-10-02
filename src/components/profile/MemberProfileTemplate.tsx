@@ -153,6 +153,7 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
       timezone={member.timezone}
       hours={weekdayHours}
       specialHours={specialHoursDays}
+      hasKitchen={member.has_kitchen === true}
     />
   ) : null;
 

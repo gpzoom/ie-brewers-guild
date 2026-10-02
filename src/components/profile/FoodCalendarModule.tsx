@@ -68,7 +68,11 @@ function FoodDayRow({
         </div>
       ) : (
         <span className="text-[13px] text-ink-muted lg:text-sm">
-          {day.status === "closed" ? "Closed" : "Bring your own food"}
+          {day.status === "closed"
+            ? "Closed"
+            : day.status === "kitchen"
+              ? "Kitchen open"
+              : "Bring your own food"}
         </span>
       )}
     </li>
@@ -81,7 +85,8 @@ function FoodDayRow({
  * today first, from their food calendar, all shown at once like "Upcoming
  * events" (owner, 2026-09-30; it used to open collapsed). Each day lists its
  * food vendors (name, time, description with links); a day with none says
- * "Bring your own food", or "Closed" when the posted hours say so
+ * "Bring your own food" ("Kitchen open" with the kitchen switch on), or
+ * "Closed" when the posted hours say so
  * (buildFoodWeek). Shown only for a producer with a food calendar connected
  * -- the template decides, and on desktop puts it under the photo carousel.
  */
@@ -91,6 +96,7 @@ export function FoodCalendarModule({
   timezone,
   hours,
   specialHours,
+  hasKitchen = false,
   label = "Food for the next week",
 }: {
   slots: EventRow[];
@@ -98,9 +104,11 @@ export function FoodCalendarModule({
   timezone: string;
   hours: WeekdayHours[];
   specialHours: SpecialHoursDay[];
+  /** The member's "We have our own kitchen" switch: empty open days say "Kitchen open". */
+  hasKitchen?: boolean;
   label?: string;
 }) {
-  const week = buildFoodWeek({ slots, now, timezone, hours, specialHours });
+  const week = buildFoodWeek({ slots, now, timezone, hours, specialHours, hasKitchen });
   return (
     <section className="flex flex-col gap-[9px] lg:gap-[11px]">
       <SectionLabel>{label}</SectionLabel>

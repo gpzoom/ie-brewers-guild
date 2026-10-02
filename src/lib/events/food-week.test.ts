@@ -187,3 +187,22 @@ describe("isClosedOnDate", () => {
     expect(isClosedOnDate("2026-09-30", hours, [])).toBe(true);
   });
 });
+
+describe("buildFoodWeek with our own kitchen", () => {
+  // Wednesday Sept 30 has a truck; Monday Oct 5 is closed by the posted hours;
+  // Thursday Oct 1 is open with nothing listed.
+  const slots = [slot({ starts_at: "2026-09-30T19:00:00Z" })];
+
+  it("an open day with nothing listed says the kitchen's open; closed and listed days are unchanged", () => {
+    const week = buildFoodWeek({ slots, now: NOW, timezone: TZ, hours: HOURS, specialHours: [], hasKitchen: true });
+    expect(week.find((d) => d.date === "2026-09-30")?.status).toBe("vendors");
+    expect(week.find((d) => d.date === "2026-10-05")?.status).toBe("closed");
+    expect(week.find((d) => d.date === "2026-10-01")?.status).toBe("kitchen");
+  });
+
+  it("without the switch the same day is still bring-your-own", () => {
+    const week = buildFoodWeek({ slots, now: NOW, timezone: TZ, hours: HOURS, specialHours: [] });
+    expect(week.find((d) => d.date === "2026-10-01")?.status).toBe("byo");
+  });
+});
+

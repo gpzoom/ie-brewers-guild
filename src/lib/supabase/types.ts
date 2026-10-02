@@ -53,6 +53,8 @@ export type MemberRow = {
   // Tile behind the logo on the public profile
   // (20260925190000_members_logo_background.sql); see src/lib/members/logo-background.ts.
   logo_background: "light" | "dark" | "theme";
+  /** "We have our own kitchen" (producers): the food week says "Kitchen open" on empty open days. */
+  has_kitchen?: boolean;
   cover_asset_id: string | null;
   cover_crop: CropRect | null;
   og_image_asset_id: string | null;

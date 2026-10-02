@@ -12,8 +12,9 @@ import type { EventRow } from "@/lib/supabase/types";
  * the next seven days at a producer's taproom, today first, in the
  * member's own time zone. A day lists the food vendors from their food
  * calendar; with none, it's "Closed" when their posted hours say so, and
- * "Bring your own food" otherwise. Pure -- the profile and the member's
- * own preview both draw from it.
+ * otherwise "Bring your own food" -- or "Kitchen open" for a taproom with
+ * its own kitchen (the "We have our own kitchen" switch, owner 2026-10-02).
+ * Pure -- the profile and the member's own preview both draw from it.
  */
 
 export const FOOD_WEEK_DAYS = 7;
@@ -31,8 +32,12 @@ export type FoodDay = {
   /** YYYY-MM-DD, the member's local date. */
   date: string;
   vendors: FoodVendor[];
-  /** vendors: someone's scheduled · closed: the posted hours say closed · byo: bring your own food. */
-  status: "vendors" | "closed" | "byo";
+  /**
+   * vendors: someone's scheduled · closed: the posted hours say closed ·
+   * kitchen: open, nothing listed, and the taproom has its own kitchen ·
+   * byo: open, nothing listed, bring your own food.
+   */
+  status: "vendors" | "closed" | "kitchen" | "byo";
 };
 
 function localDate(iso: string, timezone: string): string {
@@ -65,8 +70,10 @@ export function buildFoodWeek(params: {
   timezone: string;
   hours: WeekdayHours[];
   specialHours: SpecialHoursDay[];
+  /** The member's "We have our own kitchen" switch. */
+  hasKitchen?: boolean;
 }): FoodDay[] {
-  const { slots, now, timezone, hours, specialHours } = params;
+  const { slots, now, timezone, hours, specialHours, hasKitchen = false } = params;
   const today = getZonedNow(now, timezone).date;
 
   const byDate = new Map<string, FoodVendor[]>();
@@ -92,7 +99,9 @@ export function buildFoodWeek(params: {
       ? "vendors"
       : isClosedOnDate(date, hours, specialHours)
         ? "closed"
-        : "byo";
+        : hasKitchen
+          ? "kitchen"
+          : "byo";
     return { date, vendors, status };
   });
 }
