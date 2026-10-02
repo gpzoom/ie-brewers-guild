@@ -2,7 +2,7 @@
   "v": 3,
   "attachments": {},
   "boards": {
-    "ScreenMap.dc.html": {
+    "Main.dc.html": {
       "h": 1960,
       "title": "Screen map — wizard, finish, portal",
       "w": 1920,
@@ -22,6 +22,182 @@
       "w": 1920,
       "h": 1040,
       "title": "People & permissions"
+    },
+    "W01-Welcome.dc.html": {
+      "x": -557,
+      "y": 3700,
+      "w": 1280,
+      "h": 900,
+      "title": "1 · Welcome",
+      "is_interactive": true
+    },
+    "W02-Type.dc.html": {
+      "x": 803,
+      "y": 3700,
+      "w": 1280,
+      "h": 900,
+      "title": "2 · Confirm your member type",
+      "is_interactive": true
+    },
+    "W02b-Type-NotRight.dc.html": {
+      "x": 2163,
+      "y": 3700,
+      "w": 1280,
+      "h": 926,
+      "title": "2 · After “That's not right”",
+      "is_interactive": true
+    },
+    "W03-Basics-Producer.dc.html": {
+      "x": 3523,
+      "y": 3700,
+      "w": 1280,
+      "h": 1194,
+      "title": "3 · The basics — Producer",
+      "is_interactive": true
+    },
+    "W03-Basics-Mobile.dc.html": {
+      "x": 4883,
+      "y": 3700,
+      "w": 1280,
+      "h": 1304,
+      "title": "3 · The basics — Mobile",
+      "is_interactive": true
+    },
+    "W03-Basics-Allied.dc.html": {
+      "x": 6243,
+      "y": 3700,
+      "w": 1280,
+      "h": 1392,
+      "title": "3 · The basics — Allied",
+      "is_interactive": true
+    },
+    "W04-LogoPhotosCover.dc.html": {
+      "x": -557,
+      "y": 5252,
+      "w": 1280,
+      "h": 2301,
+      "title": "4 · Logo, Photos & Cover — filled in (NEW)",
+      "is_interactive": true
+    },
+    "W04e-LogoPhotosCover-Empty.dc.html": {
+      "x": 803,
+      "y": 5252,
+      "w": 1280,
+      "h": 2078,
+      "title": "4 · Logo, Photos & Cover — brand-new member (NEW)",
+      "is_interactive": true
+    },
+    "W04p-LogoPhotosCover-Phone.dc.html": {
+      "x": 2163,
+      "y": 5252,
+      "w": 390,
+      "h": 3092,
+      "title": "4 · Logo, Photos & Cover — phone (NEW)",
+      "is_interactive": true
+    },
+    "W05-Hours-Producer.dc.html": {
+      "x": -557,
+      "y": 8504,
+      "w": 1280,
+      "h": 1437,
+      "title": "5 · When you're open — Producer",
+      "is_interactive": true
+    },
+    "W05-WhereWellBe-Mobile.dc.html": {
+      "x": 803,
+      "y": 8504,
+      "w": 1280,
+      "h": 927,
+      "title": "5 · Where we'll be — Mobile",
+      "is_interactive": true
+    },
+    "W05-Hours-Allied.dc.html": {
+      "x": 2163,
+      "y": 8504,
+      "w": 1280,
+      "h": 1511,
+      "title": "5 · When you're open — Allied",
+      "is_interactive": true
+    },
+    "W06-Events-Producer.dc.html": {
+      "x": -557,
+      "y": 10175,
+      "w": 1280,
+      "h": 1837,
+      "title": "6 · Events + Food — Producer (new Food wording)",
+      "is_interactive": true
+    },
+    "W06-Events-Allied.dc.html": {
+      "x": 803,
+      "y": 10175,
+      "w": 1280,
+      "h": 923,
+      "title": "6 · Events — Allied",
+      "is_interactive": true
+    },
+    "W07-Links-Producer.dc.html": {
+      "x": 2163,
+      "y": 10175,
+      "w": 1280,
+      "h": 1133,
+      "title": "7 · Links — Producer",
+      "is_interactive": true
+    },
+    "W07-Links-Mobile.dc.html": {
+      "x": 3523,
+      "y": 10175,
+      "w": 1280,
+      "h": 1241,
+      "title": "7 · Links — Mobile (booking links)",
+      "is_interactive": true
+    },
+    "W08-Discount-Allied.dc.html": {
+      "x": 4883,
+      "y": 10175,
+      "w": 1280,
+      "h": 1163,
+      "title": "8 · Member discount & supplies — Allied",
+      "is_interactive": true
+    },
+    "W09-Theme.dc.html": {
+      "x": -557,
+      "y": 12172,
+      "w": 1280,
+      "h": 918,
+      "title": "9 · Pick your theme (renamed)",
+      "is_interactive": true
+    },
+    "W17-Review.dc.html": {
+      "x": 803,
+      "y": 12172,
+      "w": 1280,
+      "h": 900,
+      "title": "Review",
+      "is_interactive": true
+    },
+    "W18-Preview.dc.html": {
+      "x": 2163,
+      "y": 12172,
+      "w": 1280,
+      "h": 983,
+      "title": "Preview",
+      "is_interactive": true
+    },
+    "W19-OneLastCheck.dc.html": {
+      "x": 3523,
+      "y": 12172,
+      "w": 1280,
+      "h": 900,
+      "title": "One last check",
+      "is_interactive": true
+    },
+    "W20-Live.dc.html": {
+      "x": 4883,
+      "y": 12172,
+      "w": 1280,
+      "h": 900,
+      "title": "You're live",
+      "is_interactive": true
     }
   },
   "createdOnFiles": {
@@ -96,12 +272,82 @@
       "fill": "blue",
       "size": 24,
       "text": "SYNCED WITH STAGING — 27 Sep 2026\n'Photos & video' is now 'Photos' until video uploads exist. Gallery comes first on that page. Mobile members pick 'What you offer' categories in The basics. US spelling ('color'). Portal menu shows '[Business name] Profile' and People."
+    },
+    "wiztitle": {
+      "kind": "title1",
+      "x": -557,
+      "y": 3400,
+      "maxW": 7960,
+      "w": 240,
+      "text": "Setup wizard redesign — for review (2 Oct 2026)"
+    },
+    "wn1": {
+      "x": 7603,
+      "y": 3700,
+      "w": 440,
+      "fill": "orange",
+      "size": 24,
+      "text": "QUESTION — Food on kitchen days\nA brewpub with its own kitchen has food every day, but a day with no #food listing says \"Bring your own food\". Options: a switch \"We have our own kitchen\" that shows \"Kitchen open\" on those days instead, or leave it as is."
+    },
+    "wn2": {
+      "x": 7603,
+      "y": 4220,
+      "w": 440,
+      "fill": "blue",
+      "size": 24,
+      "text": "HOW TO READ THESE\nBoards are named by the guide's step numbers (1–9). The screen itself counts only the steps your type sees: Producer 8, Mobile 7, Allied 9. Back and Continue are clickable in Play."
+    },
+    "wn3": {
+      "x": 7603,
+      "y": 4740,
+      "w": 440,
+      "fill": "blue",
+      "size": 24,
+      "text": "BACK EVERYWHERE\nEvery screen after Welcome has Back. The basics → Confirm your type (shows your locked type). Step 4 → The basics. You're live → Review."
+    },
+    "wn4": {
+      "x": 7603,
+      "y": 5260,
+      "w": 440,
+      "fill": "blue",
+      "size": 24,
+      "text": "SAMPLE DATA\nSample Brewing Co., Sample Taco Truck and Sample Supply Co. are made up. The photos are the Guild site's own. Phone numbers use 555."
+    },
+    "wn5": {
+      "x": 2470,
+      "y": 3000,
+      "w": 400,
+      "fill": "orange",
+      "size": 24,
+      "text": "HEADS UP — 2 Oct 2026\nThe screen map above still shows the old step order. It gets updated once the redesigned wizard below is approved."
     }
   },
   "order": [
-    "ScreenMap.dc.html",
+    "Main.dc.html",
     "StepAnatomy.dc.html",
-    "Roles.dc.html"
+    "Roles.dc.html",
+    "W01-Welcome.dc.html",
+    "W02-Type.dc.html",
+    "W02b-Type-NotRight.dc.html",
+    "W03-Basics-Producer.dc.html",
+    "W03-Basics-Mobile.dc.html",
+    "W03-Basics-Allied.dc.html",
+    "W04-LogoPhotosCover.dc.html",
+    "W04e-LogoPhotosCover-Empty.dc.html",
+    "W04p-LogoPhotosCover-Phone.dc.html",
+    "W05-Hours-Producer.dc.html",
+    "W05-WhereWellBe-Mobile.dc.html",
+    "W05-Hours-Allied.dc.html",
+    "W06-Events-Producer.dc.html",
+    "W06-Events-Allied.dc.html",
+    "W07-Links-Producer.dc.html",
+    "W07-Links-Mobile.dc.html",
+    "W08-Discount-Allied.dc.html",
+    "W09-Theme.dc.html",
+    "W17-Review.dc.html",
+    "W18-Preview.dc.html",
+    "W19-OneLastCheck.dc.html",
+    "W20-Live.dc.html"
   ],
   "pages": [],
   "title": "Member Onboarding Screen Map"
