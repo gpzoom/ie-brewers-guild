@@ -43,7 +43,6 @@ describe("sectionCompleteness", () => {
       "logo-cover",
       "hours",
       "events",
-      "photos",
       "links",
       "theme",
     ]);
@@ -62,7 +61,6 @@ describe("sectionCompleteness", () => {
       "logo-cover": false,
       hours: false,
       events: false,
-      photos: false,
       links: false,
       theme: true,
     });
@@ -121,11 +119,12 @@ describe("sectionCompleteness", () => {
     ).toBe(true);
   });
 
-  it("counts slides and links with an address", () => {
+  it("step 4 counts as done with a logo, a cover or a slide; links need an address", () => {
     const slides = [
       { asset_id: "a", crop: { x: 0, y: 0, w: 1, h: 1 }, outbound_url: null, sort_order: 0 },
     ];
-    expect(doneMap(sectionCompleteness(draft({ media: { slides } }), producer)).photos).toBe(true);
+    expect(doneMap(sectionCompleteness(draft({ media: { slides } }), producer))["logo-cover"]).toBe(true);
+    expect(sectionCompleteness(draft(), producer).map((s) => s.step)).not.toContain("photos");
     const blank = [{ kind: "website" as const, label: null, url: " ", sort_order: 0 }];
     expect(doneMap(sectionCompleteness(draft({ links: { links: blank } }), producer)).links).toBe(
       false,
@@ -167,7 +166,6 @@ describe("emptySections", () => {
       "logo-cover",
       "hours",
       "events",
-      "photos",
       "links",
     ]);
   });

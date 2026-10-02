@@ -9,8 +9,8 @@ import type { CompletenessStep } from "@/lib/portal/section-completeness";
  *
  *   section      owner  editor  media_events
  *   basics       yes    yes     --
- *   logo-cover   yes    yes     --
- *   photos       yes    yes     yes
+ *   logo-cover   yes    yes     yes       (Logo, Photos & Cover; a Photos & events
+ *                                          editor sees its Gallery and Carousel only)
  *   events       yes    yes     yes
  *   food         yes    yes     --        (Producers only: the food truck calendar)
  *   links        yes    yes     --
@@ -26,7 +26,6 @@ import type { CompletenessStep } from "@/lib/portal/section-completeness";
 export const PORTAL_SECTIONS = [
   "basics",
   "logo-cover",
-  "photos",
   "events",
   "food",
   "links",
@@ -43,8 +42,7 @@ export function isPortalSection(value: unknown): value is PortalSection {
 /** Sidebar label, and the shorter one for the phone tab strip. */
 export const PORTAL_SECTION_LABELS: Record<PortalSection, { label: string; short: string }> = {
   basics: { label: "Basics & hours", short: "Basics" },
-  "logo-cover": { label: "Logo & cover", short: "Logo" },
-  photos: { label: "Photos", short: "Photos" },
+  "logo-cover": { label: "Logo, Photos & Cover", short: "Photos" },
   events: { label: "Events", short: "Events" },
   food: { label: "Food", short: "Food" },
   links: { label: "Links & contact", short: "Links" },
@@ -53,7 +51,7 @@ export const PORTAL_SECTION_LABELS: Record<PortalSection, { label: string; short
   people: { label: "People", short: "People" },
 };
 
-const MEDIA_EVENTS_SECTIONS: readonly PortalSection[] = ["photos", "events"];
+const MEDIA_EVENTS_SECTIONS: readonly PortalSection[] = ["logo-cover", "events"];
 
 /** Whether this viewer may open the section at all. */
 export function canOpenPortalSection(
@@ -77,7 +75,7 @@ export function portalSectionsFor(viewer: {
 
 /** Where /portal (or a section the viewer can't open) lands them. */
 export function firstPortalSection(role: PortalRole): PortalSection {
-  return role === "media_events" ? "photos" : "basics";
+  return role === "media_events" ? "logo-cover" : "basics";
 }
 
 /**

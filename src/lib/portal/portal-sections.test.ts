@@ -3,6 +3,7 @@ import {
   canOpenPortalSection,
   firstPortalSection,
   isPortalSection,
+  PORTAL_SECTION_LABELS,
   portalSectionsFor,
   sectionForCompletenessStep,
 } from "@/lib/portal/portal-sections";
@@ -12,7 +13,6 @@ describe("portalSectionsFor", () => {
     expect(portalSectionsFor({ role: "owner", memberType: "producer" })).toEqual([
       "basics",
       "logo-cover",
-      "photos",
       "events",
       "food",
       "links",
@@ -40,9 +40,16 @@ describe("portalSectionsFor", () => {
 
   it("gives a Photos & events editor only their two sections", () => {
     expect(portalSectionsFor({ role: "media_events", memberType: "allied" })).toEqual([
-      "photos",
+      "logo-cover",
       "events",
     ]);
+  });
+
+  it("logo, photos and cover are one section, which a Photos & events editor can open", () => {
+    expect(PORTAL_SECTION_LABELS["logo-cover"]).toEqual({ label: "Logo, Photos & Cover", short: "Photos" });
+    expect(isPortalSection("photos")).toBe(false);
+    expect(portalSectionsFor({ role: "media_events", memberType: "producer" })).toEqual(["logo-cover", "events"]);
+    expect(firstPortalSection("media_events")).toBe("logo-cover");
   });
 });
 
@@ -67,8 +74,8 @@ describe("canOpenPortalSection", () => {
 });
 
 describe("firstPortalSection", () => {
-  it("lands a Photos & events editor on Photos, everyone else on Basics", () => {
-    expect(firstPortalSection("media_events")).toBe("photos");
+  it("lands a Photos & events editor on Logo, Photos & Cover, everyone else on Basics", () => {
+    expect(firstPortalSection("media_events")).toBe("logo-cover");
     expect(firstPortalSection("editor")).toBe("basics");
     expect(firstPortalSection("owner")).toBe("basics");
   });
@@ -84,7 +91,6 @@ describe("sectionForCompletenessStep", () => {
   });
 
   it("maps the other steps to the section of the same name", () => {
-    expect(sectionForCompletenessStep("photos", "producer")).toEqual({ section: "photos" });
     expect(sectionForCompletenessStep("logo-cover", "allied")).toEqual({ section: "logo-cover" });
     expect(sectionForCompletenessStep("type", "allied")).toEqual({ section: "basics" });
   });

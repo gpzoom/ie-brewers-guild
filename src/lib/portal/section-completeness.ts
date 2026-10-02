@@ -41,7 +41,6 @@ const CHECKLIST_STEPS: CompletenessStep[] = [
   "logo-cover",
   "hours",
   "events",
-  "photos",
   "links",
   "discount",
   "theme",
@@ -64,14 +63,17 @@ function isStepDone(
     case "basics":
       return hasText(basics.business_name) && hasText(basics.city);
     case "logo-cover":
-      return basics.logo_asset_id !== null || basics.cover_asset_id !== null;
+      // Logo, Photos & Cover: any one of the three counts.
+      return (
+        basics.logo_asset_id !== null ||
+        basics.cover_asset_id !== null ||
+        draft.media.slides.length > 0
+      );
     case "hours":
       // Mobile members' step 5 is "Where we'll be": the calendar or dates by hand.
       return member.memberType === "mobile" ? hasSchedule : basics.hours.length > 0;
     case "events":
       return hasSchedule;
-    case "photos":
-      return draft.media.slides.length > 0;
     case "links":
       return draft.links.links.some((link) => hasText(link.url));
     case "discount": {
