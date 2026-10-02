@@ -56,3 +56,20 @@ describe("audit-log coverage", () => {
     }
   });
 });
+
+describe("audit-log coverage, per server function", () => {
+  // A file-level check passes as soon as one function audits; these
+  // immediate (not drafted) saves each need their own call.
+  it.each([["src/lib/events/calendar-connection.server.ts", "setMemberHasKitchen"]])(
+    "%s: %s records a Guild admin's change",
+    (relativePath, fn) => {
+      const source = readFileSync(resolve(process.cwd(), relativePath), "utf-8");
+      const start = source.indexOf(`export const ${fn}`);
+      expect(start).toBeGreaterThan(-1);
+      const next = source.indexOf("\nexport ", start + 1);
+      const body = source.slice(start, next === -1 ? undefined : next);
+      expect(body).toContain("recordAuditLogIfImpersonating");
+    },
+  );
+});
+

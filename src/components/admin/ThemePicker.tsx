@@ -150,7 +150,7 @@ export function ThemePicker({
           </div>
         )}
 
-        <fieldset className="m-0 grid min-w-0 grid-cols-2 gap-3 border-0 p-0 @[22rem]:grid-cols-4">
+        <fieldset className="m-0 grid min-w-0 grid-cols-2 gap-3 border-0 p-0 @[28rem]:grid-cols-4">
           <legend className="mb-3 p-0 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
             Eight themes
           </legend>

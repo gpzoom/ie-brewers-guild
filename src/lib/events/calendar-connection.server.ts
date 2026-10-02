@@ -505,6 +505,13 @@ export const setMemberHasKitchen = createServerFn({ method: "POST" })
       p_has_kitchen: data.hasKitchen === true,
     });
     if (error) throw new Error(error.message);
+    // A Guild admin flipping it through Edit as them is recorded against them.
+    await recordAuditLogIfImpersonating({
+      memberId: data.memberId,
+      tableName: "members",
+      rowId: data.memberId,
+      action: "update",
+    });
     return { ok: true as const };
   });
 

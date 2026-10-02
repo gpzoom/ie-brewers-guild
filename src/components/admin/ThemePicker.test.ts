@@ -16,9 +16,11 @@ describe("ThemePicker layout", () => {
     }),
   );
 
+  // 4 columns only from 28rem: each name then has room ("Garnet", "Indigo"
+  // and "Forest" were cut off at 22rem -- final review, 2026-10-02).
   it("the theme grid adapts to its container instead of a fixed 4 columns", () => {
     expect(html).toContain("@container");
-    expect(html).toContain("@[22rem]:grid-cols-4");
+    expect(html).toContain("@[28rem]:grid-cols-4");
     expect(html).not.toContain("sm:grid-cols-4");
   });
 
