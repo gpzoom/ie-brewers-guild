@@ -139,7 +139,7 @@ export function ThemePicker({
 
   return (
     <div className="flex flex-col gap-8 lg:flex-row">
-      <div className="flex min-w-0 flex-1 flex-col gap-6">
+      <div className="@container flex min-w-0 flex-1 flex-col gap-6">
         {showHeading && (
           <div className="flex flex-col gap-1.5">
             <h1 className="font-display text-[27px] font-bold leading-tight text-ink">Theme</h1>
@@ -150,7 +150,7 @@ export function ThemePicker({
           </div>
         )}
 
-        <fieldset className="m-0 grid min-w-0 grid-cols-2 gap-3 border-0 p-0 sm:grid-cols-4">
+        <fieldset className="m-0 grid min-w-0 grid-cols-2 gap-3 border-0 p-0 @[22rem]:grid-cols-4">
           <legend className="mb-3 p-0 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
             Eight themes
           </legend>
@@ -171,7 +171,7 @@ export function ThemePicker({
                 >
                   {checked && <CheckBadge color={theme.hex} />}
                 </span>
-                <span className="flex min-h-11 items-center gap-[9px] px-3 py-2.5">
+                <span className="flex min-h-11 min-w-0 items-center gap-[9px] px-3 py-2.5">
                   <input
                     type="radio"
                     id={inputId}
@@ -241,11 +241,12 @@ export function ThemePicker({
               style={{ backgroundColor: selectedHex }}
             />
             <div className="flex flex-col gap-3 px-3.5 pb-4">
-              <div className="-mt-6 flex items-end gap-2.5">
-                <div className="flex size-14 shrink-0 items-center justify-center rounded-[13px] border-[3px] border-canvas bg-white font-display text-lg font-bold text-ink-subtle">
+              {/* Only the logo tile overlaps the band; the name starts below it. */}
+              <div className="flex items-start gap-2.5">
+                <div className="-mt-6 flex size-14 shrink-0 items-center justify-center rounded-[13px] border-[3px] border-canvas bg-white font-display text-lg font-bold text-ink-subtle">
                   {name.charAt(0).toUpperCase()}
                 </div>
-                <div className="flex min-w-0 flex-col gap-[3px] pb-0.5">
+                <div className="flex min-w-0 flex-col gap-[3px] pt-2">
                   <span className="truncate font-display text-lg font-bold leading-[1.1] text-ink">
                     {name}
                   </span>
