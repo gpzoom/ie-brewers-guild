@@ -14,13 +14,15 @@ import type { PortalRole } from "@/lib/portal/portal-destination";
  *   1   welcome      yes       yes     yes
  *   2   type         yes       yes     yes
  *   3   basics       yes       yes     yes
- *   4   logo-cover   yes       yes     yes
+ *   4   logo-cover   yes       yes     yes     (Logo, Photos & Cover)
  *   5   hours        hours     "Where we'll be" (calendar + hand entry)
  *   6   events       yes       --      yes     (mobile: step 5 covered it)
- *   7   photos       yes       yes     yes
- *   8   links        yes       yes     yes
- *   9   discount     --        --      yes
- *   10  theme        yes       yes     yes
+ *   7   links        yes       yes     yes
+ *   8   discount     --        --      yes
+ *   9   theme        yes       yes     yes     (Pick your theme)
+ *
+ * Producers see 8, mobile members 7, Allied Members 9. The old Photos step
+ * is part of step 4 since the redesign (2026-10-02).
  *
  * After the numbered steps come the finish screens, which have no number:
  * review -> preview -> publish (the publish check) -> live ("You're live").
@@ -33,7 +35,6 @@ export const NUMBERED_SETUP_STEPS = [
   "logo-cover",
   "hours",
   "events",
-  "photos",
   "links",
   "discount",
   "theme",
@@ -114,13 +115,12 @@ export const SETUP_STEP_LABELS: Record<SetupStepName, string> = {
   welcome: "Welcome",
   type: "Member type",
   basics: "The basics",
-  "logo-cover": "Logo & cover",
+  "logo-cover": "Logo, Photos & Cover",
   hours: "When you're open",
   events: "Events",
-  photos: "Photos",
   links: "Links",
   discount: "Member discount & supplies",
-  theme: "Pick your color",
+  theme: "Pick your theme",
   review: "Review",
   preview: "Preview",
   publish: "Publish",
@@ -157,16 +157,17 @@ export type SetupAccess =
  * - A Photos & events editor never sees the wizard -> /portal.
  * - Unknown step name -> wherever /portal would start them.
  * - A step the member's type doesn't see -> the next step it does see.
+ * - The retired Photos step -> Logo, Photos & Cover.
  * - While setup is incomplete (type not confirmed, or Continue on The
- *   basics never clicked): Welcome is always open; Confirm type is open
- *   until the type is confirmed, then it skips to The basics; The basics
+ *   basics never clicked): Welcome and Confirm type are always open
+ *   (once confirmed, Confirm type shows the locked type); The basics
  *   needs the type confirmed first; anything later goes back to the first
  *   of steps 1-3 that isn't done (Welcome while the type is unconfirmed --
  *   same as /portal -- else The basics).
- * - Once setup is complete: steps 1-3 go to /portal ("the wizard is never
- *   shown again" -- /portal never routes into it). Steps 4-10 and the
- *   finish screens stay open: the wizard carries straight on after The
- *   basics in the same visit, and Review's "Do it now" links reach them.
+ * - Once setup is complete: every step stays open, so Back always works
+ *   (redesign, 2026-10-02). "The wizard is never shown again" holds
+ *   because /portal never routes into it (portal-destination), not
+ *   because these steps redirect.
  */
 export function resolveSetupAccess(input: {
   step: string;
@@ -176,6 +177,8 @@ export function resolveSetupAccess(input: {
   setupCompleted: boolean;
 }): SetupAccess {
   if (input.role === "media_events") return { kind: "portal" };
+  // The old Photos step is part of step 4 now (redesign, 2026-10-02).
+  if (input.step === "photos") return { kind: "step", step: "logo-cover" };
 
   const inSetup = !input.typeConfirmed || !input.setupCompleted;
   const firstIncomplete: SetupStepName = input.typeConfirmed ? "basics" : "welcome";
@@ -190,17 +193,14 @@ export function resolveSetupAccess(input: {
     return next ? { kind: "step", step: next } : { kind: "portal" };
   }
 
-  if (!inSetup) {
-    return (REQUIRED_SETUP_STEPS as readonly string[]).includes(step)
-      ? { kind: "portal" }
-      : { kind: "ok" };
-  }
+  if (!inSetup) return { kind: "ok" };
 
   switch (step) {
     case "welcome":
       return { kind: "ok" };
     case "type":
-      return input.typeConfirmed ? { kind: "step", step: "basics" } : { kind: "ok" };
+      // Open either way: confirmed, it shows the locked type with Continue.
+      return { kind: "ok" };
     case "basics":
       return input.typeConfirmed ? { kind: "ok" } : { kind: "step", step: "type" };
     default:

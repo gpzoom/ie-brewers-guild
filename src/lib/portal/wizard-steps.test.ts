@@ -12,7 +12,7 @@ import {
 } from "./wizard-steps";
 
 describe("numberedStepsForType", () => {
-  it("a producer sees nine steps: no discount", () => {
+  it("a producer sees eight steps: no discount", () => {
     expect(numberedStepsForType("producer")).toEqual([
       "welcome",
       "type",
@@ -20,27 +20,25 @@ describe("numberedStepsForType", () => {
       "logo-cover",
       "hours",
       "events",
-      "photos",
       "links",
       "theme",
     ]);
   });
 
-  it("a mobile member sees eight: no separate events step, no discount", () => {
+  it("a mobile member sees seven: no separate events step, no discount", () => {
     expect(numberedStepsForType("mobile")).toEqual([
       "welcome",
       "type",
       "basics",
       "logo-cover",
       "hours",
-      "photos",
       "links",
       "theme",
     ]);
   });
 
-  it("an Allied Member sees all ten", () => {
-    expect(numberedStepsForType("allied")).toHaveLength(10);
+  it("an Allied Member sees all nine", () => {
+    expect(numberedStepsForType("allied")).toHaveLength(9);
     expect(numberedStepsForType("allied")).toContain("discount");
   });
 
@@ -50,13 +48,13 @@ describe("numberedStepsForType", () => {
 });
 
 describe("stepPosition", () => {
-  it("matches StepAnatomy: hours is step 5 of 9 for a producer", () => {
-    expect(stepPosition("hours", "producer")).toEqual({ number: 5, total: 9 });
+  it("matches StepAnatomy: hours is step 5 of 8 for a producer", () => {
+    expect(stepPosition("hours", "producer")).toEqual({ number: 5, total: 8 });
   });
 
   it("counts only the type's own steps", () => {
-    expect(stepPosition("photos", "mobile")).toEqual({ number: 6, total: 8 });
-    expect(stepPosition("theme", "allied")).toEqual({ number: 10, total: 10 });
+    expect(stepPosition("links", "mobile")).toEqual({ number: 6, total: 7 });
+    expect(stepPosition("theme", "allied")).toEqual({ number: 9, total: 9 });
   });
 
   it("has no number for finish screens or steps the type doesn't see", () => {
@@ -68,11 +66,11 @@ describe("stepPosition", () => {
 
 describe("nextStep / previousStep", () => {
   it("skips steps the type doesn't see", () => {
-    expect(nextStep("hours", "mobile")).toBe("photos");
+    expect(nextStep("hours", "mobile")).toBe("links");
     expect(nextStep("links", "producer")).toBe("theme");
     expect(nextStep("links", "allied")).toBe("discount");
     expect(previousStep("theme", "producer")).toBe("links");
-    expect(previousStep("photos", "mobile")).toBe("hours");
+    expect(previousStep("links", "mobile")).toBe("hours");
   });
 
   it("runs theme -> review -> preview -> publish -> live, then stops", () => {
@@ -142,19 +140,16 @@ describe("resolveSetupAccess", () => {
       expect(resolveSetupAccess({ ...typed, step: "basics" })).toEqual({ kind: "ok" });
     });
 
-    it("skips an already-confirmed type straight to basics", () => {
-      expect(resolveSetupAccess({ ...typed, step: "type" })).toEqual({
-        kind: "step",
-        step: "basics",
-      });
+    it("keeps Confirm type open once confirmed (it shows the locked type)", () => {
+      expect(resolveSetupAccess({ ...typed, step: "type" })).toEqual({ kind: "ok" });
     });
 
     it("sends later steps to the first incomplete of steps 1-3", () => {
-      expect(resolveSetupAccess({ ...fresh, step: "photos" })).toEqual({
+      expect(resolveSetupAccess({ ...fresh, step: "links" })).toEqual({
         kind: "step",
         step: "welcome",
       });
-      expect(resolveSetupAccess({ ...typed, step: "photos" })).toEqual({
+      expect(resolveSetupAccess({ ...typed, step: "links" })).toEqual({
         kind: "step",
         step: "basics",
       });
@@ -179,18 +174,14 @@ describe("resolveSetupAccess", () => {
   describe("once setup is complete", () => {
     const done = { ...base, typeConfirmed: true, setupCompleted: true };
 
-    it("sends steps 1-3 to /portal", () => {
-      for (const step of ["welcome", "type", "basics"]) {
-        expect(resolveSetupAccess({ ...done, step })).toEqual({ kind: "portal" });
-      }
-    });
-
-    it("keeps steps 4-10 and the finish screens open", () => {
+    it("keeps every step open, so Back always works", () => {
       for (const step of [
+        "welcome",
+        "type",
+        "basics",
         "logo-cover",
         "hours",
         "events",
-        "photos",
         "links",
         "theme",
         "review",
@@ -211,7 +202,7 @@ describe("resolveSetupAccess", () => {
     const done = { typeConfirmed: true, setupCompleted: true, role: "owner" as const };
     expect(resolveSetupAccess({ ...done, memberType: "mobile", step: "events" })).toEqual({
       kind: "step",
-      step: "photos",
+      step: "links",
     });
     expect(resolveSetupAccess({ ...done, memberType: "producer", step: "discount" })).toEqual({
       kind: "step",
@@ -220,5 +211,28 @@ describe("resolveSetupAccess", () => {
     expect(resolveSetupAccess({ ...done, memberType: "allied", step: "discount" })).toEqual({
       kind: "ok",
     });
+  });
+});
+
+describe("redesign (2026-10-02)", () => {
+  it("labels step 4 and step 9 with their new names", () => {
+    expect(stepLabel("logo-cover", "producer")).toBe("Logo, Photos & Cover");
+    expect(stepLabel("theme", "producer")).toBe("Pick your theme");
+  });
+
+  it("a producer's step 4 is step 4 of 8", () => {
+    expect(stepPosition("logo-cover", "producer")).toEqual({ number: 4, total: 8 });
+  });
+
+  it("the old photos step goes to Logo, Photos & Cover", () => {
+    expect(
+      resolveSetupAccess({ step: "photos", memberType: "producer", role: "owner", typeConfirmed: true, setupCompleted: true }),
+    ).toEqual({ kind: "step", step: "logo-cover" });
+  });
+
+  it("a Photos & events editor still never sees the wizard", () => {
+    expect(
+      resolveSetupAccess({ step: "basics", memberType: "producer", role: "media_events", typeConfirmed: true, setupCompleted: true }),
+    ).toEqual({ kind: "portal" });
   });
 });
