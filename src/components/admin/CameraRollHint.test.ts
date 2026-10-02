@@ -78,13 +78,9 @@ describe("CameraRollHint", () => {
 });
 
 describe("where the hint is mounted", () => {
-  // The three gallery upload boxes: portal Photos, wizard Photos step, /admin/media.
-  // Each mounts the hint directly under <MediaGallery>.
-  const files = [
-    "src/components/portal/PortalSectionView.tsx",
-    "src/components/portal/setup/SectionSteps.tsx",
-    "src/routes/admin.media.tsx",
-  ];
+  // Logo, Photos & Cover (wizard step 4, the portal section and /admin/media
+  // all mount it) has the one gallery upload box, with the hint directly under it.
+  const files = ["src/components/admin/LogoPhotosCoverSection.tsx"];
   for (const file of files) {
     it(`renders under the gallery in ${file}`, () => {
       const source = readFileSync(resolve(process.cwd(), file), "utf8");

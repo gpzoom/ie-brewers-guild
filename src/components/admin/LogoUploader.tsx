@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { uploadMemberLogo } from "@/lib/media/logo.server";
 import { appendMeasuredDimensions } from "@/lib/media/image-dimensions";
 import { useDraftStatus, useSaveDraftSection } from "@/components/admin/DraftStatusContext";
@@ -34,6 +34,8 @@ export function LogoUploader({
   theme,
   businessName,
   onPreviewChange,
+  belowUpload,
+  showPreview = true,
 }: {
   memberId: string;
   initialLogoUrl: string | null;
@@ -42,6 +44,10 @@ export function LogoUploader({
   businessName: string;
   /** Reports the logo and its tile as they change (Logo, Photos & Cover's live preview). */
   onPreviewChange?: (preview: { logoUrl: string | null; background: LogoBackground }) => void;
+  /** Shown between the upload row and Logo background (Logo, Photos & Cover's PNG help). */
+  belowUpload?: ReactNode;
+  /** The small header preview; off where a full live preview sits beside it. */
+  showPreview?: boolean;
 }) {
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl);
   // Upload problems show right under the logo row; background-save problems under the choices.
@@ -144,6 +150,8 @@ export function LogoUploader({
           </p>
         )}
 
+        {belowUpload}
+
         <fieldset className="m-0 flex flex-col gap-2.5 border-0 border-t border-canvas-2 p-0 pt-4">
           <legend className="float-left mb-2.5 flex w-full items-baseline justify-between gap-3 p-0">
             <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
@@ -198,6 +206,7 @@ export function LogoUploader({
         {/* Preview of the profile header: cover band in the member's theme
             color (what shows with no cover photo) with the logo tile
             overlapping its edge, as the public page draws it. */}
+        {showPreview && (
         <div className="flex flex-col gap-2">
           <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
             Preview on your profile
@@ -224,6 +233,7 @@ export function LogoUploader({
             <p className="m-0 text-[12px] text-ink-muted">Upload a logo to see it on each background.</p>
           )}
         </div>
+        )}
       </div>
       {error && (
         <p role="alert" className="text-[13px] font-medium text-danger">

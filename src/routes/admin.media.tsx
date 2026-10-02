@@ -3,14 +3,8 @@ import { listMemberMedia } from "@/lib/media/media-gallery.server";
 import { getMemberDraft } from "@/lib/drafts/drafts.server";
 import { listUploadTokens } from "@/lib/media/upload-tokens.server";
 import { listPendingMedia } from "@/lib/media/review-tray.server";
-import { MediaGallery } from "@/components/admin/MediaGallery";
-import { CarouselEditor } from "@/components/admin/CarouselEditor";
-import { CoverEditor } from "@/components/admin/CoverEditor";
-import { SocialImageEditor } from "@/components/admin/SocialImageEditor";
-import { CreatorLinkPanel } from "@/components/admin/CreatorLinkPanel";
-import { CameraRollHint } from "@/components/admin/CameraRollHint";
-import { ReviewTray } from "@/components/admin/ReviewTray";
 import { SameMemberGuard } from "@/components/admin/SameMemberGuard";
+import { LogoPhotosCoverSection } from "@/components/admin/LogoPhotosCoverSection";
 
 export const Route = createFileRoute("/admin/media")({
   // Never reuse a previous visit's data: every member shares these URLs, so a
@@ -30,68 +24,41 @@ export const Route = createFileRoute("/admin/media")({
 });
 
 /**
- * Photos (artboard AdminMedia): the gallery upload box at the top,
- * then the carousel (slides + crop), cover photo, creator link + review
- * tray, and the social sharing image (owner's order, 2026-09-26). The logo
- * lives on Basics & hours.
+ * Logo, Photos & Cover (redesign, 2026-10-02): the same page as wizard step
+ * 4 and the portal section -- logo, gallery (camera-roll hint, creator link
+ * and review tray), carousel, cover, then the social sharing image -- with
+ * the live preview beside it. The logo moved here from Basics & hours.
  *
- * Phase 2: the slides (draft `media` section) and the cover and social
- * sharing image (draft `basics`) read from and save to the member's
- * DRAFT. The gallery itself, creator links and the review tray aren't
- * drafted -- uploads, approvals and deletes happen straight away.
+ * The slides (draft `media`), the logo, cover and social sharing image
+ * (draft `basics`) read from and save to the member's DRAFT. The gallery,
+ * creator links and the review tray aren't drafted.
  */
 function MediaRoute() {
   const { assets, draft, uploadTokens, pending } = Route.useLoaderData();
-  const basics = draft.data.basics;
   const { memberId } = Route.useRouteContext();
   return (
     <SameMemberGuard memberId={memberId} dataMemberId={draft.member.id}>
-    <div className="flex flex-col gap-8 md:gap-9">
-      <header className="flex flex-col gap-1.5">
-        <h1 className="font-display text-[24px] font-bold leading-[1.15] text-ink md:text-[27px]">
-          Photos
-        </h1>
-        <p className="text-[13px] text-ink-muted">
-          Up to four slides. Visitors swipe through them on your profile, so lead with your best
-          one.
-        </p>
-      </header>
-
-      <div className="flex flex-col gap-3">
-        <MediaGallery memberId={memberId} assets={assets} />
+      <div className="flex flex-col gap-8 md:gap-9">
+        <header className="flex flex-col gap-1.5">
+          <h1 className="font-display text-[24px] font-bold leading-[1.15] text-ink md:text-[27px]">
+            Logo, Photos &amp; Cover
+          </h1>
+          <p className="text-[13px] text-ink-muted">
+            Your logo, the photos for your page, and the wide cover across the top. Start with the
+            gallery: your slides and cover are picked from it.
+          </p>
+        </header>
         {/* /admin has no People page; Edit as them sessions reach the portal's. */}
-        <CameraRollHint peopleHref="/portal/people" />
-      </div>
-
-      <CarouselEditor
-        memberId={memberId}
-        initialSlides={draft.data.media.slides}
-        galleryAssets={assets}
-      />
-
-      <CoverEditor
-        memberId={memberId}
-        coverAssetId={basics.cover_asset_id}
-        coverCrop={basics.cover_crop}
-        galleryAssets={assets}
-      />
-
-      <div className="flex flex-col gap-6">
-        <CreatorLinkPanel
-          memberId={memberId}
-          initialTokens={uploadTokens}
-          pendingCount={pending.length}
+        <LogoPhotosCoverSection
+          draft={draft}
+          assets={assets}
+          uploadTokens={uploadTokens}
+          pending={pending}
+          canEditLogoAndCover
+          peopleHref="/portal/people"
+          showSocialImage
         />
-        <ReviewTray initialPending={pending} />
       </div>
-
-      <SocialImageEditor
-        memberId={memberId}
-        memberType={draft.member.member_type}
-        ogImageAssetId={basics.og_image_asset_id}
-        galleryAssets={assets}
-      />
-    </div>
     </SameMemberGuard>
   );
 }

@@ -25,7 +25,14 @@ export function SetupStepView({ data, shell }: { data: SetupStepData; shell: Por
     case "basics":
       return <BasicsStep draft={data.draft} categories={data.categories} />;
     case "logo-cover":
-      return <LogoCoverStep draft={data.draft} galleryAssets={data.assets} />;
+      return (
+        <LogoCoverStep
+          draft={data.draft}
+          assets={data.assets}
+          uploadTokens={data.uploadTokens}
+          pending={data.pending}
+        />
+      );
     case "hours":
       return <HoursStep shell={shell} draft={data.draft} schedule={data.schedule} />;
     case "events":

@@ -2,16 +2,11 @@ import type { MemberDraftBundle } from "@/lib/drafts/drafts.server";
 import type { PortalSetupShell } from "@/lib/portal/portal-setup.server";
 import type { ScheduleData } from "@/lib/portal/section-data.server";
 import type { CategoryRow, MediaAssetRow, UploadTokenRow } from "@/lib/supabase/types";
-import { LogoCoverSection } from "@/components/admin/LogoCoverSection";
+import { LogoPhotosCoverSection } from "@/components/admin/LogoPhotosCoverSection";
 import { HoursEditor } from "@/components/admin/HoursEditor";
 import { EventsEditor } from "@/components/admin/EventsEditor";
 import { CalendarConnectionPanel } from "@/components/admin/CalendarConnectionPanel";
 import { FoodCalendarSection } from "@/components/admin/FoodCalendarSection";
-import { CarouselEditor } from "@/components/admin/CarouselEditor";
-import { MediaGallery } from "@/components/admin/MediaGallery";
-import { CreatorLinkPanel } from "@/components/admin/CreatorLinkPanel";
-import { CameraRollHint } from "@/components/admin/CameraRollHint";
-import { ReviewTray } from "@/components/admin/ReviewTray";
 import { LinksContactEditor } from "@/components/admin/LinksContactEditor";
 import { DiscountEditor } from "@/components/admin/DiscountEditor";
 import { SupplyCategoriesPicker } from "@/components/admin/SupplyCategoriesPicker";
@@ -44,23 +39,36 @@ function RightAwayNote() {
   return <WizardInfoBox>Event changes show on your page right away.</WizardInfoBox>;
 }
 
-/** Step 4: Logo & cover (plan Decision 4). Back is hidden: steps 1-3 are closed once setup is done. */
+/** Step 4: Logo, Photos & Cover (redesign, 2026-10-02). Back returns to The basics. */
 export function LogoCoverStep({
   draft,
-  galleryAssets,
+  assets,
+  uploadTokens,
+  pending,
 }: {
   draft: MemberDraftBundle;
-  galleryAssets: MediaAssetRow[];
+  assets: MediaAssetRow[];
+  uploadTokens: UploadTokenRow[];
+  pending: MediaAssetRow[];
 }) {
   return (
     <WizardStep
       step="logo-cover"
-      title="Logo & cover"
-      lede="Your logo sits in your page's header. The cover is the wide band across the top."
-      backTo={null}
-      skipNote="Not ready? Skip it. Without a cover, your theme color fills the band. You can add both later."
+      wide
+      title="Logo, Photos & Cover"
+      lede="Your logo, the photos for your page, and the wide cover across the top. Start with the gallery: your slides and cover are picked from it."
+      backTo="basics"
+      skipNote="Not ready? Skip it. Without a cover, your theme color fills the band. You can add everything later."
     >
-      <LogoCoverSection draft={draft} galleryAssets={galleryAssets} />
+      <LogoPhotosCoverSection
+        draft={draft}
+        assets={assets}
+        uploadTokens={uploadTokens}
+        pending={pending}
+        canEditLogoAndCover
+        peopleHref={null}
+        showSocialImage={false}
+      />
     </WizardStep>
   );
 }

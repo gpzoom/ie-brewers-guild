@@ -5,7 +5,6 @@ import { getCategories } from "@/lib/categories/categories.server";
 import { SupplyCategoriesPicker } from "@/components/admin/SupplyCategoriesPicker";
 import { BasicsForm } from "@/components/admin/BasicsForm";
 import { HoursEditor } from "@/components/admin/HoursEditor";
-import { LogoUploader } from "@/components/admin/LogoUploader";
 import { SameMemberGuard } from "@/components/admin/SameMemberGuard";
 
 /**
@@ -61,15 +60,6 @@ function BasicsRoute() {
             initialCategoryIds={draft.data.discount.category_ids}
           />
         )
-      }
-      logo={
-        <LogoUploader
-          memberId={memberId}
-          initialLogoUrl={draft.logoUrl}
-          initialBackground={basics.logo_background}
-          theme={draft.data.theme.theme}
-          businessName={basics.business_name}
-        />
       }
       hours={
         <HoursEditor memberId={memberId} hours={basics.hours} specialHours={basics.special_hours} />

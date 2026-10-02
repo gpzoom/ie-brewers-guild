@@ -2,13 +2,7 @@ import type { ReactNode } from "react";
 import type { PortalSectionData, PortalShell } from "@/lib/portal/portal-shell.server";
 import { BasicsForm } from "@/components/admin/BasicsForm";
 import { HoursEditor } from "@/components/admin/HoursEditor";
-import { LogoCoverSection } from "@/components/admin/LogoCoverSection";
-import { SocialImageEditor } from "@/components/admin/SocialImageEditor";
-import { CarouselEditor } from "@/components/admin/CarouselEditor";
-import { MediaGallery } from "@/components/admin/MediaGallery";
-import { CreatorLinkPanel } from "@/components/admin/CreatorLinkPanel";
-import { CameraRollHint } from "@/components/admin/CameraRollHint";
-import { ReviewTray } from "@/components/admin/ReviewTray";
+import { LogoPhotosCoverSection } from "@/components/admin/LogoPhotosCoverSection";
 import { EventsEditor } from "@/components/admin/EventsEditor";
 import { CalendarConnectionPanel } from "@/components/admin/CalendarConnectionPanel";
 import { FoodCalendarSection } from "@/components/admin/FoodCalendarSection";
@@ -112,15 +106,18 @@ export function PortalSectionView({ data, shell }: { data: PortalSectionData; sh
       return (
         <div className="flex flex-col gap-8 md:gap-9">
           <SectionHeader
-            title="Logo & cover"
-            lede="Your logo sits in your page's header. The cover is the wide band across the top."
+            title="Logo, Photos & Cover"
+            lede="Your logo, the photos for your page, and the wide cover across the top. Start with the gallery: your slides and cover are picked from it."
           />
-          <LogoCoverSection draft={data.draft} galleryAssets={data.assets} />
-          <SocialImageEditor
-            memberId={shell.memberId}
-            memberType={data.draft.member.member_type}
-            ogImageAssetId={data.draft.data.basics.og_image_asset_id}
-            galleryAssets={data.assets}
+          {notice}
+          <LogoPhotosCoverSection
+            draft={data.draft}
+            assets={data.assets}
+            uploadTokens={data.uploadTokens}
+            pending={data.pending}
+            canEditLogoAndCover={shell.role !== "media_events"}
+            peopleHref="/portal/people"
+            showSocialImage={shell.role !== "media_events"}
           />
         </div>
       );
