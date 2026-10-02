@@ -34,14 +34,20 @@ export function CoverEditor({
   coverAssetId,
   coverCrop,
   galleryAssets,
+  onPreviewChange,
 }: {
   memberId: string;
   coverAssetId: string | null;
   coverCrop: CropRect | null;
   galleryAssets: MediaAssetRow[];
+  /** Reports the chosen cover as it changes (Logo, Photos & Cover's live preview). */
+  onPreviewChange?: (coverAssetId: string | null) => void;
 }) {
   const saveDraft = useSaveDraftSection(memberId);
   const [assetId, setAssetId] = useState(coverAssetId);
+  useEffect(() => {
+    onPreviewChange?.(assetId);
+  }, [assetId, onPreviewChange]);
   const [crop, setCrop] = useState<CropRect>(coverCrop ?? FULL_IMAGE_CROP);
   const [error, setError] = useState<string | undefined>(undefined);
   const [busy, setBusy] = useState(false);

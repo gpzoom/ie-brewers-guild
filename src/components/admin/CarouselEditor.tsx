@@ -63,14 +63,20 @@ export function CarouselEditor({
   memberId,
   initialSlides: initialDraftSlides,
   galleryAssets,
+  onPreviewChange,
 }: {
   memberId: string;
   initialSlides: DraftSlide[];
   galleryAssets: MediaAssetRow[];
+  /** Reports the slides as they change (Logo, Photos & Cover's live preview). */
+  onPreviewChange?: (slides: { asset_id: string; sort_order: number }[]) => void;
 }) {
   const saveDraft = useSaveDraftSection(memberId);
   const initialSlides = useMemo(() => toRows(initialDraftSlides), [initialDraftSlides]);
   const [slides, setSlides] = useState(initialSlides);
+  useEffect(() => {
+    onPreviewChange?.(slides);
+  }, [slides, onPreviewChange]);
   // The same list, updated SYNCHRONOUSLY with every change (optimistically,
   // before its save), and read by each save WHEN IT RUNS (the patch is a
   // function) -- so a save queued before another change still sends the

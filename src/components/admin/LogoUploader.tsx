@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { uploadMemberLogo } from "@/lib/media/logo.server";
 import { appendMeasuredDimensions } from "@/lib/media/image-dimensions";
 import { useDraftStatus, useSaveDraftSection } from "@/components/admin/DraftStatusContext";
@@ -33,12 +33,15 @@ export function LogoUploader({
   initialBackground,
   theme,
   businessName,
+  onPreviewChange,
 }: {
   memberId: string;
   initialLogoUrl: string | null;
   initialBackground: LogoBackground;
   theme: MemberThemeName;
   businessName: string;
+  /** Reports the logo and its tile as they change (Logo, Photos & Cover's live preview). */
+  onPreviewChange?: (preview: { logoUrl: string | null; background: LogoBackground }) => void;
 }) {
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl);
   // Upload problems show right under the logo row; background-save problems under the choices.
@@ -47,6 +50,9 @@ export function LogoUploader({
   const [uploading, setUploading] = useState(false);
   const [background, setBackground] = useState<LogoBackground>(initialBackground);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  useEffect(() => {
+    onPreviewChange?.({ logoUrl, background });
+  }, [logoUrl, background, onPreviewChange]);
   const savedBackgroundRef = useRef<LogoBackground>(initialBackground);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const saveDraft = useSaveDraftSection(memberId);
