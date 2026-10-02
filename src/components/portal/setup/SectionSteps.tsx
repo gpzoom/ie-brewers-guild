@@ -138,6 +138,13 @@ export function HoursStep({
   );
 }
 
+/** Step 6's lede: taprooms host trivia and releases, Allied Members tastings and workshops. */
+export function eventsLede(memberType: PortalSetupShell["memberType"]): string {
+  const kinds =
+    memberType === "allied" ? "Tastings, open houses, workshops." : "Trivia nights, releases, open houses.";
+  return `${kinds} Connect a calendar (only the events you tag come in) or add them by hand.`;
+}
+
 /** Step 6 (producers and Allied Members): events -- not drafted, live straight away. */
 export function EventsStep({
   shell,
@@ -150,7 +157,7 @@ export function EventsStep({
     <WizardStep
       step="events"
       title="Events"
-      lede="Trivia nights, releases, open houses. Connect a calendar (only the events you tag come in) or add them by hand."
+      lede={eventsLede(shell.memberType)}
       skipNote="No events coming up? Skip it. You can add them any time."
     >
       <RightAwayNote />
@@ -238,13 +245,13 @@ export function DiscountStep({
   );
 }
 
-/** Step 10: Pick your color. */
+/** Step 9: Pick your theme. */
 export function ThemeStep({ draft }: { draft: MemberDraftBundle }) {
   const basics = draft.data.basics;
   return (
     <WizardStep
       step="theme"
-      title="Pick your color"
+      title="Pick your theme"
       lede="It carries your buttons, highlights and cover band. Every option is checked so your page stays easy to read."
       skipNote="Skip it and your page keeps Amber."
     >

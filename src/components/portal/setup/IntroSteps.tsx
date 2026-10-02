@@ -14,18 +14,18 @@ import {
 import { useWizardNavigation } from "@/components/portal/setup/useWizardNavigation";
 import { cn } from "@/lib/utils";
 
-/** Step 1: what to have handy, how long it takes, what can wait. */
-export function WelcomeStep({ shell }: { shell: PortalSetupShell }) {
-  const isMobile = shell.memberType === "mobile";
-  const isAllied = shell.memberType === "allied";
-  const handy = [
+/** Step 1's "What to have handy" list, per member type. */
+export function welcomeHandyItems(memberType: MemberType): { title: string; body: string }[] {
+  const isMobile = memberType === "mobile";
+  const isAllied = memberType === "allied";
+  return [
     {
       title: "Your logo, as a PNG",
-      body: "Ideally with a transparent background and at least 400px tall. PNG only — JPGs and SVGs aren't accepted.",
+      body: "Ideally with a transparent background and at least 400px tall. No PNG? You can get one made for free; step 4 shows you how.",
     },
     {
       title: "A few photos",
-      body: "Up to four for the slides on your page (tall photos work best), and a wide one for your cover.",
+      body: "JPG or PNG. Up to four for the slides on your page (tall photos work best), and a wide one for your cover.",
     },
     isMobile
       ? {
@@ -45,6 +45,11 @@ export function WelcomeStep({ shell }: { shell: PortalSetupShell }) {
         ]
       : []),
   ];
+}
+
+/** Step 1: what to have handy, how long it takes, what can wait. */
+export function WelcomeStep({ shell }: { shell: PortalSetupShell }) {
+  const handy = welcomeHandyItems(shell.memberType);
 
   return (
     <WizardStep
@@ -157,6 +162,24 @@ export function ConfirmTypeStep({ shell }: { shell: PortalSetupShell }) {
       setError(err instanceof Error ? err.message : "Couldn't confirm your type — try again.");
       setBusy(false);
     }
+  }
+
+  // Already confirmed (Back from The basics, or a later visit): show the
+  // locked type and carry on -- confirming again isn't possible.
+  if (shell.typeConfirmed) {
+    return (
+      <WizardStep
+        step="type"
+        title="Confirm your member type"
+        lede="The Guild chose this when your profile was set up. It decides which sections your page shows."
+      >
+        <TypeCard type={shell.memberType} selected asRadio={false} />
+        <WizardInfoBox>
+          Your type is confirmed and locked. If it ever needs to change, use Request a type change
+          in your portal.
+        </WizardInfoBox>
+      </WizardStep>
+    );
   }
 
   return (
@@ -278,7 +301,7 @@ export function BasicsStep({
       step="basics"
       title="The basics"
       lede="Your business name and city are required. The rest helps visitors find and reach you."
-      backTo="welcome"
+      backTo="type"
       onContinue={onContinue}
       error={error}
     >

@@ -490,7 +490,8 @@ export function BasicsForm({
         ) : typeConfirmed ? (
           <>
             Your member type is set by the Guild. It decides which sections appear on your public
-            page. If it's wrong, contact the Guild to change it.
+            page. If it's wrong, use <strong className="font-semibold text-ink">Request a type
+            change</strong> in your portal later.
           </>
         ) : (
           <>
@@ -695,7 +696,7 @@ export function BasicsForm({
             }
             hint={
               local.member_type === "mobile"
-                ? "Shown on your profile as a tap-to-call link. Additional booking links can be added in the Links & contact section."
+                ? "Shown on your profile as a tap-to-call link. More booking links can go under Links."
                 : "Shown on your profile as a tap-to-call link."
             }
             state={status.phone ?? IDLE}

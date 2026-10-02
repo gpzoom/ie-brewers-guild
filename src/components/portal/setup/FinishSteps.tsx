@@ -371,7 +371,7 @@ export function LiveStep({ shell }: { shell: PortalSetupShell }) {
       step="live"
       title="You're live"
       lede="Your profile is on the Guild's member directory. Share it anywhere you'd send people."
-      backTo={null}
+      backTo="review"
       continueLabel="Go to your portal"
       onContinue={() => navigate({ to: "/portal" })}
     >
