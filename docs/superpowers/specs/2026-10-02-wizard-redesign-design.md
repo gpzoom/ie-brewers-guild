@@ -31,6 +31,9 @@ The owner has been through the wizard several times and sees a better flow. The 
 - **Step counts:** 8 numbered steps for a producer, 7 for a Mobile member and 9 for an Allied Member (today: 9, 8 and 10).
 - **The old step 7, Photos (`photos`), goes away** as a wizard step. Its contents move into step 4.
 - **Back:** every screen after Welcome has **Back**. Back from step 4 returns to The basics, even once setup counts as complete. Today the route sends welcome, type and basics to `/portal` after setup, which is why step 4 has no Back. That redirect must allow Back into The basics during the same wizard visit, without reopening the wizard on later sign-ins.
+- **Member-type tag** (owner request, 2 Oct): every wizard screen shows the member's type as a large colored tag in the progress row, where the small grey label is today.
+  - PRODUCER is orange, MOBILE MEMBER is teal and ALLIED MEMBER is blue, the guide's colors.
+  - A member, and anyone looking at a screenshot, can tell at a glance which type a screen is for.
 - **Unchanged:**
   - steps 1–3 are the only required ones;
   - drafts, Publish, the type lock, Skip for now and Save & exit work as today.
@@ -106,6 +109,7 @@ The owner has been through the wizard several times and sees a better flow. The 
   - **How to sign in**, as it is.
 - **Checklist:** as it is, two pages, renumbered to the new steps.
 - **Screens section:**
+  - every screenshot gets a large member-type tag above it (Producer, Mobile member, Allied Member), or **All members** when the screen is the same for every type, so a member can find the version that applies to them;
   - one step at a time, with the screenshot on top and notes under it. Side-by-side gets tested for readability and is used only if it reads better;
   - a step that differs by type gets one screenshot per type.
 - **The wizard map page** is renumbered to the new steps.

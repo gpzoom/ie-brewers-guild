@@ -43,7 +43,7 @@
       "x": 2163,
       "y": 3700,
       "w": 1280,
-      "h": 926,
+      "h": 940,
       "title": "2 · After “That's not right”",
       "is_interactive": true
     },
@@ -51,7 +51,7 @@
       "x": 3523,
       "y": 3700,
       "w": 1280,
-      "h": 1194,
+      "h": 1209,
       "title": "3 · The basics — Producer",
       "is_interactive": true
     },
@@ -59,7 +59,7 @@
       "x": 4883,
       "y": 3700,
       "w": 1280,
-      "h": 1304,
+      "h": 1319,
       "title": "3 · The basics — Mobile",
       "is_interactive": true
     },
@@ -67,109 +67,109 @@
       "x": 6243,
       "y": 3700,
       "w": 1280,
-      "h": 1392,
+      "h": 1406,
       "title": "3 · The basics — Allied",
       "is_interactive": true
     },
     "W04-LogoPhotosCover.dc.html": {
       "x": -557,
-      "y": 5252,
+      "y": 5266,
       "w": 1280,
-      "h": 2301,
+      "h": 2316,
       "title": "4 · Logo, Photos & Cover — filled in (NEW)",
       "is_interactive": true
     },
     "W04e-LogoPhotosCover-Empty.dc.html": {
       "x": 803,
-      "y": 5252,
+      "y": 5266,
       "w": 1280,
-      "h": 2078,
+      "h": 2093,
       "title": "4 · Logo, Photos & Cover — brand-new member (NEW)",
       "is_interactive": true
     },
     "W04p-LogoPhotosCover-Phone.dc.html": {
       "x": 2163,
-      "y": 5252,
+      "y": 5266,
       "w": 390,
-      "h": 3092,
+      "h": 3107,
       "title": "4 · Logo, Photos & Cover — phone (NEW)",
       "is_interactive": true
     },
     "W05-Hours-Producer.dc.html": {
       "x": -557,
-      "y": 8504,
+      "y": 8533,
       "w": 1280,
-      "h": 1437,
+      "h": 1452,
       "title": "5 · When you're open — Producer",
       "is_interactive": true
     },
     "W05-WhereWellBe-Mobile.dc.html": {
       "x": 803,
-      "y": 8504,
+      "y": 8533,
       "w": 1280,
-      "h": 927,
+      "h": 941,
       "title": "5 · Where we'll be — Mobile",
       "is_interactive": true
     },
     "W05-Hours-Allied.dc.html": {
       "x": 2163,
-      "y": 8504,
+      "y": 8533,
       "w": 1280,
-      "h": 1511,
+      "h": 1525,
       "title": "5 · When you're open — Allied",
       "is_interactive": true
     },
     "W06-Events-Producer.dc.html": {
       "x": -557,
-      "y": 10175,
+      "y": 10218,
       "w": 1280,
-      "h": 1933,
+      "h": 1947,
       "title": "6 · Events + Food — Producer (new Food wording)",
       "is_interactive": true
     },
     "W06-Events-Allied.dc.html": {
       "x": 803,
-      "y": 10175,
+      "y": 10218,
       "w": 1280,
-      "h": 923,
+      "h": 938,
       "title": "6 · Events — Allied",
       "is_interactive": true
     },
     "W07-Links-Producer.dc.html": {
       "x": 2163,
-      "y": 10175,
+      "y": 10218,
       "w": 1280,
-      "h": 1133,
+      "h": 1148,
       "title": "7 · Links — Producer",
       "is_interactive": true
     },
     "W07-Links-Mobile.dc.html": {
       "x": 3523,
-      "y": 10175,
+      "y": 10218,
       "w": 1280,
-      "h": 1241,
+      "h": 1255,
       "title": "7 · Links — Mobile (booking links)",
       "is_interactive": true
     },
     "W08-Discount-Allied.dc.html": {
       "x": 4883,
-      "y": 10175,
+      "y": 10218,
       "w": 1280,
-      "h": 1163,
+      "h": 1177,
       "title": "8 · Member discount & supplies — Allied",
       "is_interactive": true
     },
     "W09-Theme.dc.html": {
       "x": -557,
-      "y": 12268,
+      "y": 12325,
       "w": 1280,
-      "h": 918,
+      "h": 933,
       "title": "9 · Pick your theme (renamed)",
       "is_interactive": true
     },
     "W17-Review.dc.html": {
       "x": 803,
-      "y": 12268,
+      "y": 12325,
       "w": 1280,
       "h": 900,
       "title": "Review",
@@ -177,7 +177,7 @@
     },
     "W18-Preview.dc.html": {
       "x": 2163,
-      "y": 12268,
+      "y": 12325,
       "w": 1280,
       "h": 983,
       "title": "Preview",
@@ -185,15 +185,15 @@
     },
     "W19-OneLastCheck.dc.html": {
       "x": 3523,
-      "y": 12268,
+      "y": 12325,
       "w": 1280,
-      "h": 900,
+      "h": 915,
       "title": "One last check",
       "is_interactive": true
     },
     "W20-Live.dc.html": {
       "x": 4883,
-      "y": 12268,
+      "y": 12325,
       "w": 1280,
       "h": 900,
       "title": "You're live",
@@ -295,7 +295,7 @@
       "w": 440,
       "fill": "blue",
       "size": 24,
-      "text": "HOW TO READ THESE\nBoards are named by the guide's step numbers (1–9). The screen itself counts only the steps your type sees: Producer 8, Mobile 7, Allied 9. Back and Continue are clickable in Play."
+      "text": "WHICH TYPE?\nThe colored tag on every screen names the member type: PRODUCER, MOBILE MEMBER or ALLIED MEMBER. In the guide, each screenshot also gets a big tag, or \"All members\"."
     },
     "wn3": {
       "x": 7603,
@@ -320,6 +320,14 @@
       "fill": "orange",
       "size": 24,
       "text": "HEADS UP — 2 Oct 2026\nThe screen map above still shows the old step order. It gets updated once the redesigned wizard below is approved."
+    },
+    "wn6": {
+      "x": 7603,
+      "y": 5780,
+      "w": 440,
+      "fill": "blue",
+      "size": 24,
+      "text": "STEP NUMBERS\nBoards use the guide's numbers (1–9). The screen counts only your type's steps: Producer 8, Mobile 7, Allied 9. Back and Continue are clickable in Play."
     }
   },
   "order": [
