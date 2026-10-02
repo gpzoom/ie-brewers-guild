@@ -81,6 +81,13 @@
   td.c { text-align: center; }
   .yes { color: #2F6B33; font-weight: 700; }
   .no { color: var(--subtle); }
+  /* Screens */
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 14pt 16pt; align-items: start; }
+  .shots figure { margin: 0; break-inside: avoid; }
+  .shots figure.wide { grid-column: 1 / -1; }
+  .shots img { display: block; width: 100%; border: 0.75pt solid var(--border); border-radius: 5pt; }
+  .shots figcaption { font-size: 9pt; margin-top: 4pt; }
+  .shots figcaption b { font-family: "Bricolage Grotesque", Georgia, serif; color: var(--brand); margin-right: 3pt; }
   footer.small { margin-top: 10pt; font-size: 8pt; color: var(--subtle); }
 </style>
 </head>
@@ -195,7 +202,7 @@
       <div class="section-head"><span class="num">6</span><h3>Events</h3><span class="hint">Step 6</span></div>
       <ul class="check">
         <li><div>Upcoming events, such as trivia nights, releases and open houses <span class="tag t-p">Producer</span> <span class="tag t-a">Allied</span><span class="note">Add them by hand, or connect a calendar (copy its link <b>on a computer</b>: Google's phone app doesn't show it; after that, add events from your phone or computer): put your tag (for example #guild) in the title or description of each event you want shown. Its description shows on your profile too. Events in the next two weeks also appear on the Guild homepage as calendar pages with your logo and color, so a clear title helps. Using Google Calendar? Watch the 3-minute how-to: press <b>Watch how</b> on your Events page, or go to <a href="https://livid.com/watch/H1WWGjbnsr9p">livid.com/watch/H1WWGjbnsr9p</a>.</span></div></li>
-        <li><div>Food (your Food page): food trucks and pop-ups from your events calendar (or a separate one) with their own tag, for example #food. How-to video: press <b>Watch how</b> on your Food page, or go to <a href="https://livid.com/watch/v5XYPWwgyFVb">livid.com/watch/v5XYPWwgyFVb</a> <span class="tag t-p">Producer</span><span class="note">Vendor name in the title, menu link in the description. Your profile shows today, and the rest of the week with one tap; days with no vendor say "Bring your own food".</span></div></li>
+        <li><div>Food (your Food page): food trucks and pop-ups from your events calendar (or a separate one) with their own tag, for example #food. How-to video: press <b>Watch how</b> on your Food page, or go to <a href="https://livid.com/watch/v5XYPWwgyFVb">livid.com/watch/v5XYPWwgyFVb</a> <span class="tag t-p">Producer</span><span class="note">Vendor name in the title, menu link in the description. Your profile shows the next 7 days; days with no vendor say "Bring your own food".</span></div></li>
       </ul>
     </div>
 
@@ -238,7 +245,7 @@
 
   </div>
 
-  <div class="grid-2" style="margin-top: 14pt;">
+  <div class="grid-2" style="margin-top: 6pt;">
     <div class="soft">
       <h3 style="margin-bottom: 4pt;">After you're live</h3>
       <p style="font-size: 9.5pt;">Signing in to <strong>Member Portal</strong> now opens your profile editor. A <strong>Finish your profile</strong> card lists anything still empty. Edits save to a draft. Your page only changes when you click <strong>Publish changes</strong>. Event changes show right away.</p>
@@ -249,7 +256,7 @@
     </div>
   </div>
 
-  <footer class="small">Questions? Reach the Guild through the contact form at iscbrewersguild.org or email iscbrewersguild@gmail.com.</footer>
+  <footer class="small" style="margin-top: 5pt;">Questions? Reach the Guild through the contact form at iscbrewersguild.org or email iscbrewersguild@gmail.com.</footer>
 </section>
 
 <!-- PAGE 3: WIZARD MAP -->
@@ -304,6 +311,30 @@
     </tbody>
   </table>
 
+</section>
+
+<!-- PAGES 4+: SCREENS -->
+<section class="page">
+  <div class="eyebrow">Part 3</div>
+  <h2>What each screen looks like</h2>
+  <p class="muted" style="margin-bottom: 10pt;">Screens from the setup wizard on a computer; on a phone each one is a single narrow column. The numbers match the steps in this guide. The screens' own "Step N of M" counts only the steps your type sees, so a producer's say "of 9".</p>
+  <div class="shots">
+    <figure><img src="screens/01-welcome.jpg" alt=""><figcaption><b>1</b> Welcome</figcaption></figure>
+    <figure><img src="screens/02-type.jpg" alt=""><figcaption><b>2</b> Confirm your member type</figcaption></figure>
+    <figure><img src="screens/02b-type-not-right.jpg" alt=""><figcaption><b>2</b> After "That's not right"</figcaption></figure>
+    <figure><img src="screens/03-basics.jpg" alt=""><figcaption><b>3</b> The basics <span class="tag t-p">Producer</span></figcaption></figure>
+    <figure><img src="screens/04-logo-cover.jpg" alt=""><figcaption><b>4</b> Logo &amp; cover</figcaption></figure>
+    <figure><img src="screens/05-hours.jpg" alt=""><figcaption><b>5</b> When you're open <span class="tag t-p">Producer</span></figcaption></figure>
+    <figure><img src="screens/05a-hours-allied.jpg" alt=""><figcaption><b>5</b> When you're open <span class="tag t-a">Allied</span></figcaption></figure>
+    <figure><img src="screens/06-events.jpg" alt=""><figcaption><b>6</b> Events, with Food for producers</figcaption></figure>
+    <figure><img src="screens/07-photos.jpg" alt=""><figcaption><b>7</b> Photos</figcaption></figure>
+    <figure><img src="screens/08-links.jpg" alt=""><figcaption><b>8</b> Links <span class="tag t-p">Producer</span></figcaption></figure>
+    <figure><img src="screens/09-discount.jpg" alt=""><figcaption><b>9</b> Member discount &amp; supplies <span class="tag t-a">Allied</span></figcaption></figure>
+    <figure><img src="screens/10-theme.jpg" alt=""><figcaption><b>10</b> Pick your color</figcaption></figure>
+    <figure><img src="screens/11-review.jpg" alt=""><figcaption><b>✓</b> Review</figcaption></figure>
+    <figure><img src="screens/14-live.jpg" alt=""><figcaption><b>★</b> You're live</figcaption></figure>
+    <figure class="wide"><img src="screens/12-preview.jpg" alt=""><figcaption><b>◉</b> Preview: your real page, with Keep editing and Publish at the top</figcaption></figure>
+  </div>
 </section>
 
 </body>
