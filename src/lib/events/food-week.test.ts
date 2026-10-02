@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SpecialHoursDay, WeekdayHours } from "@/lib/hours/open-now";
 import type { EventRow } from "@/lib/supabase/types";
-import { buildFoodWeek, isClosedOnDate } from "./food-week";
+import { buildFoodWeek, isClosedOnDate, showsFoodWeek } from "./food-week";
 
 const TZ = "America/Los_Angeles";
 
@@ -203,6 +203,21 @@ describe("buildFoodWeek with our own kitchen", () => {
   it("without the switch the same day is still bring-your-own", () => {
     const week = buildFoodWeek({ slots, now: NOW, timezone: TZ, hours: HOURS, specialHours: [] });
     expect(week.find((d) => d.date === "2026-10-01")?.status).toBe("byo");
+  });
+});
+
+describe("showsFoodWeek", () => {
+  it("shows for a producer with a food calendar, or with their own kitchen", () => {
+    expect(showsFoodWeek({ memberType: "producer", hasFoodCalendar: true, hasKitchen: false })).toBe(true);
+    expect(showsFoodWeek({ memberType: "producer", hasFoodCalendar: false, hasKitchen: true })).toBe(true);
+  });
+
+  it("stays hidden with neither, so a taproom never gets a week of 'Bring your own food'", () => {
+    expect(showsFoodWeek({ memberType: "producer", hasFoodCalendar: false, hasKitchen: false })).toBe(false);
+  });
+
+  it("is producers only", () => {
+    expect(showsFoodWeek({ memberType: "allied", hasFoodCalendar: true, hasKitchen: true })).toBe(false);
   });
 });
 

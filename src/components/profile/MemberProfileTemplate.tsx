@@ -4,6 +4,7 @@ import { StatusBlock } from "@/components/profile/StatusBlock";
 import { ScheduleChips } from "@/components/profile/ScheduleChips";
 import { EventsModule } from "@/components/profile/EventsModule";
 import { FoodCalendarModule } from "@/components/profile/FoodCalendarModule";
+import { showsFoodWeek } from "@/lib/events/food-week";
 import { toSpecialHoursDay, toWeekdayHours } from "@/lib/hours/hours-rows";
 import { DiscountBlock } from "@/components/profile/DiscountBlock";
 import { CategoryChips } from "@/components/profile/CategoryChips";
@@ -66,10 +67,14 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
   const scheduleVisible = member.member_type !== "mobile" && weekdayHours.length > 0;
   const visibleEventsCount = events.filter((event) => !event.is_hidden).length;
   const eventsVisible = member.member_type === "mobile" || visibleEventsCount > 0;
-  // "Food for the next week": a producer with a food calendar connected (docs/member-profiles.md,
-  // "Events" > "Food calendar") -- never a week of "Bring your own food" for a
-  // taproom that hasn't set one up.
-  const foodVisible = member.member_type === "producer" && data.hasFoodCalendar;
+  // "Food for the next week": a producer with a food calendar connected or
+  // their own kitchen (docs/member-profiles.md, "Events" > "Food calendar") --
+  // never a week of "Bring your own food" for a taproom with neither.
+  const foodVisible = showsFoodWeek({
+    memberType: member.member_type,
+    hasFoodCalendar: data.hasFoodCalendar,
+    hasKitchen: member.has_kitchen === true,
+  });
   const linksVisible = links.some((link) => isHttpUrl(link.url));
   const contactLocationText = member.member_type === "mobile" ? member.service_area : member.street_address;
   const contactHasEmail = member.member_type === "allied" && Boolean(member.contact_email);

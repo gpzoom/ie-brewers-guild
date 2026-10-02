@@ -19,6 +19,20 @@ import type { EventRow } from "@/lib/supabase/types";
 
 export const FOOD_WEEK_DAYS = 7;
 
+/**
+ * Whether a profile shows "Food for the next week": producers only, once
+ * they have a food calendar connected or their own kitchen (owner,
+ * 2026-10-02). Neither: hidden, so a taproom never shows a week of "Bring
+ * your own food".
+ */
+export function showsFoodWeek(params: {
+  memberType: string;
+  hasFoodCalendar: boolean;
+  hasKitchen: boolean;
+}): boolean {
+  return params.memberType === "producer" && (params.hasFoodCalendar || params.hasKitchen);
+}
+
 export type FoodVendor = {
   id: string;
   title: string;

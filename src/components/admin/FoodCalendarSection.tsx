@@ -73,7 +73,7 @@ export function FoodCalendarSection({
         canEdit={canEdit}
         purpose="food"
       />
-      {food.connection && (
+      {(food.connection || food.hasKitchen) && (
         <div className="rounded-[14px] border border-canvas-border bg-canvas px-4 py-4 md:px-5">
           <FoodCalendarModule
             label="Next 7 days on your profile"
