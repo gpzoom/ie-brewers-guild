@@ -9,6 +9,13 @@
       "x": -557,
       "y": 0
     },
+    "Roles.dc.html": {
+      "h": 1040,
+      "title": "People & permissions",
+      "w": 1920,
+      "x": -557,
+      "y": 2080
+    },
     "StepAnatomy.dc.html": {
       "h": 844,
       "title": "Wizard step anatomy (phone, lo-fi)",
@@ -16,188 +23,181 @@
       "x": 2000,
       "y": 0
     },
-    "Roles.dc.html": {
-      "x": -557,
-      "y": 2080,
-      "w": 1920,
-      "h": 1040,
-      "title": "People & permissions"
-    },
     "W01-Welcome.dc.html": {
-      "x": -557,
-      "y": 3700,
-      "w": 1280,
       "h": 900,
+      "is_interactive": true,
       "title": "1 · Welcome",
-      "is_interactive": true
+      "w": 1280,
+      "x": -557,
+      "y": 3700
     },
     "W02-Type.dc.html": {
-      "x": 803,
-      "y": 3700,
-      "w": 1280,
       "h": 900,
+      "is_interactive": true,
       "title": "2 · Confirm your member type",
-      "is_interactive": true
+      "w": 1280,
+      "x": 803,
+      "y": 3700
     },
     "W02b-Type-NotRight.dc.html": {
-      "x": 2163,
-      "y": 3700,
-      "w": 1280,
       "h": 940,
+      "is_interactive": true,
       "title": "2 · After “That's not right”",
-      "is_interactive": true
-    },
-    "W03-Basics-Producer.dc.html": {
-      "x": 3523,
-      "y": 3700,
       "w": 1280,
-      "h": 1209,
-      "title": "3 · The basics — Producer",
-      "is_interactive": true
-    },
-    "W03-Basics-Mobile.dc.html": {
-      "x": 4883,
-      "y": 3700,
-      "w": 1280,
-      "h": 1319,
-      "title": "3 · The basics — Mobile",
-      "is_interactive": true
+      "x": 2163,
+      "y": 3700
     },
     "W03-Basics-Allied.dc.html": {
-      "x": 6243,
-      "y": 3700,
-      "w": 1280,
       "h": 1406,
+      "is_interactive": true,
       "title": "3 · The basics — Allied",
-      "is_interactive": true
+      "w": 1280,
+      "x": 6243,
+      "y": 3700
+    },
+    "W03-Basics-Mobile.dc.html": {
+      "h": 1319,
+      "is_interactive": true,
+      "title": "3 · The basics — Mobile",
+      "w": 1280,
+      "x": 4883,
+      "y": 3700
+    },
+    "W03-Basics-Producer.dc.html": {
+      "h": 1209,
+      "is_interactive": true,
+      "title": "3 · The basics — Producer",
+      "w": 1280,
+      "x": 3523,
+      "y": 3700
     },
     "W04-LogoPhotosCover.dc.html": {
-      "x": -557,
-      "y": 5266,
-      "w": 1280,
       "h": 2316,
+      "is_interactive": true,
       "title": "4 · Logo, Photos & Cover — filled in (NEW)",
-      "is_interactive": true
+      "w": 1280,
+      "x": -557,
+      "y": 5266
     },
     "W04e-LogoPhotosCover-Empty.dc.html": {
-      "x": 803,
-      "y": 5266,
-      "w": 1280,
       "h": 2093,
+      "is_interactive": true,
       "title": "4 · Logo, Photos & Cover — brand-new member (NEW)",
-      "is_interactive": true
+      "w": 1280,
+      "x": 803,
+      "y": 5266
     },
     "W04p-LogoPhotosCover-Phone.dc.html": {
-      "x": 2163,
-      "y": 5266,
-      "w": 390,
       "h": 3107,
+      "is_interactive": true,
       "title": "4 · Logo, Photos & Cover — phone (NEW)",
-      "is_interactive": true
-    },
-    "W05-Hours-Producer.dc.html": {
-      "x": -557,
-      "y": 8533,
-      "w": 1280,
-      "h": 1452,
-      "title": "5 · When you're open — Producer",
-      "is_interactive": true
-    },
-    "W05-WhereWellBe-Mobile.dc.html": {
-      "x": 803,
-      "y": 8533,
-      "w": 1280,
-      "h": 941,
-      "title": "5 · Where we'll be — Mobile",
-      "is_interactive": true
+      "w": 390,
+      "x": 2163,
+      "y": 5266
     },
     "W05-Hours-Allied.dc.html": {
-      "x": 2163,
-      "y": 8533,
-      "w": 1280,
       "h": 1525,
+      "is_interactive": true,
       "title": "5 · When you're open — Allied",
-      "is_interactive": true
-    },
-    "W06-Events-Producer.dc.html": {
-      "x": -557,
-      "y": 10218,
       "w": 1280,
-      "h": 1947,
-      "title": "6 · Events + Food — Producer (new Food wording)",
-      "is_interactive": true
+      "x": 2163,
+      "y": 8533
+    },
+    "W05-Hours-Producer.dc.html": {
+      "h": 1452,
+      "is_interactive": true,
+      "title": "5 · When you're open — Producer",
+      "w": 1280,
+      "x": -557,
+      "y": 8533
+    },
+    "W05-WhereWellBe-Mobile.dc.html": {
+      "h": 941,
+      "is_interactive": true,
+      "title": "5 · Where we'll be — Mobile",
+      "w": 1280,
+      "x": 803,
+      "y": 8533
     },
     "W06-Events-Allied.dc.html": {
-      "x": 803,
-      "y": 10218,
-      "w": 1280,
       "h": 938,
+      "is_interactive": true,
       "title": "6 · Events — Allied",
-      "is_interactive": true
-    },
-    "W07-Links-Producer.dc.html": {
-      "x": 2163,
-      "y": 10218,
       "w": 1280,
-      "h": 1148,
-      "title": "7 · Links — Producer",
-      "is_interactive": true
+      "x": 803,
+      "y": 10218
+    },
+    "W06-Events-Producer.dc.html": {
+      "h": 1947,
+      "is_interactive": true,
+      "title": "6 · Events + Food — Producer (new Food wording)",
+      "w": 1280,
+      "x": -557,
+      "y": 10218
     },
     "W07-Links-Mobile.dc.html": {
-      "x": 3523,
-      "y": 10218,
-      "w": 1280,
       "h": 1255,
+      "is_interactive": true,
       "title": "7 · Links — Mobile (booking links)",
-      "is_interactive": true
+      "w": 1280,
+      "x": 3523,
+      "y": 10218
+    },
+    "W07-Links-Producer.dc.html": {
+      "h": 1148,
+      "is_interactive": true,
+      "title": "7 · Links — Producer",
+      "w": 1280,
+      "x": 2163,
+      "y": 10218
     },
     "W08-Discount-Allied.dc.html": {
-      "x": 4883,
-      "y": 10218,
-      "w": 1280,
       "h": 1177,
+      "is_interactive": true,
       "title": "8 · Member discount & supplies — Allied",
-      "is_interactive": true
+      "w": 1280,
+      "x": 4883,
+      "y": 10218
     },
     "W09-Theme.dc.html": {
-      "x": -557,
-      "y": 12325,
-      "w": 1280,
       "h": 933,
+      "is_interactive": true,
       "title": "9 · Pick your theme (renamed)",
-      "is_interactive": true
+      "w": 1280,
+      "x": -557,
+      "y": 12325
     },
     "W17-Review.dc.html": {
-      "x": 803,
-      "y": 12325,
-      "w": 1280,
       "h": 900,
+      "is_interactive": true,
       "title": "Review",
-      "is_interactive": true
+      "w": 1280,
+      "x": 803,
+      "y": 12325
     },
     "W18-Preview.dc.html": {
-      "x": 2163,
-      "y": 12325,
-      "w": 1280,
       "h": 983,
+      "is_interactive": true,
       "title": "Preview",
-      "is_interactive": true
+      "w": 1280,
+      "x": 2163,
+      "y": 12325
     },
     "W19-OneLastCheck.dc.html": {
-      "x": 3523,
-      "y": 12325,
-      "w": 1280,
       "h": 915,
+      "is_interactive": true,
       "title": "One last check",
-      "is_interactive": true
+      "w": 1280,
+      "x": 3523,
+      "y": 12325
     },
     "W20-Live.dc.html": {
-      "x": 4883,
-      "y": 12325,
-      "w": 1280,
       "h": 900,
+      "is_interactive": true,
       "title": "You're live",
-      "is_interactive": true
+      "w": 1280,
+      "x": 4883,
+      "y": 12325
     }
   },
   "createdOnFiles": {
@@ -258,76 +258,76 @@
       "y": 1440
     },
     "q6": {
-      "x": 2470,
-      "y": 2080,
-      "w": 400,
       "fill": "green",
       "size": 24,
-      "text": "DECIDED — Photos & events editor\nOwner invites/removes from People. This role sees only Photos and Events, can't connect a calendar, and publishes (or discards) only Photos — the owner's other draft changes stay put."
+      "text": "DECIDED — Photos & events editor\nOwner invites/removes from People. This role sees only Photos and Events, can't connect a calendar, and publishes (or discards) only Photos — the owner's other draft changes stay put.",
+      "w": 400,
+      "x": 2470,
+      "y": 2080
     },
     "q7": {
-      "x": 2470,
-      "y": 2540,
-      "w": 400,
       "fill": "blue",
       "size": 24,
-      "text": "SYNCED WITH STAGING — 27 Sep 2026\n'Photos & video' is now 'Photos' until video uploads exist. Gallery comes first on that page. Mobile members pick 'What you offer' categories in The basics. US spelling ('color'). Portal menu shows '[Business name] Profile' and People."
+      "text": "SYNCED WITH STAGING — 27 Sep 2026\n'Photos & video' is now 'Photos' until video uploads exist. Gallery comes first on that page. Mobile members pick 'What you offer' categories in The basics. US spelling ('color'). Portal menu shows '[Business name] Profile' and People.",
+      "w": 400,
+      "x": 2470,
+      "y": 2540
     },
     "wiztitle": {
       "kind": "title1",
-      "x": -557,
-      "y": 3400,
       "maxW": 7960,
+      "text": "Setup wizard redesign — for review (2 Oct 2026)",
       "w": 240,
-      "text": "Setup wizard redesign — for review (2 Oct 2026)"
+      "x": -557,
+      "y": 3400
     },
     "wn1": {
-      "x": 7603,
-      "y": 3700,
-      "w": 440,
       "fill": "green",
       "size": 24,
-      "text": "DECIDED — Food on kitchen days (2 Oct)\nA \"We have our own kitchen\" switch on the Food section. When it's on, an open day with nothing tagged #food says \"Kitchen open\" instead of \"Bring your own food\". Closed days still say \"Closed\". See board 6 · Events + Food."
+      "text": "DECIDED — Food on kitchen days (2 Oct)\nA \"We have our own kitchen\" switch on the Food section. When it's on, an open day with nothing tagged #food says \"Kitchen open\" instead of \"Bring your own food\". Closed days still say \"Closed\". See board 6 · Events + Food.",
+      "w": 440,
+      "x": 7603,
+      "y": 3700
     },
     "wn2": {
-      "x": 7603,
-      "y": 4220,
-      "w": 440,
       "fill": "blue",
       "size": 24,
-      "text": "WHICH TYPE?\nThe colored tag on every screen names the member type: PRODUCER, MOBILE MEMBER or ALLIED MEMBER. In the guide, each screenshot also gets a big tag, or \"All members\"."
+      "text": "WHICH TYPE?\nThe colored tag on every screen names the member type: PRODUCER, MOBILE MEMBER or ALLIED MEMBER. In the guide, each screenshot also gets a big tag, or \"All members\".",
+      "w": 440,
+      "x": 7603,
+      "y": 4220
     },
     "wn3": {
-      "x": 7603,
-      "y": 4740,
-      "w": 440,
       "fill": "blue",
       "size": 24,
-      "text": "BACK EVERYWHERE\nEvery screen after Welcome has Back. The basics → Confirm your type (shows your locked type). Step 4 → The basics. You're live → Review."
+      "text": "BACK EVERYWHERE\nEvery screen after Welcome has Back. The basics → Confirm your type (shows your locked type). Step 4 → The basics. You're live → Review.",
+      "w": 440,
+      "x": 7603,
+      "y": 4740
     },
     "wn4": {
-      "x": 7603,
-      "y": 5260,
-      "w": 440,
       "fill": "blue",
       "size": 24,
-      "text": "SAMPLE DATA\nSample Brewing Co., Sample Taco Truck and Sample Supply Co. are made up. The photos are the Guild site's own. Phone numbers use 555."
+      "text": "SAMPLE DATA\nSample Brewing Co., Sample Taco Truck and Sample Supply Co. are made up. The photos are the Guild site's own. Phone numbers use 555.",
+      "w": 440,
+      "x": 7603,
+      "y": 5260
     },
     "wn5": {
-      "x": 2470,
-      "y": 3000,
-      "w": 400,
       "fill": "orange",
       "size": 24,
-      "text": "HEADS UP — 2 Oct 2026\nThe screen map above still shows the old step order. It gets updated once the redesigned wizard below is approved."
+      "text": "HEADS UP — 2 Oct 2026\nThe screen map above still shows the old step order. It gets updated once the redesigned wizard below is approved.",
+      "w": 400,
+      "x": 2470,
+      "y": 3000
     },
     "wn6": {
-      "x": 7603,
-      "y": 5780,
-      "w": 440,
       "fill": "blue",
       "size": 24,
-      "text": "STEP NUMBERS\nBoards use the guide's numbers (1–9). The screen counts only your type's steps: Producer 8, Mobile 7, Allied 9. Back and Continue are clickable in Play."
+      "text": "STEP NUMBERS\nBoards use the guide's numbers (1–9). The screen counts only your type's steps: Producer 8, Mobile 7, Allied 9. Back and Continue are clickable in Play.",
+      "w": 440,
+      "x": 7603,
+      "y": 5780
     }
   },
   "order": [
