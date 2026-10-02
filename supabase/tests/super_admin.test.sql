@@ -9,7 +9,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(36);
+insert into _tap (line) select plan(37);
 
 -- The super admin for this test (f0..07); the fixtures' Guild admin is f0..04.
 insert into auth.users (id, email, aud, role) values
@@ -123,6 +123,12 @@ insert into _tap (line) select isnt_empty(
 insert into _tap (line) select lives_ok(
   $q$ update public.members set trail_eligible = true where id = 'f1000000-0000-4000-8000-000000000001' $q$,
   'super admin: flips the Trail switch');
+insert into _tap (line) select lives_ok(
+  $q$ update public.members
+      set status = 'published', approved_at = now(),
+          approved_by_user_id = 'f0000000-0000-4000-8000-000000000007'
+      where id = 'f1000000-0000-4000-8000-000000000002' $q$,
+  'super admin: approves a suspended member (roster Approve)');
 insert into _tap (line) select isnt_empty(
   $q$ delete from public.categories where id = 'f3000000-0000-4000-8000-000000000001' returning 1 $q$,
   'super admin: deletes a category');
