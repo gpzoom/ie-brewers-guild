@@ -123,7 +123,7 @@
       "x": -557,
       "y": 10175,
       "w": 1280,
-      "h": 1837,
+      "h": 1933,
       "title": "6 · Events + Food — Producer (new Food wording)",
       "is_interactive": true
     },
@@ -161,7 +161,7 @@
     },
     "W09-Theme.dc.html": {
       "x": -557,
-      "y": 12172,
+      "y": 12268,
       "w": 1280,
       "h": 918,
       "title": "9 · Pick your theme (renamed)",
@@ -169,7 +169,7 @@
     },
     "W17-Review.dc.html": {
       "x": 803,
-      "y": 12172,
+      "y": 12268,
       "w": 1280,
       "h": 900,
       "title": "Review",
@@ -177,7 +177,7 @@
     },
     "W18-Preview.dc.html": {
       "x": 2163,
-      "y": 12172,
+      "y": 12268,
       "w": 1280,
       "h": 983,
       "title": "Preview",
@@ -185,7 +185,7 @@
     },
     "W19-OneLastCheck.dc.html": {
       "x": 3523,
-      "y": 12172,
+      "y": 12268,
       "w": 1280,
       "h": 900,
       "title": "One last check",
@@ -193,7 +193,7 @@
     },
     "W20-Live.dc.html": {
       "x": 4883,
-      "y": 12172,
+      "y": 12268,
       "w": 1280,
       "h": 900,
       "title": "You're live",
@@ -285,9 +285,9 @@
       "x": 7603,
       "y": 3700,
       "w": 440,
-      "fill": "orange",
+      "fill": "green",
       "size": 24,
-      "text": "QUESTION — Food on kitchen days\nA brewpub with its own kitchen has food every day, but a day with no #food listing says \"Bring your own food\". Options: a switch \"We have our own kitchen\" that shows \"Kitchen open\" on those days instead, or leave it as is."
+      "text": "DECIDED — Food on kitchen days (2 Oct)\nA \"We have our own kitchen\" switch on the Food section. When it's on, an open day with nothing tagged #food says \"Kitchen open\" instead of \"Bring your own food\". Closed days still say \"Closed\". See board 6 · Events + Food."
     },
     "wn2": {
       "x": 7603,

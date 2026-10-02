@@ -66,7 +66,12 @@ The owner has been through the wizard several times and sees a better flow. The 
 
 - **Step 6, Food (producers):** the wording explains both uses of the one **#food** tag: visiting food trucks and pop-ups, and the taproom's own kitchen specials, such as brewpub specials.
   - Both show in "Food for the next week".
-  - No new tag, setting or profile section.
+  - No new tag or profile section.
+  - **"We have our own kitchen" switch** (owner decision, 2 Oct): a switch on the Food section, producers only.
+    - When it's on, an open day with nothing tagged #food says **"Kitchen open"** on the profile instead of "Bring your own food".
+    - Closed days still say "Closed".
+    - It's saved per member as a new yes/no setting, off by default. This is the redesign's one database change: a new column, with a migration and a pgTAP test.
+    - It saves straight away, like the food calendar itself, not through the draft.
   - The food how-to video (`videos/google-food-calendar`) gets a line or two to match, re-voiced with the same settings, and is replaced on livid.com.
   - The Food page's hint and the guide's Food item change to match.
 - **Step 9, "Pick your theme"** (was "Pick your color"):
@@ -129,12 +134,12 @@ The owner has been through the wizard several times and sees a better flow. The 
 ## 8. Testing
 
 - Unit tests for the step order and counts per type, Back from step 4, the merged portal section, and the Photos & events editor's view.
-- The existing pgTAP files stay green. Nothing in the database changes.
+- The existing pgTAP files stay green. The only database change is the kitchen switch's column.
 - `npm run test`, `npm run test:db` and `npm run build` before each push.
 - The owner walks through the wizard on staging for each type.
 
 ## Out of scope
 
-- No changes to what's saved, publishing, the type lock or roles.
+- No changes to publishing, the type lock or roles. The kitchen switch is the only new saved setting.
 - No new tags or profile sections.
 - Mobile members' Phase 1 food-vendor matching (GV1–GV3) is a separate proposal.
