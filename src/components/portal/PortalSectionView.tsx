@@ -115,42 +115,13 @@ export function PortalSectionView({ data, shell }: { data: PortalSectionData; sh
             title="Logo & cover"
             lede="Your logo sits in your page's header. The cover is the wide band across the top."
           />
-          <LogoCoverSection draft={data.draft} galleryAssets={data.galleryAssets} />
+          <LogoCoverSection draft={data.draft} galleryAssets={data.assets} />
           <SocialImageEditor
             memberId={shell.memberId}
             memberType={data.draft.member.member_type}
             ogImageAssetId={data.draft.data.basics.og_image_asset_id}
-            galleryAssets={data.galleryAssets}
-          />
-        </div>
-      );
-
-    case "photos":
-      return (
-        <div className="flex flex-col gap-8 md:gap-9">
-          <SectionHeader
-            title="Photos"
-            lede="Up to four slides. Visitors swipe through them on your page, so lead with your best one."
-          />
-          {notice}
-          <div className="flex flex-col gap-3">
-            <MediaGallery memberId={shell.memberId} assets={data.assets} />
-            <CameraRollHint peopleHref="/portal/people" />
-          </div>
-          <CarouselEditor
-            memberId={shell.memberId}
-            initialSlides={data.draft.data.media.slides}
             galleryAssets={data.assets}
           />
-          <div className="flex flex-col gap-6">
-            <CreatorLinkPanel
-              memberId={shell.memberId}
-              initialTokens={data.uploadTokens}
-              pendingCount={data.pending.length}
-            />
-            <ReviewTray initialPending={data.pending} />
-          </div>
-          <SaveNoteFooter />
         </div>
       );
 

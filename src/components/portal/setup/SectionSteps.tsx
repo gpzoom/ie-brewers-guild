@@ -164,50 +164,6 @@ export function EventsStep({
   );
 }
 
-/** Step 7: Photos, including the creator upload link. */
-export function PhotosStep({
-  draft,
-  assets,
-  uploadTokens,
-  pending,
-}: {
-  draft: MemberDraftBundle;
-  assets: MediaAssetRow[];
-  uploadTokens: UploadTokenRow[];
-  pending: MediaAssetRow[];
-}) {
-  const memberId = draft.member.id;
-  return (
-    <WizardStep
-      step="photos"
-      title="Photos"
-      lede="Up to four slides. Visitors swipe through them on your page, so lead with your best one."
-      skipNote="No photos yet? Skip it, or make a link for your photographer to send them straight to you."
-    >
-      <div className="flex flex-col gap-3">
-        <MediaGallery memberId={memberId} assets={assets} />
-        <CameraRollHint peopleHref={null} />
-      </div>
-      <CarouselEditor
-        memberId={memberId}
-        initialSlides={draft.data.media.slides}
-        galleryAssets={assets}
-      />
-      <div className="flex flex-col gap-6">
-        <CreatorLinkPanel
-          memberId={memberId}
-          initialTokens={uploadTokens}
-          pendingCount={pending.length}
-        />
-        <ReviewTray initialPending={pending} />
-      </div>
-      <p className="border-t border-canvas-2 pt-[18px] text-[13px] text-ink-muted">
-        <SaveNoteText />
-      </p>
-    </WizardStep>
-  );
-}
-
 const THIRD_PILL: Record<PortalSetupShell["memberType"], string> = {
   producer: "Tap list",
   mobile: "Press kit",

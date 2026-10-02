@@ -3,6 +3,7 @@ import {
   canOpenPortalSection,
   firstPortalSection,
   isPortalSection,
+  legacyPortalSection,
   PORTAL_SECTION_LABELS,
   portalSectionsFor,
   sectionForCompletenessStep,
@@ -101,5 +102,12 @@ describe("isPortalSection", () => {
     expect(isPortalSection("people")).toBe(true);
     expect(isPortalSection("setup")).toBe(false);
     expect(isPortalSection(undefined)).toBe(false);
+  });
+});
+
+describe("legacyPortalSection", () => {
+  it("maps the retired /portal/photos to Logo, Photos & Cover", () => {
+    expect(legacyPortalSection("photos")).toBe("logo-cover");
+    expect(legacyPortalSection("events")).toBeNull();
   });
 });

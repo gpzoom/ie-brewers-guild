@@ -14,9 +14,8 @@ import {
   loadDraftSection,
   loadEventsSection,
   loadFoodSection,
-  loadLogoCoverSection,
+  loadLogoPhotosCoverSection,
   loadMemberShell,
-  loadPhotosSection,
   type PortalMemberShell,
 } from "@/lib/portal/section-data.server";
 import { emptySections, type SectionCompleteness } from "@/lib/portal/section-completeness";
@@ -101,8 +100,7 @@ type Loaded<T extends (...args: never[]) => Promise<unknown>> = Awaited<ReturnTy
 export type PortalSectionData =
   | ({ section: "basics" } & Loaded<typeof loadBasicsSection>)
   | ({ section: "links" | "theme" } & Loaded<typeof loadDraftSection>)
-  | ({ section: "logo-cover" } & Loaded<typeof loadLogoCoverSection>)
-  | ({ section: "photos" } & Loaded<typeof loadPhotosSection>)
+  | ({ section: "logo-cover" } & Loaded<typeof loadLogoPhotosCoverSection>)
   | ({ section: "events" } & Loaded<typeof loadEventsSection>)
   | ({ section: "food" } & Loaded<typeof loadFoodSection>)
   | ({ section: "discount" } & Loaded<typeof loadDiscountSection>)
@@ -138,9 +136,7 @@ export const getPortalSectionData = createServerFn({ method: "GET" })
       case "theme":
         return { section: data.section, ...(await loadDraftSection(supabase, id)) };
       case "logo-cover":
-        return { section: "logo-cover", ...(await loadLogoCoverSection(supabase, id)) };
-      case "photos":
-        return { section: "photos", ...(await loadPhotosSection(supabase, id)) };
+        return { section: "logo-cover", ...(await loadLogoPhotosCoverSection(supabase, id)) };
       case "events":
         return { section: "events", ...(await loadEventsSection(supabase, id)) };
       case "food":

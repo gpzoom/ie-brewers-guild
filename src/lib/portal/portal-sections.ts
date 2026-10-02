@@ -73,6 +73,11 @@ export function portalSectionsFor(viewer: {
   return PORTAL_SECTIONS.filter((section) => canOpenPortalSection(section, viewer));
 }
 
+/** Sections that were renamed or merged; old links still land somewhere. */
+export function legacyPortalSection(name: string): PortalSection | null {
+  return name === "photos" ? "logo-cover" : null;
+}
+
 /** Where /portal (or a section the viewer can't open) lands them. */
 export function firstPortalSection(role: PortalRole): PortalSection {
   return role === "media_events" ? "logo-cover" : "basics";

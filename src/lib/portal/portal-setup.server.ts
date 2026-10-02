@@ -12,10 +12,9 @@ import {
   loadDraftSection,
   loadEventsSection,
   loadHoursSection,
-  loadLogoCoverSection,
+  loadLogoPhotosCoverSection,
   loadMemberShell,
   loadWizardBasicsSection,
-  loadPhotosSection,
   type PortalMemberShell,
 } from "@/lib/portal/section-data.server";
 import { isSetupStepName, type SetupStepName } from "@/lib/portal/wizard-steps";
@@ -63,10 +62,9 @@ export type SetupStepData =
   | { step: "welcome" | "type" | "live" }
   | ({ step: "basics" } & Awaited<ReturnType<typeof loadWizardBasicsSection>>)
   | ({ step: "links" | "theme" } & Awaited<ReturnType<typeof loadDraftSection>>)
-  | ({ step: "logo-cover" } & Awaited<ReturnType<typeof loadLogoCoverSection>>)
+  | ({ step: "logo-cover" } & Awaited<ReturnType<typeof loadLogoPhotosCoverSection>>)
   | ({ step: "hours" } & Awaited<ReturnType<typeof loadHoursSection>>)
   | ({ step: "events" } & Awaited<ReturnType<typeof loadEventsSection>>)
-  | ({ step: "photos" } & Awaited<ReturnType<typeof loadPhotosSection>>)
   | ({ step: "discount" } & Awaited<ReturnType<typeof loadDiscountSection>>)
   | ({ step: "review" } & Awaited<ReturnType<typeof loadCompletenessData>>)
   | ({ step: "preview" } & Awaited<ReturnType<typeof loadMemberPreviewData>>)
@@ -100,13 +98,11 @@ export const getPortalStepData = createServerFn({ method: "GET" })
       case "theme":
         return { step: data.step, ...(await loadDraftSection(supabase, id)) };
       case "logo-cover":
-        return { step: "logo-cover", ...(await loadLogoCoverSection(supabase, id)) };
+        return { step: "logo-cover", ...(await loadLogoPhotosCoverSection(supabase, id)) };
       case "hours":
         return { step: "hours", ...(await loadHoursSection(supabase, id)) };
       case "events":
         return { step: "events", ...(await loadEventsSection(supabase, id)) };
-      case "photos":
-        return { step: "photos", ...(await loadPhotosSection(supabase, id)) };
       case "discount":
         return { step: "discount", ...(await loadDiscountSection(supabase, id)) };
       case "review":

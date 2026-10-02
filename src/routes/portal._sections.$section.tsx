@@ -4,6 +4,7 @@ import {
   canOpenPortalSection,
   firstPortalSection,
   isPortalSection,
+  legacyPortalSection,
 } from "@/lib/portal/portal-sections";
 import { PortalSectionView } from "@/components/portal/PortalSectionView";
 
@@ -19,6 +20,9 @@ export const Route = createFileRoute("/portal/_sections/$section")({
   gcTime: 0,
   beforeLoad: ({ context, params }) => {
     const { shell } = context;
+    // Renamed or merged sections (/portal/photos is part of Logo, Photos & Cover).
+    const renamed = legacyPortalSection(params.section);
+    if (renamed) throw redirect({ to: "/portal/$section", params: { section: renamed } });
     if (!isPortalSection(params.section) || !canOpenPortalSection(params.section, shell)) {
       throw redirect({
         to: "/portal/$section",

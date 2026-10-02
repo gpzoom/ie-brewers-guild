@@ -6,7 +6,6 @@ import {
   HoursStep,
   LinksStep,
   LogoCoverStep,
-  PhotosStep,
   ThemeStep,
 } from "@/components/portal/setup/SectionSteps";
 import {
@@ -26,20 +25,11 @@ export function SetupStepView({ data, shell }: { data: SetupStepData; shell: Por
     case "basics":
       return <BasicsStep draft={data.draft} categories={data.categories} />;
     case "logo-cover":
-      return <LogoCoverStep draft={data.draft} galleryAssets={data.galleryAssets} />;
+      return <LogoCoverStep draft={data.draft} galleryAssets={data.assets} />;
     case "hours":
       return <HoursStep shell={shell} draft={data.draft} schedule={data.schedule} />;
     case "events":
       return <EventsStep shell={shell} schedule={data} />;
-    case "photos":
-      return (
-        <PhotosStep
-          draft={data.draft}
-          assets={data.assets}
-          uploadTokens={data.uploadTokens}
-          pending={data.pending}
-        />
-      );
     case "links":
       return <LinksStep shell={shell} draft={data.draft} />;
     case "discount":

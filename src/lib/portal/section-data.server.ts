@@ -258,13 +258,15 @@ export async function loadDraftSection(
   return { draft: await loadMemberDraftBundle(supabase, memberId) };
 }
 
-/** Logo & cover: the draft's logo/cover plus the gallery the cover is picked from. */
-export async function loadLogoCoverSection(supabase: SessionClient, memberId: string) {
-  const [draft, galleryAssets] = await Promise.all([
+/** Logo, Photos & Cover: the draft (logo, cover, slides), the gallery, upload links and the review tray. */
+export async function loadLogoPhotosCoverSection(supabase: SessionClient, memberId: string) {
+  const [draft, assets, uploadTokens, pending] = await Promise.all([
     loadMemberDraftBundle(supabase, memberId),
     listGallery(supabase, memberId),
+    listTokens(supabase, memberId),
+    listPending(supabase, memberId),
   ]);
-  return { draft, galleryAssets };
+  return { draft, assets, uploadTokens, pending };
 }
 
 /**
@@ -296,16 +298,6 @@ export async function loadFoodSection(supabase: SessionClient, memberId: string)
   return { food, memberTimezone: live.timezone };
 }
 
-/** Photos: slides (draft `media`), the gallery, creator links and the review tray. */
-export async function loadPhotosSection(supabase: SessionClient, memberId: string) {
-  const [draft, assets, uploadTokens, pending] = await Promise.all([
-    loadMemberDraftBundle(supabase, memberId),
-    listGallery(supabase, memberId),
-    listTokens(supabase, memberId),
-    listPending(supabase, memberId),
-  ]);
-  return { draft, assets, uploadTokens, pending };
-}
 
 /** Member discount & supplies: the draft's `discount` section plus the Guild's category list. */
 export async function loadDiscountSection(supabase: SessionClient, memberId: string) {
