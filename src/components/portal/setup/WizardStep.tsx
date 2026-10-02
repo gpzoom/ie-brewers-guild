@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { stopImpersonation } from "@/lib/guild/impersonation.server";
-import { MEMBER_TYPE_SHORT_LABEL } from "@/lib/members/member-type-options";
 import {
   canSkipStep,
   isFinishStep,
@@ -14,6 +13,7 @@ import {
 import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 import { StatusBand, bandButtonClass } from "@/components/shell/AppChrome";
 import { useWizardNavigation } from "@/components/portal/setup/useWizardNavigation";
+import { MemberTypeTag } from "@/components/portal/setup/MemberTypeTag";
 import { cn } from "@/lib/utils";
 
 export const wizardPrimaryButtonClass =
@@ -70,6 +70,7 @@ export function WizardStep({
   hideContinue = false,
   backTo,
   error = null,
+  wide = false,
 }: {
   step: SetupStepName;
   title: ReactNode;
@@ -90,6 +91,8 @@ export function WizardStep({
    */
   backTo?: SetupStepName | null;
   error?: string | null;
+  /** A wider column (1080px) for a step with a side panel (Logo, Photos & Cover's preview). */
+  wide?: boolean;
 }) {
   const editing = useMemberEditing();
   const router = useRouter();
@@ -133,6 +136,7 @@ export function WizardStep({
   }
 
   const shownError = error ?? navError;
+  const maxW = wide ? "max-w-[1080px]" : "max-w-[720px]";
 
   return (
     <div className="flex min-h-dvh flex-col bg-canvas text-ink">
@@ -153,7 +157,7 @@ export function WizardStep({
       )}
 
       <div className="sticky top-0 z-20 bg-bg">
-        <div className="mx-auto flex h-14 w-full max-w-[720px] items-center justify-between gap-3 px-4 md:px-5">
+        <div className={cn("mx-auto flex h-14 w-full items-center justify-between gap-3 px-4 md:px-5", maxW)}>
           <div className="flex min-w-0 flex-col">
             <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-text-muted">
               Set up your profile
@@ -173,9 +177,9 @@ export function WizardStep({
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-[720px] px-5 pt-4 md:px-5 md:pt-6">
+      <div className={cn("mx-auto w-full px-5 pt-4 md:px-5 md:pt-6", maxW)}>
         <div className="flex flex-col gap-2">
-          <div className="flex justify-between gap-3 text-[13px] text-ink-muted">
+          <div className="flex items-center justify-between gap-3 text-[13px] text-ink-muted">
             <span>
               {position
                 ? `Step ${position.number} of ${position.total}`
@@ -183,7 +187,7 @@ export function WizardStep({
                   ? SETUP_STEP_LABELS[step]
                   : ""}
             </span>
-            <span>{MEMBER_TYPE_SHORT_LABEL[memberType]}</span>
+            <MemberTypeTag memberType={memberType} />
           </div>
           <div
             className="h-1.5 overflow-hidden rounded-full bg-canvas-2"
@@ -198,7 +202,7 @@ export function WizardStep({
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-[720px] flex-1 flex-col gap-[14px] px-5 pb-8 pt-[22px] md:gap-5 md:px-5 md:pt-8">
+      <div className={cn("mx-auto flex w-full flex-1 flex-col gap-[14px] px-5 pb-8 pt-[22px] md:gap-5 md:px-5 md:pt-8", maxW)}>
         <div className="flex flex-col gap-[14px]">
           <h1 className="font-display text-[27px] font-bold leading-[1.15] text-ink md:text-[30px]">
             {title}
@@ -214,7 +218,7 @@ export function WizardStep({
       </div>
 
       <div className="sticky bottom-0 z-20 border-t border-canvas-border bg-white">
-        <div className="mx-auto flex w-full max-w-[720px] flex-col gap-2 px-4 pb-[18px] pt-3 md:px-5">
+        <div className={cn("mx-auto flex w-full flex-col gap-2 px-4 pb-[18px] pt-3 md:px-5", maxW)}>
           {shownError && (
             <p role="alert" className="text-[13px] text-danger">
               {shownError}
