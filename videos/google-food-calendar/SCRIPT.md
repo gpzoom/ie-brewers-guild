@@ -6,7 +6,7 @@ as they are, since the build reads them.
 
 For taprooms (producers). It explains the **Food** page, which fills
 "Food for the next week" on their profile. The taught way is **one calendar, two tags**:
-vendor visits go on the same Google calendar as their events, tagged #food.
+vendor visits (and the taproom's own kitchen specials) go on the same Google calendar as their events, tagged #food.
 
 ## 01 — The promise
 Do you want visitors to know which food vendors are at your taproom this week? Food vendors go on the same Google calendar as your events, so this builds on your events calendar. Haven't connected your events calendar yet? Watch that video first, then come back. If it's already connected, this only takes two steps.
@@ -21,7 +21,7 @@ Step one. Add each vendor's visit to the calendar you use for events. Put the ve
 Step two. Sign in to your Member Portal and open Food. Press Add calendar. Paste the same link you used for your events calendar. You'll find it on your Events page under Edit link. Type hashtag food as the tag, then press Refresh now.
 
 ## 05 — Food for the next week
-Your profile now shows Food for the next week. Seven days, starting today. Each day lists its vendors with their times and descriptions. A day with no vendor says Bring your own food. And if your posted hours say you're closed that day, it says Closed.
+Your profile now shows Food for the next week. Seven days, starting today. Each day lists its vendors with their times and descriptions. A day with no vendor says Bring your own food. And if your posted hours say you're closed that day, it says Closed. Have your own kitchen? Tag your specials hashtag food too, and turn on We have our own kitchen. Then an open day with nothing listed says Kitchen open.
 
 ## 06 — Keep it going
 From now on just add vendor visits to your calendar with hashtag food. The site checks for changes on its own. Need help? Press Help in the Member Portal.

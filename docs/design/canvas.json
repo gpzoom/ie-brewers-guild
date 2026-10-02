@@ -10,7 +10,7 @@
       "y": 2300
     },
     "AdminEvents.dc.html": {
-      "h": 1160,
+      "h": 1300,
       "title": "M · Admin — events & calendar (all member types)",
       "w": 1280,
       "x": 5860,
@@ -24,8 +24,8 @@
       "y": 2300
     },
     "AdminMedia.dc.html": {
-      "h": 1760,
-      "title": "G · Admin desktop — Photos: gallery, carousel & crop, cover",
+      "h": 1780,
+      "title": "G · Admin desktop — Logo, Photos & Cover (redesigned 2 Oct 2026: see the onboarding canvas, boards 4)",
       "w": 1280,
       "x": 1360,
       "y": 2300
@@ -157,18 +157,60 @@
       "y": 2300
     },
     "GuildSettings.dc.html": {
-      "h": 1120,
-      "title": "Z · Super admin — Settings (calendar sync timing)",
+      "h": 1560,
+      "title": "Z · Super admin — Settings (calendar sync, homepage carousel, hero image)",
       "w": 1280,
       "x": 19460,
       "y": 2300
     },
     "AdminFood.dc.html": {
-      "h": 900,
-      "title": "M2 · Admin — food (producers only)",
+      "h": 1100,
+      "title": "M2 · Admin — food (producers only) · kitchen switch",
       "w": 1280,
       "x": 5860,
-      "y": 3560
+      "y": 3680
+    },
+    "HomeEvents.dc.html": {
+      "x": 0,
+      "y": 4880,
+      "w": 1440,
+      "h": 1120,
+      "title": "A · Homepage — member events carousel (desktop)"
+    },
+    "HomeEventsPhone.dc.html": {
+      "x": 1520,
+      "y": 4880,
+      "w": 390,
+      "h": 1420,
+      "title": "A2 · Homepage — member events carousel (phone)"
+    },
+    "HomeEventsStates.dc.html": {
+      "x": 1990,
+      "y": 4880,
+      "w": 1440,
+      "h": 1680,
+      "title": "A3 · Homepage — calendar page states, Guild event, empty"
+    },
+    "GuildVendorFood.dc.html": {
+      "x": 0,
+      "y": 7000,
+      "w": 1280,
+      "h": 1400,
+      "title": "GV1 · Proposal — Food page: Guild food vendors (auto or ask first)"
+    },
+    "GuildVendorEmails.dc.html": {
+      "x": 1360,
+      "y": 7000,
+      "w": 1500,
+      "h": 1000,
+      "title": "GV2 · Proposal — emails to the taproom"
+    },
+    "GuildVendorProfiles.dc.html": {
+      "x": 2940,
+      "y": 7000,
+      "w": 960,
+      "h": 1000,
+      "title": "GV3 · Proposal — one stop on both profiles"
     }
   },
   "createdOnFiles": {
@@ -195,6 +237,22 @@
       "w": 240,
       "x": 0,
       "y": 2000
+    },
+    "hdr4": {
+      "kind": "title1",
+      "maxW": 3430,
+      "text": "Public — homepage",
+      "w": 240,
+      "x": 0,
+      "y": 4580
+    },
+    "hdr5": {
+      "kind": "title1",
+      "maxW": 3900,
+      "text": "Proposal — Guild food vendor stops (Phase 1)",
+      "w": 240,
+      "x": 0,
+      "y": 6700
     }
   },
   "order": [
@@ -221,7 +279,13 @@
     "GuildAudit.dc.html",
     "SupportHelp.dc.html",
     "GuildHelp.dc.html",
-    "GuildSettings.dc.html"
+    "GuildSettings.dc.html",
+    "HomeEvents.dc.html",
+    "HomeEventsPhone.dc.html",
+    "HomeEventsStates.dc.html",
+    "GuildVendorFood.dc.html",
+    "GuildVendorEmails.dc.html",
+    "GuildVendorProfiles.dc.html"
   ],
   "pages": [],
   "title": "IE Brewers Guild — Member Profile"

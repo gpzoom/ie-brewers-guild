@@ -276,7 +276,7 @@
     "wiztitle": {
       "kind": "title1",
       "maxW": 7960,
-      "text": "Setup wizard redesign — for review (2 Oct 2026)",
+      "text": "Setup wizard redesign — approved and built (2 Oct 2026)",
       "w": 240,
       "x": -557,
       "y": 3400
@@ -314,9 +314,9 @@
       "y": 5260
     },
     "wn5": {
-      "fill": "orange",
+      "fill": "green",
       "size": 24,
-      "text": "HEADS UP — 2 Oct 2026\nThe screen map above still shows the old step order. It gets updated once the redesigned wizard below is approved.",
+      "text": "DONE — 2 Oct 2026\nThe screen map above now shows the redesigned order: Logo, Photos & Cover is step 4, there's no separate Photos step, and step 9 is Pick your theme. Built on staging.",
       "w": 400,
       "x": 2470,
       "y": 3000

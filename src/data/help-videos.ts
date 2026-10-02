@@ -18,7 +18,7 @@ export const HELP_VIDEOS = {
   },
   googleFoodCalendar: {
     title: "Connect your food vendor calendar",
-    duration: "1:52",
+    duration: "2:04",
     embedUrl: "https://livid.com/embed/v5XYPWwgyFVb?autoplay=1",
     watchUrl: "https://livid.com/watch/v5XYPWwgyFVb",
   },

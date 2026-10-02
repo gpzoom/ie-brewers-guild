@@ -203,7 +203,7 @@ Events come from a connected calendar, not hand entry. Hand entry is the fallbac
 
 **Remove calendar (owner, 30 September 2026).** Under **Edit link**, the owner (or a Guild admin editing as them) can **Remove calendar**, for the events calendar and the food calendar alike. A confirm box says what happens: the entries it brought in come off the profile (events, or vendor visits and the food week), entries added by hand stay, and the Google calendar itself isn't changed. The database keeps a removed connection's events unlinked (`on delete set null`, so overlays survive an accidental disconnect), so `removeIcsConnection` deletes that connection's imported events itself, after the owner-only delete succeeds. Editors don't see the button, and the database refuses them.
 
-**Watch how (owner, 30 September 2026).** The events calendar box carries a **Watch how to connect a Google Calendar for EVENTS (2:53)** link, in the portal's Events section, the wizard's Events step and `/admin/events`, whether or not a calendar is connected yet. It opens a how-to video in a pop-up on the same page, and closing the pop-up stops the video. The video is hosted on the Guild's livid.com account (embed `https://livid.com/embed/H1WWGjbnsr9p?autoplay=1`, so it starts playing when the pop-up opens, watch page `https://livid.com/watch/H1WWGjbnsr9p`). The player is loaded only when the pop-up opens. The member guide links to the watch page. Its source project is `videos/google-events-calendar/` in the repo. The food calendar box has its own: **Watch how to connect a Google Calendar for FOOD VENDORS (1:52)** (embed `https://livid.com/embed/v5XYPWwgyFVb?autoplay=1`, watch page `https://livid.com/watch/v5XYPWwgyFVb`; source `videos/google-food-calendar/`). It teaches the one-calendar way and starts by pointing to the events video.
+**Watch how (owner, 30 September 2026).** The events calendar box carries a **Watch how to connect a Google Calendar for EVENTS (2:53)** link, in the portal's Events section, the wizard's Events step and `/admin/events`, whether or not a calendar is connected yet. It opens a how-to video in a pop-up on the same page, and closing the pop-up stops the video. The video is hosted on the Guild's livid.com account (embed `https://livid.com/embed/H1WWGjbnsr9p?autoplay=1`, so it starts playing when the pop-up opens, watch page `https://livid.com/watch/H1WWGjbnsr9p`). The player is loaded only when the pop-up opens. The member guide links to the watch page. Its source project is `videos/google-events-calendar/` in the repo. The food calendar box has its own: **Watch how to connect a Google Calendar for FOOD (2:04)** (renamed from "…FOOD VENDORS" and re-voiced with the kitchen line, 2 October 2026) (embed `https://livid.com/embed/v5XYPWwgyFVb?autoplay=1`, watch page `https://livid.com/watch/v5XYPWwgyFVb`; source `videos/google-food-calendar/`). It teaches the one-calendar way and starts by pointing to the events video.
 
 **Which events come in.** Only events with the member's sync tag (for example `#guild`) in their **title or description** are imported (a CATEGORIES match also counts, though Google Calendar can't set one). The description is the natural place: it keeps the tag out of the title. The profile shows the event's title **with the tag taken out** ("Trivia night #guild" shows as "Trivia night"; an event titled only with the tag shows its venue, or "Event"), its **description** (see below), and its **location**: the first part as the venue ("Hop House" from "Hop House, 123 Main St, Riverside…"), the whole thing kept as the address. Title, description, venue and times follow the calendar on every sync. The **description** shows under the event as plain text: Google's formatting becomes line breaks, the Google Meet joining block and the `#tag` are taken out, and it's capped at 1,000 characters. **Web addresses in it are links** (http and https, or starting with "www."; opening in a new tab): an address typed into the description links as it is, and a link Google saved behind other words is kept as "words (address)" so it can be linked too (Google's own redirect wrapper is removed). Nothing else becomes a link. On the profile a long one starts at three lines with **More**; the member's Events list shows the first two lines. The Events screen warns members that descriptions of tagged events are public. An event that's **deleted from the calendar, or has its tag taken off**, is removed from the profile on the next successful sync (with any status overlay on it); a sync that fails removes nothing.
 
@@ -237,6 +237,7 @@ Decided with the owner on 27 September 2026. **Producers only.** A taproom can c
 - **Tags match whole (owner, 30 September 2026), for events and food alike.** A tag counts only as `#tag` on its own (not inside a longer tag: `#food` doesn't match `#foodtruck` or `#foodie`), or in brackets (`[food]`, `(#food)`), or as an equal CATEGORIES value, in any case. A plain word never counts, so an event that just mentions food stays out of Food for the next week, and taking the tag out of a title leaves the plain word ("Brewers Guild meetup #guild" shows as "Brewers Guild meetup"). Tags are saved with their "#": typing `food` saves and shows `#food`.
 - Each entry is a **vendor's day**: the vendor's name in the title, the time, and anything else (a menu or Instagram link) in the description. Title and description are cleaned the same way as events (tag taken out, links clickable).
 - The profile shows **Food for the next week** (owner, 30 September 2026; it was "Food for the next week" and opened collapsed): all **7 days** at once, today first, like "Upcoming events", in the member's time zone, each with the weekday, day and month. On a phone and tablet it sits between the hours and "Upcoming events". On desktop, when the profile has a photo carousel, it sits **under the carousel**, filling the space the photos leave in the left column. A day lists its vendors (name, time, description; several in time order). A day with no vendor says **"Bring your own food"**, or **"Closed"** when their posted hours (weekly, or a holiday) say they're closed that day, the same rule "open now" uses. With no hours posted, no day is Closed.
+- **Kitchen specials and "We have our own kitchen" (owner, 2 October 2026).** The one `#food` tag covers both visiting trucks and a taproom's own kitchen specials ("Brisket Tuesday"), with the wording on the Food section saying so. A producer with its own kitchen turns on **We have our own kitchen** (a switch on the Food section, owner or Guild admin only, saved straight away, not drafted; `members.has_kitchen`, written through `set_member_has_kitchen()`). With it on, an open day with nothing tagged says **"Kitchen open"** instead of "Bring your own food". Closed days still say Closed, and listed days still list.
 - It shows only once a food calendar is connected, so a taproom without one never gets a week of "Bring your own food". Visitors can't read calendar links, so `member_has_food_calendar(member_id)` (security definer) answers only yes or no, for a published producer (or for someone who can see the unpublished profile).
 - **No vendor photos.** Showing a photo from the calendar entry was built and then removed (owner, 27 September 2026): a Google Calendar photo lives in Google Drive and only shows once the member shares it "Anyone with the link", which was too cumbersome.
 - **All-day entries** (a date, no time) start at the member's own local midnight and show **"All day"** instead of a time (`events.all_day`), for events and food alike. (Before this, an all-day entry on Oct 1 landed on the evening of Sept 30 in California.)
@@ -495,30 +496,35 @@ A member is in **setup** until both of these are true:
 
 Until then, `/portal` opens the wizard at the first of steps 1–3 that isn't done. After that, `/portal` always opens the portal. **The wizard is never shown again**, not to the owner and not to any editor added later. Setup belongs to the member, not to each person.
 
+Once setup is complete, every wizard step still opens when reached directly, so **Back** always works (redesign, 2 October 2026). What keeps the wizard from showing again is `/portal` never routing into it, not redirects on the steps. Confirm type, once confirmed, shows the locked type with Continue.
+
 Imported members already have a business name and city, but their setup is still incomplete. `setup_completed_at` records someone actually clicking Continue on step 3, not the fields happening to be filled in. So every imported member's first sign-in goes through steps 1–3.
 
 ### Wizard steps
 
-One step per screen. Every step has **Back**, **Skip for now** (except steps 2 and 3) and **Continue**, plus **Save & exit** in the top bar. A progress line reads "Step N of M", where M depends on the member type.
+Redesigned with the owner on 2 October 2026 (spec `docs/superpowers/specs/2026-10-02-wizard-redesign-design.md`; artboards on the onboarding canvas, mirrored in `docs/design/onboarding/wizard/`).
+
+One step per screen. Every step after Welcome has **Back**, every optional step **Skip for now**, and every step **Continue**, plus **Save & exit** in the top bar. A progress line reads "Step N of M", where M depends on the member type: **8 for a producer, 7 for a Mobile member, 9 for an Allied Member**. Beside it, a large colored tag names the type (PRODUCER orange, MOBILE MEMBER teal, ALLIED MEMBER blue), so anyone, and any screenshot, shows which type a screen is for.
 
 | # | Step | Producer | Mobile | Allied | Required | Reuses |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Welcome: what to have handy, about 10 minutes, what can be skipped | ✓ | ✓ | ✓ | — | new |
 | 2 | Confirm your member type | ✓ | ✓ | ✓ | yes | new |
 | 3 | The basics: name, city, tagline, phone, member since, plus the type's location fields (address with suggestions and ZIP; an Allied Member's is their business address); Mobile members also pick "What you offer" categories here, and their Booking phone notes that more booking links go on Links & contact | ✓ | ✓ | ✓ | name and city | F |
-| 4 | Logo and cover (the cover hint suggests using your Facebook cover photo) | ✓ | ✓ | ✓ | — | G |
-| 5 | When you're open: 7-day hours / 5-day business hours / Where we'll be (calendar or hand entry) | hours | calendar | hours | — | F, M |
-| 6 | Events (producers also: the food calendar) | ✓ | — (step 5 covered it) | ✓ | — | M |
-| 7 | Photos: gallery upload first, then Your Carousel (slides, crop, tap-through link under the crop controls), then the creator upload link | ✓ | ✓ | ✓ | — | G, J |
-| 8 | Links: link buttons (third button: Tap list / Press kit / Catalog; Mobile members can add Instagram DM and WhatsApp booking links) | ✓ | ✓ | ✓ | — | R |
-| 9 | Member discount and supplies | — | — | ✓ | — | /admin/discount |
-| 10 | Pick your color | ✓ | ✓ | ✓ | — | K |
+| 4 | **Logo, Photos & Cover**: the logo (with "You don't have a PNG format?" and a link to Canva's Background Removal tool, above Logo background), the gallery (camera-roll hint, creator upload link), the four carousel slides, and the cover picked from the gallery; a live preview of the top of the profile sits beside them on a computer, below them on a phone | ✓ | ✓ | ✓ | — | G, J |
+| 5 | When you're open: 7-day hours / business hours / Where we'll be (calendar or hand entry) | hours | calendar | hours | — | F, M |
+| 6 | Events (producers also: Food, with the "We have our own kitchen" switch) | ✓ | — (step 5 covered it) | ✓ | — | M, M2 |
+| 7 | Links: link buttons (third button: Tap list / Press kit / Catalog; Mobile members can add Instagram DM and WhatsApp booking links) | ✓ | ✓ | ✓ | — | R |
+| 8 | Member discount and supplies | — | — | ✓ | — | /admin/discount |
+| 9 | Pick your theme | ✓ | ✓ | ✓ | — | K |
+
+The old separate Photos step is part of step 4; `/portal/setup/photos` goes there. Step 4 counts as done with a logo, a cover or a slide.
 
 Steps after 3 are optional. A skipped step isn't stored anywhere. Whether a step is done is worked out from whether its data is empty, so the Review checklist and the portal's Finish card can't drift from the real profile.
 
 **Each wizard step is the portal section with the same content, wrapped in step chrome.** Same component, same fields, same save. Nothing is built twice. If a portal section changes, the wizard step changes with it.
 
-After step 10 (or the last step for that type) comes **Review**: a checklist of every step, either done or empty, with a link back to each empty one. Then Preview, the publish check and "You're live".
+After the last step for that type comes **Review**: a checklist of every step, either done or empty, with a link back to each empty one. Then Preview, the publish check and "You're live".
 
 **Save & exit** before step 3 is finished: the next visit resumes the wizard. After step 3: the next visit goes to the portal, which shows a **Finish your profile** card listing the empty sections, each linking to its portal section. The card disappears once nothing is empty.
 
@@ -559,8 +565,8 @@ A member's profile can have three kinds of people. The role lives in `member_use
 | Can they… | Owner (`owner`) | Full editor (`editor`) | Photos & events editor (`media_events`) |
 | --- | --- | --- | --- |
 | Go through the setup wizard | yes | yes, if setup isn't done | never |
-| Basics & hours, Logo & cover, Links, Discount, Theme, Food (producers) | yes | yes | no, sections hidden |
-| Photos: upload, crop, reorder, tap-through links, creator upload links, approve or reject creator uploads | yes | yes | yes |
+| Basics & hours, Links, Discount, Theme, Food (producers); the logo and cover on Logo, Photos & Cover | yes | yes | no, hidden |
+| Logo, Photos & Cover's gallery and slides: upload, crop, reorder, tap-through links, creator upload links, approve or reject creator uploads | yes | yes | yes (they see only these two parts of the page) |
 | Events: add, edit, hide, set Postponed / Rescheduled / Canceled, Refresh now | yes | yes | yes |
 | Connect or disconnect the Google / Apple calendar | yes | no | no |
 | Preview | whole draft | whole draft | live page plus their Photos draft |
@@ -569,7 +575,7 @@ A member's profile can have three kinds of people. The role lives in `member_use
 | Request a type change | yes | yes | no |
 | People: invite, resend, cancel invite, remove | yes | no | no |
 
-- **Cover and logo are not part of Photos** for this purpose. They stay with the owner and full editors.
+- **Cover and logo are not part of Photos** for this purpose. They stay with the owner and full editors. Since the redesign (2 October 2026) they share one page, **Logo, Photos & Cover** (`/portal/logo-cover`; `/portal/photos` redirects there); a Photos & events editor opens it and sees only Gallery and Carousel.
 - Only the owner connects the calendar, so sync doesn't break when an editor leaves or used their own Google account.
 - A Photos & events editor never sees the wizard. If the member's setup isn't done yet, they still land on their two sections.
 - One owner per member. Changing who the owner is is a Guild admin job, from the roster. The owner can't remove themselves.

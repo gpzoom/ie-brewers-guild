@@ -25,7 +25,7 @@ describe("HelpVideoButton", () => {
       }),
     );
     expect(html).toContain("FOOD VENDORS");
-    expect(html).toContain("(1:52)");
+    expect(html).toContain("(2:04)");
   });
 });
 
