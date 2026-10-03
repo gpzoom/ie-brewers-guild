@@ -61,6 +61,7 @@ export function WelcomeStep({ shell }: { shell: PortalSetupShell }) {
           It takes about 10 minutes. Only the first three steps are needed to get started —
           everything after <strong className="font-semibold text-ink">The basics</strong> can be
           skipped and finished later.
+          <MemberGuideNote />
         </>
       }
       continueLabel="Get started"
@@ -83,7 +84,6 @@ export function WelcomeStep({ shell }: { shell: PortalSetupShell }) {
             </li>
           ))}
         </ul>
-        <MemberGuideNote />
       </section>
       <WizardInfoBox>
         Don't have something yet? Skip that step. Anything you skip, you can finish later from your

@@ -32,3 +32,18 @@ describe("Member Guide in the menu", () => {
     expect(portal).not.toContain("<MemberGuideSidebarLink />");
   });
 });
+
+describe("Member Guide on the Welcome step (owner, 2026-10-02)", () => {
+  it("the note takes the lede's font size instead of setting its own", () => {
+    const html = renderToStaticMarkup(createElement(MemberGuideNote));
+    expect(html).not.toMatch(/text-\[\d+px\]/);
+  });
+
+  it("sits in the lede, right after its first sentence, above What to have handy", () => {
+    const src = readFileSync(resolve(process.cwd(), "src/components/portal/setup/IntroSteps.tsx"), "utf-8");
+    const welcome = src.slice(src.indexOf("export function WelcomeStep"));
+    const note = welcome.indexOf("<MemberGuideNote />");
+    expect(note).toBeGreaterThan(welcome.indexOf("finished later."));
+    expect(note).toBeLessThan(welcome.indexOf("continueLabel="));
+  });
+});

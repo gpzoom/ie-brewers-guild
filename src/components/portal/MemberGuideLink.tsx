@@ -11,10 +11,13 @@ export function MemberGuideSidebarLink() {
   );
 }
 
-/** Setup step 1, under What to have handy: the step-by-step guide. */
+/**
+ * Setup step 1, in the lede right after its first sentence, at the lede's
+ * own size (owner, 2026-10-02: more prominent than a note under the list).
+ */
 export function MemberGuideNote() {
   return (
-    <p className="m-0 text-[13px] leading-[1.5] text-ink-muted">
+    <p className="m-0 mt-2">
       Want to see every step first?{" "}
       <a
         href={MEMBER_GUIDE_PATH}
