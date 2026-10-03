@@ -12,6 +12,7 @@
  * from server-only code.
  */
 import type { MemberType } from "@/lib/supabase/types";
+import { MEMBER_GUIDE_PATH } from "@/lib/member-guide";
 
 export type TransactionalEmailPayload =
   | { trigger: "creator_upload_pending"; memberId: string; assetId: string; creatorName: string | null }
@@ -230,9 +231,11 @@ export function buildEmailContent(payload: TransactionalEmailPayload, siteUrl: s
 
     case "member_invited": {
       const signInUrl = `${siteUrl}/signin?next=/portal`;
+      const guideUrl = `${siteUrl}${MEMBER_GUIDE_PATH}`;
       const text =
         `Welcome to the ${ORG_NAME}! The Guild has created a profile for your business on the ` +
-        `member directory. Sign in anytime with this email address to start filling it in:\n\n${signInUrl}`;
+        `member directory. Sign in anytime with this email address to start filling it in:\n\n${signInUrl}` +
+        `\n\nNew to the site? Here's the step-by-step Member Guide (PDF):\n\n${guideUrl}`;
       return {
         subject: `You're invited to the ${ORG_SHORT_NAME} member directory`,
         text,
@@ -240,6 +243,7 @@ export function buildEmailContent(payload: TransactionalEmailPayload, siteUrl: s
           `Welcome to the ${ORG_NAME}! The Guild has created a profile for your business on the ` +
             "member directory.",
           `Sign in anytime with this email address to start filling it in: <a href="${signInUrl}">${signInUrl}</a>`,
+          `New to the site? Here's the <a href="${guideUrl}">step-by-step Member Guide (PDF)</a>.`,
         ]),
       };
     }

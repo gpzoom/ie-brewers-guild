@@ -12,6 +12,7 @@ import {
   wizardPrimaryButtonClass,
 } from "@/components/portal/setup/WizardStep";
 import { useWizardNavigation } from "@/components/portal/setup/useWizardNavigation";
+import { MemberGuideNote } from "@/components/portal/MemberGuideLink";
 import { cn } from "@/lib/utils";
 
 /** Step 1's "What to have handy" list, per member type. */
@@ -82,6 +83,7 @@ export function WelcomeStep({ shell }: { shell: PortalSetupShell }) {
             </li>
           ))}
         </ul>
+        <MemberGuideNote />
       </section>
       <WizardInfoBox>
         Don't have something yet? Skip that step. Anything you skip, you can finish later from your

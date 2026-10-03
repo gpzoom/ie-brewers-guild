@@ -102,6 +102,6 @@ Set these on the **production** Worker, `ie-brewers-guild` (Cloudflare → Worke
 
 ## 6. After
 
-- [ ] **Owner: send the member guide PDF** (`docs/member-guide/ISC-Brewers-Guild-Member-Profile-Guide.pdf`). It now includes the livid.com watch links for both how-to videos.
+- [x] **Member guide PDF on the site** (2026-10-02): `/member-guide.pdf`, linked from the setup wizard's Welcome step, the portal sidebar ("Member Guide (PDF)") and the Member invited email. Public on purpose (sample members only), so the Guild can also send the link to prospective members. After rebuilding the guide, copy `docs/member-guide/ISC-Brewers-Guild-Member-Profile-Guide.pdf` to `public/member-guide.pdf`; a test fails until the two match.
 - [ ] **Later, owner's call: more how-to videos.** The video projects in `videos/` (events and food) can be reused for other topics (photos, hours, Links & contact) with the same look and your ElevenLabs voice.
 - [ ] **Later, owner's call:** retiring the old `/admin` editor. It stays for now, because **Edit as them** uses it.

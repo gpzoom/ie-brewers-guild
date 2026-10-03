@@ -10,6 +10,7 @@ import {
   type MemberEditingValue,
 } from "@/components/admin/MemberEditingContext";
 import { sidebarItemClass } from "@/components/shell/AppChrome";
+import { MemberGuideSidebarLink } from "@/components/portal/MemberGuideLink";
 
 /**
  * The portal's layout (plan phase 5; docs/member-profiles.md, "Routes":
@@ -92,12 +93,15 @@ function PortalLayoutInner() {
       navItems={navItems}
       topBarLabel="ISC Brewers Guild · Member Portal"
       sidebarExtra={
-        shell.membershipCount > 1 ? (
-          <Link to="/portal" search={{ switch: true }} className={sidebarItemClass(false)}>
-            <span className="md:hidden">Switch</span>
-            <span className="hidden md:inline">Switch business</span>
-          </Link>
-        ) : null
+        <>
+          <MemberGuideSidebarLink />
+          {shell.membershipCount > 1 ? (
+            <Link to="/portal" search={{ switch: true }} className={sidebarItemClass(false)}>
+              <span className="md:hidden">Switch</span>
+              <span className="hidden md:inline">Switch business</span>
+            </Link>
+          ) : null}
+        </>
       }
     >
       {/* Remounted after a discard so every editor starts again from the reloaded draft. */}

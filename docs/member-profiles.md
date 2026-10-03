@@ -431,7 +431,7 @@ Resend, called from a Worker. Supabase Auth sends the magic link; everything els
 | --- | --- | --- |
 | Contact form submitted | the sender | "Thank you for reaching out. We have received your submission." Plus, when the membership box is ticked, a line saying a Guild representative will be in touch to discuss membership. |
 | Contact form submitted | the Guild | The inquiry, flagged if it is a membership lead |
-| Member invited | the new member | Welcome and a sign-in link |
+| Member invited | the new member | Welcome, a sign-in link and a link to the Member Guide PDF |
 | Hours stale past 90 days | the member | One-click confirmation — the link itself sets the timestamp, no login |
 | Creator uploads to a gallery | the member | Something is waiting for review |
 | Super admin invites a Guild admin | the invitee | Who invited them, what a Guild admin does, and a sign-in link; the invite lasts 14 days |
@@ -486,6 +486,7 @@ The member's own profile admin, meaning the owner or an editor in `member_users`
 - **The testing period is over (27 September 2026).** The old **Member sign in** link, which landed on `/admin`, is gone. Every member sign-in now lands on `/portal`, with or without `next`; a Guild admin still lands on `/guild`. `/admin` itself still exists but is no longer a landing page; retiring it is a separate step.
 - Implement Member Portal as the existing sign-in form with a destination (`/signin?next=/portal`), not a second sign-in form. Check `next` against a short allowlist of internal paths so it can't be used as an open redirect.
 - The Guild's invite email links to `/portal` too.
+- **Member Guide (2 October 2026).** The guide PDF is served at `/member-guide.pdf`, a copy of `docs/member-guide/ISC-Brewers-Guild-Member-Profile-Guide.pdf` (a test fails until the two match). Three links point to it: the invite email, a note under step 1's "What to have handy", and **Member Guide (PDF)** in the portal sidebar (**Guide** on a phone). They open in a new tab. The PDF is public on purpose: it shows only sample members, and the Guild can send it to someone who hasn't joined yet.
 
 ### Wizard or portal: one rule
 

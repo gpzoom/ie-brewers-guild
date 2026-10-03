@@ -99,6 +99,15 @@ describe("buildEmailContent: member_invited", () => {
     expect(content.text).not.toContain(SITE_URL);
   });
 
+  it("links to the Member Guide PDF on the same site", () => {
+    const content = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" });
+    expect(content.text).toContain(`${SITE_URL}/member-guide.pdf`);
+    expect(content.html).toContain(`href="${SITE_URL}/member-guide.pdf"`);
+    const staging = "https://ie-brewers-guild-staging.boblelle77.workers.dev";
+    const onStaging = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" }, staging);
+    expect(onStaging.text).toContain(`${staging}/member-guide.pdf`);
+  });
+
   it("uses the Guild's current name, never the outdated IE Brewers Guild", () => {
     const content = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" });
     expect(content.text).toContain(ORG_NAME);
