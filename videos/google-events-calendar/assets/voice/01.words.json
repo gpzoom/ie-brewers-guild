@@ -1,0 +1,152 @@
+[
+  {
+    "id": "w0",
+    "text": "Want",
+    "start": 0.0,
+    "end": 0.244
+  },
+  {
+    "id": "w1",
+    "text": "your",
+    "start": 0.279,
+    "end": 0.395
+  },
+  {
+    "id": "w2",
+    "text": "events",
+    "start": 0.441,
+    "end": 0.731
+  },
+  {
+    "id": "w3",
+    "text": "to",
+    "start": 0.766,
+    "end": 0.836
+  },
+  {
+    "id": "w4",
+    "text": "show",
+    "start": 0.906,
+    "end": 1.103
+  },
+  {
+    "id": "w5",
+    "text": "up",
+    "start": 1.161,
+    "end": 1.265
+  },
+  {
+    "id": "w6",
+    "text": "on",
+    "start": 1.324,
+    "end": 1.405
+  },
+  {
+    "id": "w7",
+    "text": "the",
+    "start": 1.44,
+    "end": 1.509
+  },
+  {
+    "id": "w8",
+    "text": "Guild",
+    "start": 1.556,
+    "end": 1.776
+  },
+  {
+    "id": "w9",
+    "text": "homepage?",
+    "start": 1.834,
+    "end": 2.531
+  },
+  {
+    "id": "w10",
+    "text": "Here's",
+    "start": 2.856,
+    "end": 3.123
+  },
+  {
+    "id": "w11",
+    "text": "how",
+    "start": 3.17,
+    "end": 3.262
+  },
+  {
+    "id": "w12",
+    "text": "to",
+    "start": 3.309,
+    "end": 3.355
+  },
+  {
+    "id": "w13",
+    "text": "set",
+    "start": 3.413,
+    "end": 3.587
+  },
+  {
+    "id": "w14",
+    "text": "it",
+    "start": 3.634,
+    "end": 3.692
+  },
+  {
+    "id": "w15",
+    "text": "up",
+    "start": 3.738,
+    "end": 3.831
+  },
+  {
+    "id": "w16",
+    "text": "with",
+    "start": 3.878,
+    "end": 4.005
+  },
+  {
+    "id": "w17",
+    "text": "Google",
+    "start": 4.075,
+    "end": 4.389
+  },
+  {
+    "id": "w18",
+    "text": "Calendar",
+    "start": 4.423,
+    "end": 4.934
+  },
+  {
+    "id": "w19",
+    "text": "and",
+    "start": 5.108,
+    "end": 5.317
+  },
+  {
+    "id": "w20",
+    "text": "have",
+    "start": 5.387,
+    "end": 5.55
+  },
+  {
+    "id": "w21",
+    "text": "it",
+    "start": 5.573,
+    "end": 5.631
+  },
+  {
+    "id": "w22",
+    "text": "run",
+    "start": 5.689,
+    "end": 5.851
+  },
+  {
+    "id": "w23",
+    "text": "on",
+    "start": 5.909,
+    "end": 6.002
+  },
+  {
+    "id": "w24",
+    "text": "autopilot.",
+    "start": 6.084,
+    "end": 7.105
+  }
+]

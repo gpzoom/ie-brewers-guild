@@ -1,13 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { Instagram, Facebook, Menu, X } from "lucide-react";
 import { useState } from "react";
-import logo from "@/assets/logo.jpg";
+import logo from "@/assets/logo.svg";
 
 const nav = [
   { to: "/", label: "Home" },
   { to: "/about", label: "About" },
   { to: "/members", label: "Members" },
-  { to: "/events", label: "Events" },
   { to: "/news", label: "News" },
   { to: "/contact", label: "Contact" },
 ] as const;
@@ -15,11 +14,11 @@ const nav = [
 export function Header() {
   const [open, setOpen] = useState(false);
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
+    <header className="theme-site sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 md:px-6">
         <Link to="/" className="flex items-center gap-2 font-display text-lg tracking-wider">
-          <img src={logo} alt="IE Brewers Guild" className="h-9 w-9 rounded-sm object-contain" />
-          <span>IE Brewers Guild</span>
+          <img src={logo} alt="Inland Southern California Brewers Guild" className="h-14 w-14 rounded-sm object-contain" />
+          <span>ISC Brewers Guild</span>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">

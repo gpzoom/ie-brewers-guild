@@ -1,0 +1,904 @@
+import { describe, expect, it } from "vitest";
+import { readPngHeight, validateUploadedImage } from "./validate-file";
+
+const PNG_1X1 = new Uint8Array([
+  0x89,
+  0x50,
+  0x4e,
+  0x47,
+  0x0d,
+  0x0a,
+  0x1a,
+  0x0a,
+  0x00,
+  0x00,
+  0x00,
+  0x0d,
+  0x49,
+  0x48,
+  0x44,
+  0x52, // length=13, "IHDR"
+  0x00,
+  0x00,
+  0x00,
+  0x01, // width = 1
+  0x00,
+  0x00,
+  0x01,
+  0x90, // height = 400
+  0x08,
+  0x06,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00, // CRC, unchecked
+]);
+
+const JPEG_MAGIC = new Uint8Array([
+  0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00,
+]);
+
+// A real, complete, decodable JPEG (SOI, APP0/JFIF, DQT, minimal SOF0, DHT,
+// SOS, one scan byte, EOI) -- not just a magic-byte prefix. Needed for the
+// "real JPEG rejected for the logo path" tests, since a rejection driven by
+// something *other* than a genuine, fully-signature-matched JPEG wouldn't
+// actually prove the case the spec cares about.
+const REAL_JPEG = new Uint8Array([
+  0xff,
+  0xd8, // SOI
+  0xff,
+  0xe0,
+  0x00,
+  0x10,
+  0x4a,
+  0x46,
+  0x49,
+  0x46,
+  0x00,
+  0x01,
+  0x01,
+  0x00,
+  0x00,
+  0x01,
+  0x00,
+  0x01,
+  0x00,
+  0x00, // APP0/JFIF
+  0xff,
+  0xdb,
+  0x00,
+  0x04,
+  0x00,
+  0x01, // DQT (minimal, malformed table contents, irrelevant to signature detection)
+  0xff,
+  0xda,
+  0x00,
+  0x02, // SOS (no components, irrelevant to signature detection)
+  0x00, // one scan byte
+  0xff,
+  0xd9, // EOI
+]);
+
+const GIF_MAGIC = new TextEncoder().encode("GIF89a").slice(0);
+
+describe("validateUploadedImage", () => {
+  it("accepts a real PNG by its magic bytes", async () => {
+    const result = await validateUploadedImage({
+      bytes: PNG_1X1,
+      claimedMimeType: "image/png",
+      allowSvg: true,
+    });
+    expect(result).toEqual({ valid: true, detectedMimeType: "image/png" });
+  });
+
+  it("rejects a JPEG renamed to claim it's a PNG, by checking the real signature", async () => {
+    const result = await validateUploadedImage({
+      bytes: JPEG_MAGIC,
+      claimedMimeType: "image/png",
+      allowSvg: true,
+    });
+    expect(result.valid).toBe(false);
+  });
+
+  it("accepts a real SVG by content-sniffing, since it has no magic-byte signature", async () => {
+    const svg = new TextEncoder().encode(
+      '<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"></svg>',
+    );
+    const result = await validateUploadedImage({
+      bytes: svg,
+      claimedMimeType: "image/svg+xml",
+      allowSvg: true,
+    });
+    expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+  });
+
+  it("rejects an SVG containing a <script> tag", async () => {
+    const svg = new TextEncoder().encode(
+      '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
+    );
+    const result = await validateUploadedImage({
+      bytes: svg,
+      claimedMimeType: "image/svg+xml",
+      allowSvg: true,
+    });
+    expect(result.valid).toBe(false);
+  });
+
+  it("rejects an oversized file", async () => {
+    const big = new Uint8Array(10);
+    const result = await validateUploadedImage({
+      bytes: big,
+      claimedMimeType: "image/png",
+      allowSvg: true,
+      maxBytes: 5,
+    });
+    expect(result.valid).toBe(false);
+  });
+
+  it("rejects SVG when allowSvg is false", async () => {
+    const svg = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"></svg>');
+    const result = await validateUploadedImage({
+      bytes: svg,
+      claimedMimeType: "image/svg+xml",
+      allowSvg: false,
+    });
+    expect(result.valid).toBe(false);
+  });
+
+  // --- Adversarial / contract coverage added beyond the brief's happy-path list ---
+  // (Per the coordinator: Task 11 shipped a fail-open denylist that this repo had to
+  // redesign twice under review. Same rigor here: prove the reject-vs-accept boundary
+  // by construction, don't just exercise the happy paths.)
+
+  describe("logo context (allowSvg: true) must reject a real JPEG -- spec: PNG or SVG only", () => {
+    it("rejects a genuine, fully-formed JPEG even when claimedMimeType correctly says image/jpeg", async () => {
+      // This is the exact case docs/member-profiles.md:116 describes: "PNG or SVG only
+      // ... Reject JPGs at upload with a message that says why". A real JPEG must be
+      // rejected on the logo path regardless of what it honestly claims to be -- the
+      // brief's own literal algorithm (RASTER_SIGNATURE_MIME_TYPES = {jpeg, png}
+      // unconditionally) would have let this through, silently breaking Task 17's
+      // planned reject-JPEG UX and the spec requirement it exists to satisfy.
+      const result = await validateUploadedImage({
+        bytes: REAL_JPEG,
+        claimedMimeType: "image/jpeg",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects a genuine JPEG mislabeled as image/png too (claimed type never grants an exemption)", async () => {
+      const result = await validateUploadedImage({
+        bytes: REAL_JPEG,
+        claimedMimeType: "image/png",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejection reason mentions PNG or SVG -- logo.server.ts (Task 17) branches its user-facing copy on this exact substring", async () => {
+      const result = await validateUploadedImage({
+        bytes: REAL_JPEG,
+        claimedMimeType: "image/jpeg",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+      if (!result.valid) {
+        expect(result.reason).toContain("PNG or SVG");
+      }
+    });
+  });
+
+  describe("gallery/creator-upload context (allowSvg: false) still accepts real JPEG", () => {
+    it("accepts a genuine JPEG when SVG is disallowed (general photo upload, not the logo path)", async () => {
+      const result = await validateUploadedImage({
+        bytes: REAL_JPEG,
+        claimedMimeType: "image/jpeg",
+        allowSvg: false,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/jpeg" });
+    });
+  });
+
+  it("ignores claimedMimeType entirely and trusts only the real bytes -- a real PNG mislabeled as image/jpeg is still accepted as PNG", async () => {
+    const result = await validateUploadedImage({
+      bytes: PNG_1X1,
+      claimedMimeType: "image/jpeg",
+      allowSvg: false,
+    });
+    expect(result).toEqual({ valid: true, detectedMimeType: "image/png" });
+  });
+
+  it("rejects a real GIF (correct signature, unsupported format) rather than misreporting it as invalid-PNG", async () => {
+    const result = await validateUploadedImage({
+      bytes: GIF_MAGIC,
+      claimedMimeType: "image/png",
+      allowSvg: false,
+    });
+    expect(result.valid).toBe(false);
+  });
+
+  it("rejects an empty file with a clear reason, rather than throwing or misdetecting", async () => {
+    const result = await validateUploadedImage({
+      bytes: new Uint8Array(0),
+      claimedMimeType: "image/png",
+      allowSvg: true,
+    });
+    expect(result).toEqual({ valid: false, reason: expect.stringContaining("empty") });
+  });
+
+  describe("SVG XSS vectors beyond a literal <script> tag", () => {
+    it("rejects an SVG using an onload= event-handler attribute (no <script> tag needed)", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects an SVG using an onerror= handler on a nested element", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><image href="x" onerror="alert(1)"/></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects an SVG containing a javascript: URI", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a href="javascript:alert(1)"><text>click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects an SVG containing a <foreignObject> (can embed arbitrary HTML/scripts)", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><foreignObject><body xmlns="http://www.w3.org/1999/xhtml">hi</body></foreignObject></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects an SVG containing an <iframe>", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><iframe src="https://evil.example"></iframe></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects an SVG declaring an external/internal DTD entity (XXE / entity-expansion vector)", async () => {
+      const svg = new TextEncoder().encode(
+        '<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><svg xmlns="http://www.w3.org/2000/svg"><text>&xxe;</text></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("still accepts a clean SVG with a legitimate style attribute (proves the denylist isn't so broad it over-rejects)", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" style="fill:blue" /></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+  });
+
+  // --- Fix round: reviewer-confirmed bypasses of the SVG denylist above, plus
+  // two false-positive/dead-code fixes. Each test below fails against the
+  // pre-fix denylist (namespace-agnostic element matching, entity decoding,
+  // SMIL attributeName targeting, and href scheme allowlisting were all
+  // absent) and passes against the fix.
+
+  describe("SVG denylist bypasses (fix round)", () => {
+    it("rejects a <script> element hidden behind a non-default namespace prefix bound to the SVG namespace", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:s="http://www.w3.org/2000/svg"><s:script>alert(1)</s:script></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects a <foreignObject> element hidden behind a non-default namespace prefix", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:x="http://www.w3.org/2000/svg"><x:foreignObject><body xmlns="http://www.w3.org/1999/xhtml">hi</body></x:foreignObject></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects a javascript: URI hidden behind numeric character-reference encoding in xlink:href", async () => {
+      // &#106; is 'j' -- decodes to "javascript:alert(1)" before the pattern runs.
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><a xlink:href="&#106;avascript:alert(1)"><text>click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects a javascript: URI hidden behind an encoded colon in href", async () => {
+      // &#58; is ':' -- decodes to "javascript:alert(1)" before the pattern runs.
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a href="javascript&#58;alert(1)"><text>click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects a SMIL <set> that targets an event-handler attribute via attributeName, not literal on*= text", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect><set attributeName="onload" to="alert(1)"/></rect></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+  });
+
+  describe("SVG false-positive fixes (fix round)", () => {
+    it("accepts a real Illustrator/Inkscape-shaped export with a generator comment between the XML prologue and the root element", async () => {
+      const svg = new TextEncoder().encode(
+        '<?xml version="1.0" encoding="UTF-8"?>\n' +
+          "<!-- Generator: Adobe Illustrator 24.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n" +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+
+    it("accepts an SVG whose <title> merely contains the word 'javascript:' as ordinary prose (not an href value)", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><title>Careful with javascript: in URLs</title><rect width="1" height="1"/></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+
+    it("accepts a DOCTYPE with an internal subset that declares no ENTITY (proves the sniffer tolerates the syntax, not just rejects it wholesale)", async () => {
+      const svg = new TextEncoder().encode(
+        '<?xml version="1.0"?><!DOCTYPE svg [<!ELEMENT svg ANY>]><svg xmlns="http://www.w3.org/2000/svg"></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+  });
+
+  // --- Fix round 2: reviewer-confirmed regressions in the fix-round-1 code
+  // (a ReDoS in the comment-tolerance regex, an unhandled RangeError in the
+  // entity decoder) plus one more real bypass (SMIL indirectly targeting
+  // href/xlink:href) left open after round 1.
+
+  describe("SVG comment-tolerance ReDoS (fix round 2)", () => {
+    it("does not hang on a long run of empty comments that never resolves to a real <svg> root -- linear time, not exponential", async () => {
+      // The pre-fix-round-2 code used one interleaved
+      // `(?:\s|<!--...-->)*` regex repeated across several optional
+      // sections; when the overall match failed, the engine could
+      // partition a run of comments exponentially many ways before giving
+      // up. Review measured ~186 bytes of this already taking 357ms and
+      // roughly doubling per added comment unit. This payload is bigger
+      // (700 bytes) and deliberately never reaches a real `<svg>` tag, so
+      // the old code would have to exhaust the full ambiguous search
+      // before failing -- the worst case for that pattern.
+      const payload = new TextEncoder().encode("<!---->".repeat(100));
+      const start = performance.now();
+      const result = await validateUploadedImage({
+        bytes: payload,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      const elapsedMs = performance.now() - start;
+      expect(result.valid).toBe(false);
+      // Generous bound (the manual scanner should be sub-millisecond) --
+      // this is here to catch a reintroduced exponential-time regex, not
+      // to pin an exact number. The pre-fix code measurably took hundreds
+      // of milliseconds on a payload a quarter this size.
+      expect(elapsedMs).toBeLessThan(50);
+    });
+
+    it("still accepts a real Illustrator/Inkscape-shaped export with a generator comment (manual scanner didn't regress the round-1 fix)", async () => {
+      const svg = new TextEncoder().encode(
+        '<?xml version="1.0" encoding="UTF-8"?>\n' +
+          "<!-- Generator: Adobe Illustrator 24.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->\n" +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+  });
+
+  describe("entity-decoding RangeError (fix round 2)", () => {
+    it("does not throw for an out-of-range decimal character reference -- rejects cleanly instead", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a href="&#99999999;"><text>click</text></a></svg>',
+      );
+      await expect(
+        validateUploadedImage({ bytes: svg, claimedMimeType: "image/svg+xml", allowSvg: true }),
+      ).resolves.toMatchObject({ valid: false });
+    });
+
+    it("does not throw for an out-of-range hex character reference -- rejects cleanly instead", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a href="&#x7FFFFFFF;"><text>click</text></a></svg>',
+      );
+      await expect(
+        validateUploadedImage({ bytes: svg, claimedMimeType: "image/svg+xml", allowSvg: true }),
+      ).resolves.toMatchObject({ valid: false });
+    });
+  });
+
+  describe("SMIL indirect href/xlink:href targeting (fix round 2)", () => {
+    it('rejects <animate attributeName="xlink:href" values="javascript:..."> -- the exact bypass payload from review', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+          '<a><animate attributeName="xlink:href" values="javascript:alert(1)" begin="0s" dur="1s" repeatCount="indefinite"/><text x="10" y="20">click me</text></a>' +
+          "</svg>",
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it('rejects the same bypass using attributeName="href" (no xlink prefix) and to= instead of values=', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a><set attributeName="href" to="javascript:alert(1)"/><text>click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("still accepts <animate> targeting a harmless attribute (proves the fix doesn't blanket-reject SMIL animation)", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"><animate attributeName="opacity" values="0;1" dur="1s"/></rect></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+
+    it('still accepts <set attributeName="href" to="#fragment"> targeting a safe same-document fragment', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a><set attributeName="href" to="#target"/><text>click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+  });
+
+  // --- Fix round 3: values= is a semicolon-separated keyframe LIST, not a
+  // single value -- a safe first keyframe followed by an unsafe later one
+  // slipped through round 2's whole-string check. Also closes the by=
+  // keyframe attribute, which round 2 didn't examine at all.
+
+  describe("SMIL values= keyframe-list bypass (fix round 3)", () => {
+    it('rejects attributeName="href" values="#a;javascript:alert(1)" -- unsafe SECOND keyframe, safe first one', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a>' +
+          '<animate attributeName="href" values="#a;javascript:alert(1)" dur="2s" repeatCount="indefinite"/>' +
+          '<text x="10" y="20">click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it('rejects attributeName="xlink:href" values="#a;javascript:alert(1)" -- same bypass, xlink-prefixed target', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><a>' +
+          '<animate attributeName="xlink:href" values="#a;javascript:alert(1)" dur="2s" repeatCount="indefinite"/>' +
+          '<text x="10" y="20">click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects the same bypass with whitespace padding around the semicolon-separated keyframes", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a>' +
+          '<animate attributeName="href" values=" #a ; javascript:alert(1) " dur="2s" repeatCount="indefinite"/>' +
+          '<text x="10" y="20">click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it('rejects attributeName="href" by="javascript:alert(1)" -- the by= keyframe attribute, previously unexamined', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a><animate attributeName="href" by="javascript:alert(1)"/><text>click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it('still accepts attributeName="opacity" values="0;1" -- unrelated keyframe list on a harmless attribute (existing negative control, must keep passing)', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"><animate attributeName="opacity" values="0;1" dur="1s"/></rect></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+
+    it('still accepts attributeName="href" values="#a;#b" -- every keyframe safe, proves this isn\'t a blanket SMIL-values ban', async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a><animate attributeName="href" values="#a;#b" dur="2s"/><text>click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+  });
+
+  // --- Fix round 4: the SMIL check decoded the WHOLE document BEFORE
+  // tokenizing start tags, so an entity-encoded `">` in an unrelated
+  // "carrier" attribute decoded into characters the quote-aware tag scanner
+  // read as ending the tag early -- hiding everything after it on the SAME
+  // element, including the `values=` carrying the payload. The real markup
+  // never contains a literal `">` anywhere; it only appears after decoding,
+  // which is why a real XML parser (tokenize first, decode each attribute
+  // value second) is never fooled by it. The fix inverts the order for this
+  // one boundary-dependent check.
+
+  describe("carrier-attribute entity bypass of tag boundaries (fix round 4)", () => {
+    const wrap = (animateTag: string) =>
+      new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a>\n' +
+          animateTag +
+          "\n<text>click</text></a></svg>",
+      );
+
+    it('rejects a named-entity carrier attribute (x="&quot;&gt;") that decodes into a fake early tag end', async () => {
+      const result = await validateUploadedImage({
+        bytes: wrap(
+          '<animate attributeName="href" x="&quot;&gt;" values="javascript:alert(1)" dur="2s"/>',
+        ),
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it('rejects the decimal-entity spelling of the same carrier (x="&#34;&#62;")', async () => {
+      const result = await validateUploadedImage({
+        bytes: wrap(
+          '<animate attributeName="href" x="&#34;&#62;" values="javascript:alert(1)" dur="2s"/>',
+        ),
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it('rejects the hex-entity spelling of the same carrier (x="&#x22;&#x3e;")', async () => {
+      const result = await validateUploadedImage({
+        bytes: wrap(
+          '<animate attributeName="href" x="&#x22;&#x3e;" values="javascript:alert(1)" dur="2s"/>',
+        ),
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects the same carrier trick with the attributes in reverse order (values= before attributeName=)", async () => {
+      const result = await validateUploadedImage({
+        bytes: wrap(
+          '<animate values="javascript:alert(1)" x="&quot;&gt;" attributeName="href" dur="2s"/>',
+        ),
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects the carrier trick combined with the round-3 keyframe-list split (safe first keyframe, unsafe second)", async () => {
+      const result = await validateUploadedImage({
+        bytes: wrap(
+          '<animate attributeName="href" x="&quot;&gt;" values="#a;javascript:alert(1)" dur="2s"/>',
+        ),
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects an entity-encoded single-quote carrier on a single-quoted SMIL value attribute", async () => {
+      const result = await validateUploadedImage({
+        bytes: wrap(
+          "<animate attributeName='href' x='&apos;&gt;' values='javascript:alert(1)' dur='2s'/>",
+        ),
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it('rejects an entity-encoded attributeName target (attributeName="&#104;ref") -- per-value decoding still applies after tokenizing', async () => {
+      // Tokenizing raw must not mean the check now reads raw VALUES: the
+      // attributeName value is decoded once its boundaries are known, so an
+      // encoded spelling of "href" is still recognized as targeting href.
+      const result = await validateUploadedImage({
+        bytes: wrap('<animate attributeName="&#104;ref" values="javascript:alert(1)" dur="2s"/>'),
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it('rejects an entity-encoded payload value (values="&#106;avascript:alert(1)") on a raw-tokenized tag', async () => {
+      const result = await validateUploadedImage({
+        bytes: wrap('<animate attributeName="href" values="&#106;avascript:alert(1)" dur="2s"/>'),
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    // --- Negative controls: ordinary, harmless entity use must still validate.
+    // Without these, "reject anything containing &quot;/&gt;" would pass every
+    // test above while making the validator useless for real logo exports.
+
+    it("still accepts a <title> containing &quot; as ordinary escaped prose", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><title>Quote: &quot;hello&quot;</title><rect width="1" height="1"/></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+
+    it("still accepts harmless attribute values that use &gt;, &quot; and &amp; entities", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" aria-label="a &gt; b"><rect width="1" height="1" aria-label="x &amp; y" data-note="he said &quot;hi&quot;"/></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+
+    it("still accepts a SAFE <animate> that happens to carry an entity-heavy unrelated attribute", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a>' +
+          '<animate attributeName="href" aria-label="a &quot;&gt; b" values="#a;#b" dur="2s"/>' +
+          "<text>click</text></a></svg>",
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+
+    it("stays linear on a large payload of entity-heavy carrier attributes (no ReDoS/quadratic blowup in the new tokenize-then-decode path)", async () => {
+      // 1,000 <animate> tags, each with two carrier attributes made of 20
+      // repeats of `&quot;&gt;` -- ~465KB, several times a realistic logo,
+      // and the exact shape the fix's new per-attribute decode path walks.
+      const carrier = "&quot;&gt;".repeat(20);
+      const body = Array.from(
+        { length: 1000 },
+        () =>
+          `<animate attributeName="href" x="${carrier}" y="${carrier}" values="#a;#b" dur="2s"/>`,
+      ).join("");
+      const bytes = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a>' + body + "<text>click</text></a></svg>",
+      );
+      const start = performance.now();
+      const result = await validateUploadedImage({
+        bytes,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      const elapsedMs = performance.now() - start;
+      expect(result.valid).toBe(true);
+      // Generous bound to catch a reintroduced super-linear path, not to pin
+      // a number: measured ~9ms here (vs ~5.5ms for the pre-fix code on the
+      // identical payload -- same linear order, no blowup).
+      expect(elapsedMs).toBeLessThan(500);
+    });
+  });
+
+  // --- Fix round 4, second instance of the SAME root cause, found by applying
+  // the same reasoning to the other checks: hasUnsafeHrefValue looks like a
+  // plain whole-document substring scan, but its `"([^"]*)"|'([^']*)'` capture
+  // makes it implicitly attribute-VALUE-boundary dependent, and decode-first
+  // desynchronizes those boundaries too. A carrier attribute that decodes into
+  // a stray `"` lets one regex match open at a fake `href="#...` and swallow a
+  // real, single-quoted javascript: href inside its own value -- which passes
+  // the scheme allowlist as a same-document fragment and advances past the
+  // payload without ever examining it.
+
+  describe("carrier-attribute entity desync of the href scheme allowlist (fix round 4)", () => {
+    it("rejects a javascript: href swallowed by a decoded fake #fragment span from a carrier attribute", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg">' +
+          `<a x='href=&quot;#a' href='javascript:alert(1)' y='b"'><text>click</text></a>` +
+          "</svg>",
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects the same payload without the carrier attribute (control: this one was already rejected)", async () => {
+      const svg = new TextEncoder().encode(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\"><a href='javascript:alert(1)'><text>click</text></a></svg>",
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("rejects an unquoted href value, which the quoted-only regex never matched at all", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><a href=javascript:alert(1)><text>click</text></a></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result.valid).toBe(false);
+    });
+
+    it("still accepts the ordinary same-document fragment references real logo exports rely on (<use xlink:href='#id'>)", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+          '<defs><rect id="r" width="10" height="10"/></defs>' +
+          '<use xlink:href="#r" x="0"/><use href="#r" x="20"/>' +
+          "</svg>",
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+
+    it("still accepts a fragment reference whose value uses entities harmlessly", async () => {
+      const svg = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><defs><rect id="r" width="1" height="1"/></defs>' +
+          '<use href="&#35;r" aria-label="a &gt; b"/></svg>',
+      );
+      const result = await validateUploadedImage({
+        bytes: svg,
+        claimedMimeType: "image/svg+xml",
+        allowSvg: true,
+      });
+      expect(result).toEqual({ valid: true, detectedMimeType: "image/svg+xml" });
+    });
+  });
+});
+
+describe("readPngHeight", () => {
+  it("reads the height from IHDR", () => {
+    expect(readPngHeight(PNG_1X1)).toBe(400);
+  });
+
+  it("returns null for a non-PNG buffer", () => {
+    expect(readPngHeight(JPEG_MAGIC)).toBeNull();
+  });
+
+  it("returns null for a buffer too short to contain an IHDR chunk", () => {
+    expect(
+      readPngHeight(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
+    ).toBeNull();
+  });
+
+  it("returns null for an empty buffer", () => {
+    expect(readPngHeight(new Uint8Array(0))).toBeNull();
+  });
+});

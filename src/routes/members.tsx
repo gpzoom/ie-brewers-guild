@@ -1,9 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { PageHero } from "@/components/site/PageHero";
 import { SectionHeader } from "@/components/site/SectionHeader";
 import { MembersMap } from "@/components/site/MembersMap";
-import { members, type Location } from "@/data/site";
+import { getDirectoryMembers } from "@/lib/members/directory.server";
+import { directionsUrl, type DirectoryLocation } from "@/lib/members/directory";
+import { validateDirectorySearch } from "@/lib/directory/search-params";
 import { Beer, ExternalLink, Facebook, Instagram, MapPin, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,12 +19,17 @@ import {
 import heroImg from "@/assets/pillar-events.jpg";
 
 export const Route = createFileRoute("/members")({
+  validateSearch: validateDirectorySearch,
+  // Every PUBLISHED member, straight from the database (retired the
+  // hard-coded list in src/data/site.ts): publishing adds a card,
+  // "Move back to draft" removes it.
+  loader: () => getDirectoryMembers(),
   head: () => ({
     meta: [
-      { title: "Member Breweries — IE Brewers Guild" },
-      { name: "description", content: "Discover the independent craft breweries that make up the IE Brewers Guild." },
-      { property: "og:title", content: "Member Breweries" },
-      { property: "og:description", content: "Independent breweries in the guild." },
+      { title: "Member Directory — Inland Southern California Brewers Guild" },
+      { name: "description", content: "Discover the independent producers, mobile members, and Allied Members that make up the Inland Southern California Brewers Guild." },
+      { property: "og:title", content: "Member Directory" },
+      { property: "og:description", content: "The independent producers, mobile members, and Allied Members behind the guild." },
     ],
   }),
   component: MembersPage,
@@ -39,19 +46,27 @@ function UntappdIcon({ className }: { className?: string }) {
 
 type SelectedLocation = {
   brewery: string;
-  website: string;
-  location: Location;
+  website: string | null;
+  location: DirectoryLocation;
 };
 
 function MembersPage() {
+  const members = Route.useLoaderData();
   const [selected, setSelected] = useState<SelectedLocation | null>(null);
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/members" });
+
+  const initialView =
+    search.mapLat !== undefined && search.mapLng !== undefined && search.mapZoom !== undefined
+      ? { lat: search.mapLat, lng: search.mapLng, zoom: search.mapZoom }
+      : undefined;
 
   return (
     <>
       <PageHero
         image={heroImg}
         eyebrow="Our members"
-        title="The breweries behind the guild."
+        title="The independent producers, mobile members, and Allied Members behind the guild."
         subtitle="Every member is independently owned and proud of it."
         minHeight="min-h-[50vh]"
       />
@@ -59,12 +74,29 @@ function MembersPage() {
       <section className="mx-auto max-w-7xl px-4 pt-20 md:px-6">
         <SectionHeader
           eyebrow="Find a member"
-          title="Breweries on the map."
+          title="Members on the map."
           subtitle="Click any pin for the address, website, and driving directions."
           align="center"
         />
         <div className="mt-10">
-          <MembersMap members={members} />
+          <MembersMap
+            members={members}
+            linkSearch={search}
+            initialView={initialView}
+            onViewChange={(view) =>
+              navigate({
+                search: (prev) => ({ ...prev, mapLat: view.lat, mapLng: view.lng, mapZoom: view.zoom }),
+                replace: true,
+                // This navigate call is pure URL bookkeeping (persisting the
+                // map's pan/zoom so it survives a reload or a shared link) --
+                // not a real page transition. Without resetScroll: false, the
+                // router's global scrollRestoration: true (router.tsx) treats
+                // every debounced camera-change as a new location and jumps
+                // the page back to the top mid-drag.
+                resetScroll: false,
+              })
+            }
+          />
         </div>
       </section>
 
@@ -147,14 +179,30 @@ function MembersPage() {
                 ))}
               </p>
 
-              <a
-                href={m.website}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-semibold uppercase tracking-wider text-foreground hover:text-primary"
+              <Link
+                to="/members/$slug"
+                // The card's one "View profile" link always lands on the
+                // FIRST location's real profile for a multi-location
+                // business (per product decision) -- the profile page's
+                // own "Next location" link is how a visitor reaches the
+                // others from there.
+                params={{ slug: m.locations[0].slug }}
+                search={search}
+                className="mt-2 inline-flex min-h-11 items-center gap-1 text-sm font-semibold uppercase tracking-wider text-primary hover:underline"
               >
-                Visit <ExternalLink className="h-4 w-4" />
-              </a>
+                View profile
+              </Link>
+
+              {m.website && (
+                <a
+                  href={m.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-semibold uppercase tracking-wider text-foreground hover:text-primary"
+                >
+                  Visit <ExternalLink className="h-4 w-4" />
+                </a>
+              )}
             </article>
           ))}
         </div>
@@ -173,18 +221,20 @@ function MembersPage() {
               <DialogFooter className="gap-2 sm:gap-2">
                 <Button asChild variant="outline">
                   <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${selected.location.lat},${selected.location.lng}`}
+                    href={directionsUrl(selected.location)}
                     target="_blank"
                     rel="noreferrer"
                   >
                     <Navigation className="h-4 w-4" /> Directions
                   </a>
                 </Button>
-                <Button asChild>
-                  <a href={selected.website} target="_blank" rel="noreferrer">
-                    <ExternalLink className="h-4 w-4" /> Visit website
-                  </a>
-                </Button>
+                {selected.website && (
+                  <Button asChild>
+                    <a href={selected.website} target="_blank" rel="noreferrer">
+                      <ExternalLink className="h-4 w-4" /> Visit website
+                    </a>
+                  </Button>
+                )}
               </DialogFooter>
             </>
           )}

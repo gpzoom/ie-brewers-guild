@@ -1,114 +1,45 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/site/PageHero";
-import { SectionHeader } from "@/components/site/SectionHeader";
-import { ArrowRight, Calendar, MapPin } from "lucide-react";
+import { MemberEventsCarousel } from "@/components/home/MemberEventsCarousel";
+import { getHomepageData } from "@/lib/home/homepage.server";
 import heroImg from "@/assets/hero-home.jpg";
-import advocacyImg from "@/assets/hero-news.jpg";
-import educationImg from "@/assets/pillar-education.jpg";
-import eventsImg from "@/assets/pillar-events.jpg";
-const featuredImg = "/events/frontier-beer-fest.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "IE Brewers Guild — Home" },
+      { title: "Inland Southern California Brewers Guild — Home" },
       { name: "description", content: "The home of independent craft breweries. Advocacy, education, and events that strengthen our local brewing community." },
-      { property: "og:title", content: "IE Brewers Guild — Home" },
+      { property: "og:title", content: "Inland Southern California Brewers Guild — Home" },
       { property: "og:description", content: "The home of independent craft breweries." },
       { property: "og:image", content: heroImg },
       { property: "twitter:image", content: heroImg },
     ],
   }),
+  loader: () => getHomepageData(),
   component: HomePage,
 });
 
-const pillars = [
-  {
-    title: "Advocacy",
-    image: advocacyImg,
-    body: "We support independent brewers by advocating at the local, state, and federal level — partnering with like-minded organizations along the way.",
-    href: "/about",
-  },
-  {
-    title: "Education",
-    image: educationImg,
-    body: "Educating the community about craft brewing and offering opportunities for industry pros is a pillar of our organization.",
-    href: "/about",
-  },
-  {
-    title: "Events",
-    image: eventsImg,
-    body: "Producing local events with our member breweries gives us the chance to engage with the people who make this community special.",
-    href: "/events",
-  },
-] as const;
-
 function HomePage() {
+  const { cards, guildEvent, dwellSeconds, heroImageUrl } = Route.useLoaderData();
   return (
     <>
+      {/* Half its old height (owner, 2026-09-28); the image is the one the
+          super admin uploaded on Settings, or the built-in one. */}
       <PageHero
-        image={heroImg}
+        image={heroImageUrl ?? heroImg}
         title="Welcome to the home of independent craft breweries."
-        subtitle="The IE Brewers Guild promotes and protects local independently-owned breweries and advocates for the strengthening of the craft beer industry."
-        minHeight="min-h-[85vh]"
+        subtitle="The Inland Southern California Brewers Guild promotes and protects local independently-owned breweries and advocates for the strengthening of the craft beer industry."
+        minHeight="min-h-[42vh]"
+        paddingY="py-10 md:py-12"
       >
         <Button asChild size="lg"><Link to="/members">Meet our members</Link></Button>
-        <Button asChild size="lg" variant="outline"><Link to="/events">Upcoming events</Link></Button>
+        <Button asChild size="lg" variant="outline"><a href="#coming-up">Upcoming events</a></Button>
       </PageHero>
 
-      {/* Pillars */}
-      <section className="mx-auto max-w-7xl px-4 py-20 md:px-6">
-        <SectionHeader
-          eyebrow="What we do"
-          title="Three pillars, one mission."
-          subtitle="Everything we do for our member breweries lives under advocacy, education, or events."
-          align="center"
-        />
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {pillars.map((p) => (
-            <article key={p.title} className="group overflow-hidden rounded-lg border border-border bg-card transition-transform hover:-translate-y-1">
-              <div className="aspect-[4/3] overflow-hidden">
-                <img
-                  src={p.image}
-                  alt={p.title}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              </div>
-              <div className="p-6">
-                <h3 className="text-2xl text-primary">{p.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{p.body}</p>
-                <Link to={p.href} className="mt-4 inline-flex items-center gap-1 text-sm font-semibold uppercase tracking-wider text-foreground hover:text-primary">
-                  Learn more <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* Featured event */}
-      <section className="relative overflow-hidden border-y border-border bg-card/40">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-20 md:grid-cols-2 md:items-center md:px-6">
-          <div>
-            <div className="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary">Featured Event</div>
-            <h2 className="text-4xl md:text-5xl">Frontier Beer Fest</h2>
-            <p className="mt-4 text-muted-foreground">
-              Our flagship beer festival brings independent breweries together for an afternoon of tastings, food, and live music in the mountains.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-5 text-sm text-foreground/80">
-              <span className="inline-flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" /> Saturday, May 30</span>
-              <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> Idyllwild</span>
-            </div>
-            <div className="mt-7">
-              <Button asChild size="lg"><Link to="/events">More info</Link></Button>
-            </div>
-          </div>
-          <div className="overflow-hidden rounded-lg border border-border shadow-[var(--shadow-glow)]">
-            <img src={featuredImg} alt="Frontier Beer Fest" loading="lazy" className="h-full w-full object-cover" />
-          </div>
-        </div>
+      {/* Replaces the three placeholder pillars and the Featured Event section. */}
+      <section id="coming-up" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-16 md:px-6 md:py-20">
+        <MemberEventsCarousel cards={cards} guildEvent={guildEvent} dwellSeconds={dwellSeconds} />
       </section>
     </>
   );

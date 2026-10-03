@@ -11,12 +11,47 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SurveyResultsRouteImport } from './routes/survey-results'
 import { Route as SurveyRouteImport } from './routes/survey'
+import { Route as SigninRouteImport } from './routes/signin'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as MembersRouteImport } from './routes/members'
+import { Route as GuildRouteImport } from './routes/guild'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PortalIndexRouteImport } from './routes/portal.index'
+import { Route as GuildIndexRouteImport } from './routes/guild.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as SendTokenRouteImport } from './routes/send.$token'
+import { Route as PortalSetupRouteImport } from './routes/portal.setup'
+import { Route as PortalPreviewRouteImport } from './routes/portal.preview'
+import { Route as PortalSectionsRouteImport } from './routes/portal._sections'
+import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
+import { Route as GuildSettingsRouteImport } from './routes/guild.settings'
+import { Route as GuildRosterRouteImport } from './routes/guild.roster'
+import { Route as GuildInquiriesRouteImport } from './routes/guild.inquiries'
+import { Route as GuildHelpRouteImport } from './routes/guild.help'
+import { Route as GuildCategoriesRouteImport } from './routes/guild.categories'
+import { Route as GuildBrandRouteImport } from './routes/guild.brand'
+import { Route as GuildAuditRouteImport } from './routes/guild.audit'
+import { Route as GuildAdminsRouteImport } from './routes/guild.admins'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AdminPreviewRouteImport } from './routes/admin_.preview'
+import { Route as AdminThemeRouteImport } from './routes/admin.theme'
+import { Route as AdminMediaRouteImport } from './routes/admin.media'
+import { Route as AdminLinksRouteImport } from './routes/admin.links'
+import { Route as AdminHoursRouteImport } from './routes/admin.hours'
+import { Route as AdminFoodRouteImport } from './routes/admin.food'
+import { Route as AdminEventsRouteImport } from './routes/admin.events'
+import { Route as AdminDiscountRouteImport } from './routes/admin.discount'
+import { Route as AdminBasicsRouteImport } from './routes/admin.basics'
+import { Route as PortalSetupIndexRouteImport } from './routes/portal.setup.index'
+import { Route as PortalSetupStepRouteImport } from './routes/portal.setup.$step'
+import { Route as PortalSectionsSectionRouteImport } from './routes/portal._sections.$section'
+import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
+import { Route as ApiConfirmHoursTokenRouteImport } from './routes/api.confirm-hours.$token'
+import { Route as ApiAdminMediaAssetIdRouteImport } from './routes/api.admin-media.$assetId'
 
 const SurveyResultsRoute = SurveyResultsRouteImport.update({
   id: '/survey-results',
@@ -26,6 +61,11 @@ const SurveyResultsRoute = SurveyResultsRouteImport.update({
 const SurveyRoute = SurveyRouteImport.update({
   id: '/survey',
   path: '/survey',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SigninRoute = SigninRouteImport.update({
+  id: '/signin',
+  path: '/signin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewsRoute = NewsRouteImport.update({
@@ -38,6 +78,11 @@ const MembersRoute = MembersRouteImport.update({
   path: '/members',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuildRoute = GuildRouteImport.update({
+  id: '/guild',
+  path: '/guild',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EventsRoute = EventsRouteImport.update({
   id: '/events',
   path: '/events',
@@ -46,6 +91,11 @@ const EventsRoute = EventsRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -58,16 +108,211 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalIndexRoute = PortalIndexRouteImport.update({
+  id: '/portal/',
+  path: '/portal/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuildIndexRoute = GuildIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => GuildRoute,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const SendTokenRoute = SendTokenRouteImport.update({
+  id: '/send/$token',
+  path: '/send/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalSetupRoute = PortalSetupRouteImport.update({
+  id: '/portal/setup',
+  path: '/portal/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalPreviewRoute = PortalPreviewRouteImport.update({
+  id: '/portal/preview',
+  path: '/portal/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalSectionsRoute = PortalSectionsRouteImport.update({
+  id: '/portal/_sections',
+  path: '/portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MembersSlugRoute = MembersSlugRouteImport.update({
+  id: '/members_/$slug',
+  path: '/members/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuildSettingsRoute = GuildSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => GuildRoute,
+} as any)
+const GuildRosterRoute = GuildRosterRouteImport.update({
+  id: '/roster',
+  path: '/roster',
+  getParentRoute: () => GuildRoute,
+} as any)
+const GuildInquiriesRoute = GuildInquiriesRouteImport.update({
+  id: '/inquiries',
+  path: '/inquiries',
+  getParentRoute: () => GuildRoute,
+} as any)
+const GuildHelpRoute = GuildHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => GuildRoute,
+} as any)
+const GuildCategoriesRoute = GuildCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => GuildRoute,
+} as any)
+const GuildBrandRoute = GuildBrandRouteImport.update({
+  id: '/brand',
+  path: '/brand',
+  getParentRoute: () => GuildRoute,
+} as any)
+const GuildAuditRoute = GuildAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => GuildRoute,
+} as any)
+const GuildAdminsRoute = GuildAdminsRouteImport.update({
+  id: '/admins',
+  path: '/admins',
+  getParentRoute: () => GuildRoute,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPreviewRoute = AdminPreviewRouteImport.update({
+  id: '/admin_/preview',
+  path: '/admin/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminThemeRoute = AdminThemeRouteImport.update({
+  id: '/theme',
+  path: '/theme',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMediaRoute = AdminMediaRouteImport.update({
+  id: '/media',
+  path: '/media',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLinksRoute = AdminLinksRouteImport.update({
+  id: '/links',
+  path: '/links',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminHoursRoute = AdminHoursRouteImport.update({
+  id: '/hours',
+  path: '/hours',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFoodRoute = AdminFoodRouteImport.update({
+  id: '/food',
+  path: '/food',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEventsRoute = AdminEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDiscountRoute = AdminDiscountRouteImport.update({
+  id: '/discount',
+  path: '/discount',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBasicsRoute = AdminBasicsRouteImport.update({
+  id: '/basics',
+  path: '/basics',
+  getParentRoute: () => AdminRoute,
+} as any)
+const PortalSetupIndexRoute = PortalSetupIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortalSetupRoute,
+} as any)
+const PortalSetupStepRoute = PortalSetupStepRouteImport.update({
+  id: '/$step',
+  path: '/$step',
+  getParentRoute: () => PortalSetupRoute,
+} as any)
+const PortalSectionsSectionRoute = PortalSectionsSectionRouteImport.update({
+  id: '/$section',
+  path: '/$section',
+  getParentRoute: () => PortalSectionsRoute,
+} as any)
+const ApiMemberMediaAssetIdRoute = ApiMemberMediaAssetIdRouteImport.update({
+  id: '/api/member-media/$assetId',
+  path: '/api/member-media/$assetId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiConfirmHoursTokenRoute = ApiConfirmHoursTokenRouteImport.update({
+  id: '/api/confirm-hours/$token',
+  path: '/api/confirm-hours/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminMediaAssetIdRoute = ApiAdminMediaAssetIdRouteImport.update({
+  id: '/api/admin-media/$assetId',
+  path: '/api/admin-media/$assetId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
+  '/guild': typeof GuildRouteWithChildren
   '/members': typeof MembersRoute
   '/news': typeof NewsRoute
+  '/signin': typeof SigninRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/admin/basics': typeof AdminBasicsRoute
+  '/admin/discount': typeof AdminDiscountRoute
+  '/admin/events': typeof AdminEventsRoute
+  '/admin/food': typeof AdminFoodRoute
+  '/admin/hours': typeof AdminHoursRoute
+  '/admin/links': typeof AdminLinksRoute
+  '/admin/media': typeof AdminMediaRoute
+  '/admin/theme': typeof AdminThemeRoute
+  '/admin/preview': typeof AdminPreviewRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/guild/admins': typeof GuildAdminsRoute
+  '/guild/audit': typeof GuildAuditRoute
+  '/guild/brand': typeof GuildBrandRoute
+  '/guild/categories': typeof GuildCategoriesRoute
+  '/guild/help': typeof GuildHelpRoute
+  '/guild/inquiries': typeof GuildInquiriesRoute
+  '/guild/roster': typeof GuildRosterRoute
+  '/guild/settings': typeof GuildSettingsRoute
+  '/members/$slug': typeof MembersSlugRoute
+  '/portal': typeof PortalSectionsRouteWithChildren
+  '/portal/preview': typeof PortalPreviewRoute
+  '/portal/setup': typeof PortalSetupRouteWithChildren
+  '/send/$token': typeof SendTokenRoute
+  '/admin/': typeof AdminIndexRoute
+  '/guild/': typeof GuildIndexRoute
+  '/portal/': typeof PortalIndexRoute
+  '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
+  '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
+  '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
+  '/portal/$section': typeof PortalSectionsSectionRoute
+  '/portal/setup/$step': typeof PortalSetupStepRoute
+  '/portal/setup/': typeof PortalSetupIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -76,31 +321,132 @@ export interface FileRoutesByTo {
   '/events': typeof EventsRoute
   '/members': typeof MembersRoute
   '/news': typeof NewsRoute
+  '/signin': typeof SigninRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/admin/basics': typeof AdminBasicsRoute
+  '/admin/discount': typeof AdminDiscountRoute
+  '/admin/events': typeof AdminEventsRoute
+  '/admin/food': typeof AdminFoodRoute
+  '/admin/hours': typeof AdminHoursRoute
+  '/admin/links': typeof AdminLinksRoute
+  '/admin/media': typeof AdminMediaRoute
+  '/admin/theme': typeof AdminThemeRoute
+  '/admin/preview': typeof AdminPreviewRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/guild/admins': typeof GuildAdminsRoute
+  '/guild/audit': typeof GuildAuditRoute
+  '/guild/brand': typeof GuildBrandRoute
+  '/guild/categories': typeof GuildCategoriesRoute
+  '/guild/help': typeof GuildHelpRoute
+  '/guild/inquiries': typeof GuildInquiriesRoute
+  '/guild/roster': typeof GuildRosterRoute
+  '/guild/settings': typeof GuildSettingsRoute
+  '/members/$slug': typeof MembersSlugRoute
+  '/portal': typeof PortalIndexRoute
+  '/portal/preview': typeof PortalPreviewRoute
+  '/send/$token': typeof SendTokenRoute
+  '/admin': typeof AdminIndexRoute
+  '/guild': typeof GuildIndexRoute
+  '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
+  '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
+  '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
+  '/portal/$section': typeof PortalSectionsSectionRoute
+  '/portal/setup/$step': typeof PortalSetupStepRoute
+  '/portal/setup': typeof PortalSetupIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
+  '/guild': typeof GuildRouteWithChildren
   '/members': typeof MembersRoute
   '/news': typeof NewsRoute
+  '/signin': typeof SigninRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/admin/basics': typeof AdminBasicsRoute
+  '/admin/discount': typeof AdminDiscountRoute
+  '/admin/events': typeof AdminEventsRoute
+  '/admin/food': typeof AdminFoodRoute
+  '/admin/hours': typeof AdminHoursRoute
+  '/admin/links': typeof AdminLinksRoute
+  '/admin/media': typeof AdminMediaRoute
+  '/admin/theme': typeof AdminThemeRoute
+  '/admin_/preview': typeof AdminPreviewRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/guild/admins': typeof GuildAdminsRoute
+  '/guild/audit': typeof GuildAuditRoute
+  '/guild/brand': typeof GuildBrandRoute
+  '/guild/categories': typeof GuildCategoriesRoute
+  '/guild/help': typeof GuildHelpRoute
+  '/guild/inquiries': typeof GuildInquiriesRoute
+  '/guild/roster': typeof GuildRosterRoute
+  '/guild/settings': typeof GuildSettingsRoute
+  '/members_/$slug': typeof MembersSlugRoute
+  '/portal/_sections': typeof PortalSectionsRouteWithChildren
+  '/portal/preview': typeof PortalPreviewRoute
+  '/portal/setup': typeof PortalSetupRouteWithChildren
+  '/send/$token': typeof SendTokenRoute
+  '/admin/': typeof AdminIndexRoute
+  '/guild/': typeof GuildIndexRoute
+  '/portal/': typeof PortalIndexRoute
+  '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
+  '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
+  '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
+  '/portal/_sections/$section': typeof PortalSectionsSectionRoute
+  '/portal/setup/$step': typeof PortalSetupStepRoute
+  '/portal/setup/': typeof PortalSetupIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/about'
+    | '/admin'
     | '/contact'
     | '/events'
+    | '/guild'
     | '/members'
     | '/news'
+    | '/signin'
     | '/survey'
     | '/survey-results'
+    | '/admin/basics'
+    | '/admin/discount'
+    | '/admin/events'
+    | '/admin/food'
+    | '/admin/hours'
+    | '/admin/links'
+    | '/admin/media'
+    | '/admin/theme'
+    | '/admin/preview'
+    | '/auth/callback'
+    | '/guild/admins'
+    | '/guild/audit'
+    | '/guild/brand'
+    | '/guild/categories'
+    | '/guild/help'
+    | '/guild/inquiries'
+    | '/guild/roster'
+    | '/guild/settings'
+    | '/members/$slug'
+    | '/portal'
+    | '/portal/preview'
+    | '/portal/setup'
+    | '/send/$token'
+    | '/admin/'
+    | '/guild/'
+    | '/portal/'
+    | '/api/admin-media/$assetId'
+    | '/api/confirm-hours/$token'
+    | '/api/member-media/$assetId'
+    | '/portal/$section'
+    | '/portal/setup/$step'
+    | '/portal/setup/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -109,29 +455,109 @@ export interface FileRouteTypes {
     | '/events'
     | '/members'
     | '/news'
+    | '/signin'
     | '/survey'
     | '/survey-results'
+    | '/admin/basics'
+    | '/admin/discount'
+    | '/admin/events'
+    | '/admin/food'
+    | '/admin/hours'
+    | '/admin/links'
+    | '/admin/media'
+    | '/admin/theme'
+    | '/admin/preview'
+    | '/auth/callback'
+    | '/guild/admins'
+    | '/guild/audit'
+    | '/guild/brand'
+    | '/guild/categories'
+    | '/guild/help'
+    | '/guild/inquiries'
+    | '/guild/roster'
+    | '/guild/settings'
+    | '/members/$slug'
+    | '/portal'
+    | '/portal/preview'
+    | '/send/$token'
+    | '/admin'
+    | '/guild'
+    | '/api/admin-media/$assetId'
+    | '/api/confirm-hours/$token'
+    | '/api/member-media/$assetId'
+    | '/portal/$section'
+    | '/portal/setup/$step'
+    | '/portal/setup'
   id:
     | '__root__'
     | '/'
     | '/about'
+    | '/admin'
     | '/contact'
     | '/events'
+    | '/guild'
     | '/members'
     | '/news'
+    | '/signin'
     | '/survey'
     | '/survey-results'
+    | '/admin/basics'
+    | '/admin/discount'
+    | '/admin/events'
+    | '/admin/food'
+    | '/admin/hours'
+    | '/admin/links'
+    | '/admin/media'
+    | '/admin/theme'
+    | '/admin_/preview'
+    | '/auth/callback'
+    | '/guild/admins'
+    | '/guild/audit'
+    | '/guild/brand'
+    | '/guild/categories'
+    | '/guild/help'
+    | '/guild/inquiries'
+    | '/guild/roster'
+    | '/guild/settings'
+    | '/members_/$slug'
+    | '/portal/_sections'
+    | '/portal/preview'
+    | '/portal/setup'
+    | '/send/$token'
+    | '/admin/'
+    | '/guild/'
+    | '/portal/'
+    | '/api/admin-media/$assetId'
+    | '/api/confirm-hours/$token'
+    | '/api/member-media/$assetId'
+    | '/portal/_sections/$section'
+    | '/portal/setup/$step'
+    | '/portal/setup/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AdminRoute: typeof AdminRouteWithChildren
   ContactRoute: typeof ContactRoute
   EventsRoute: typeof EventsRoute
+  GuildRoute: typeof GuildRouteWithChildren
   MembersRoute: typeof MembersRoute
   NewsRoute: typeof NewsRoute
+  SigninRoute: typeof SigninRoute
   SurveyRoute: typeof SurveyRoute
   SurveyResultsRoute: typeof SurveyResultsRoute
+  AdminPreviewRoute: typeof AdminPreviewRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  MembersSlugRoute: typeof MembersSlugRoute
+  PortalSectionsRoute: typeof PortalSectionsRouteWithChildren
+  PortalPreviewRoute: typeof PortalPreviewRoute
+  PortalSetupRoute: typeof PortalSetupRouteWithChildren
+  SendTokenRoute: typeof SendTokenRoute
+  PortalIndexRoute: typeof PortalIndexRoute
+  ApiAdminMediaAssetIdRoute: typeof ApiAdminMediaAssetIdRoute
+  ApiConfirmHoursTokenRoute: typeof ApiConfirmHoursTokenRoute
+  ApiMemberMediaAssetIdRoute: typeof ApiMemberMediaAssetIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -150,6 +576,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SurveyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/signin': {
+      id: '/signin'
+      path: '/signin'
+      fullPath: '/signin'
+      preLoaderRoute: typeof SigninRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/news': {
       id: '/news'
       path: '/news'
@@ -162,6 +595,13 @@ declare module '@tanstack/react-router' {
       path: '/members'
       fullPath: '/members'
       preLoaderRoute: typeof MembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guild': {
+      id: '/guild'
+      path: '/guild'
+      fullPath: '/guild'
+      preLoaderRoute: typeof GuildRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/events': {
@@ -178,6 +618,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -192,18 +639,334 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/': {
+      id: '/portal/'
+      path: '/portal'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guild/': {
+      id: '/guild/'
+      path: '/'
+      fullPath: '/guild/'
+      preLoaderRoute: typeof GuildIndexRouteImport
+      parentRoute: typeof GuildRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/send/$token': {
+      id: '/send/$token'
+      path: '/send/$token'
+      fullPath: '/send/$token'
+      preLoaderRoute: typeof SendTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/setup': {
+      id: '/portal/setup'
+      path: '/portal/setup'
+      fullPath: '/portal/setup'
+      preLoaderRoute: typeof PortalSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/preview': {
+      id: '/portal/preview'
+      path: '/portal/preview'
+      fullPath: '/portal/preview'
+      preLoaderRoute: typeof PortalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/_sections': {
+      id: '/portal/_sections'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalSectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/members_/$slug': {
+      id: '/members_/$slug'
+      path: '/members/$slug'
+      fullPath: '/members/$slug'
+      preLoaderRoute: typeof MembersSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guild/settings': {
+      id: '/guild/settings'
+      path: '/settings'
+      fullPath: '/guild/settings'
+      preLoaderRoute: typeof GuildSettingsRouteImport
+      parentRoute: typeof GuildRoute
+    }
+    '/guild/roster': {
+      id: '/guild/roster'
+      path: '/roster'
+      fullPath: '/guild/roster'
+      preLoaderRoute: typeof GuildRosterRouteImport
+      parentRoute: typeof GuildRoute
+    }
+    '/guild/inquiries': {
+      id: '/guild/inquiries'
+      path: '/inquiries'
+      fullPath: '/guild/inquiries'
+      preLoaderRoute: typeof GuildInquiriesRouteImport
+      parentRoute: typeof GuildRoute
+    }
+    '/guild/help': {
+      id: '/guild/help'
+      path: '/help'
+      fullPath: '/guild/help'
+      preLoaderRoute: typeof GuildHelpRouteImport
+      parentRoute: typeof GuildRoute
+    }
+    '/guild/categories': {
+      id: '/guild/categories'
+      path: '/categories'
+      fullPath: '/guild/categories'
+      preLoaderRoute: typeof GuildCategoriesRouteImport
+      parentRoute: typeof GuildRoute
+    }
+    '/guild/brand': {
+      id: '/guild/brand'
+      path: '/brand'
+      fullPath: '/guild/brand'
+      preLoaderRoute: typeof GuildBrandRouteImport
+      parentRoute: typeof GuildRoute
+    }
+    '/guild/audit': {
+      id: '/guild/audit'
+      path: '/audit'
+      fullPath: '/guild/audit'
+      preLoaderRoute: typeof GuildAuditRouteImport
+      parentRoute: typeof GuildRoute
+    }
+    '/guild/admins': {
+      id: '/guild/admins'
+      path: '/admins'
+      fullPath: '/guild/admins'
+      preLoaderRoute: typeof GuildAdminsRouteImport
+      parentRoute: typeof GuildRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin_/preview': {
+      id: '/admin_/preview'
+      path: '/admin/preview'
+      fullPath: '/admin/preview'
+      preLoaderRoute: typeof AdminPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/theme': {
+      id: '/admin/theme'
+      path: '/theme'
+      fullPath: '/admin/theme'
+      preLoaderRoute: typeof AdminThemeRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/media': {
+      id: '/admin/media'
+      path: '/media'
+      fullPath: '/admin/media'
+      preLoaderRoute: typeof AdminMediaRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/links': {
+      id: '/admin/links'
+      path: '/links'
+      fullPath: '/admin/links'
+      preLoaderRoute: typeof AdminLinksRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/hours': {
+      id: '/admin/hours'
+      path: '/hours'
+      fullPath: '/admin/hours'
+      preLoaderRoute: typeof AdminHoursRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/food': {
+      id: '/admin/food'
+      path: '/food'
+      fullPath: '/admin/food'
+      preLoaderRoute: typeof AdminFoodRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/events': {
+      id: '/admin/events'
+      path: '/events'
+      fullPath: '/admin/events'
+      preLoaderRoute: typeof AdminEventsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/discount': {
+      id: '/admin/discount'
+      path: '/discount'
+      fullPath: '/admin/discount'
+      preLoaderRoute: typeof AdminDiscountRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/basics': {
+      id: '/admin/basics'
+      path: '/basics'
+      fullPath: '/admin/basics'
+      preLoaderRoute: typeof AdminBasicsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/portal/setup/': {
+      id: '/portal/setup/'
+      path: '/'
+      fullPath: '/portal/setup/'
+      preLoaderRoute: typeof PortalSetupIndexRouteImport
+      parentRoute: typeof PortalSetupRoute
+    }
+    '/portal/setup/$step': {
+      id: '/portal/setup/$step'
+      path: '/$step'
+      fullPath: '/portal/setup/$step'
+      preLoaderRoute: typeof PortalSetupStepRouteImport
+      parentRoute: typeof PortalSetupRoute
+    }
+    '/portal/_sections/$section': {
+      id: '/portal/_sections/$section'
+      path: '/$section'
+      fullPath: '/portal/$section'
+      preLoaderRoute: typeof PortalSectionsSectionRouteImport
+      parentRoute: typeof PortalSectionsRoute
+    }
+    '/api/member-media/$assetId': {
+      id: '/api/member-media/$assetId'
+      path: '/api/member-media/$assetId'
+      fullPath: '/api/member-media/$assetId'
+      preLoaderRoute: typeof ApiMemberMediaAssetIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/confirm-hours/$token': {
+      id: '/api/confirm-hours/$token'
+      path: '/api/confirm-hours/$token'
+      fullPath: '/api/confirm-hours/$token'
+      preLoaderRoute: typeof ApiConfirmHoursTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin-media/$assetId': {
+      id: '/api/admin-media/$assetId'
+      path: '/api/admin-media/$assetId'
+      fullPath: '/api/admin-media/$assetId'
+      preLoaderRoute: typeof ApiAdminMediaAssetIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface AdminRouteChildren {
+  AdminBasicsRoute: typeof AdminBasicsRoute
+  AdminDiscountRoute: typeof AdminDiscountRoute
+  AdminEventsRoute: typeof AdminEventsRoute
+  AdminFoodRoute: typeof AdminFoodRoute
+  AdminHoursRoute: typeof AdminHoursRoute
+  AdminLinksRoute: typeof AdminLinksRoute
+  AdminMediaRoute: typeof AdminMediaRoute
+  AdminThemeRoute: typeof AdminThemeRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminBasicsRoute: AdminBasicsRoute,
+  AdminDiscountRoute: AdminDiscountRoute,
+  AdminEventsRoute: AdminEventsRoute,
+  AdminFoodRoute: AdminFoodRoute,
+  AdminHoursRoute: AdminHoursRoute,
+  AdminLinksRoute: AdminLinksRoute,
+  AdminMediaRoute: AdminMediaRoute,
+  AdminThemeRoute: AdminThemeRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface GuildRouteChildren {
+  GuildAdminsRoute: typeof GuildAdminsRoute
+  GuildAuditRoute: typeof GuildAuditRoute
+  GuildBrandRoute: typeof GuildBrandRoute
+  GuildCategoriesRoute: typeof GuildCategoriesRoute
+  GuildHelpRoute: typeof GuildHelpRoute
+  GuildInquiriesRoute: typeof GuildInquiriesRoute
+  GuildRosterRoute: typeof GuildRosterRoute
+  GuildSettingsRoute: typeof GuildSettingsRoute
+  GuildIndexRoute: typeof GuildIndexRoute
+}
+
+const GuildRouteChildren: GuildRouteChildren = {
+  GuildAdminsRoute: GuildAdminsRoute,
+  GuildAuditRoute: GuildAuditRoute,
+  GuildBrandRoute: GuildBrandRoute,
+  GuildCategoriesRoute: GuildCategoriesRoute,
+  GuildHelpRoute: GuildHelpRoute,
+  GuildInquiriesRoute: GuildInquiriesRoute,
+  GuildRosterRoute: GuildRosterRoute,
+  GuildSettingsRoute: GuildSettingsRoute,
+  GuildIndexRoute: GuildIndexRoute,
+}
+
+const GuildRouteWithChildren = GuildRoute._addFileChildren(GuildRouteChildren)
+
+interface PortalSectionsRouteChildren {
+  PortalSectionsSectionRoute: typeof PortalSectionsSectionRoute
+}
+
+const PortalSectionsRouteChildren: PortalSectionsRouteChildren = {
+  PortalSectionsSectionRoute: PortalSectionsSectionRoute,
+}
+
+const PortalSectionsRouteWithChildren = PortalSectionsRoute._addFileChildren(
+  PortalSectionsRouteChildren,
+)
+
+interface PortalSetupRouteChildren {
+  PortalSetupStepRoute: typeof PortalSetupStepRoute
+  PortalSetupIndexRoute: typeof PortalSetupIndexRoute
+}
+
+const PortalSetupRouteChildren: PortalSetupRouteChildren = {
+  PortalSetupStepRoute: PortalSetupStepRoute,
+  PortalSetupIndexRoute: PortalSetupIndexRoute,
+}
+
+const PortalSetupRouteWithChildren = PortalSetupRoute._addFileChildren(
+  PortalSetupRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  AdminRoute: AdminRouteWithChildren,
   ContactRoute: ContactRoute,
   EventsRoute: EventsRoute,
+  GuildRoute: GuildRouteWithChildren,
   MembersRoute: MembersRoute,
   NewsRoute: NewsRoute,
+  SigninRoute: SigninRoute,
   SurveyRoute: SurveyRoute,
   SurveyResultsRoute: SurveyResultsRoute,
+  AdminPreviewRoute: AdminPreviewRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
+  MembersSlugRoute: MembersSlugRoute,
+  PortalSectionsRoute: PortalSectionsRouteWithChildren,
+  PortalPreviewRoute: PortalPreviewRoute,
+  PortalSetupRoute: PortalSetupRouteWithChildren,
+  SendTokenRoute: SendTokenRoute,
+  PortalIndexRoute: PortalIndexRoute,
+  ApiAdminMediaAssetIdRoute: ApiAdminMediaAssetIdRoute,
+  ApiConfirmHoursTokenRoute: ApiConfirmHoursTokenRoute,
+  ApiMemberMediaAssetIdRoute: ApiMemberMediaAssetIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Member admin — photos and 9:16 crop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#F9F6F0}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+
+<div style="width: 1280px; height: 1780px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column;">
+
+  <div style="height: 64px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 28px;">
+    <div style="display: flex; align-items: center; gap: 11px;">
+      <div style="width: 24px; height: 24px; border-radius: 5px; background: #38322A;"></div>
+      <div style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">IE BREWERS GUILD · MEMBER ADMIN</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="font-size: 13px; color: #A89D8E;">[MEMBER NAME]</div>
+      <a href="TaproomProfile.dc.html" style="height: 40px; padding: 0 16px; border-radius: 9px; border: 1px solid #4A4238; color: #F9F6F0; display: flex; align-items: center; font-size: 13px; font-weight: 500; text-decoration: none;">Preview</a>
+      <a href="AdminPublish.dc.html" style="height: 40px; padding: 0 18px; border-radius: 9px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; font-size: 13px; font-weight: 600; text-decoration: none;">Publish changes</a>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; display: flex;">
+
+    <div style="width: 236px; flex-shrink: 0; border-right: 1px solid #EFEAE1; padding: 26px 16px; display: flex; flex-direction: column; gap: 3px;">
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #8C8275; padding: 0 12px 10px;">YOUR PROFILE</div>
+      <a href="AdminBasics.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Basics &amp; hours</a>
+      <a href="#photos" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; background: #241F1A; color: #F9F6F0; font-weight: 600;">Logo, Photos &amp; Cover</a>
+      <a href="AdminEvents.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Events</a>
+      <a href="AdminFood.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Food<span style="font-size: 10px; letter-spacing: 0.08em; color: #8C8275;">PRODUCERS</span></a>
+      <a href="AdminLinks.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Links &amp; contact</a>
+      <a href="AdminPhone.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Discount &amp; supplies<span style="font-size: 10px; letter-spacing: 0.08em; color: #8C8275;">ALLIED</span></a>
+      <a href="AdminTheme.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Theme</a>
+      <a href="#people" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">People<span style="font-size: 10px; letter-spacing: 0.08em; color: #8C8275;">OWNER</span></a>
+      <div style="font-size: 11px; line-height: 1.45; color: #A89D8E; padding: 8px 12px 0;">Food: producers · Discount &amp; supplies: Allied Members · People: the owner. A Photos &amp; events editor sees only Logo, Photos &amp; Cover (gallery and slides) and Events.</div>
+    </div>
+
+    <div style="flex-grow: 1; padding: 30px 36px; display: flex; flex-direction: column; gap: 24px;">
+
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 27px; font-weight: 700; color: #241F1A;">Logo, Photos &amp; Cover</div>
+        <div style="font-size: 13px; color: #6B6156;">Your logo, the photos for your page, and the wide cover across the top. Start with the gallery: your slides and cover are picked from it.</div>
+        <div style="font-size: 11px; color: #8C8275;">Since 2 Oct 2026 one page with a live preview: see the onboarding canvas, boards "4 · Logo, Photos &amp; Cover".</div>
+      </div>
+
+      <!-- 1. Your Gallery: everything uploaded lands here first. -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-family: 'Chivo', sans-serif; font-size: 14px; letter-spacing: 0.12em; font-weight: 700; color: #241F1A;">YOUR GALLERY</div>
+          <div style="font-size: 12px; color: #6B6156;">Everything you upload lands here first. Pick from it for your slides, your cover and your sharing image.</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 11px; padding: 20px; border-radius: 13px; border: 2px dashed #D3CBBD;">
+          <div style="font-size: 14px; font-weight: 600; color: #241F1A;">Drop a photo here</div>
+          <div style="font-size: 12px; color: #6B6156; line-height: 1.5;">JPG or PNG, up to 25 MB. Once it's in your gallery, add it as a slide and choose what stays in the portrait frame.</div>
+          <button type="button" style="align-self: flex-start; height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #D3CBBD; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Choose a file</button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px;">
+          <div style="height: 96px; border-radius: 9px; background: #EFEAE1; border: 1px solid #DED7CB;"></div>
+          <div style="height: 96px; border-radius: 9px; background: #EFEAE1; border: 1px solid #DED7CB;"></div>
+          <div style="height: 96px; border-radius: 9px; background: #EFEAE1; border: 1px solid #DED7CB;"></div>
+          <div style="height: 96px; border-radius: 9px; background: #EFEAE1; border: 1px solid #DED7CB;"></div>
+        </div>
+        <!-- Camera roll hint (owner view; editors see only the creator link line). Always shown, not dismissible. -->
+        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 15px 17px; border-radius: 11px; background: #EFEAE1; color: #6B6156;">
+          <svg width="17" height="17" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0; margin-top: 1px;" aria-hidden="true"><circle cx="8" cy="8" r="6.4" stroke="currentColor" stroke-width="1.4"/><path d="M8 7.2v4M8 4.9v.9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <div style="font-size: 13px; line-height: 1.5; color: #3A332C;">
+            <div>Posted it on Instagram or Facebook? The original photo is probably still in your phone's camera roll. Upload that one for the sharpest result.</div>
+            <div style="margin-top: 6px;">Someone else takes your photos? Invite them as a <a href="#people" style="font-weight: 500; color: #241F1A; text-decoration: underline; text-underline-offset: 2px; padding: 13px 0;">Photos &amp; events editor</a>, or send them a <a href="#creator-link" style="font-weight: 500; color: #241F1A; text-decoration: underline; text-underline-offset: 2px; padding: 13px 0;">creator upload link</a>.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Your Carousel: crop panel on the left with the tap-through link under it; slides on the right. -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: baseline; gap: 8px;">
+          <div style="font-family: 'Chivo', sans-serif; font-size: 14px; letter-spacing: 0.12em; font-weight: 700; color: #241F1A;">YOUR CAROUSEL</div>
+          <div style="font-size: 10px; color: #A89D8E;">Portrait · 4:5</div>
+        </div>
+        <div style="display: flex; gap: 30px;">
+
+          <div style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 13px;">
+            <div style="display: flex; align-items: baseline; gap: 8px;">
+              <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">CROP TO PORTRAIT</div>
+              <div style="font-size: 10px; color: #A89D8E;">4:5</div>
+            </div>
+            <div style="width: 300px; height: 420px; border-radius: 13px; background: #221E18; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+              <div style="width: 258px; height: 322px; border-radius: 4px; border: 2px solid #F9F6F0; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; padding: 8px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="display: block; width: 14px; height: 14px; border-top: 3px solid #F9F6F0; border-left: 3px solid #F9F6F0;"></span>
+                  <span style="display: block; width: 14px; height: 14px; border-top: 3px solid #F9F6F0; border-right: 3px solid #F9F6F0;"></span>
+                </div>
+                <div style="text-align: center; font-size: 11px; letter-spacing: 0.1em; color: #EFEAE1;">DRAG TO REPOSITION</div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="display: block; width: 14px; height: 14px; border-bottom: 3px solid #F9F6F0; border-left: 3px solid #F9F6F0;"></span>
+                  <span style="display: block; width: 14px; height: 14px; border-bottom: 3px solid #F9F6F0; border-right: 3px solid #F9F6F0;"></span>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 7px;">
+              <label for="zoom" style="font-size: 12px; font-weight: 500; color: #241F1A;">Zoom</label>
+              <input type="range" id="zoom" min="100" max="300" value="145" style="width: 100%; accent-color: #241F1A;">
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button type="button" style="flex-grow: 1; height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #D3CBBD; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Reset</button>
+              <button type="button" style="flex-grow: 1; height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #D3CBBD; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Remove slide</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding: 16px; border-radius: 13px; border: 1px solid #DED7CB;">
+              <label for="slide-link" style="font-size: 13px; font-weight: 600; color: #241F1A;">Where this slide goes when tapped</label>
+              <input type="url" id="slide-link" value="[PASTE YOUR POST LINK — OPTIONAL]" style="height: 46px; padding: 0 13px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 13px; color: #241F1A; box-sizing: border-box;">
+              <div style="font-size: 11px; color: #8C8275;">Leave it blank and the slide just sits in the carousel.</div>
+            </div>
+          </div>
+
+          <div style="flex-grow: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-content: start;">
+            <div style="display: flex; flex-direction: column; gap: 7px;">
+              <div style="height: 188px; border-radius: 11px; background: #EFEAE1; border: 2px solid #241F1A; display: flex; align-items: flex-end; padding: 9px; box-sizing: border-box;">
+                <span style="padding: 3px 8px; border-radius: 99px; background: #241F1A; font-size: 9px; letter-spacing: 0.08em; color: #F9F6F0;">EDITING</span>
+              </div>
+              <div style="font-size: 11px; color: #6B6156;">Uploaded photo</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 7px;">
+              <div style="height: 188px; border-radius: 11px; background: #EFEAE1; border: 1px solid #DED7CB;"></div>
+              <div style="font-size: 11px; color: #6B6156;">Uploaded photo</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 7px;">
+              <div style="height: 188px; border-radius: 11px; background: #EFEAE1; border: 1px solid #DED7CB; display: flex; align-items: flex-start; justify-content: flex-end; padding: 9px; box-sizing: border-box;">
+                <span style="padding: 3px 8px; border-radius: 99px; background: #F9F6F0; border: 1px solid #D3CBBD; font-size: 9px; letter-spacing: 0.08em; color: #3A332C;">CREDITED</span>
+              </div>
+              <div style="font-size: 11px; color: #6B6156;">From [CREATOR]</div>
+            </div>
+            <button type="button" style="height: 188px; border-radius: 11px; border: 2px dashed #D3CBBD; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; font-family: inherit; cursor: pointer;">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true"><path d="M11 4.5v13M4.5 11h13" stroke="#8C8275" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span style="font-size: 12px; font-weight: 500; color: #6B6156;">Add slide</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 3. Cover photo (on /admin; the portal keeps it on its Logo & cover page). -->
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; align-items: baseline; gap: 8px;">
+            <div style="font-family: 'Chivo', sans-serif; font-size: 14px; letter-spacing: 0.12em; font-weight: 700; color: #241F1A;">COVER PHOTO</div>
+            <div style="font-size: 10px; color: #A89D8E;">Wide band · 5:2</div>
+          </div>
+          <div style="font-size: 12px; color: #6B6156;">The wide band across the top of your profile. For example, use your Facebook cover photo. No cover photo? Your theme color fills the band instead.</div>
+        </div>
+        <div style="height: 160px; max-width: 400px; border-radius: 11px; background: #EFEAE1; border: 1px solid #DED7CB;"></div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" style="height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #D3CBBD; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Choose from gallery…</button>
+          <button type="button" style="height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #D3CBBD; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Remove cover</button>
+        </div>
+      </div>
+
+      <!-- Creator upload link and review tray. -->
+      <div id="creator-link" style="display: flex; flex-direction: column; gap: 11px; padding: 20px; border-radius: 13px; background: #EFEAE1;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+          <div style="font-size: 14px; font-weight: 600; color: #241F1A;">Didn't shoot it yourself?</div>
+          <a href="#pending" style="font-size: 12px; font-weight: 500;">2 waiting for review →</a>
+        </div>
+        <div style="font-size: 12px; color: #6B6156; line-height: 1.5;">Send the person who made it an upload link. They add the original file and their credit, it lands in your gallery, and nothing appears on your profile until you approve it.</div>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" aria-label="Upload link to share" value="iscbrewersguild.org/send/[TOKEN]" readonly="readonly" style="flex-grow: 1; height: 46px; padding: 0 13px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 13px; color: #3A332C; box-sizing: border-box;">
+          <button type="button" style="height: 46px; padding: 0 17px; border-radius: 9px; border: 1px solid #D3CBBD; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Copy</button>
+          <a href="CreatorUpload.dc.html" style="height: 46px; padding: 0 19px; border-radius: 9px; background: #241F1A; display: flex; align-items: center; font-size: 13px; font-weight: 600; color: #F9F6F0; text-decoration: none;">Preview</a>
+        </div>
+        <div style="font-size: 11px; color: #8C8275;">Expires in 7 days · works for up to 5 files · revoke it any time</div>
+      </div>
+
+      <!-- Social sharing image (on /admin; the portal keeps it on Logo & cover). -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">SOCIAL SHARING IMAGE</div>
+        <div style="font-size: 12px; color: #6B6156;">What shows when someone shares your page. Pick one from your gallery.</div>
+        <button type="button" style="align-self: flex-start; height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #D3CBBD; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Choose from gallery…</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#B3591F","options":["#B3591F","#4E9A4A","#8C2F1B","#1F5F6B"]},"$preview":{"width":1280,"height":1780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#B3591F' };
+  }
+}
+</script>
+</body>
+</html>

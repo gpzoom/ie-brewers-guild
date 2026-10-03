@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Clone Mic Test</title>
+<style>
+  :root { --ink:#1f1a15; --muted:#6b6258; --accent:#b8661f; --line:#e4dccf; --paper:#fffdf9; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:18px/1.7 Georgia, "Times New Roman", serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+  h1 { font: 700 30px/1.2 Arial, Helvetica, sans-serif; margin: 0 0 4px; }
+  .sub { color: var(--muted); font: 15px/1.5 Arial, Helvetica, sans-serif; margin: 0 0 24px; }
+  .tips { border: 2px solid var(--accent); border-radius: 10px; padding: 14px 20px; font: 15px/1.55 Arial, Helvetica, sans-serif; }
+  .tips h2 { font-size: 16px; margin: 4px 0 6px; }
+  .tips ul { margin: 0; padding-left: 20px; }
+  .tips li { margin: 3px 0; }
+  .session { margin-top: 40px; }
+  .session h2 { font: 700 22px/1.3 Arial, Helvetica, sans-serif; border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin: 0 0 4px; }
+  .session .meta { color: var(--muted); font: 14px Arial, Helvetica, sans-serif; margin-bottom: 14px; }
+  .session .meta .box { margin-left: 10px; }
+  .p { display: grid; grid-template-columns: 26px 30px 1fr; gap: 0 8px; padding: 10px 0; border-bottom: 1px solid var(--line); break-inside: avoid; }
+  .p .box { width: 18px; height: 18px; border: 2px solid var(--ink); border-radius: 3px; margin-top: 6px; }
+  .p .n { color: var(--muted); font: 13px/2.2 Arial, Helvetica, sans-serif; text-align: right; }
+  .p p { margin: 0; }
+  .end { margin-top: 32px; color: var(--muted); font: 14px Arial, Helvetica, sans-serif; text-align: center; }
+  @media print {
+    body { font-size: 14.5pt; background: #fff; }
+    main { padding: 0; max-width: none; }
+    .session { break-before: page; margin-top: 0; }
+    @page { margin: 0.75in; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Voice Clone Mic Test</h1>
+  <p class="sub">About 1 minute · record this before the full sessions so the setup can be checked</p>
+  <div class="tips">
+    <h2>How to record the test</h2>
+    <ul>
+      <li>In Audacity, press <b>Record</b>, then stay <b>silent for 5 seconds</b>. Don't move, and hold the paper still.</li>
+      <li>Read the three paragraphs below at your normal, friendly pace.</li>
+      <li>Stay silent for <b>2 more seconds</b>, then press <b>Stop</b>.</li>
+      <li><b>File → Export Audio</b> → WAV, 16-bit, named <b>test.wav</b>, saved in the <b>videos / voice-clone</b> folder.</li>
+    </ul>
+  </div>
+  <section class="session">
+    <h2>Test paragraphs</h2>
+    <div class="meta">Paragraphs 1–3 of the main script</div>
+    <div class="p"><div class="box"></div><div class="n">1</div><p>Welcome to the Guild. We're glad you're here. Over the next few minutes, I'll show you how to set up your profile, step by step. There's nothing to memorize, and nothing you can break. If you get stuck, you can always come back to this video and pick up where you left off.</p></div>
+    <div class="p"><div class="box"></div><div class="n">2</div><p>Your profile is the page people see when they look you up on the Guild website. It's where they find your hours, your address, your beers, and what's coming up at your place. A complete profile helps people decide to visit. An empty one sends them somewhere else.</p></div>
+    <div class="p"><div class="box"></div><div class="n">3</div><p>Let's start by signing in. Go to the Guild website and press Sign in, at the top right of the page. Type your email address and your password, and press Continue. If you've forgotten your password, press Forgot password, and we'll send you a link to make a new one. That's it. You're in.</p></div>
+  </section>
+</main>
+</body>
+</html>

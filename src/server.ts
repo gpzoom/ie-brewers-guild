@@ -77,4 +77,23 @@ export default {
       return brandedErrorResponse();
     }
   },
+
+  // Task 29: the two Cloudflare Cron Triggers declared in wrangler.jsonc's
+  // triggers.crons -- a 15-minute ICS calendar refresh and a daily
+  // hours-stale email-notice check. Both handlers are dynamically imported
+  // (rather than imported at module top-level) so neither's code, nor its
+  // transitive dependencies, is pulled into every single `fetch` request's
+  // module graph -- this `scheduled` export is only ever invoked by the
+  // platform on the matching cron schedule, never from an HTTP request.
+  // ctx.waitUntil keeps the invocation alive until the async work finishes,
+  // per Cloudflare Workers' own scheduled-handler contract.
+  async scheduled(controller: { cron: string }, _env: unknown, ctx: { waitUntil: (promise: Promise<unknown>) => void }) {
+    if (controller.cron === "*/15 * * * *") {
+      const { refreshAllIcsConnections } = await import("./lib/events/ics-refresh-cron.server");
+      ctx.waitUntil(refreshAllIcsConnections());
+    } else if (controller.cron === "0 13 * * *") {
+      const { sendHoursStaleNotices } = await import("./lib/hours/hours-stale-cron.server");
+      ctx.waitUntil(sendHoursStaleNotices());
+    }
+  },
 };

@@ -1,0 +1,272 @@
+[
+  {
+    "id": "w0",
+    "text": "Step",
+    "start": 0.0,
+    "end": 0.325
+  },
+  {
+    "id": "w1",
+    "text": "three.",
+    "start": 0.383,
+    "end": 0.917
+  },
+  {
+    "id": "w2",
+    "text": "Grab",
+    "start": 1.358,
+    "end": 1.637
+  },
+  {
+    "id": "w3",
+    "text": "the",
+    "start": 1.695,
+    "end": 1.765
+  },
+  {
+    "id": "w4",
+    "text": "link",
+    "start": 1.811,
+    "end": 2.009
+  },
+  {
+    "id": "w5",
+    "text": "you",
+    "start": 2.067,
+    "end": 2.148
+  },
+  {
+    "id": "w6",
+    "text": "copied",
+    "start": 2.229,
+    "end": 2.612
+  },
+  {
+    "id": "w7",
+    "text": "at",
+    "start": 2.635,
+    "end": 2.705
+  },
+  {
+    "id": "w8",
+    "text": "the",
+    "start": 2.74,
+    "end": 2.81
+  },
+  {
+    "id": "w9",
+    "text": "end",
+    "start": 2.891,
+    "end": 3.042
+  },
+  {
+    "id": "w10",
+    "text": "of",
+    "start": 3.088,
+    "end": 3.135
+  },
+  {
+    "id": "w11",
+    "text": "step",
+    "start": 3.193,
+    "end": 3.448
+  },
+  {
+    "id": "w12",
+    "text": "one.",
+    "start": 3.564,
+    "end": 3.982
+  },
+  {
+    "id": "w13",
+    "text": "Sign",
+    "start": 4.365,
+    "end": 4.679
+  },
+  {
+    "id": "w14",
+    "text": "in",
+    "start": 4.725,
+    "end": 4.807
+  },
+  {
+    "id": "w15",
+    "text": "to",
+    "start": 4.865,
+    "end": 4.911
+  },
+  {
+    "id": "w16",
+    "text": "your",
+    "start": 4.981,
+    "end": 5.085
+  },
+  {
+    "id": "w17",
+    "text": "Member",
+    "start": 5.155,
+    "end": 5.375
+  },
+  {
+    "id": "w18",
+    "text": "Portal",
+    "start": 5.445,
+    "end": 5.735
+  },
+  {
+    "id": "w19",
+    "text": "and",
+    "start": 5.805,
+    "end": 5.944
+  },
+  {
+    "id": "w20",
+    "text": "open",
+    "start": 6.026,
+    "end": 6.281
+  },
+  {
+    "id": "w21",
+    "text": "Events.",
+    "start": 6.339,
+    "end": 6.966
+  },
+  {
+    "id": "w22",
+    "text": "Press",
+    "start": 7.779,
+    "end": 8.069
+  },
+  {
+    "id": "w23",
+    "text": "Add",
+    "start": 8.115,
+    "end": 8.255
+  },
+  {
+    "id": "w24",
+    "text": "calendar.",
+    "start": 8.313,
+    "end": 8.916
+  },
+  {
+    "id": "w25",
+    "text": "Paste",
+    "start": 9.358,
+    "end": 9.694
+  },
+  {
+    "id": "w26",
+    "text": "your",
+    "start": 9.729,
+    "end": 9.857
+  },
+  {
+    "id": "w27",
+    "text": "link",
+    "start": 9.915,
+    "end": 10.159
+  },
+  {
+    "id": "w28",
+    "text": "and",
+    "start": 10.228,
+    "end": 10.344
+  },
+  {
+    "id": "w29",
+    "text": "type",
+    "start": 10.403,
+    "end": 10.635
+  },
+  {
+    "id": "w30",
+    "text": "the",
+    "start": 10.67,
+    "end": 10.739
+  },
+  {
+    "id": "w31",
+    "text": "same",
+    "start": 10.786,
+    "end": 11.053
+  },
+  {
+    "id": "w32",
+    "text": "tag",
+    "start": 11.099,
+    "end": 11.389
+  },
+  {
+    "id": "w33",
+    "text": "you",
+    "start": 11.447,
+    "end": 11.552
+  },
+  {
+    "id": "w34",
+    "text": "used",
+    "start": 11.668,
+    "end": 12.04
+  },
+  {
+    "id": "w35",
+    "text": "in",
+    "start": 12.249,
+    "end": 12.388
+  },
+  {
+    "id": "w36",
+    "text": "your",
+    "start": 12.434,
+    "end": 12.562
+  },
+  {
+    "id": "w37",
+    "text": "tagged",
+    "start": 12.632,
+    "end": 12.992
+  },
+  {
+    "id": "w38",
+    "text": "events",
+    "start": 13.026,
+    "end": 13.398
+  },
+  {
+    "id": "w39",
+    "text": "(hashtag",
+    "start": 13.642,
+    "end": 14.35
+  },
+  {
+    "id": "w40",
+    "text": "guild).",
+    "start": 14.42,
+    "end": 14.954
+  },
+  {
+    "id": "w41",
+    "text": "Then",
+    "start": 15.337,
+    "end": 15.534
+  },
+  {
+    "id": "w42",
+    "text": "press",
+    "start": 15.615,
+    "end": 15.871
+  },
+  {
+    "id": "w43",
+    "text": "Refresh",
+    "start": 15.964,
+    "end": 16.451
+  },
+  {
+    "id": "w44",
+    "text": "now.",
+    "start": 16.533,
+    "end": 17.229
+  }
+]

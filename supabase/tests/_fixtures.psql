@@ -1,0 +1,94 @@
+-- Shared fixtures for the *.test.sql files, pulled in with `\ir` right after
+-- each file's `begin;` (psql / pg_prove resolve \ir natively;
+-- scripts/test-db.mjs inlines it). Everything here is created inside the
+-- test's transaction, which always ends in `rollback`, so none of it is ever
+-- committed to the shared staging/production database. Named with .psql,
+-- not .sql, so test runners don't try to run it as a test on its own.
+--
+-- People (auth.users):
+--   f0..01 owner   -- owner of m1, m3, m4, m5
+--   f0..02 editor  -- full editor of m1, m3, m4, m5
+--   f0..03 media   -- media_events of m1, m3, m4, m5
+--   f0..04 admin   -- Guild admin, not linked to anyone
+--   f0..05 other   -- owner of m2 only
+--   f0..06 nobody  -- signed in, linked to nothing
+-- Members:
+--   m1 f1..01 producer, published, with live hours/slide/link/cover
+--   m2 f1..02 producer, published, another member entirely
+--   m3 f1..03 producer, draft (never published)
+--   m4 f1..04 mobile, published
+--   m5 f1..05 producer, applied (not approved yet)
+-- Assets:
+--   a1, a2 f2..01/02 m1 approved; a3 f2..03 m1 pending;
+--   b1 f2..04 m2 approved; c1 f2..05 m3 approved; d1 f2..06 m4 approved
+
+set local search_path = public, extensions;
+
+-- TAP lines are collected here and printed by one select at the end, so the
+-- whole run comes back as a single result set (what `supabase db query`
+-- returns) and still reads as plain TAP under pg_prove.
+create temp table _tap (n serial primary key, line text) on commit drop;
+grant all on _tap to public;
+grant all on sequence _tap_n_seq to public;
+
+insert into auth.users (id, email, aud, role) values
+  ('f0000000-0000-4000-8000-000000000001', 'pgtap-owner@example.test', 'authenticated', 'authenticated'),
+  ('f0000000-0000-4000-8000-000000000002', 'pgtap-editor@example.test', 'authenticated', 'authenticated'),
+  ('f0000000-0000-4000-8000-000000000003', 'pgtap-media@example.test', 'authenticated', 'authenticated'),
+  ('f0000000-0000-4000-8000-000000000004', 'pgtap-admin@example.test', 'authenticated', 'authenticated'),
+  ('f0000000-0000-4000-8000-000000000005', 'pgtap-other@example.test', 'authenticated', 'authenticated'),
+  ('f0000000-0000-4000-8000-000000000006', 'pgtap-nobody@example.test', 'authenticated', 'authenticated');
+
+insert into public.profiles (id, is_guild_admin)
+values ('f0000000-0000-4000-8000-000000000004', true)
+on conflict (id) do update set is_guild_admin = true;
+
+insert into public.members (id, slug, member_type, business_name, city, status, tagline) values
+  ('f1000000-0000-4000-8000-000000000001', 'pgtap-m1', 'producer', 'PgTap Brewing', 'Riverside', 'published', 'Live tagline'),
+  ('f1000000-0000-4000-8000-000000000002', 'pgtap-m2', 'producer', 'Other Brewing', 'Ontario', 'published', null),
+  ('f1000000-0000-4000-8000-000000000003', 'pgtap-m3', 'producer', 'Never Live Brewing', 'Corona', 'draft', null),
+  ('f1000000-0000-4000-8000-000000000004', 'pgtap-m4', 'mobile', 'Rolling Taps', 'Fontana', 'published', null),
+  ('f1000000-0000-4000-8000-000000000005', 'pgtap-m5', 'producer', 'Applied Brewing', 'Chino', 'applied', null);
+
+insert into public.member_users (member_id, user_id, role)
+select m.id, u.user_id, u.role
+from (values
+  ('f1000000-0000-4000-8000-000000000001'::uuid),
+  ('f1000000-0000-4000-8000-000000000003'::uuid),
+  ('f1000000-0000-4000-8000-000000000004'::uuid),
+  ('f1000000-0000-4000-8000-000000000005'::uuid)
+) as m (id)
+cross join (values
+  ('f0000000-0000-4000-8000-000000000001'::uuid, 'owner'),
+  ('f0000000-0000-4000-8000-000000000002'::uuid, 'editor'),
+  ('f0000000-0000-4000-8000-000000000003'::uuid, 'media_events')
+) as u (user_id, role);
+
+insert into public.member_users (member_id, user_id, role) values
+  ('f1000000-0000-4000-8000-000000000002', 'f0000000-0000-4000-8000-000000000005', 'owner');
+
+insert into public.media_assets (id, member_id, storage_path, kind, mime_type, byte_size, source, review_status) values
+  ('f2000000-0000-4000-8000-000000000001', 'f1000000-0000-4000-8000-000000000001', 'pgtap/a1.jpg', 'image', 'image/jpeg', 1000, 'member_upload', 'approved'),
+  ('f2000000-0000-4000-8000-000000000002', 'f1000000-0000-4000-8000-000000000001', 'pgtap/a2.jpg', 'image', 'image/jpeg', 1000, 'member_upload', 'approved'),
+  ('f2000000-0000-4000-8000-000000000003', 'f1000000-0000-4000-8000-000000000001', 'pgtap/a3.jpg', 'image', 'image/jpeg', 1000, 'creator_upload', 'pending'),
+  ('f2000000-0000-4000-8000-000000000004', 'f1000000-0000-4000-8000-000000000002', 'pgtap/b1.jpg', 'image', 'image/jpeg', 1000, 'member_upload', 'approved'),
+  ('f2000000-0000-4000-8000-000000000005', 'f1000000-0000-4000-8000-000000000003', 'pgtap/c1.jpg', 'image', 'image/jpeg', 1000, 'member_upload', 'approved'),
+  ('f2000000-0000-4000-8000-000000000006', 'f1000000-0000-4000-8000-000000000004', 'pgtap/d1.jpg', 'image', 'image/jpeg', 1000, 'member_upload', 'approved');
+
+update public.members
+set cover_asset_id = 'f2000000-0000-4000-8000-000000000002',
+    cover_crop = '{"x":0,"y":0,"w":1,"h":0.5}'
+where id = 'f1000000-0000-4000-8000-000000000001';
+
+insert into public.hours (member_id, weekday, opens_at, closes_at, closes_next_day, is_closed) values
+  ('f1000000-0000-4000-8000-000000000001', 1, '12:00', '20:00', false, false),
+  ('f1000000-0000-4000-8000-000000000001', 5, '12:00', '01:00', true, false);
+
+insert into public.carousel_slides (member_id, asset_id, crop, outbound_url, sort_order) values
+  ('f1000000-0000-4000-8000-000000000001', 'f2000000-0000-4000-8000-000000000001', '{"x":0,"y":0,"w":0.8,"h":1}', null, 0);
+
+insert into public.member_links (member_id, kind, label, url, sort_order) values
+  ('f1000000-0000-4000-8000-000000000001', 'website', null, 'https://pgtap.example.test', 0);
+
+insert into public.categories (id, name, slug, sort_order) values
+  ('f3000000-0000-4000-8000-000000000001', 'pgTAP test category', 'pgtap-test-category', 999);

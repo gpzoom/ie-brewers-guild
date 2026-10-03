@@ -7,9 +7,9 @@ import heroImg from "@/assets/hero-news.jpg";
 export const Route = createFileRoute("/news")({
   head: () => ({
     meta: [
-      { title: "News — IE Brewers Guild" },
-      { name: "description", content: "The latest news, advocacy wins, and announcements from the IE Brewers Guild." },
-      { property: "og:title", content: "News — IE Brewers Guild" },
+      { title: "News — Inland Southern California Brewers Guild" },
+      { name: "description", content: "The latest news, advocacy wins, and announcements from the Inland Southern California Brewers Guild." },
+      { property: "og:title", content: "News — Inland Southern California Brewers Guild" },
       { property: "og:description", content: "Updates and announcements." },
     ],
   }),

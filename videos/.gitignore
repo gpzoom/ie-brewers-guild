@@ -1,0 +1,18 @@
+# Video tool caches and generated output
+.hyperframes/
+.media/
+.thumbnails/
+.waveform-cache/
+snapshots/
+renders/
+*.mp4
+node_modules/
+
+# Cleaned voice-training audio (too large for git)
+voice-clone/clean/
+voice-clone/samples/
+# HeyGen takes (already in git history before the ElevenLabs re-voice)
+google-events-calendar/assets/voice/heygen/
+__pycache__/
+google-events-calendar/assets/voice/previous/
+*/assets/voice/previous/

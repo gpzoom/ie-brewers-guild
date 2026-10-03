@@ -17,7 +17,430 @@ export default defineConfig(async ({ command, mode }) => {
       importProtection: {
         behavior: "error",
         client: {
-          files: ["**/server/**"],
+          // A custom `files` array REPLACES TanStack Start's own default
+          // (["**/*.server.*"]) rather than merging with it, so the
+          // default pattern must be listed explicitly alongside our own
+          // "**/server/**" or every *.server.ts file loses file-based
+          // import protection project-wide. This is defense-in-depth --
+          // createServerOnlyFn's compile-time body-stripping is the real,
+          // still-working guarantee against secret leaks -- but it costs
+          // nothing to keep both patterns active.
+          // ics-refresh-cron.server.ts and hours-stale-cron.server.ts
+          // (Task 29) are already covered by the "**/*.server.*" glob above
+          // -- listed here explicitly too, redundantly but harmlessly, per
+          // this task's own instructions. Unlike every file in excludeFiles
+          // below, neither exports a createServerFn: refreshAllIcsConnections
+          // and sendHoursStaleNotices are plain async functions with no
+          // client caller at all, only ever dynamically imported from
+          // src/server.ts's own `scheduled` handler (a Worker-only entry
+          // point, never bundled for the client) -- so, deliberately, they
+          // are NOT added to excludeFiles the way the sixteen RPC-boundary
+          // files below are. Doing so would defeat the point of import
+          // protection for these two: it would let the client bundle
+          // reference code that talks to the service-role Supabase client
+          // and reads HOURS_CONFIRM_SECRET.
+          files: [
+            "**/*.server.*",
+            "**/server/**",
+            "src/lib/events/ics-refresh-cron.server.ts",
+            "src/lib/hours/hours-stale-cron.server.ts",
+          ],
+          // src/lib/members/member-profile.server.ts,
+          // src/lib/auth/require-member-session.server.ts,
+          // src/lib/members/member-basics.server.ts,
+          // src/lib/hours/hours-editor.server.ts,
+          // src/lib/media/media-gallery.server.ts,
+          // src/lib/media/carousel.server.ts,
+          // src/lib/media/cover.server.ts,
+          // src/lib/media/logo.server.ts,
+          // src/lib/media/upload-tokens.server.ts,
+          // src/lib/media/creator-upload.server.ts,
+          // src/lib/media/review-tray.server.ts,
+          // src/lib/hours/publish-gate.server.ts,
+          // src/lib/theme/member-theme.server.ts,
+          // src/lib/events/events.server.ts,
+          // src/lib/events/calendar-connection.server.ts, and
+          // src/lib/hours/confirm-token.server.ts are the files in
+          // this repo the restored "**/*.server.*" default pattern would
+          // now also catch, and all sixteen are deliberate exceptions, not
+          // a gap: every export of each file (`getMemberProfileData`;
+          // `requireMemberSession`; `getMemberBasics`/`updateMemberBasics`;
+          // `listHours`/`upsertHoursRow`/`deleteHoursRow`/
+          // `upsertSpecialHoursRow`/`deleteSpecialHoursRow`;
+          // `listMemberMedia`/`uploadMemberMedia`/`deleteMemberMedia`;
+          // `listCarouselSlides`/`assignCarouselSlide`/
+          // `unassignCarouselSlide`/`updateCarouselSlideCrop`/
+          // `updateCarouselSlideLink`;
+          // `getMemberCover`/`updateCoverAsset`/`updateCoverCrop`;
+          // `uploadMemberLogo`/`getMemberLogo`;
+          // `listUploadTokens`/`createUploadToken`/`revokeUploadToken`;
+          // `submitCreatorUpload`;
+          // `listPendingMedia`/`approvePendingMedia`/`rejectPendingMedia`;
+          // `publishMemberProfile`/`unpublishMemberProfile`/
+          // `getPublishGateData`; `updateMemberTheme`; `listEvents`/
+          // `createEvent`/`updateEvent`/`deleteEvent`/`setEventOverlay`/
+          // `clearEventOverlay`/`toggleEventHidden`;
+          // `getCalendarConnection`/`saveIcsConnection`/
+          // `refreshIcsConnectionNow` -- calendar-connection.server.ts's
+          // other export, `syncOneIcsConnection`, is a plain function, not
+          // a createServerFn, but it's never imported client-side either;
+          // it's only ever called from refreshIcsConnectionNow's own
+          // handler here and from the Task 29 cron, both server-only
+          // contexts; `checkHoursConfirmToken`/`confirmHoursStale`)
+          // is a createServerFn().handler(...) call
+          // -- already the exact safe client/server RPC boundary this deny
+          // rule exists to push people toward (see the plugin's own
+          // "Import denied" message).
+          // src/routes/members_.$slug.tsx, src/routes/admin.tsx (which
+          // calls getPublishGateData straight from its own loader, and
+          // renders PublishGateDialog.tsx, which calls
+          // publishMemberProfile/unpublishMemberProfile from its own
+          // onPublish/onUnpublish handlers the same way),
+          // src/routes/admin.basics.tsx (plus BasicsForm.tsx, which calls
+          // updateMemberBasics from an onBlur/onValueChange handler),
+          // src/routes/admin.hours.tsx (plus HoursEditor.tsx, same
+          // pattern), src/routes/admin.media.tsx (plus
+          // MediaGallery.tsx, which calls uploadMemberMedia/
+          // deleteMemberMedia from its own handlers, CarouselEditor.tsx,
+          // which calls assignCarouselSlide/unassignCarouselSlide/
+          // updateCarouselSlideCrop/updateCarouselSlideLink the same way,
+          // CoverEditor.tsx, which calls updateCoverAsset/
+          // updateCoverCrop the same way -- getMemberCover is imported
+          // straight into the route's own loader instead -- LogoUploader.tsx,
+          // which calls uploadMemberLogo from its own onFileSelected handler
+          // the same way -- getMemberLogo is likewise imported straight into
+          // the route's own loader instead -- and CreatorLinkPanel.tsx, which
+          // calls createUploadToken/revokeUploadToken from its own onCreate/
+          // onRevoke handlers the same way -- listUploadTokens is likewise
+          // imported straight into the route's own loader instead -- and
+          // ReviewTray.tsx, which calls approvePendingMedia/
+          // rejectPendingMedia from its own onApprove/onReject handlers the
+          // same way -- listPendingMedia is likewise imported straight into
+          // the route's own loader instead), src/routes/admin.theme.tsx
+          // (plus ThemePicker.tsx, which calls updateMemberTheme from its
+          // own onSelect handler the same way -- getMemberBasics is
+          // imported straight into the route's own loader instead),
+          // src/routes/admin.events.tsx (plus EventsEditor.tsx, which
+          // calls createEvent/updateEvent/deleteEvent/setEventOverlay/
+          // clearEventOverlay/toggleEventHidden from its own onAdd/
+          // onFieldChange/onDelete/onOverlayChange/onToggleHidden handlers
+          // the same way -- listEvents is likewise imported straight into
+          // the route's own loader instead -- and CalendarConnectionPanel.tsx,
+          // which calls saveIcsConnection/refreshIcsConnectionNow from its
+          // own onSave/onRefreshNow handlers the same way -- getCalendarConnection
+          // is likewise imported straight into the route's own loader
+          // instead), and
+          // src/routes/send.$token.tsx (its own SendPage component calls
+          // submitCreatorUpload directly from its onSubmit handler -- this
+          // is the one route in this list with no server-side loader/action
+          // of its own calling anything from the same file; the whole
+          // point of this exclusion is that submitCreatorUpload's ONLY
+          // caller is this direct client-side RPC call, since routing it
+          // through a route-level server.handlers.POST instead is exactly
+          // what broke this in production the first time: nothing in the
+          // client bundle referenced the function, so the compiler never
+          // emitted its RPC provider module. See creator-upload.server.ts's
+          // own doc comment), and
+          // src/routes/api.confirm-hours.$token.tsx (its loader calls
+          // checkHoursConfirmToken, and its own ConfirmHoursPage component
+          // calls confirmHoursStale directly from its onConfirm handler --
+          // same reasoning as send.$token.tsx just above: no route-level
+          // server.handlers.POST, so the client bundle's own direct call is
+          // confirmHoursStale's only path to being reachable at all)
+          // import them directly by design, per TanStack
+          // Start's own createServerFn convention -- that is not a
+          // violation to catch, so all sixteen are excluded here rather
+          // than renamed off the *.server.* convention project-wide. The
+          // next file added to this list should get the same treatment: update
+          // this comment to describe it too, so the gap that broke the
+          // build for require-member-session.server.ts doesn't repeat.
+          //
+          // Phase 2 (member drafts) deleted hours-editor.server.ts,
+          // carousel.server.ts, cover.server.ts, member-theme.server.ts,
+          // member-links.server.ts, discount.server.ts and
+          // social-image.server.ts -- their live writes became draft saves
+          // through src/lib/drafts/drafts.server.ts (listed below) -- so
+          // their entries are gone from excludeFiles; the paragraph above
+          // still describes them as they were.
+          //
+          // "**/node_modules/**" MUST stay listed here too -- a custom
+          // `excludeFiles` array replaces the framework's own default
+          // (["**/node_modules/**"]) rather than merging with it, exactly
+          // the same replace-not-merge behavior that caused the original
+          // `files` bug this config is fixing. Nothing in today's
+          // dependency graph trips this, but the first future dependency
+          // that ships its own `.server.`/`server/`-named file would
+          // otherwise hard-fail the client build with a confusing "Import
+          // denied" error from inside node_modules.
+          excludeFiles: [
+            "**/node_modules/**",
+            "src/lib/members/member-profile.server.ts",
+            "src/lib/auth/require-member-session.server.ts",
+            "src/lib/members/member-basics.server.ts",
+            // src/lib/members/member-email.server.ts (Guild-admin sign-in
+            // email change) -- same reasoning as member-basics.server.ts
+            // right above: its two createServerFn exports, getMemberEmail
+            // and updateMemberEmail, are called directly from
+            // src/routes/admin.basics.tsx's own loader and from
+            // BasicsForm.tsx's SignInEmailEditor -- the same safe
+            // client/server RPC boundary this deny rule exists to push
+            // people toward, already covered by the "**/*.server.*" glob
+            // above and excluded here for the same reason as the rest.
+            "src/lib/members/member-email.server.ts",
+            "src/lib/media/media-gallery.server.ts",
+            "src/lib/media/logo.server.ts",
+            "src/lib/media/upload-tokens.server.ts",
+            "src/lib/media/creator-upload.server.ts",
+            "src/lib/media/review-tray.server.ts",
+            "src/lib/hours/publish-gate.server.ts",
+            "src/lib/events/events.server.ts",
+            "src/lib/events/calendar-connection.server.ts",
+            "src/lib/hours/confirm-token.server.ts",
+            // src/lib/guild/delete-member.server.ts -- its createServerFn
+            // export, deleteMember, is called directly from
+            // src/components/guild/DeleteMemberDialog.tsx's confirm handler;
+            // same safe client/server RPC boundary as the rest.
+            "src/lib/guild/delete-member.server.ts",
+            // src/lib/guild/impersonation.server.ts (Task 13, Guild Admin
+            // phase) -- same reasoning as the files above: its two
+            // createServerFn exports, startImpersonation and
+            // stopImpersonation, are called directly from client
+            // components in later tasks of this same plan (the roster's
+            // "Edit as them" button, Task 18, and AdminShell's "Stop"
+            // button, Task 20) -- the same safe client/server RPC boundary
+            // this deny rule exists to push people toward, already covered
+            // by the "**/*.server.*" glob above and excluded here for the
+            // same reason as the rest. getMemberDisplayName is also a
+            // createServerFn export of this file but is only ever called
+            // server-side per this plan; it rides along with the same
+            // exclusion since the file-level allowlist can't be split
+            // per-export.
+            "src/lib/guild/impersonation.server.ts",
+            // src/lib/guild/roster.server.ts (Task 14, Guild Admin phase)
+            // -- its one createServerFn export, getRoster, is imported
+            // straight into src/routes/guild.roster.tsx's own loader --
+            // the same safe client/server RPC boundary this deny rule
+            // exists to push people toward, already covered by the
+            // "**/*.server.*" glob above and excluded here for the same
+            // reason as the rest.
+            "src/lib/guild/roster.server.ts",
+            // src/lib/guild/create-member.server.ts (Task 12, reused by
+            // Task 15's CreateMemberDialog.tsx) -- same reasoning as the
+            // files above: its one createServerFn export,
+            // createMemberRecord, is called directly from
+            // CreateMemberDialog.tsx's own onSubmit handler -- the same
+            // safe client/server RPC boundary this deny rule exists to
+            // push people toward, already covered by the "**/*.server.*"
+            // glob above and excluded here for the same reason as the
+            // rest.
+            "src/lib/guild/create-member.server.ts",
+            // src/lib/guild/invite-member.server.ts (Task 16, Guild Admin
+            // phase) -- same reasoning as the files above: its one
+            // createServerFn export, inviteMember, is called directly from
+            // RosterTable.tsx's own handleInvite handler -- the same safe
+            // client/server RPC boundary this deny rule exists to push
+            // people toward, already covered by the "**/*.server.*" glob
+            // above and excluded here for the same reason as the rest.
+            "src/lib/guild/invite-member.server.ts",
+            // src/lib/guild/member-admin-actions.server.ts (Task 17, Guild
+            // Admin phase) -- same reasoning as the files above: its
+            // createServerFn exports (approveMember, declineMember,
+            // suspendMember, correctMemberType, setTrailEligible,
+            // setDuesReceived, updateMemberByGuildAdmin) are called
+            // directly from RosterTable.tsx's own onClick/onChange
+            // handlers -- the same safe client/server RPC boundary this
+            // deny rule exists to push people toward, already covered by
+            // the "**/*.server.*" glob above and excluded here for the
+            // same reason as the rest.
+            "src/lib/guild/member-admin-actions.server.ts",
+            // src/lib/auth/sign-out.server.ts (Task 23, Guild Admin phase)
+            // -- same reasoning as the files above: its one createServerFn
+            // export, signOutEverything, is called directly from client
+            // components -- GuildShell.tsx's own handleSignOut handler
+            // (Task 11) and AdminShell.tsx's own handleSignOut handler
+            // (this task) -- the same safe client/server RPC boundary this
+            // deny rule exists to push people toward, already covered by
+            // the "**/*.server.*" glob above and excluded here for the
+            // same reason as the rest.
+            "src/lib/auth/sign-out.server.ts",
+            // src/lib/auth/require-guild-admin-session.server.ts (Guild
+            // Admin phase, /guild auth guard) -- same reasoning as its
+            // sibling src/lib/auth/require-member-session.server.ts above:
+            // its one createServerFn export, requireGuildAdminSession, is
+            // called directly from src/routes/guild.tsx's own `beforeLoad`
+            // (the same "imported straight into the route's own loader"
+            // pattern as require-member-session.server.ts's own
+            // requireMemberSession call from src/routes/admin.tsx's
+            // `beforeLoad`) -- the same safe client/server RPC boundary
+            // this deny rule exists to push people toward, already covered
+            // by the "**/*.server.*" glob above and excluded here for the
+            // same reason as the rest.
+            "src/lib/auth/require-guild-admin-session.server.ts",
+            // src/lib/guild/inquiries.server.ts (Task 24, Guild Admin
+            // phase) -- same reasoning as the files above: its
+            // createServerFn export getInquiries is imported straight into
+            // src/routes/guild.inquiries.tsx's own loader, and its other
+            // two createServerFn exports, markInquiryHandled and
+            // setUpInquiryAsMember, are called directly from
+            // InquiriesTable.tsx's own handleMarkHandled/
+            // handleSetUpAsMember handlers -- the same safe client/server
+            // RPC boundary this deny rule exists to push people toward,
+            // already covered by the "**/*.server.*" glob above and
+            // excluded here for the same reason as the rest.
+            "src/lib/guild/inquiries.server.ts",
+            // src/lib/brand/brand-settings.server.ts (Task 26, Guild Admin
+            // phase) -- same reasoning as the files above: its
+            // createServerFn export getBrandSettings is imported straight
+            // into src/routes/guild.brand.tsx's own loader, and its other
+            // createServerFn export, saveBrandSettings, is called directly
+            // from BrandEditor.tsx's own onSubmit handler -- the same safe
+            // client/server RPC boundary this deny rule exists to push
+            // people toward, already covered by the "**/*.server.*" glob
+            // above and excluded here for the same reason as the rest.
+            "src/lib/brand/brand-settings.server.ts",
+            // src/lib/brand/active-brand.server.ts (Task 28, Guild Admin
+            // phase) -- same reasoning as the files above: its one
+            // createServerFn export, getActiveBrandTokens, is imported
+            // straight into src/routes/__root.tsx's own loader -- the same
+            // safe client/server RPC boundary this deny rule exists to push
+            // people toward, already covered by the "**/*.server.*" glob
+            // above and excluded here for the same reason as the rest.
+            "src/lib/brand/active-brand.server.ts",
+            // src/lib/categories/categories.server.ts (Task 29, Guild Admin
+            // phase) -- same reasoning as the files above: its
+            // createServerFn export getCategories is imported straight into
+            // src/routes/guild.categories.tsx's own loader, and its other
+            // createServerFn exports, createCategory/updateCategory/
+            // deleteCategory, are called directly from
+            // CategoriesEditor.tsx's own handleCreate/handleRename/
+            // handleReorder/handleDelete handlers -- the same safe
+            // client/server RPC boundary this deny rule exists to push
+            // people toward, already covered by the "**/*.server.*" glob
+            // above and excluded here for the same reason as the rest.
+            "src/lib/categories/categories.server.ts",
+            // src/lib/contact/submit-contact-form.server.ts (contact form +
+            // Resend integration) -- same reasoning as send.$token.tsx
+            // above: its one createServerFn export, submitContactForm, is
+            // called directly from src/routes/contact.tsx's own
+            // ContactPage component, from its onSubmit handler -- routing
+            // it through a route-level server.handlers.POST instead is
+            // exactly what broke this in production the first time
+            // (confirmed against a real built Worker: the RPC id never
+            // made it into the server-function manifest) -- the same safe
+            // client/server RPC boundary this deny rule exists to push
+            // people toward, already covered by the "**/*.server.*" glob
+            // above and excluded here for the same reason as the rest.
+            "src/lib/contact/submit-contact-form.server.ts",
+            // src/lib/guild/guild-admin-status.server.ts (persistent Guild
+            // admin bar) -- same reasoning as submit-contact-form.server.ts
+            // above: its one createServerFn export, getGuildAdminStatus, is
+            // called directly from src/routes/__root.tsx's own root loader,
+            // which runs on both server and client (every navigation) --
+            // the same safe client/server RPC boundary this deny rule
+            // exists to push people toward, already covered by the
+            // "**/*.server.*" glob above and excluded here for the same
+            // reason as the rest.
+            "src/lib/guild/guild-admin-status.server.ts",
+            // src/lib/guild/guild-shell.server.ts (Guild admin shell,
+            // design stage 2) -- same reasoning as the files above: its one
+            // createServerFn export, getGuildShellSummary (sidebar counts +
+            // the admin's email), is called directly from
+            // src/routes/guild.tsx's own loader, which runs on both server
+            // and client (every /guild navigation and router.invalidate())
+            // -- the same safe client/server RPC boundary this deny rule
+            // exists to push people toward, already covered by the
+            // "**/*.server.*" glob above and excluded here for the same
+            // reason as the rest.
+            "src/lib/guild/guild-shell.server.ts",
+            // src/lib/drafts/drafts.server.ts (member drafts, phase 2) --
+            // same reasoning as the files above: its createServerFn exports
+            // are the draft's whole client/server RPC boundary.
+            // getMemberDraft is imported straight into the /admin editor
+            // routes' own loaders (admin.basics/media/links/discount/
+            // theme.tsx) and getDraftStatus into src/routes/admin.tsx's;
+            // saveDraftSection is called directly from DraftStatusContext's
+            // useSaveDraftSection hook (every drafted editor's save
+            // handler); publishDraft/discardDraft/unpublishMember from
+            // PublishGateDialog.tsx's own onPublish/onDiscard/onUnpublish
+            // handlers. Its plain helper loadMemberDraftBundle is only ever
+            // called server-side (member-profile.server.ts's preview
+            // loader). Already covered by the "**/*.server.*" glob above
+            // and excluded here for the same reason as the rest.
+            "src/lib/drafts/drafts.server.ts",
+            // src/lib/portal/portal-session.server.ts (Member Portal, phase
+            // 3) -- same reasoning as the files above: getPortalState is
+            // imported straight into src/routes/portal.index.tsx's own
+            // loader, and choosePortalMember is called from that page's
+            // "Choose a business" onClick handler. Its pure helpers live in
+            // portal-access.ts / portal-destination.ts, not here.
+            "src/lib/portal/portal-session.server.ts",
+            // src/lib/portal/portal-setup.server.ts (Member Portal, phase
+            // 4: the setup wizard) -- same reasoning as the files above:
+            // getPortalSetupShell is imported straight into
+            // src/routes/portal.setup.tsx's own beforeLoad and
+            // getPortalStepData into portal.setup.$step.tsx's loader;
+            // confirmPortalMemberType and completePortalSetup are called
+            // from the Confirm type and The basics steps' click handlers
+            // (src/components/portal/setup/IntroSteps.tsx). Its per-section
+            // loaders live in section-data.server.ts, which only this file
+            // imports at runtime (client components import its types only),
+            // so that one stays protected.
+            "src/lib/portal/portal-setup.server.ts",
+            // src/lib/members/directory.server.ts -- its one createServerFn
+            // export, getDirectoryMembers, is imported straight into
+            // src/routes/members.tsx's own loader (the public /members map
+            // and cards) -- the same safe client/server RPC boundary as the
+            // rest. src/lib/geo/geocode.server.ts (service-role write +
+            // Google key) stays protected: only drafts.server.ts and
+            // member-admin-actions.server.ts handlers import it.
+            "src/lib/members/directory.server.ts",
+            // The Member Portal, phase 5 -- same reasoning again, each file
+            // is a set of createServerFn exports the portal's routes and
+            // components call: portal-shell.server.ts (getPortalShell in
+            // portal._sections.tsx's beforeLoad, getPortalSectionData and
+            // getPortalPreviewData in loaders), portal-people.server.ts (the
+            // People section's buttons), type-change.server.ts ("Request a
+            // type change") and guild/support-requests.server.ts (the Guild
+            // Inquiries screen). Their service-role helpers --
+            // people-store.server.ts, section-data.server.ts -- are only
+            // imported inside handlers, so those stay protected.
+            "src/lib/portal/portal-shell.server.ts",
+            "src/lib/portal/portal-people.server.ts",
+            "src/lib/portal/type-change.server.ts",
+            "src/lib/guild/support-requests.server.ts",
+            // Super admin (2026-09-27): guild-admins.server.ts (the Guild
+            // admins screen's actions, and acceptGuildAdminInvitesAtSignIn,
+            // a createServerOnlyFn the auth callback route calls) and
+            // audit-log-view.server.ts (the Audit log screen's loader).
+            // Their service-role store and helpers are private to each
+            // file and used only inside handlers, after the super admin check.
+            "src/lib/guild/guild-admins.server.ts",
+            "src/lib/guild/audit-log-view.server.ts",
+            // The Help button (2026-09-27): support-message.server.ts's
+            // getSupportContext and sendSupportMessage are called from
+            // SupportButton.tsx. The sender is worked out from the session
+            // inside the handlers; its service-role use stays there.
+            "src/lib/support/support-message.server.ts",
+            // help-messages.server.ts: the super admin's Help messages
+            // screen (getHelpMessages, setHelpMessageStatus), called from
+            // guild.help.tsx and HelpMessagesScreen.tsx. The service key is
+            // opened only inside setHelpMessageStatusCore, after the super
+            // admin check.
+            "src/lib/guild/help-messages.server.ts",
+            // site-settings.server.ts: the super admin's Settings screen
+            // (getSiteSettings, saveCalendarSyncInterval), called from
+            // guild.settings.tsx and SiteSettingsScreen.tsx. Session client
+            // only, after the super admin check.
+            "src/lib/guild/site-settings.server.ts",
+            // homepage.server.ts: getHomepageData, the homepage route's
+            // loader (member events carousel, dwell time, hero image). Anon
+            // client for events; service role only for site_settings.
+            "src/lib/home/homepage.server.ts",
+            // food-calendar.server.ts: getFoodCalendar, the old
+            // /admin/events screen's loader for a producer's food calendar
+            // (session client; RLS limits it to the member's editors).
+            "src/lib/events/food-calendar.server.ts",
+          ],
           specifiers: ["server-only"],
         },
       },
@@ -25,13 +448,14 @@ export default defineConfig(async ({ command, mode }) => {
     viteReact(),
   ];
 
-  // Cloudflare plugin only applies to production builds, matching the
-  // original config's behavior (it never ran in `vite dev`).
-  if (command === "build") {
-    const { cloudflare } = await import("@cloudflare/vite-plugin");
-    const configPath = mode === "staging" ? "./wrangler.staging.jsonc" : "./wrangler.jsonc";
-    plugins.push(cloudflare({ configPath, viteEnvironment: { name: "ssr" } }));
-  }
+  // The Cloudflare plugin must also run in `vite dev` so that
+  // `import { env } from "cloudflare:workers"` resolves locally inside
+  // createServerFn/createServerOnlyFn handlers (src/lib/supabase/server.ts
+  // and the private-media streaming route depend on this). It previously
+  // only ran for `command === "build"" -- that gate is gone.
+  const { cloudflare } = await import("@cloudflare/vite-plugin");
+  const configPath = mode === "staging" ? "./wrangler.staging.jsonc" : "./wrangler.jsonc";
+  plugins.push(cloudflare({ configPath, viteEnvironment: { name: "ssr" } }));
 
   return {
     plugins,

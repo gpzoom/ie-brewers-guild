@@ -1,0 +1,1 @@
+Now scroll down to "Integrate calendar". Copy the "Public address in iCal format". This will be used in Step three, so you may want to paste it somewhere you can grab it when you get there.

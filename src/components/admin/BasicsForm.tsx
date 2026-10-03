@@ -1,0 +1,782 @@
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { updateMemberType } from "@/lib/members/member-basics.server";
+import type { BasicsDraft } from "@/lib/drafts/sections";
+import { useSaveDraftSection } from "@/components/admin/DraftStatusContext";
+import { updateMemberEmail } from "@/lib/members/member-email.server";
+import { isFieldVisibleForMemberType, LOCATION_FIELD_LABEL } from "@/lib/members/type-fields";
+import { listIanaTimezones } from "@/lib/timezone/timezones";
+import type { MemberType } from "@/lib/supabase/types";
+import { MEMBER_TYPE_OPTIONS } from "@/lib/members/member-type-options";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { SaveNoteText } from "@/components/admin/SaveNote";
+import { useMemberEditing } from "@/components/admin/MemberEditingContext";
+import { AddressAutocompleteInput } from "@/components/admin/basics/AddressAutocomplete";
+import {
+  handEditPatch,
+  isValidZip,
+  normalizeZip,
+  pickPatch,
+  type HandEditedAddressField,
+  type PickedPlace,
+} from "@/lib/geo/places-address";
+import {
+  Field,
+  IDLE,
+  InfoBox,
+  type SaveState,
+  SaveIndicator,
+  fieldLabelClass,
+  primaryButtonClass,
+  sectionLabelClass,
+  textInputClass,
+} from "@/components/admin/basics/ui";
+
+const TIMEZONES = listIanaTimezones();
+
+// Plan's Decision 6: "~400ms debounce, saves as the member types." A
+// member who types then backgrounds the tab, loses connectivity, or
+// navigates away without ever blurring the field still gets an autosave
+// attempt fired on this timer, not just on blur.
+const SAVE_DEBOUNCE_MS = 400;
+const MIN_MEMBER_SINCE_YEAR = 1800;
+const MAX_MEMBER_SINCE_YEAR = new Date().getFullYear() + 1;
+
+
+/**
+ * The sign-in email tied to this member's account, shown ONLY while a
+ * Guild admin is editing as this member, and editable only by the super
+ * admin (2026-09-27; a Guild admin sees it read-only) -- product decision
+ * 2026-09-24, see member-email.server.ts's own doc comment on
+ * changeMemberEmail for the full reasoning: a departed employee should
+ * never be able to permanently lock a member out of, or retain access to,
+ * their own account). An explicit "Update email" button, not autosave --
+ * unlike every field above, a half-typed value here would otherwise get
+ * committed as someone's actual login credential 400ms after a keystroke.
+ */
+function SignInEmailEditor({
+  memberId,
+  email,
+  canChange,
+}: {
+  memberId: string;
+  email: string | null;
+  /** Only the super admin may change it (docs/member-profiles.md, "Super admin"). */
+  canChange: boolean;
+}) {
+  const [value, setValue] = useState(email ?? "");
+  const [status, setStatus] = useState<SaveState>(IDLE);
+
+  async function handleUpdate() {
+    setStatus({ status: "saving" });
+    try {
+      await updateMemberEmail({ data: { memberId, newEmail: value } });
+      setStatus({ status: "saved" });
+    } catch (error) {
+      setStatus({
+        status: "error",
+        message: error instanceof Error ? error.message : "Couldn't update the email — try again.",
+      });
+    }
+  }
+
+  const heading = (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className={sectionLabelClass}>Sign-in email</span>
+      <span className="rounded-full bg-canvas-2 px-2 py-0.5 text-[11px] font-medium text-ink-muted">
+        {canChange ? "Super admin only" : "Read only"}
+      </span>
+    </div>
+  );
+
+  // No member_users row yet -- this member has never been invited/claimed,
+  // so there is no account to change an email ON. changeMemberEmail's own
+  // server-side check would reject this the same way, but surfacing it
+  // here avoids a confusing round-trip error on a button that could never
+  // have worked. Use the roster's existing "Invite" action instead, which
+  // is the flow that actually creates the first account+email.
+  if (email === null) {
+    return (
+      <section className="flex flex-col gap-3 rounded-[12px] border border-canvas-border bg-white px-[17px] py-[15px]">
+        {heading}
+        <p className="text-[13px] leading-[1.5] text-ink">
+          This member hasn't been invited yet, so there's no sign-in email to show or change here.
+          Use <strong>Invite</strong> from the Guild roster to give them their first one.
+        </p>
+      </section>
+    );
+  }
+
+  if (!canChange) {
+    return (
+      <section className="flex flex-col gap-3 rounded-[12px] border border-canvas-border bg-white px-[17px] py-[15px]">
+        {heading}
+        <p className="break-all text-[14px] text-ink">{email}</p>
+        <p className="text-[12px] leading-[1.45] text-ink-muted">
+          The address this member signs in with. Only the super admin can change it.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="flex flex-col gap-3 rounded-[12px] border border-canvas-border bg-white px-[17px] py-[15px]">
+      {heading}
+      <div className="flex flex-col gap-[7px]">
+        <label htmlFor="member_email" className={fieldLabelClass}>
+          Email this member signs in with
+        </label>
+        <p className="text-[12px] leading-[1.45] text-ink-muted">
+          Changing it takes effect immediately — the member will need to sign in with the new
+          address from then on.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Input
+            id="member_email"
+            type="email"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className={cn(textInputClass, "min-w-0 flex-1 basis-60 md:h-11 md:max-w-sm")}
+          />
+          <button
+            type="button"
+            onClick={handleUpdate}
+            disabled={status.status === "saving"}
+            className={primaryButtonClass}
+          >
+            {status.status === "saving" ? "Updating…" : "Update email"}
+          </button>
+        </div>
+        <SaveIndicator state={status} />
+      </div>
+    </section>
+  );
+}
+
+/** A Basics field's saved value: a draft `basics` key, or the (live) member type. */
+type BasicsFormValues = BasicsDraft & { member_type: MemberType };
+type BasicsFormPatch = Partial<BasicsFormValues>;
+
+/**
+ * Every field here autosaves via its own small patch -- debounced ~400ms
+ * after the last keystroke for text fields (this plan's Decision 6),
+ * immediately on change for the radio/select -- never a whole-form submit.
+ * That's what keeps a member-type switch from ever clobbering a hidden
+ * field's stored value.
+ *
+ * Phase 2: the patches go to the member's DRAFT (section `basics`,
+ * useSaveDraftSection) and reach the live page only when published. Member
+ * type is the exception -- it isn't drafted, so it still changes live
+ * (updateMemberType), and only until the type is confirmed; after that it
+ * shows read-only ("Your member type is set by the Guild").
+ */
+export function BasicsForm({
+  memberId,
+  memberType,
+  typeConfirmed,
+  basics,
+  email = null,
+  isImpersonating = false,
+  canChangeSignInEmail = false,
+  logo,
+  hours,
+  typeChange,
+  categories,
+  showHeading = true,
+}: {
+  memberId: string;
+  memberType: MemberType;
+  /** type_confirmed_at is set: the type is locked for the member. */
+  typeConfirmed: boolean;
+  basics: BasicsDraft;
+  email?: string | null;
+  isImpersonating?: boolean;
+  /** The super admin is editing as this member: the sign-in email is editable (else read-only). */
+  canChangeSignInEmail?: boolean;
+  /** The logo row card (LogoUploader), shown at the end of IDENTITY. */
+  logo?: ReactNode;
+  /** The weekly/special hours editor (HoursEditor), shown after IDENTITY. */
+  hours?: ReactNode;
+  /**
+   * The portal's "Request a type change" control, shown with the locked
+   * type once it's confirmed (docs/member-profiles.md, "Member type: confirm
+   * once, then locked"). /admin leaves it out.
+   */
+  typeChange?: ReactNode;
+  /**
+   * A Mobile member's "What you offer" category picker
+   * (SupplyCategoriesPicker), shown under the member type. Pages pass it
+   * only for Mobile members; Allied Members pick theirs under Discount.
+   */
+  categories?: ReactNode;
+  /** False where the page around it has its own heading (the setup wizard's step chrome). */
+  showHeading?: boolean;
+}) {
+  const editing = useMemberEditing();
+  const saveDraft = useSaveDraftSection(memberId);
+  const initialValues: BasicsFormValues = { ...basics, member_type: memberType };
+  const [local, setLocal] = useState<BasicsFormValues>(initialValues);
+  const [status, setStatus] = useState<Record<string, SaveState>>({});
+  /** A small line under the address after a pick (e.g. a business was picked). */
+  const [pickNote, setPickNote] = useState<string | null>(null);
+
+  // The last value this component knows to be saved, per field -- used
+  // both to skip no-op saves (tabbing through the form without changing
+  // anything shouldn't fire a write) and, on a debounced field, to know
+  // what to compare a keystroke against. Deliberately a ref, not state:
+  // updating it must never itself trigger a re-render.
+  const savedRef = useRef<BasicsFormValues>(initialValues);
+  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const savedStatusTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  useEffect(() => {
+    const timers = debounceTimers.current;
+    const statusTimers = savedStatusTimers.current;
+    return () => {
+      for (const timer of Object.values(timers)) clearTimeout(timer);
+      for (const timer of Object.values(statusTimers)) clearTimeout(timer);
+    };
+  }, []);
+
+  function isNoOp(patch: BasicsFormPatch) {
+    return Object.entries(patch).every(
+      ([key, value]) => savedRef.current[key as keyof BasicsFormValues] === value,
+    );
+  }
+
+  function performSave(field: string, patch: BasicsFormPatch) {
+    if (isNoOp(patch)) return;
+
+    if (savedStatusTimers.current[field]) {
+      clearTimeout(savedStatusTimers.current[field]);
+      delete savedStatusTimers.current[field];
+    }
+    setStatus((prev) => ({ ...prev, [field]: { status: "saving" } }));
+
+    const { member_type: nextType, ...draftPatch } = patch;
+    const request =
+      nextType !== undefined
+        ? updateMemberType({ data: { memberId, memberType: nextType } })
+        : saveDraft("basics", draftPatch);
+    request
+      .then(() => {
+        savedRef.current = { ...savedRef.current, ...patch };
+        setStatus((prev) => ({ ...prev, [field]: { status: "saved" } }));
+        savedStatusTimers.current[field] = setTimeout(() => {
+          setStatus((prev) =>
+            prev[field]?.status === "saved" ? { ...prev, [field]: IDLE } : prev,
+          );
+        }, 2000);
+      })
+      .catch((error: unknown) => {
+        setStatus((prev) => ({
+          ...prev,
+          [field]: {
+            status: "error",
+            message: error instanceof Error ? error.message : "Couldn't save — try again.",
+          },
+        }));
+      });
+  }
+
+  /** Radio/select fields: no debounce, save fires on the change itself. */
+  function saveNow(field: string, patch: BasicsFormPatch) {
+    setLocal((prev) => ({ ...prev, ...patch }));
+    performSave(field, patch);
+  }
+
+  /** Text fields: debounce while typing... */
+  function scheduleSave(field: string, patch: BasicsFormPatch) {
+    setLocal((prev) => ({ ...prev, ...patch }));
+    if (debounceTimers.current[field]) clearTimeout(debounceTimers.current[field]);
+    debounceTimers.current[field] = setTimeout(() => {
+      delete debounceTimers.current[field];
+      performSave(field, patch);
+    }, SAVE_DEBOUNCE_MS);
+  }
+
+  /**
+   * Clears a field's pending debounced save, if any. Every client-side
+   * validation rejection below calls this FIRST -- otherwise an earlier,
+   * still-valid keystroke's timer keeps counting down in the background
+   * and fires anyway once it elapses, saving stale data while the field
+   * shows a rejection (or nothing at all). That's exactly the regression
+   * Finding B caught in member_since_year's range check before this
+   * helper existed: type "2020" (arms a save), then keep typing to
+   * "20205" (out of range) -- without canceling here, the "2020" timer
+   * still fires, saves successfully, and flips the indicator to "Saved"
+   * while the input reads "20205" and the DB holds "2020".
+   */
+  function cancelPendingSave(field: string) {
+    if (debounceTimers.current[field]) {
+      clearTimeout(debounceTimers.current[field]);
+      delete debounceTimers.current[field];
+    }
+  }
+
+  /** ...and flush immediately on blur, so leaving the field never waits out the timer. */
+  function flushSave(field: string, patch: BasicsFormPatch) {
+    cancelPendingSave(field);
+    performSave(field, patch);
+  }
+
+  /**
+   * business_name/city/state are conceptually NOT NULL -- guard client-side
+   * too (the server rejects an empty patch value the same way, but there's
+   * no reason to round-trip a request that's certain to fail, or to leave
+   * the field looking silently saved while it's actually blank in the DB).
+   */
+  function requireNonEmpty(field: string, value: string): boolean {
+    if (value.trim() !== "") return true;
+    cancelPendingSave(field);
+    setStatus((prev) => ({ ...prev, [field]: { status: "error", message: "Can't be empty." } }));
+    return false;
+  }
+
+  /** member_since_year's client-side range guard -- see cancelPendingSave's doc comment. */
+  function requireValidYear(value: number | null): boolean {
+    if (value === null || (value >= MIN_MEMBER_SINCE_YEAR && value <= MAX_MEMBER_SINCE_YEAR))
+      return true;
+    cancelPendingSave("member_since_year");
+    setStatus((prev) => ({
+      ...prev,
+      member_since_year: {
+        status: "error",
+        message: `Must be between ${MIN_MEMBER_SINCE_YEAR} and ${MAX_MEMBER_SINCE_YEAR}.`,
+      },
+    }));
+    return false;
+  }
+
+  /**
+   * Street / city / state / ZIP typed by hand. The inputs are controlled
+   * (a picked suggestion fills them), so `local` always takes the keystroke;
+   * the save goes through the same checks as before, and a real change
+   * clears the saved map pin in the same patch (handEditPatch) so the
+   * post-publish geocode places the edited address.
+   */
+  function editAddress(field: HandEditedAddressField, raw: string, mode: "schedule" | "flush") {
+    const value =
+      field === "postal_code" ? normalizeZip(raw) : field === "street_address" ? raw || null : raw;
+    setLocal((prev) => ({ ...prev, [field]: field === "street_address" ? raw || null : raw }));
+
+    if ((field === "city" || field === "state") && !requireNonEmpty(field, raw)) return;
+    if (field === "postal_code" && value !== null && !isValidZip(value)) {
+      cancelPendingSave(field);
+      // Half-typed: no nagging until they leave the field.
+      setStatus((prev) => ({
+        ...prev,
+        postal_code:
+          mode === "flush"
+            ? { status: "error", message: "Enter a 5-digit ZIP code (or ZIP+4, like 92374-1234)." }
+            : IDLE,
+      }));
+      return;
+    }
+    if (field === "street_address") setPickNote(null);
+
+    const hasCoordinates =
+      local.latitude !== null ||
+      local.longitude !== null ||
+      savedRef.current.latitude !== null ||
+      savedRef.current.longitude !== null;
+    const patch = handEditPatch(
+      field,
+      value,
+      savedRef.current[field] as string | null,
+      hasCoordinates,
+    ) as BasicsFormPatch;
+    if ("latitude" in patch) setLocal((prev) => ({ ...prev, latitude: null, longitude: null }));
+    if (mode === "schedule") scheduleSave(field, patch);
+    else flushSave(field, patch);
+  }
+
+  /** A picked suggestion: street, city, state, ZIP and the exact pin, saved together. */
+  function applyPick(picked: PickedPlace) {
+    const patch = pickPatch(picked.address);
+    for (const field of ["street_address", "city", "state", "postal_code"]) cancelPendingSave(field);
+    setLocal((prev) => ({ ...prev, ...patch }));
+    setStatus((prev) => ({ ...prev, city: IDLE, state: IDLE, postal_code: IDLE }));
+    setPickNote(
+      picked.address.street_address === null
+        ? "That place has no street address. Pick a street address, or type it in."
+        : picked.businessName
+          ? `Filled in the address of ${picked.businessName}. Your business name stays as you entered it.`
+          : null,
+    );
+    performSave("street_address", patch);
+  }
+
+  const isMobile = local.member_type === "mobile";
+  const showStreet = isFieldVisibleForMemberType(local.member_type, "street_address");
+  const showServiceArea = isFieldVisibleForMemberType(local.member_type, "service_area");
+  // The profile shows a sales email for Allied Members only (ContactBlock).
+  const showSalesEmail = local.member_type === "allied";
+
+  return (
+    <div className="flex max-w-[972px] flex-col gap-[22px] md:gap-[30px]">
+      {showHeading && (
+        <h1 className="font-display text-[24px] leading-tight text-ink md:text-[27px]">
+          Basics &amp; hours
+        </h1>
+      )}
+
+      {isImpersonating && (
+        <SignInEmailEditor memberId={memberId} email={email} canChange={canChangeSignInEmail} />
+      )}
+
+      <fieldset className="m-0 flex flex-col gap-[9px] border-0 p-0 md:gap-3">
+        <legend className={cn(sectionLabelClass, "mb-[9px] p-0 md:mb-3")}>Member type</legend>
+        {MEMBER_TYPE_OPTIONS.filter((option) => !typeConfirmed || option.value === local.member_type).map((option) => {
+          const checked = local.member_type === option.value;
+          return (
+            <label
+              key={option.value}
+              htmlFor={`member_type_${option.value}`}
+              className={cn(
+                "flex min-h-[52px] cursor-pointer items-start gap-3 rounded-[11px] bg-white md:gap-[13px] md:rounded-[12px]",
+                checked
+                  ? "border-2 border-ink px-[13px] py-[12px] md:px-[17px] md:py-[15px]"
+                  : "border border-canvas-border px-[14px] py-[13px] md:px-[18px] md:py-4",
+              )}
+            >
+              <input
+                type="radio"
+                id={`member_type_${option.value}`}
+                name="member_type"
+                value={option.value}
+                checked={checked}
+                disabled={typeConfirmed}
+                onChange={() => saveNow("member_type", { member_type: option.value })}
+                className="mt-0.5 h-[19px] w-[19px] shrink-0 cursor-pointer accent-ink md:h-[18px] md:w-[18px]"
+              />
+              <span className="flex flex-col gap-[3px] md:gap-1">
+                <span className="text-[14px] font-semibold text-ink md:text-[15px]">
+                  {option.title}
+                </span>
+                <span
+                  className={cn(
+                    "text-[12px] text-ink-muted md:block md:text-[13px]",
+                    !checked && "hidden",
+                  )}
+                >
+                  {option.description}
+                </span>
+              </span>
+            </label>
+          );
+        })}
+        <SaveIndicator state={status.member_type ?? IDLE} />
+      </fieldset>
+
+      <InfoBox>
+        {typeConfirmed && typeChange ? (
+          <span className="flex flex-col items-start gap-2">
+            <span>
+              Your member type is locked. It decides which sections appear on your public page. Only
+              the Guild can change it.
+            </span>
+            {typeChange}
+          </span>
+        ) : typeConfirmed ? (
+          <>
+            Your member type is set by the Guild. It decides which sections appear on your public
+            page. If it's wrong, use <strong className="font-semibold text-ink">Request a type
+            change</strong> in your portal later.
+          </>
+        ) : (
+          <>
+            Your type decides which sections appear on your public page. Changing it won't delete
+            anything you've already filled in. Unlike your other changes, a new type takes effect
+            right away — it isn't part of what you publish.
+          </>
+        )}
+      </InfoBox>
+
+      {categories}
+
+      <section className="flex flex-col gap-[14px] md:gap-4" aria-labelledby="identity-heading">
+        <h2 id="identity-heading" className={cn(sectionLabelClass, "font-sans")}>
+          Identity
+        </h2>
+        <div className="grid grid-cols-1 gap-[14px] md:grid-cols-2 md:gap-4">
+          <Field id="business_name" label="Business name" state={status.business_name ?? IDLE}>
+            <Input
+              id="business_name"
+              defaultValue={local.business_name}
+              className={textInputClass}
+              required
+              onChange={(e) => {
+                if (requireNonEmpty("business_name", e.target.value)) {
+                  scheduleSave("business_name", { business_name: e.target.value });
+                }
+              }}
+              onBlur={(e) => {
+                if (requireNonEmpty("business_name", e.target.value)) {
+                  flushSave("business_name", { business_name: e.target.value });
+                }
+              }}
+            />
+          </Field>
+
+          <Field id="timezone" label="Timezone" state={status.timezone ?? IDLE}>
+            <Select
+              defaultValue={local.timezone}
+              onValueChange={(value) => saveNow("timezone", { timezone: value })}
+            >
+              <SelectTrigger id="timezone" className={cn(textInputClass, "w-full")}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIMEZONES.map((tz) => (
+                  <SelectItem key={tz} value={tz}>
+                    {tz}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field
+            id="tagline"
+            label="Tagline"
+            hint="Up to 70 characters — the one place you speak in your own words."
+            state={status.tagline ?? IDLE}
+            className="md:col-span-2"
+          >
+            <Textarea
+              id="tagline"
+              defaultValue={local.tagline ?? ""}
+              maxLength={70}
+              rows={2}
+              className="min-h-[72px] rounded-[10px] border-canvas-border bg-white px-[13px] py-3 text-[15px] text-ink shadow-none md:rounded-[9px] md:text-[14px]"
+              onChange={(e) => scheduleSave("tagline", { tagline: e.target.value || null })}
+              onBlur={(e) => flushSave("tagline", { tagline: e.target.value || null })}
+            />
+          </Field>
+
+          {showStreet && (
+            <Field
+              id="street_address"
+              label={LOCATION_FIELD_LABEL[local.member_type]}
+              hint={
+                pickNote ??
+                "Start typing your address or business name and pick it from the list, or type it in full."
+              }
+              state={status.street_address ?? IDLE}
+              className="md:col-span-2"
+            >
+              <AddressAutocompleteInput
+                id="street_address"
+                value={local.street_address ?? ""}
+                className={textInputClass}
+                onValueChange={(value) => editAddress("street_address", value, "schedule")}
+                onBlur={(value) => editAddress("street_address", value, "flush")}
+                onPick={applyPick}
+              />
+            </Field>
+          )}
+
+          {/* City / State (/ ZIP when there's a street address), one row. */}
+          <div
+            className={cn(
+              "grid grid-cols-2 gap-[14px] md:col-span-2 md:gap-4",
+              showStreet
+                ? "md:grid-cols-[minmax(0,1fr)_120px_150px]"
+                : "md:grid-cols-[minmax(0,1fr)_120px]",
+            )}
+          >
+            <Field
+              id="city"
+              label="City"
+              state={status.city ?? IDLE}
+              className="col-span-2 md:col-span-1"
+            >
+              <Input
+                id="city"
+                value={local.city}
+                className={textInputClass}
+                required
+                autoComplete="address-level2"
+                onChange={(e) => editAddress("city", e.target.value, "schedule")}
+                onBlur={(e) => editAddress("city", e.target.value, "flush")}
+              />
+            </Field>
+
+            <Field id="state" label="State" state={status.state ?? IDLE}>
+              <Input
+                id="state"
+                value={local.state}
+                className={textInputClass}
+                required
+                autoComplete="address-level1"
+                onChange={(e) => editAddress("state", e.target.value, "schedule")}
+                onBlur={(e) => editAddress("state", e.target.value, "flush")}
+              />
+            </Field>
+
+            {showStreet && (
+              <Field id="postal_code" label="ZIP code" state={status.postal_code ?? IDLE}>
+                <Input
+                  id="postal_code"
+                  value={local.postal_code ?? ""}
+                  className={textInputClass}
+                  inputMode="numeric"
+                  autoComplete="postal-code"
+                  maxLength={10}
+                  onChange={(e) => editAddress("postal_code", e.target.value, "schedule")}
+                  onBlur={(e) => editAddress("postal_code", e.target.value, "flush")}
+                />
+              </Field>
+            )}
+          </div>
+
+          {showServiceArea && (
+            <Field id="service_area" label="Service area" state={status.service_area ?? IDLE}>
+              <Input
+                id="service_area"
+                defaultValue={local.service_area ?? ""}
+                className={textInputClass}
+                placeholder="e.g. Inland Empire and Coachella Valley"
+                onChange={(e) =>
+                  scheduleSave("service_area", { service_area: e.target.value || null })
+                }
+                onBlur={(e) => flushSave("service_area", { service_area: e.target.value || null })}
+              />
+            </Field>
+          )}
+
+          <Field
+            id="member_since_year"
+            label="Member since"
+            state={status.member_since_year ?? IDLE}
+          >
+            <Input
+              id="member_since_year"
+              type="number"
+              inputMode="numeric"
+              min={MIN_MEMBER_SINCE_YEAR}
+              max={MAX_MEMBER_SINCE_YEAR}
+              defaultValue={local.member_since_year ?? ""}
+              className={textInputClass}
+              onChange={(e) => {
+                const value = e.target.value ? Number(e.target.value) : null;
+                if (requireValidYear(value)) {
+                  scheduleSave("member_since_year", { member_since_year: value });
+                }
+              }}
+              onBlur={(e) => {
+                const value = e.target.value ? Number(e.target.value) : null;
+                if (requireValidYear(value)) {
+                  flushSave("member_since_year", { member_since_year: value });
+                }
+              }}
+            />
+          </Field>
+
+          {/* Phone and sales email moved here from Links & contact (plan
+              Decision 2): they're part of the draft's basics section. */}
+          <Field
+            id="phone"
+            label={
+              local.member_type === "mobile"
+                ? "Booking phone"
+                : local.member_type === "allied"
+                  ? "Sales phone"
+                  : "Phone"
+            }
+            hint={
+              local.member_type === "mobile"
+                ? "Shown on your profile as a tap-to-call link. More booking links can go under Links."
+                : "Shown on your profile as a tap-to-call link."
+            }
+            state={status.phone ?? IDLE}
+          >
+            <Input
+              id="phone"
+              type="tel"
+              defaultValue={local.phone ?? ""}
+              className={textInputClass}
+              onChange={(e) => scheduleSave("phone", { phone: e.target.value || null })}
+              onBlur={(e) => flushSave("phone", { phone: e.target.value || null })}
+            />
+          </Field>
+
+          {showSalesEmail && (
+            <Field
+              id="contact_email"
+              label="Sales email"
+              hint="Shown on your profile. Not the address you sign in with."
+              state={status.contact_email ?? IDLE}
+            >
+              <Input
+                id="contact_email"
+                type="email"
+                defaultValue={local.contact_email ?? ""}
+                className={textInputClass}
+                onChange={(e) =>
+                  scheduleSave("contact_email", { contact_email: e.target.value || null })
+                }
+                onBlur={(e) => flushSave("contact_email", { contact_email: e.target.value || null })}
+              />
+            </Field>
+          )}
+        </div>
+
+        {logo}
+      </section>
+
+      {hours !== undefined && (
+        <div id="hours" className="flex scroll-mt-6 flex-col gap-[22px] md:gap-[30px]">
+          {isMobile && (
+            <section className="flex flex-col gap-3" aria-labelledby="hours-mobile-heading">
+              <h2 id="hours-mobile-heading" className={cn(sectionLabelClass, "font-sans")}>
+                Weekly hours
+              </h2>
+              <InfoBox>
+                Mobile members don't show weekly hours — your{" "}
+                {editing?.paths.events ? (
+                  <Link
+                    to={editing.paths.events.to}
+                    hash={editing.paths.events.hash}
+                    className="font-medium text-brand underline-offset-2 hover:text-brand-hover hover:underline"
+                  >
+                    events calendar
+                  </Link>
+                ) : (
+                  "events calendar"
+                )}{" "}
+                is your schedule. Any hours you entered before are kept in case you switch back.
+              </InfoBox>
+            </section>
+          )}
+          {/*
+            Hidden, not unmounted, for a mobile member: HoursEditor keeps
+            its own row state, so remounting it after a type switch would
+            reset it to the page-load rows (dropping rows added/removed
+            since) while the database already has the newer ones.
+          */}
+          <div
+            hidden={isMobile}
+            className={cn("flex-col gap-[22px] md:gap-[30px]", isMobile ? "hidden" : "flex")}
+          >
+            {hours}
+          </div>
+        </div>
+      )}
+
+      <p className="border-t border-canvas-2 pt-[22px] text-[13px] text-ink-muted">
+        <SaveNoteText />
+      </p>
+    </div>
+  );
+}

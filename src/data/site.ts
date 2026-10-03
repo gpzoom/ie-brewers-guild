@@ -1,3 +1,4 @@
+import type { GuildEvent } from "@/lib/home/member-events";
 export type Location = {
   city: string;
   address: string;
@@ -13,6 +14,9 @@ export type Member = {
   facebook?: string;
   instagram?: string;
   untappd?: string;
+  // Set once a member has a self-guided/booked tour link; the map popup's
+  // "Take A Tour" button stays disabled for members without one.
+  tourUrl?: string;
 };
 
 export const members: Member[] = [
@@ -87,7 +91,7 @@ export const members: Member[] = [
       },
     ],
     website: "https://www.luchadorbrew.com/",
-    logo: "/members/luchador.jpg",
+    logo: "/members/luchador.png",
     facebook: "https://www.facebook.com/LuchadorBrewingCo/",
     untappd: "https://untappd.com/LuchadorBrewingCompany",
   },
@@ -102,7 +106,7 @@ export const members: Member[] = [
       },
     ],
     website: "https://www.marsbrewing.com/",
-    logo: "/members/mars.jpg",
+    logo: "/members/mars.png",
     facebook: "https://www.facebook.com/MarsBrewingCo/",
     instagram: "https://www.instagram.com/marsbrewingco/",
     untappd: "https://untappd.com/marsbrewingco",
@@ -118,7 +122,7 @@ export const members: Member[] = [
       },
     ],
     website: "https://carbonnationbrewing.com/",
-    logo: "/members/carbon.jpg",
+    logo: "/members/carbon.png",
     facebook: "https://www.facebook.com/carbonnationbrewing",
     instagram: "http://instagram.com/carbonnationbrewing",
     untappd: "https://untappd.com/w/carbon-nation-brewing/540272",
@@ -152,7 +156,7 @@ export const members: Member[] = [
       },
     ],
     website: "https://www.leftcoastbrewing.com/",
-    logo: "/members/leftcoast.gif",
+    logo: "/members/leftcoast.png",
     untappd: "https://untappd.com/leftcoastbrewco",
   },
   {
@@ -251,7 +255,7 @@ export const members: Member[] = [
       },
     ],
     website: "https://consbeeracybrewing.com/",
-    logo: "/members/consbeeracy.jpg",
+    logo: "/members/consbeeracy.png",
     facebook: "https://www.facebook.com/profile.php?id=61552937806945",
     instagram: "https://www.instagram.com/followthefroggg/",
     untappd: "https://untappd.com/w/consbeeracy-brewing/550174",
@@ -283,24 +287,30 @@ export const members: Member[] = [
       },
     ],
     website: "https://www.norcobrewingcompany.com/",
-    logo: "/members/norco.jpg",
+    logo: "/members/norco.png",
     facebook: "https://www.facebook.com/profile.php?id=100089868368137",
     instagram: "https://www.instagram.com/norco_brewing_co",
     untappd: "https://untappd.com/Norco_Brewing_Co",
   },
 ];
 
-export const events = [
+/**
+ * The Guild's own events. The next one from today on is pinned first in the
+ * homepage carousel (src/lib/home/member-events.ts, nextGuildEvent); once
+ * it's passed, it drops off. Add next year's here with its date.
+ */
+export const guildEvents: readonly GuildEvent[] = [
   {
-    slug: "frontier-beer-fest",
+    slug: "frontier-beer-fest-2026",
     title: "Frontier Beer Fest",
-    date: "Saturday, May 30",
+    date: "2026-05-30",
     location: "Idyllwild",
     excerpt:
       "Our flagship beer festival brings independent breweries together for an afternoon of tastings, food, and live music in the mountains.",
-    featured: true,
+    image: "/events/frontier-beer-fest.png",
+    ticketsUrl: "https://iebrewers.ticketspice.com/2026-iebg-beer-fest",
   },
-] as const;
+];
 
 export const news = [
   {

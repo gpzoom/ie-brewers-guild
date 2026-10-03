@@ -1,0 +1,332 @@
+[
+  {
+    "id": "w0",
+    "text": "Do",
+    "start": 0.0,
+    "end": 0.139
+  },
+  {
+    "id": "w1",
+    "text": "you",
+    "start": 0.174,
+    "end": 0.244
+  },
+  {
+    "id": "w2",
+    "text": "want",
+    "start": 0.29,
+    "end": 0.441
+  },
+  {
+    "id": "w3",
+    "text": "visitors",
+    "start": 0.499,
+    "end": 0.894
+  },
+  {
+    "id": "w4",
+    "text": "to",
+    "start": 0.94,
+    "end": 1.01
+  },
+  {
+    "id": "w5",
+    "text": "know",
+    "start": 1.068,
+    "end": 1.231
+  },
+  {
+    "id": "w6",
+    "text": "which",
+    "start": 1.324,
+    "end": 1.556
+  },
+  {
+    "id": "w7",
+    "text": "food",
+    "start": 1.672,
+    "end": 1.962
+  },
+  {
+    "id": "w8",
+    "text": "vendors",
+    "start": 2.02,
+    "end": 2.392
+  },
+  {
+    "id": "w9",
+    "text": "are",
+    "start": 2.426,
+    "end": 2.531
+  },
+  {
+    "id": "w10",
+    "text": "at",
+    "start": 2.566,
+    "end": 2.647
+  },
+  {
+    "id": "w11",
+    "text": "your",
+    "start": 2.705,
+    "end": 2.833
+  },
+  {
+    "id": "w12",
+    "text": "taproom",
+    "start": 2.902,
+    "end": 3.413
+  },
+  {
+    "id": "w13",
+    "text": "this",
+    "start": 3.471,
+    "end": 3.611
+  },
+  {
+    "id": "w14",
+    "text": "week?",
+    "start": 3.68,
+    "end": 4.122
+  },
+  {
+    "id": "w15",
+    "text": "Food",
+    "start": 4.818,
+    "end": 5.085
+  },
+  {
+    "id": "w16",
+    "text": "vendors",
+    "start": 5.132,
+    "end": 5.596
+  },
+  {
+    "id": "w17",
+    "text": "go",
+    "start": 5.77,
+    "end": 5.909
+  },
+  {
+    "id": "w18",
+    "text": "on",
+    "start": 5.991,
+    "end": 6.06
+  },
+  {
+    "id": "w19",
+    "text": "the",
+    "start": 6.107,
+    "end": 6.177
+  },
+  {
+    "id": "w20",
+    "text": "same",
+    "start": 6.235,
+    "end": 6.525
+  },
+  {
+    "id": "w21",
+    "text": "Google",
+    "start": 6.594,
+    "end": 6.908
+  },
+  {
+    "id": "w22",
+    "text": "calendar",
+    "start": 6.943,
+    "end": 7.419
+  },
+  {
+    "id": "w23",
+    "text": "as",
+    "start": 7.593,
+    "end": 7.755
+  },
+  {
+    "id": "w24",
+    "text": "your",
+    "start": 7.814,
+    "end": 7.941
+  },
+  {
+    "id": "w25",
+    "text": "events,",
+    "start": 7.999,
+    "end": 8.603
+  },
+  {
+    "id": "w26",
+    "text": "so",
+    "start": 8.719,
+    "end": 8.87
+  },
+  {
+    "id": "w27",
+    "text": "this",
+    "start": 8.94,
+    "end": 9.102
+  },
+  {
+    "id": "w28",
+    "text": "builds",
+    "start": 9.218,
+    "end": 9.555
+  },
+  {
+    "id": "w29",
+    "text": "on",
+    "start": 9.613,
+    "end": 9.729
+  },
+  {
+    "id": "w30",
+    "text": "your",
+    "start": 9.787,
+    "end": 9.915
+  },
+  {
+    "id": "w31",
+    "text": "events",
+    "start": 9.973,
+    "end": 10.275
+  },
+  {
+    "id": "w32",
+    "text": "calendar.",
+    "start": 10.321,
+    "end": 10.937
+  },
+  {
+    "id": "w33",
+    "text": "Haven't",
+    "start": 11.447,
+    "end": 11.726
+  },
+  {
+    "id": "w34",
+    "text": "connected",
+    "start": 11.761,
+    "end": 12.144
+  },
+  {
+    "id": "w35",
+    "text": "your",
+    "start": 12.19,
+    "end": 12.318
+  },
+  {
+    "id": "w36",
+    "text": "events",
+    "start": 12.365,
+    "end": 12.655
+  },
+  {
+    "id": "w37",
+    "text": "calendar",
+    "start": 12.713,
+    "end": 13.119
+  },
+  {
+    "id": "w38",
+    "text": "yet?",
+    "start": 13.189,
+    "end": 13.595
+  },
+  {
+    "id": "w39",
+    "text": "Watch",
+    "start": 13.978,
+    "end": 14.257
+  },
+  {
+    "id": "w40",
+    "text": "that",
+    "start": 14.315,
+    "end": 14.466
+  },
+  {
+    "id": "w41",
+    "text": "video",
+    "start": 14.536,
+    "end": 14.907
+  },
+  {
+    "id": "w42",
+    "text": "first,",
+    "start": 15.023,
+    "end": 15.557
+  },
+  {
+    "id": "w43",
+    "text": "then",
+    "start": 15.673,
+    "end": 15.894
+  },
+  {
+    "id": "w44",
+    "text": "come",
+    "start": 15.987,
+    "end": 16.219
+  },
+  {
+    "id": "w45",
+    "text": "back.",
+    "start": 16.254,
+    "end": 16.73
+  },
+  {
+    "id": "w46",
+    "text": "If",
+    "start": 17.009,
+    "end": 17.148
+  },
+  {
+    "id": "w47",
+    "text": "it's",
+    "start": 17.206,
+    "end": 17.334
+  },
+  {
+    "id": "w48",
+    "text": "already",
+    "start": 17.368,
+    "end": 17.612
+  },
+  {
+    "id": "w49",
+    "text": "connected,",
+    "start": 17.659,
+    "end": 18.251
+  },
+  {
+    "id": "w50",
+    "text": "this",
+    "start": 18.46,
+    "end": 18.646
+  },
+  {
+    "id": "w51",
+    "text": "only",
+    "start": 18.715,
+    "end": 18.889
+  },
+  {
+    "id": "w52",
+    "text": "takes",
+    "start": 18.936,
+    "end": 19.168
+  },
+  {
+    "id": "w53",
+    "text": "two",
+    "start": 19.226,
+    "end": 19.412
+  },
+  {
+    "id": "w54",
+    "text": "steps.",
+    "start": 19.47,
+    "end": 20.248
+  }
+]

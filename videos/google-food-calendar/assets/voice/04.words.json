@@ -1,0 +1,266 @@
+[
+  {
+    "id": "w0",
+    "text": "Step",
+    "start": 0.0,
+    "end": 0.337
+  },
+  {
+    "id": "w1",
+    "text": "two.",
+    "start": 0.395,
+    "end": 0.813
+  },
+  {
+    "id": "w2",
+    "text": "Sign",
+    "start": 1.138,
+    "end": 1.463
+  },
+  {
+    "id": "w3",
+    "text": "in",
+    "start": 1.521,
+    "end": 1.614
+  },
+  {
+    "id": "w4",
+    "text": "to",
+    "start": 1.672,
+    "end": 1.73
+  },
+  {
+    "id": "w5",
+    "text": "your",
+    "start": 1.788,
+    "end": 1.892
+  },
+  {
+    "id": "w6",
+    "text": "Member",
+    "start": 1.939,
+    "end": 2.159
+  },
+  {
+    "id": "w7",
+    "text": "Portal",
+    "start": 2.229,
+    "end": 2.554
+  },
+  {
+    "id": "w8",
+    "text": "and",
+    "start": 2.647,
+    "end": 2.821
+  },
+  {
+    "id": "w9",
+    "text": "open",
+    "start": 2.937,
+    "end": 3.262
+  },
+  {
+    "id": "w10",
+    "text": "Food.",
+    "start": 3.355,
+    "end": 3.843
+  },
+  {
+    "id": "w11",
+    "text": "Press",
+    "start": 4.226,
+    "end": 4.551
+  },
+  {
+    "id": "w12",
+    "text": "Add",
+    "start": 4.632,
+    "end": 4.911
+  },
+  {
+    "id": "w13",
+    "text": "calendar.",
+    "start": 4.992,
+    "end": 5.608
+  },
+  {
+    "id": "w14",
+    "text": "Paste",
+    "start": 5.991,
+    "end": 6.362
+  },
+  {
+    "id": "w15",
+    "text": "the",
+    "start": 6.409,
+    "end": 6.502
+  },
+  {
+    "id": "w16",
+    "text": "same",
+    "start": 6.56,
+    "end": 6.827
+  },
+  {
+    "id": "w17",
+    "text": "link",
+    "start": 6.885,
+    "end": 7.117
+  },
+  {
+    "id": "w18",
+    "text": "you",
+    "start": 7.187,
+    "end": 7.279
+  },
+  {
+    "id": "w19",
+    "text": "used",
+    "start": 7.396,
+    "end": 7.686
+  },
+  {
+    "id": "w20",
+    "text": "for",
+    "start": 7.732,
+    "end": 7.848
+  },
+  {
+    "id": "w21",
+    "text": "your",
+    "start": 7.906,
+    "end": 8.034
+  },
+  {
+    "id": "w22",
+    "text": "events",
+    "start": 8.092,
+    "end": 8.382
+  },
+  {
+    "id": "w23",
+    "text": "calendar.",
+    "start": 8.429,
+    "end": 9.021
+  },
+  {
+    "id": "w24",
+    "text": "You'll",
+    "start": 9.346,
+    "end": 9.601
+  },
+  {
+    "id": "w25",
+    "text": "find",
+    "start": 9.659,
+    "end": 9.903
+  },
+  {
+    "id": "w26",
+    "text": "it",
+    "start": 9.961,
+    "end": 10.031
+  },
+  {
+    "id": "w27",
+    "text": "on",
+    "start": 10.101,
+    "end": 10.217
+  },
+  {
+    "id": "w28",
+    "text": "your",
+    "start": 10.263,
+    "end": 10.379
+  },
+  {
+    "id": "w29",
+    "text": "Events",
+    "start": 10.426,
+    "end": 10.704
+  },
+  {
+    "id": "w30",
+    "text": "page",
+    "start": 10.751,
+    "end": 11.076
+  },
+  {
+    "id": "w31",
+    "text": "under",
+    "start": 11.134,
+    "end": 11.378
+  },
+  {
+    "id": "w32",
+    "text": "Edit",
+    "start": 11.494,
+    "end": 11.761
+  },
+  {
+    "id": "w33",
+    "text": "link.",
+    "start": 11.819,
+    "end": 12.249
+  },
+  {
+    "id": "w34",
+    "text": "Type",
+    "start": 12.527,
+    "end": 12.899
+  },
+  {
+    "id": "w35",
+    "text": "hashtag",
+    "start": 12.968,
+    "end": 13.642
+  },
+  {
+    "id": "w36",
+    "text": "food",
+    "start": 13.735,
+    "end": 14.06
+  },
+  {
+    "id": "w37",
+    "text": "as",
+    "start": 14.118,
+    "end": 14.292
+  },
+  {
+    "id": "w38",
+    "text": "the",
+    "start": 14.362,
+    "end": 14.431
+  },
+  {
+    "id": "w39",
+    "text": "tag,",
+    "start": 14.478,
+    "end": 15.023
+  },
+  {
+    "id": "w40",
+    "text": "then",
+    "start": 15.267,
+    "end": 15.464
+  },
+  {
+    "id": "w41",
+    "text": "press",
+    "start": 15.546,
+    "end": 15.824
+  },
+  {
+    "id": "w42",
+    "text": "Refresh",
+    "start": 15.894,
+    "end": 16.347
+  },
+  {
+    "id": "w43",
+    "text": "now.",
+    "start": 16.416,
+    "end": 17.09
+  }
+]

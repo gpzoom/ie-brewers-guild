@@ -1,5 +1,5 @@
 import { Mail, Instagram, Facebook } from "lucide-react";
-import logo from "@/assets/logo.jpg";
+import logo from "@/assets/logo.svg";
 
 export function UnderConstruction() {
   return (
