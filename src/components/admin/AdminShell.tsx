@@ -12,6 +12,7 @@ import {
   sidebarNavClass,
   topBarOutlineClass,
 } from "@/components/shell/AppChrome";
+import { MemberGuideSidebarLink } from "@/components/portal/MemberGuideLink";
 
 // Order follows artboard AdminBasics's sidebar; Discount has no artboard
 // and keeps its place at the end. `short` is the phone tab-strip label
@@ -194,6 +195,7 @@ export function AdminShell({
             );
           })}
           {sidebarExtra}
+          <MemberGuideSidebarLink />
           <SidebarSignOut onClick={handleSignOut} />
         </nav>
 
