@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { EventOverlayStatus, EventRow } from "@/lib/supabase/types";
+import { positionColumns } from "@/lib/events/venue-place";
 
 export const listEvents = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => data)
@@ -26,6 +27,13 @@ type HandEnteredEventInput = {
   venueName: string | null;
   city: string | null;
   address: string | null;
+};
+
+/** A venue picked from Google suggestions also sends its map position (venue-place.ts). */
+type EventPositionInput = {
+  latitude: number | null;
+  longitude: number | null;
+  geocodedAddress: string | null;
 };
 
 export const createEvent = createServerFn({ method: "POST" })
@@ -63,7 +71,7 @@ export const createEvent = createServerFn({ method: "POST" })
   });
 
 export const updateEvent = createServerFn({ method: "POST" })
-  .inputValidator((data: { id: string; patch: Partial<HandEnteredEventInput> }) => data)
+  .inputValidator((data: { id: string; patch: Partial<HandEnteredEventInput & EventPositionInput> }) => data)
   .handler(async ({ data }) => {
     const supabase = await getSupabaseServerClientForRequest();
     // .select("id") + row-count check -- same gotcha cover.server.ts's
@@ -89,6 +97,8 @@ export const updateEvent = createServerFn({ method: "POST" })
         venue_name: data.patch.venueName,
         city: data.patch.city,
         address: data.patch.address,
+        // Checked here, never trusted from the browser: a real position with its address, or cleared.
+        ...positionColumns(data.patch),
       })
       .eq("id", data.id)
       .select("id, member_id");

@@ -10,6 +10,76 @@ import {
 import { fromDatetimeLocalValue, toDatetimeLocalValue } from "@/lib/timezone/timezones";
 import type { EventOverlayStatus, EventRow } from "@/lib/supabase/types";
 import { createDebouncedSave } from "@/lib/forms/debounced-save";
+import { venueHandEditPatch, venuePickPatch, type VenuePatch } from "@/lib/events/venue-place";
+import { AddressAutocompleteInput } from "@/components/admin/basics/AddressAutocomplete";
+import { MapPin } from "lucide-react";
+
+/**
+ * The Venue box: Google suggestions as the member types (owner,
+ * 2026-10-05). Picking one saves the place's name, full address, city and
+ * exact position at once, so the stop's map pin is accurate anywhere.
+ * Typing by hand still works and saves as they type (createDebouncedSave);
+ * typing over a picked venue clears its address and position.
+ */
+function VenueInput({
+  id,
+  event,
+  className,
+  describedBy,
+  onSave,
+}: {
+  id: string;
+  event: EventRow;
+  className: string;
+  describedBy: string;
+  onSave: (patch: VenuePatch) => void;
+}) {
+  const [value, setValue] = useState(event.venue_name ?? "");
+  const hadPickedAddress = useRef(Boolean(event.address));
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
+  const makeSaver = (initial: string) =>
+    createDebouncedSave(
+      (text) => {
+        onSaveRef.current(venueHandEditPatch(text, { hadPickedAddress: hadPickedAddress.current }));
+        hadPickedAddress.current = false;
+      },
+      800,
+      initial,
+    );
+  const saverRef = useRef<ReturnType<typeof createDebouncedSave> | null>(null);
+  if (!saverRef.current) saverRef.current = makeSaver(event.venue_name ?? "");
+  useEffect(() => {
+    const onPageHide = () => saverRef.current?.flush();
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      saverRef.current?.flush();
+    };
+  }, []);
+  return (
+    <AddressAutocompleteInput
+      id={id}
+      value={value}
+      className={className}
+      listLabel="Venue suggestions"
+      aria-describedby={describedBy}
+      onValueChange={(text) => {
+        setValue(text);
+        saverRef.current!.change(text);
+      }}
+      onBlur={() => saverRef.current!.flush()}
+      onPick={(picked) => {
+        saverRef.current!.cancel();
+        const patch = venuePickPatch(picked, value);
+        setValue(patch.venueName ?? "");
+        hadPickedAddress.current = patch.address !== null;
+        saverRef.current = makeSaver(patch.venueName ?? "");
+        onSaveRef.current(patch);
+      }}
+    />
+  );
+}
 
 /**
  * A text box that saves as the member types (a moment after they pause),
@@ -207,6 +277,9 @@ export function EventsEditor({
     if (patch.venueName !== undefined) rowPatch.venue_name = patch.venueName;
     if (patch.city !== undefined) rowPatch.city = patch.city;
     if (patch.address !== undefined) rowPatch.address = patch.address;
+    if (patch.latitude !== undefined) rowPatch.latitude = patch.latitude;
+    if (patch.longitude !== undefined) rowPatch.longitude = patch.longitude;
+    if (patch.geocodedAddress !== undefined) rowPatch.geocoded_address = patch.geocodedAddress;
     return rowPatch;
   }
 
@@ -525,16 +598,23 @@ export function EventsEditor({
                 <label htmlFor={`venue-${event.id}`} className={fieldLabelClass}>
                   Venue
                 </label>
-                <AutoSaveInput
+                <VenueInput
                   id={`venue-${event.id}`}
-                  initialValue={event.venue_name ?? ""}
-                  aria-describedby={`venue-help-${event.id}`}
+                  event={event}
+                  describedBy={`venue-help-${event.id}`}
                   className={inputClass}
-                  onSave={(value) => onFieldChange(event, { venueName: value || null })}
+                  onSave={(patch) => onFieldChange(event, patch)}
                 />
-                <p id={`venue-help-${event.id}`} className="text-xs text-ink-subtle">
-                  Leave blank for your own address
-                </p>
+                {event.address ? (
+                  <p id={`venue-help-${event.id}`} className="flex gap-1.5 text-xs text-ink-muted">
+                    <MapPin aria-hidden="true" className="mt-px h-3.5 w-3.5 shrink-0" />
+                    <span>{event.address}</span>
+                  </p>
+                ) : (
+                  <p id={`venue-help-${event.id}`} className="text-xs text-ink-subtle">
+                    Start typing to pick the place from Google, or leave blank for your own address
+                  </p>
+                )}
               </div>
             </div>
           )}

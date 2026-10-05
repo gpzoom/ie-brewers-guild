@@ -44,6 +44,9 @@ type Props = {
   onBlur: (value: string) => void;
   onPick: (picked: PickedPlace) => void;
   className?: string;
+  /** The suggestion list's accessible name; the Events editor's Venue box says "Venue suggestions". */
+  listLabel?: string;
+  "aria-describedby"?: string;
 };
 
 export function AddressAutocompleteInput(props: Props) {
@@ -71,6 +74,8 @@ function AddressCombobox({
   onBlur,
   onPick,
   className,
+  listLabel = "Address suggestions",
+  "aria-describedby": describedBy,
   lookup,
 }: Props & { lookup: AddressLookup | null }) {
   const listId = useId();
@@ -162,6 +167,7 @@ function AddressCombobox({
         aria-expanded={enabled ? showList : undefined}
         aria-controls={enabled ? listId : undefined}
         aria-activedescendant={showList && active >= 0 ? optionId(active) : undefined}
+        aria-describedby={describedBy}
         className={className}
         onChange={(e) => {
           onValueChange(e.target.value);
@@ -178,7 +184,7 @@ function AddressCombobox({
           <ul
             id={listId}
             role="listbox"
-            aria-label="Address suggestions"
+            aria-label={listLabel}
             className="m-0 list-none p-1"
           >
             {suggestions.map((s, i) => {

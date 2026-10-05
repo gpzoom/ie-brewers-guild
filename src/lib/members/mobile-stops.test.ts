@@ -238,3 +238,14 @@ describe("needsStopGeocode: a stop added after it started", () => {
     expect(needsStopGeocode(over, NOW)).toBe(false);
   });
 });
+
+describe("placeStop with a Google-picked venue", () => {
+  it("a picked place at a Guild member's street address goes beside that member", () => {
+    const addr = "2023 Chicago Ave Unit B8, Riverside, CA 92507, USA";
+    const p = placeStop(
+      stop({ ...today, venue_name: "Some Other Name", address: addr, latitude: 33.97, longitude: -117.35, geocoded_address: addr }),
+      HOSTS,
+    );
+    expect(p.kind === "member" && p.host.slug).toBe("all-points");
+  });
+});
