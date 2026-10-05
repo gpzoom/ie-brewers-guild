@@ -61,6 +61,10 @@ Placeholders like `[MEMBER NAME]` in the artboards are stand-ins for real data. 
 | A `HomeEvents` | Homepage: "Coming up at our members" carousel (desktop) | `routes/index.tsx` → `home/MemberEventsCarousel` |
 | A2 `HomeEventsPhone` | The same, on a phone | same |
 | A3 `HomeEventsStates` | Calendar page states, the pinned Guild event, nothing coming up | same |
+| B1 `MembersV2Desktop` | Members page v2, desktop: list beside the map, one card per location (**draft for review, 2026-10-05**) | `/members-2` on staging (not built yet) |
+| B2 `MembersV2DesktopB` | The same, one card per member with its locations inside (alternative to B1) | same |
+| B3 `MembersV2Phone` · B4 `MembersV2PhoneFilters` · B5 `MembersV2PhoneMap` | Members page v2 on a phone: list, Filters panel, map view | same |
+| B6 `MembersV2States` | Members page v2 card states: food truck's stop today, Allied Member, Near me, no results | same |
 
 Screens with no artboard (e.g. `/admin/discount`) follow the same shell and design language.
 

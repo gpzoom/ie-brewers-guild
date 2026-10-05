@@ -211,6 +211,48 @@
       "w": 960,
       "h": 1000,
       "title": "GV3 · Proposal — one stop on both profiles"
+    },
+    "MembersV2Desktop.dc.html": {
+      "x": 0,
+      "y": 9000,
+      "w": 1440,
+      "h": 1130,
+      "title": "B1 · Members v2 (/members-2) — desktop, one card per location"
+    },
+    "MembersV2DesktopB.dc.html": {
+      "x": 1520,
+      "y": 9000,
+      "w": 1440,
+      "h": 1100,
+      "title": "B2 · Members v2 — desktop, one card per member (compare with B1)"
+    },
+    "MembersV2Phone.dc.html": {
+      "x": 3040,
+      "y": 9000,
+      "w": 390,
+      "h": 1540,
+      "title": "B3 · Members v2 — phone, list (Near me on)"
+    },
+    "MembersV2PhoneFilters.dc.html": {
+      "x": 3510,
+      "y": 9000,
+      "w": 390,
+      "h": 844,
+      "title": "B4 · Members v2 — phone, Filters panel"
+    },
+    "MembersV2PhoneMap.dc.html": {
+      "x": 3980,
+      "y": 9000,
+      "w": 390,
+      "h": 1100,
+      "title": "B5 · Members v2 — phone, map view"
+    },
+    "MembersV2States.dc.html": {
+      "x": 4450,
+      "y": 9000,
+      "w": 1340,
+      "h": 1030,
+      "title": "B6 · Members v2 — card states (food trucks, Allied, Near me, empty)"
     }
   },
   "createdOnFiles": {
@@ -253,6 +295,14 @@
       "w": 240,
       "x": 0,
       "y": 6700
+    },
+    "hdr6": {
+      "kind": "title1",
+      "maxW": 5790,
+      "text": "Public — Members page v2 (/members-2, staging only)",
+      "w": 240,
+      "x": 0,
+      "y": 8700
     }
   },
   "order": [
@@ -285,7 +335,13 @@
     "HomeEventsStates.dc.html",
     "GuildVendorFood.dc.html",
     "GuildVendorEmails.dc.html",
-    "GuildVendorProfiles.dc.html"
+    "GuildVendorProfiles.dc.html",
+    "MembersV2Desktop.dc.html",
+    "MembersV2DesktopB.dc.html",
+    "MembersV2Phone.dc.html",
+    "MembersV2PhoneFilters.dc.html",
+    "MembersV2PhoneMap.dc.html",
+    "MembersV2States.dc.html"
   ],
   "pages": [],
   "title": "IE Brewers Guild — Member Profile"
