@@ -2003,7 +2003,7 @@ This task is glue around Google Maps; its rules are unit tested in Task 6. Check
 
 ```tsx
 import { APIProvider, InfoWindow, Map, Marker, useMap } from "@vis.gl/react-google-maps";
-import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { V2Pin } from "@/lib/members/members-v2";
 import type { DirectorySearch } from "@/lib/directory/search-params";
