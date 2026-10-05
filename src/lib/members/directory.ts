@@ -44,6 +44,8 @@ export type DirectoryLocation = {
   /** The real profile slug of this location's member row. */
   slug: string;
   city: string;
+  /** The street address alone (Members page v2's location rows); null for a mobile member. */
+  street: string | null;
   /** One-line address for the address dialog and map popup. */
   address: string;
   /** Null when the location has no street address or no coordinates yet -- no map pin. */
@@ -102,6 +104,7 @@ function toLocation(row: DirectoryMemberRow): DirectoryLocation {
   return {
     slug: row.slug,
     city: row.city,
+    street: nonEmpty(row.street_address),
     address: formatDirectoryAddress(row),
     lat: pinnable ? lat : null,
     lng: pinnable ? lng : null,

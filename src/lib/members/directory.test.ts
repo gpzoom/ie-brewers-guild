@@ -41,6 +41,11 @@ describe("formatDirectoryAddress", () => {
 });
 
 describe("buildDirectoryMembers", () => {
+  it("each location carries its street address (Members page v2 rows)", () => {
+    const [card] = buildDirectoryMembers({ rows: [row({})], links: [], logoUrls: new Map() });
+    expect(card.locations[0].street).toBe("2060 Chicago Ave STE A17");
+  });
+
   it("maps a single-location member into the card shape", () => {
     const [card] = buildDirectoryMembers({
       rows: [row({})],
@@ -59,6 +64,7 @@ describe("buildDirectoryMembers", () => {
         {
           slug: "euryale-brewing-co",
           city: "Riverside",
+          street: "2060 Chicago Ave STE A17",
           address: "2060 Chicago Ave STE A17, Riverside, CA 92507",
           lat: 33.992759,
           lng: -117.347977,

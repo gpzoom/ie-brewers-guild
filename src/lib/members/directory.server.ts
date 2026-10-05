@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import {
   buildDirectoryMembers,
@@ -18,46 +19,52 @@ import {
  * are selected (see DIRECTORY_MEMBER_COLUMNS).
  */
 export const getDirectoryMembers = createServerFn({ method: "GET" }).handler(
-  async (): Promise<DirectoryMember[]> => {
-    const supabase = await getSupabaseServerClient();
+  async (): Promise<DirectoryMember[]> => (await loadDirectory(await getSupabaseServerClient())).members,
+);
 
-    const { data: memberData, error } = await supabase
-      .from("members")
-      .select(DIRECTORY_MEMBER_COLUMNS)
-      .eq("status", "published")
-      .order("business_name");
-    if (error) throw new Error("Couldn't load the member directory.");
-    const rows = (memberData ?? []) as unknown as DirectoryMemberRow[];
-    if (rows.length === 0) return [];
+/** The directory reads, shared by /members (getDirectoryMembers) and /members-2 (getMembersV2Data). */
+export async function loadDirectory(
+  supabase: SupabaseClient,
+): Promise<{ rows: DirectoryMemberRow[]; members: DirectoryMember[] }> {
+  const { data: memberData, error } = await supabase
+    .from("members")
+    .select(DIRECTORY_MEMBER_COLUMNS)
+    .eq("status", "published")
+    .order("business_name");
+  if (error) throw new Error("Couldn't load the member directory.");
+  const rows = (memberData ?? []) as unknown as DirectoryMemberRow[];
+  if (rows.length === 0) return { rows, members: [] };
 
-    const memberIds = rows.map((row) => row.id);
-    const logoAssetIds = [
-      ...new Set(rows.map((row) => row.logo_asset_id).filter((id): id is string => Boolean(id))),
-    ];
+  const memberIds = rows.map((row) => row.id);
+  const logoAssetIds = [
+    ...new Set(rows.map((row) => row.logo_asset_id).filter((id): id is string => Boolean(id))),
+  ];
 
-    const [linksResult, logosResult] = await Promise.all([
-      supabase
-        .from("member_links")
-        .select("member_id, kind, label, url, sort_order")
-        .in("member_id", memberIds),
-      logoAssetIds.length
-        ? // media_assets' own RLS decides readability (approved + referenced by a published logo).
-          supabase.from("media_assets").select("id, storage_path").in("id", logoAssetIds)
-        : Promise.resolve({ data: [] as Array<{ id: string; storage_path: string }> }),
-    ]);
+  const [linksResult, logosResult] = await Promise.all([
+    supabase
+      .from("member_links")
+      .select("member_id, kind, label, url, sort_order")
+      .in("member_id", memberIds),
+    logoAssetIds.length
+      ? // media_assets' own RLS decides readability (approved + referenced by a published logo).
+        supabase.from("media_assets").select("id, storage_path").in("id", logoAssetIds)
+      : Promise.resolve({ data: [] as Array<{ id: string; storage_path: string }> }),
+  ]);
 
-    const logoUrls = new Map<string, string>();
-    for (const asset of (logosResult.data ?? []) as Array<{ id: string; storage_path: string }>) {
-      logoUrls.set(
-        asset.id,
-        supabase.storage.from("member-logos").getPublicUrl(asset.storage_path).data.publicUrl,
-      );
-    }
+  const logoUrls = new Map<string, string>();
+  for (const asset of (logosResult.data ?? []) as Array<{ id: string; storage_path: string }>) {
+    logoUrls.set(
+      asset.id,
+      supabase.storage.from("member-logos").getPublicUrl(asset.storage_path).data.publicUrl,
+    );
+  }
 
-    return buildDirectoryMembers({
+  return {
+    rows,
+    members: buildDirectoryMembers({
       rows,
       links: (linksResult.data ?? []) as DirectoryLinkRow[],
       logoUrls,
-    });
-  },
-);
+    }),
+  };
+}
