@@ -110,3 +110,109 @@ export function formatStopTime(e: StopEvent): string {
 export function formatStopDay(e: StopEvent): string {
   return new Date(stopStart(e)).toLocaleDateString("en-US", { weekday: "short", timeZone: STOP_TIMEZONE });
 }
+
+export type HostLocation = { name: string; slug: string; city: string; street: string | null; lat: number; lng: number };
+
+export type StopPlacement =
+  | { kind: "member"; host: HostLocation; lat: number; lng: number }
+  | { kind: "address"; lat: number; lng: number }
+  | { kind: "none" };
+
+/** The mobile pin sits this far east of the host's pin (~80 m) so both show. */
+export const MOBILE_PIN_OFFSET_LNG = 0.0009;
+
+export function normalizeBusinessName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[.,'’]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s+(co|company)$/, "")
+    .trim();
+}
+
+function clean(value: string | null | undefined): string {
+  return (value ?? "").trim();
+}
+
+function toNumber(value: number | string | null): number | null {
+  if (value === null || value === "") return null;
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** The stop's own coordinates -- only while they belong to its current address. */
+export function stopCoordinates(e: StopEvent): { lat: number; lng: number } | null {
+  if (!clean(e.address) || clean(e.geocoded_address) !== clean(e.address)) return null;
+  const lat = toNumber(e.latitude);
+  const lng = toNumber(e.longitude);
+  return lat === null || lng === null ? null : { lat, lng };
+}
+
+function hostFor(e: StopEvent, hosts: HostLocation[]): HostLocation | null {
+  const venue = clean(e.venue_name);
+  const address = clean(e.address).toLowerCase();
+  const byName = venue ? hosts.filter((h) => normalizeBusinessName(h.name) === normalizeBusinessName(venue)) : [];
+  const byStreet = address ? hosts.filter((h) => h.street && address.startsWith(h.street.trim().toLowerCase())) : [];
+  const candidates = byName.length ? byName : byStreet;
+  if (candidates.length === 1) return candidates[0];
+  if (candidates.length > 1) {
+    const city = clean(e.city).toLowerCase();
+    return candidates.find((h) => city && h.city.trim().toLowerCase() === city) ?? null;
+  }
+  return null;
+}
+
+export function placeStop(e: StopEvent, hosts: HostLocation[]): StopPlacement {
+  const host = hostFor(e, hosts);
+  if (host) return { kind: "member", host, lat: host.lat, lng: host.lng + MOBILE_PIN_OFFSET_LNG };
+  const own = stopCoordinates(e);
+  if (own) return { kind: "address", ...own };
+  return { kind: "none" };
+}
+
+export type StopSummary =
+  | { state: "at-member"; hostName: string; time: string }
+  | { state: "at-address"; venue: string; address: string; time: string }
+  | { state: "in-city"; place: string | null; time: string }
+  | { state: "next"; day: string; city: string | null }
+  | { state: "none" };
+
+export function summarizeStops(
+  events: StopEvent[],
+  hosts: HostLocation[],
+  now: Date,
+): { summary: StopSummary; placement: StopPlacement } {
+  const todays = pickTodaysStop(events, now);
+  if (todays) {
+    const placement = placeStop(todays, hosts);
+    const time = formatStopTime(todays);
+    if (placement.kind === "member") return { summary: { state: "at-member", hostName: placement.host.name, time }, placement };
+    if (placement.kind === "address") {
+      return {
+        summary: {
+          state: "at-address",
+          venue: clean(todays.venue_name) || clean(todays.title) || clean(todays.address),
+          address: clean(todays.address),
+          time,
+        },
+        placement,
+      };
+    }
+    return { summary: { state: "in-city", place: clean(todays.city) || clean(todays.venue_name) || null, time }, placement };
+  }
+  const next = pickNextStop(events, now);
+  if (next) return { summary: { state: "next", day: formatStopDay(next), city: clean(next.city) || null }, placement: { kind: "none" } };
+  return { summary: { state: "none" }, placement: { kind: "none" } };
+}
+
+const LOOKUP_WINDOW_HOURS = 48;
+
+/** The cron looks a stop up when it has a street address (a number in it), starts within 48 hours, and isn't looked up for this address yet. */
+export function needsStopGeocode(e: StopEvent, now: Date, hours = LOOKUP_WINDOW_HOURS): boolean {
+  const address = clean(e.address);
+  if (!address || !/\d/.test(address)) return false;
+  if (clean(e.geocoded_address) === address) return false;
+  const start = new Date(stopStart(e)).getTime();
+  return start >= now.getTime() - DEFAULT_LENGTH_MS && start <= now.getTime() + hours * 3600 * 1000;
+}

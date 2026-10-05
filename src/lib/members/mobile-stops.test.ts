@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { formatStopDay, formatStopTime, pickNextStop, pickTodaysStop, type StopEvent } from "./mobile-stops";
+import {
+  formatStopDay,
+  formatStopTime,
+  pickNextStop,
+  pickTodaysStop,
+  needsStopGeocode,
+  normalizeBusinessName,
+  placeStop,
+  stopCoordinates,
+  summarizeStops,
+  MOBILE_PIN_OFFSET_LNG,
+  type StopEvent,
+  type HostLocation,
+} from "./mobile-stops";
 
 function stop(overrides: Partial<StopEvent>): StopEvent {
   return {
@@ -101,5 +114,116 @@ describe("formatStopTime / formatStopDay", () => {
 
   it("day is the short Pacific weekday", () => {
     expect(formatStopDay(stop({ starts_at: "2026-10-10T00:00:00Z" }))).toBe("Fri");
+  });
+});
+
+
+const HOSTS: HostLocation[] = [
+  { name: "All Points Brewing Co.", slug: "all-points", city: "Riverside", street: "2023 Chicago Ave Unit B8", lat: 33.977, lng: -117.353 },
+  { name: "Sample Brewing Co.", slug: "sample-riv", city: "Riverside", street: "3750 Main Street", lat: 33.98, lng: -117.375 },
+  { name: "Sample Brewing Co.", slug: "sample-ont", city: "Ontario", street: "100 Euclid Ave", lat: 34.06, lng: -117.65 },
+];
+const today = { starts_at: "2026-10-06T00:00:00Z", ends_at: "2026-10-06T04:00:00Z" };
+
+describe("normalizeBusinessName", () => {
+  it("ignores case, spaces, punctuation and a trailing Co. / Company", () => {
+    expect(normalizeBusinessName("  All Points Brewing Co. ")).toBe("all points brewing");
+    expect(normalizeBusinessName("ALL POINTS BREWING COMPANY")).toBe("all points brewing");
+    expect(normalizeBusinessName("All  Points Brewing")).toBe("all points brewing");
+  });
+});
+
+describe("placeStop", () => {
+  it("rule 1: at a Guild member by venue name -> beside that member's pin", () => {
+    const p = placeStop(stop({ ...today, venue_name: "All Points Brewing Company" }), HOSTS);
+    expect(p).toEqual({ kind: "member", host: HOSTS[0], lat: 33.977, lng: -117.353 + MOBILE_PIN_OFFSET_LNG });
+  });
+
+  it("rule 1: by street address", () => {
+    const p = placeStop(stop({ ...today, address: "2023 Chicago Ave Unit B8, Riverside, CA 92507" }), HOSTS);
+    expect(p.kind).toBe("member");
+  });
+
+  it("rule 1: a business with several locations uses the one in the stop's city", () => {
+    const p = placeStop(stop({ ...today, venue_name: "Sample Brewing Co.", city: "Ontario" }), HOSTS);
+    expect(p.kind === "member" && p.host.slug).toBe("sample-ont");
+  });
+
+  it("rule 1: several locations and no city match -> rule doesn't apply", () => {
+    const p = placeStop(stop({ ...today, venue_name: "Sample Brewing Co.", city: "Corona" }), HOSTS);
+    expect(p.kind).toBe("none");
+  });
+
+  it("rule 2: coordinates looked up for the current address", () => {
+    const addr = "3900 Main St, Riverside, CA";
+    const p = placeStop(stop({ ...today, address: addr, latitude: 33.98, longitude: -117.37, geocoded_address: addr }), HOSTS);
+    expect(p).toEqual({ kind: "address", lat: 33.98, lng: -117.37 });
+  });
+
+  it("rule 2: coordinates for an OLD address are not used", () => {
+    const p = placeStop(
+      stop({ ...today, address: "500 New St, Riverside, CA", latitude: 33.98, longitude: -117.37, geocoded_address: "3900 Main St, Riverside, CA" }),
+      HOSTS,
+    );
+    expect(p.kind).toBe("none");
+  });
+
+  it("rule 3: city only -> no pin", () => {
+    expect(placeStop(stop({ ...today, city: "Corona" }), HOSTS).kind).toBe("none");
+  });
+});
+
+describe("summarizeStops", () => {
+  it("today at a Guild member", () => {
+    const r = summarizeStops([stop({ ...today, venue_name: "All Points Brewing Co." })], HOSTS, NOW);
+    expect(r.summary).toEqual({ state: "at-member", hostName: "All Points Brewing Co.", time: "5–9 pm" });
+    expect(r.placement.kind).toBe("member");
+  });
+
+  it("today at a street address", () => {
+    const addr = "3900 Main St, Riverside";
+    const r = summarizeStops(
+      [stop({ ...today, venue_name: "Riverside Food Truck Night", address: addr, latitude: 33.98, longitude: -117.37, geocoded_address: addr })],
+      HOSTS,
+      NOW,
+    );
+    expect(r.summary).toEqual({ state: "at-address", venue: "Riverside Food Truck Night", address: addr, time: "5–9 pm" });
+  });
+
+  it("today, city only", () => {
+    const r = summarizeStops([stop({ ...today, city: "Corona" })], HOSTS, NOW);
+    expect(r.summary).toEqual({ state: "in-city", place: "Corona", time: "5–9 pm" });
+    expect(r.placement.kind).toBe("none");
+  });
+
+  it("no stop today -> next stop", () => {
+    const r = summarizeStops([stop({ starts_at: "2026-10-10T00:00:00Z", city: "Riverside" })], HOSTS, NOW);
+    expect(r.summary).toEqual({ state: "next", day: "Fri", city: "Riverside" });
+  });
+
+  it("nothing in 14 days -> none", () => {
+    expect(summarizeStops([], HOSTS, NOW).summary).toEqual({ state: "none" });
+  });
+});
+
+describe("needsStopGeocode / stopCoordinates", () => {
+  const soon = "2026-10-06T01:00:00Z";
+  it("a street address in the next 48 hours, never looked up -> yes", () => {
+    expect(needsStopGeocode(stop({ starts_at: soon, address: "3900 Main St, Riverside, CA" }), NOW)).toBe(true);
+  });
+  it("already looked up for this address -> no; address changed -> yes", () => {
+    const addr = "3900 Main St, Riverside, CA";
+    expect(needsStopGeocode(stop({ starts_at: soon, address: addr, geocoded_address: addr }), NOW)).toBe(false);
+    expect(needsStopGeocode(stop({ starts_at: soon, address: "1 New St, Riverside", geocoded_address: addr }), NOW)).toBe(true);
+  });
+  it("no street number, past, or more than 48 hours out -> no", () => {
+    expect(needsStopGeocode(stop({ starts_at: soon, address: "Riverside, CA" }), NOW)).toBe(false);
+    expect(needsStopGeocode(stop({ starts_at: "2026-10-04T01:00:00Z", address: "3900 Main St" }), NOW)).toBe(false);
+    expect(needsStopGeocode(stop({ starts_at: "2026-10-09T01:00:00Z", address: "3900 Main St" }), NOW)).toBe(false);
+  });
+  it("stopCoordinates only while geocoded_address matches", () => {
+    const addr = "3900 Main St";
+    expect(stopCoordinates(stop({ address: addr, geocoded_address: addr, latitude: "33.98", longitude: "-117.37" }))).toEqual({ lat: 33.98, lng: -117.37 });
+    expect(stopCoordinates(stop({ address: "x", geocoded_address: addr, latitude: 1, longitude: 1 }))).toBeNull();
   });
 });
