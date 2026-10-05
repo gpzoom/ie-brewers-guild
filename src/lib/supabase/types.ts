@@ -206,6 +206,11 @@ export type EventRow = {
   overlay_note: string | null;
   overlay_set_at: string | null;
   is_hidden: boolean;
+  /** Members page v2 (20261005100000_event_coordinates.sql): the stop's map position, looked up by the cron. */
+  latitude?: number | string | null;
+  longitude?: number | string | null;
+  /** The address latitude/longitude belong to; coordinates count only while it equals `address`. */
+  geocoded_address?: string | null;
 };
 
 export type CategoryRow = {
