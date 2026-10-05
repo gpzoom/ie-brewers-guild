@@ -11,7 +11,7 @@ import { MembersV2Map } from "./MembersV2Map";
 import { FiltersSheet } from "./FiltersSheet";
 import { useNearMe } from "./useNearMe";
 import { cn } from "@/lib/utils";
-import { pickVisible } from "./reveal";
+import { nearestScrollTop, pickVisible } from "./reveal";
 
 function pointsOf(card: V2Card): LatLng[] {
   if (card.memberType === "mobile") return card.stopPin ? [card.stopPin] : [];
@@ -48,7 +48,15 @@ export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: D
   const revealCard = (key: string | null) => {
     setHoverCard(key);
     if (!key) return;
-    pickVisible([...document.querySelectorAll<HTMLElement>(`[data-card-key="${CSS.escape(key)}"]`)])?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const node = pickVisible([...document.querySelectorAll<HTMLElement>(`[data-card-key="${CSS.escape(key)}"]`)]);
+    const list = node?.closest<HTMLElement>("[data-members-list]");
+    if (node && list) {
+      // Desktop: scroll the list only, never the page.
+      const top = node.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop;
+      list.scrollTo({ top: nearestScrollTop({ top, height: node.offsetHeight }, { scrollTop: list.scrollTop, height: list.clientHeight }), behavior: "smooth" });
+    } else {
+      node?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
     // Phone map view: bring the pin's card into the swipe rail.
     document.querySelector(`[data-rail-key="${CSS.escape(key)}"]`)?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
   };
@@ -166,7 +174,7 @@ export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: D
             </p>
           </div>
           {blockedNote}
-          <div className="flex-1 overflow-y-auto">{empty}{list}</div>
+          <div data-members-list className="flex-1 overflow-y-auto">{empty}{list}</div>
         </div>
         {map("min-w-0 flex-1 [&>div]:h-full")}
       </div>
