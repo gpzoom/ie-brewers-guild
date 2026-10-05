@@ -13,6 +13,7 @@ import { Route as SurveyResultsRouteImport } from './routes/survey-results'
 import { Route as SurveyRouteImport } from './routes/survey'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as NewsRouteImport } from './routes/news'
+import { Route as Members2RouteImport } from './routes/members-2'
 import { Route as MembersRouteImport } from './routes/members'
 import { Route as GuildRouteImport } from './routes/guild'
 import { Route as EventsRouteImport } from './routes/events'
@@ -71,6 +72,11 @@ const SigninRoute = SigninRouteImport.update({
 const NewsRoute = NewsRouteImport.update({
   id: '/news',
   path: '/news',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Members2Route = Members2RouteImport.update({
+  id: '/members-2',
+  path: '/members-2',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MembersRoute = MembersRouteImport.update({
@@ -277,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/events': typeof EventsRoute
   '/guild': typeof GuildRouteWithChildren
   '/members': typeof MembersRoute
+  '/members-2': typeof Members2Route
   '/news': typeof NewsRoute
   '/signin': typeof SigninRoute
   '/survey': typeof SurveyRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/members': typeof MembersRoute
+  '/members-2': typeof Members2Route
   '/news': typeof NewsRoute
   '/signin': typeof SigninRoute
   '/survey': typeof SurveyRoute
@@ -364,6 +372,7 @@ export interface FileRoutesById {
   '/events': typeof EventsRoute
   '/guild': typeof GuildRouteWithChildren
   '/members': typeof MembersRoute
+  '/members-2': typeof Members2Route
   '/news': typeof NewsRoute
   '/signin': typeof SigninRoute
   '/survey': typeof SurveyRoute
@@ -411,6 +420,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/guild'
     | '/members'
+    | '/members-2'
     | '/news'
     | '/signin'
     | '/survey'
@@ -454,6 +464,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/events'
     | '/members'
+    | '/members-2'
     | '/news'
     | '/signin'
     | '/survey'
@@ -497,6 +508,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/guild'
     | '/members'
+    | '/members-2'
     | '/news'
     | '/signin'
     | '/survey'
@@ -543,6 +555,7 @@ export interface RootRouteChildren {
   EventsRoute: typeof EventsRoute
   GuildRoute: typeof GuildRouteWithChildren
   MembersRoute: typeof MembersRoute
+  Members2Route: typeof Members2Route
   NewsRoute: typeof NewsRoute
   SigninRoute: typeof SigninRoute
   SurveyRoute: typeof SurveyRoute
@@ -588,6 +601,13 @@ declare module '@tanstack/react-router' {
       path: '/news'
       fullPath: '/news'
       preLoaderRoute: typeof NewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/members-2': {
+      id: '/members-2'
+      path: '/members-2'
+      fullPath: '/members-2'
+      preLoaderRoute: typeof Members2RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/members': {
@@ -952,6 +972,7 @@ const rootRouteChildren: RootRouteChildren = {
   EventsRoute: EventsRoute,
   GuildRoute: GuildRouteWithChildren,
   MembersRoute: MembersRoute,
+  Members2Route: Members2Route,
   NewsRoute: NewsRoute,
   SigninRoute: SigninRoute,
   SurveyRoute: SurveyRoute,

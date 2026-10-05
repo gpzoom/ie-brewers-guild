@@ -394,6 +394,14 @@ export default defineConfig(async ({ command, mode }) => {
             // Google key) stays protected: only drafts.server.ts and
             // member-admin-actions.server.ts handlers import it.
             "src/lib/members/directory.server.ts",
+            // Members page v2 (2026-10-05): members-v2.server.ts's one
+            // createServerFn export, getMembersV2Data, is imported straight
+            // into src/routes/members-2.tsx's loader -- the same RPC
+            // boundary as directory.server.ts above. The cron's
+            // stop-geocode-cron.server.ts (service role + Google key) is
+            // only imported by src/server.ts's scheduled handler, so it
+            // stays protected.
+            "src/lib/members/members-v2.server.ts",
             // The Member Portal, phase 5 -- same reasoning again, each file
             // is a set of createServerFn exports the portal's routes and
             // components call: portal-shell.server.ts (getPortalShell in
