@@ -62,7 +62,7 @@ export function buildV2(args: {
     if (m.memberType === "mobile") {
       const memberId = idBySlug.get(m.locations[0]?.slug ?? "") ?? "";
       const categories = args.categoriesByMemberId.get(memberId) ?? [];
-      const { summary, placement } = summarizeStops(args.stopsByMemberId.get(memberId) ?? [], hosts, args.now);
+      const { summary, placement, city: stopCity } = summarizeStops(args.stopsByMemberId.get(memberId) ?? [], hosts, args.now);
       const stopPin = placement.kind === "none" ? null : { lat: placement.lat, lng: placement.lng };
       const icon = mobileIconFor(categories);
       cards.push({ ...m, key, tag: mobileTagFor(categories), mobileIcon: icon, stop: summary, stopPin });
@@ -72,7 +72,8 @@ export function buildV2(args: {
           cardKey: key,
           slug: m.locations[0]?.slug ?? "",
           name: m.name,
-          city: m.locations[0]?.city ?? "",
+          // Labeled with where the stop is today, not the member's home city.
+          city: stopCity ?? m.locations[0]?.city ?? "",
           address: summary.state === "at-address" ? summary.address : "",
           lat: stopPin.lat,
           lng: stopPin.lng,

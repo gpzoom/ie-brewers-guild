@@ -182,12 +182,14 @@ export function summarizeStops(
   events: StopEvent[],
   hosts: HostLocation[],
   now: Date,
-): { summary: StopSummary; placement: StopPlacement } {
+): { summary: StopSummary; placement: StopPlacement; city: string | null } {
   const todays = pickTodaysStop(events, now);
   if (todays) {
     const placement = placeStop(todays, hosts);
     const time = formatStopTime(todays);
-    if (placement.kind === "member") return { summary: { state: "at-member", hostName: placement.host.name, time }, placement };
+    if (placement.kind === "member") {
+      return { summary: { state: "at-member", hostName: placement.host.name, time }, placement, city: placement.host.city };
+    }
     if (placement.kind === "address") {
       return {
         summary: {
@@ -197,13 +199,20 @@ export function summarizeStops(
           time,
         },
         placement,
+        city: clean(todays.city) || null,
       };
     }
-    return { summary: { state: "in-city", place: clean(todays.city) || clean(todays.venue_name) || null, time }, placement };
+    return {
+      summary: { state: "in-city", place: clean(todays.city) || clean(todays.venue_name) || null, time },
+      placement,
+      city: clean(todays.city) || null,
+    };
   }
   const next = pickNextStop(events, now);
-  if (next) return { summary: { state: "next", day: formatStopDay(next), city: clean(next.city) || null }, placement: { kind: "none" } };
-  return { summary: { state: "none" }, placement: { kind: "none" } };
+  if (next) {
+    return { summary: { state: "next", day: formatStopDay(next), city: clean(next.city) || null }, placement: { kind: "none" }, city: null };
+  }
+  return { summary: { state: "none" }, placement: { kind: "none" }, city: null };
 }
 
 const LOOKUP_WINDOW_HOURS = 48;

@@ -55,4 +55,17 @@ describe("buildV2", () => {
     const r = buildV2({ members: allied, rows: [row({ id: "a1", slug: "supply", member_type: "allied", business_name: "Sample Supply Co." })], categoriesByMemberId: new Map(), stopsByMemberId: new Map(), now: NOW });
     expect(r.cards[0].tag).toBe("ALLIED");
   });
+
+  it("a mobile pin is labeled with today's stop city, not the member's home city", () => {
+    const marsRow = row({ id: "mars", slug: "mars", business_name: "Mars Brewing Co.", city: "Rancho Cucamonga", street_address: "9728 6th St", latitude: 34.0855, longitude: -117.5923 });
+    const rows2 = [marsRow, rows[1]];
+    const r = buildV2({
+      members: buildDirectoryMembers({ rows: rows2, links: [], logoUrls: new Map() }),
+      rows: rows2,
+      categoriesByMemberId: new Map(),
+      stopsByMemberId: new Map([["t1", [{ ...truckStop, venue_name: "Mars Brewing Company", city: "Rancho Cucamonga" }]]]),
+      now: NOW,
+    });
+    expect(r.pins.find((p) => p.kind === "mobile")?.city).toBe("Rancho Cucamonga");
+  });
 });
