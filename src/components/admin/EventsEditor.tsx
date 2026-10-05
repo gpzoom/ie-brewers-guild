@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, type InputHTMLAttributes } from "react";
 import {
   clearEventOverlay,
   createEvent,
@@ -9,6 +9,46 @@ import {
 } from "@/lib/events/events.server";
 import { fromDatetimeLocalValue, toDatetimeLocalValue } from "@/lib/timezone/timezones";
 import type { EventOverlayStatus, EventRow } from "@/lib/supabase/types";
+import { createDebouncedSave } from "@/lib/forms/debounced-save";
+
+/**
+ * A text box that saves as the member types (a moment after they pause),
+ * and right away on blur, on unmount and when the page is closed or left.
+ * Blur-only saving lost a typed venue when the member went straight to
+ * another page (owner, 2026-10-05).
+ */
+function AutoSaveInput({
+  initialValue,
+  onSave,
+  ...inputProps
+}: { initialValue: string; onSave: (value: string) => void } & Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "defaultValue" | "onChange" | "onBlur"
+>) {
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
+  const saverRef = useRef<ReturnType<typeof createDebouncedSave> | null>(null);
+  if (!saverRef.current) {
+    saverRef.current = createDebouncedSave((value) => onSaveRef.current(value), 800, initialValue);
+  }
+  useEffect(() => {
+    const saver = saverRef.current!;
+    const onPageHide = () => saver.flush();
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      saver.flush();
+    };
+  }, []);
+  return (
+    <input
+      {...inputProps}
+      defaultValue={initialValue}
+      onChange={(e) => saverRef.current!.change(e.target.value)}
+      onBlur={() => saverRef.current!.flush()}
+    />
+  );
+}
 
 const OVERLAY_OPTIONS: { value: EventOverlayStatus; label: string }[] = [
   { value: "postponed", label: "Postponed" },
@@ -450,11 +490,11 @@ export function EventsEditor({
                 <label htmlFor={`title-${event.id}`} className={fieldLabelClass}>
                   Title (optional)
                 </label>
-                <input
+                <AutoSaveInput
                   id={`title-${event.id}`}
-                  defaultValue={event.title ?? ""}
+                  initialValue={event.title ?? ""}
                   className={inputClass}
-                  onBlur={(e) => onFieldChange(event, { title: e.target.value || null })}
+                  onSave={(value) => onFieldChange(event, { title: value || null })}
                 />
               </div>
               <div className="flex flex-col gap-[7px]">
@@ -485,12 +525,12 @@ export function EventsEditor({
                 <label htmlFor={`venue-${event.id}`} className={fieldLabelClass}>
                   Venue
                 </label>
-                <input
+                <AutoSaveInput
                   id={`venue-${event.id}`}
-                  defaultValue={event.venue_name ?? ""}
+                  initialValue={event.venue_name ?? ""}
                   aria-describedby={`venue-help-${event.id}`}
                   className={inputClass}
-                  onBlur={(e) => onFieldChange(event, { venueName: e.target.value || null })}
+                  onSave={(value) => onFieldChange(event, { venueName: value || null })}
                 />
                 <p id={`venue-help-${event.id}`} className="text-xs text-ink-subtle">
                   Leave blank for your own address
