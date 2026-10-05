@@ -91,6 +91,9 @@ export default {
     if (controller.cron === "*/15 * * * *") {
       const { refreshAllIcsConnections } = await import("./lib/events/ics-refresh-cron.server");
       ctx.waitUntil(refreshAllIcsConnections());
+      // Members page v2: map positions for mobile members' upcoming stops.
+      const { geocodeUpcomingMobileStops } = await import("./lib/events/stop-geocode-cron.server");
+      ctx.waitUntil(geocodeUpcomingMobileStops());
     } else if (controller.cron === "0 13 * * *") {
       const { sendHoursStaleNotices } = await import("./lib/hours/hours-stale-cron.server");
       ctx.waitUntil(sendHoursStaleNotices());
