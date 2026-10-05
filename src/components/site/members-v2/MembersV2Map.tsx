@@ -1,5 +1,5 @@
 /// <reference types="google.maps" />
-import { APIProvider, InfoWindow, Map, Marker, useMap } from "@vis.gl/react-google-maps";
+import { APIProvider, InfoWindow, Map, Marker, useApiIsLoaded, useMap } from "@vis.gl/react-google-maps";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { V2Pin } from "@/lib/members/members-v2";
@@ -47,6 +47,47 @@ function PanToHighlighted({ targets }: { targets: Array<{ lat: number; lng: numb
   return null;
 }
 
+/**
+ * The pins. Their icons need google.maps.Size/Point, which exist only once
+ * the Maps script has loaded (and never on the server), so nothing renders
+ * until then.
+ */
+function PinMarkers(props: {
+  pins: V2Pin[];
+  highlightCard: string | null;
+  focusedSlug: string | null;
+  onPinHover: (cardKey: string | null) => void;
+  onPinClick: (pin: V2Pin) => void;
+}) {
+  const loaded = useApiIsLoaded();
+  if (!loaded || typeof google === "undefined") return null;
+  return (
+    <>
+      {props.pins.map((p) => {
+        const look = lookOf(p, props.highlightCard, props.focusedSlug);
+        const label = `${p.name} · ${p.city}`.toUpperCase();
+        const icon = p.kind === "mobile" && p.icon ? mobilePinSvg(p.icon, look, label) : locationPinSvg(look, label);
+        return (
+          <Marker
+            key={p.key}
+            position={{ lat: p.lat, lng: p.lng }}
+            title={`${p.name} — ${p.city}`}
+            zIndex={look === "normal" ? 1 : look === "member" ? 50 : 100}
+            icon={{
+              url: icon.url,
+              scaledSize: new google.maps.Size(icon.width, icon.height),
+              anchor: new google.maps.Point(icon.anchorX, icon.anchorY),
+            }}
+            onMouseOver={() => props.onPinHover(p.cardKey)}
+            onMouseOut={() => props.onPinHover(null)}
+            onClick={() => props.onPinClick(p)}
+          />
+        );
+      })}
+    </>
+  );
+}
+
 export function MembersV2Map(props: {
   pins: V2Pin[];
   highlightCard: string | null;
@@ -90,30 +131,16 @@ export function MembersV2Map(props: {
         >
           {!props.initialView && <FitOnce pins={props.pins} />}
           <PanToHighlighted targets={targets} />
-          {props.pins.map((p) => {
-            const look = lookOf(p, props.highlightCard, props.focusedSlug);
-            const label = `${p.name} · ${p.city}`.toUpperCase();
-            const icon = p.kind === "mobile" && p.icon ? mobilePinSvg(p.icon, look, label) : locationPinSvg(look, label);
-            return (
-              <Marker
-                key={p.key}
-                position={{ lat: p.lat, lng: p.lng }}
-                title={`${p.name} — ${p.city}`}
-                zIndex={look === "normal" ? 1 : look === "member" ? 50 : 100}
-                icon={{
-                  url: icon.url,
-                  scaledSize: new google.maps.Size(icon.width, icon.height),
-                  anchor: new google.maps.Point(icon.anchorX, icon.anchorY),
-                }}
-                onMouseOver={() => props.onPinHover(p.cardKey)}
-                onMouseOut={() => props.onPinHover(null)}
-                onClick={() => {
-                  setActive(p);
-                  props.onPinClick(p);
-                }}
-              />
-            );
-          })}
+          <PinMarkers
+            pins={props.pins}
+            highlightCard={props.highlightCard}
+            focusedSlug={props.focusedSlug}
+            onPinHover={props.onPinHover}
+            onPinClick={(p) => {
+              setActive(p);
+              props.onPinClick(p);
+            }}
+          />
           {active && (
             <InfoWindow position={{ lat: active.lat, lng: active.lng }} pixelOffset={[0, -36]} onCloseClick={() => setActive(null)}>
               <div className="font-sans" style={{ minWidth: 220, maxWidth: 280 }}>
