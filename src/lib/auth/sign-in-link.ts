@@ -8,7 +8,7 @@
  *   &token_hash={{ .TokenHash }}&type=email). /auth/callback sends it on to
  *   /auth/confirm, a page with one button; only pressing it signs in, so a
  *   scanner that merely opens the link can't use it up.
- * - The email also carries a 6-digit code ({{ .Token }}), typed on the
+ * - The email also carries a code ({{ .Token }}; 8 digits here), typed on the
  *   sign-in page as a fallback.
  * - Links from the old template (?code=...) still work in /auth/callback.
  */

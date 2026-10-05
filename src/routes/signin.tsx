@@ -74,12 +74,12 @@ function SignInPage() {
   const [codeState, setCodeState] = useState<"idle" | "checking" | "error">("idle");
   const [codeError, setCodeError] = useState<string | null>(null);
 
-  // The 6-digit code from the email: works on any device, whatever opened the email.
+  // The code from the email (8 digits on this project): works on any device, whatever opened the email.
   const onCode = async (event: FormEvent) => {
     event.preventDefault();
     if (!normalizeEmailCode(code)) {
       setCodeState("error");
-      setCodeError("Enter the 6-digit code from the email.");
+      setCodeError("Enter the code from the email.");
       return;
     }
     setCodeState("checking");
@@ -159,7 +159,7 @@ function SignInPage() {
                 <CanvasHeading size="md">Check your email</CanvasHeading>
                 <p className={leadClass}>
                   If <strong className="font-semibold text-ink break-all">{email}</strong> belongs to a
-                  member, a sign-in email is on its way. Open the link in it, or type its 6-digit code
+                  member, a sign-in email is on its way. Open the link in it, or type the code from it
                   here. Either works once, for about an hour.
                 </p>
               </div>
@@ -175,7 +175,7 @@ function SignInPage() {
                     onChange={(e) => setCode(e.target.value)}
                     inputMode="numeric"
                     autoComplete="one-time-code"
-                    placeholder="123456"
+                    placeholder="12345678"
                     aria-invalid={codeState === "error" ? true : undefined}
                     aria-describedby={codeError ? "signin-code-error" : undefined}
                     className={`${inputClass} h-[52px] min-w-0 flex-1 tracking-[0.3em]`}

@@ -25,7 +25,7 @@ export const confirmEmailLink = createServerFn({ method: "POST" })
     return { ok: true, href: await afterSignInHref(supabase, verified.user, data.next) };
   });
 
-/** The 6-digit code from the sign-in email, typed on /signin. */
+/** The code from the sign-in email (8 digits on this project), typed on /signin. */
 export const verifyEmailCode = createServerFn({ method: "POST" })
   .inputValidator((data: { email: string; code: string; next?: string }) => data)
   .handler(async ({ data }): Promise<Result> => {
