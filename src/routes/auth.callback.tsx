@@ -1,9 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
-import { resolveCallbackRedirect, resolveUserRoleAndTarget } from "@/lib/auth/role-routing";
-import { safeNextPath } from "@/lib/auth/safe-next-path";
-import { readImpersonationState } from "@/lib/guild/impersonation.server";
-import { acceptGuildAdminInvitesAtSignIn } from "@/lib/guild/guild-admins.server";
+import { afterSignInHref } from "@/lib/auth/after-sign-in.server";
+import { confirmPageHref } from "@/lib/auth/sign-in-link";
 
 /**
  * The magic-link landing page. A real request/response cycle (server.handlers,
@@ -28,6 +26,12 @@ export const Route = createFileRoute("/auth/callback")({
     handlers: {
       GET: async ({ request }) => {
         const url = new URL(request.url);
+        // A link from the new email template carries a token hash: send it
+        // on to the Confirm sign-in page (sign-in-link.ts). Opening a link
+        // must never use it up -- spam filters open links too.
+        const confirm = confirmPageHref(url.searchParams);
+        if (confirm) throw redirect({ href: confirm });
+
         const code = url.searchParams.get("code");
         const supabase = await getSupabaseServerClientForRequest();
 
@@ -40,19 +44,7 @@ export const Route = createFileRoute("/auth/callback")({
           throw redirect({ href: "/signin?notice=invalid-link" });
         }
 
-        await acceptGuildAdminInvitesAtSignIn({ id: data.user.id, email: data.user.email });
-        const routing = await resolveUserRoleAndTarget(supabase, data.user.id);
-        const next = safeNextPath(url.searchParams.get("next"));
-
-        // Only a Guild admin's impersonation matters here; the cookie is read
-        // (and verified) just for them.
-        let isImpersonating = false;
-        if (next && routing.role === "guild_admin") {
-          const impersonation = await readImpersonationState();
-          isImpersonating = !!impersonation && impersonation.actorUserId === data.user.id;
-        }
-
-        throw redirect({ href: resolveCallbackRedirect(routing, next, isImpersonating) });
+        throw redirect({ href: await afterSignInHref(supabase, data.user, url.searchParams.get("next")) });
       },
     },
   },

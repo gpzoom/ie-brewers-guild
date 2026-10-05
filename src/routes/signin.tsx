@@ -2,6 +2,9 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
+import { cn } from "@/lib/utils";
+import { normalizeEmailCode, signInRedirectUrl } from "@/lib/auth/sign-in-link";
+import { verifyEmailCode } from "@/lib/auth/sign-in-verify.server";
 import {
   BrandBar,
   CanvasCard,
@@ -67,6 +70,33 @@ function SignInPage() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [code, setCode] = useState("");
+  const [codeState, setCodeState] = useState<"idle" | "checking" | "error">("idle");
+  const [codeError, setCodeError] = useState<string | null>(null);
+
+  // The 6-digit code from the email: works on any device, whatever opened the email.
+  const onCode = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!normalizeEmailCode(code)) {
+      setCodeState("error");
+      setCodeError("Enter the 6-digit code from the email.");
+      return;
+    }
+    setCodeState("checking");
+    setCodeError(null);
+    try {
+      const result = await verifyEmailCode({ data: { email, code, next } });
+      if (result.ok) {
+        window.location.assign(result.href);
+        return;
+      }
+      setCodeState("error");
+      setCodeError(result.message);
+    } catch {
+      setCodeState("error");
+      setCodeError("Something went wrong. Try again, or send a new email.");
+    }
+  };
 
   const sendLink = async (): Promise<string | null> => {
     try {
@@ -74,12 +104,11 @@ function SignInPage() {
       // `next` has passed safeNextPath, so nothing but an allowlisted path
       // is ever written into the magic link. Without a `next`, the link is
       // exactly what it always was.
-      const callback = `${window.location.origin}/auth/callback`;
+      // Always ends in a query string, so the email template can add the
+      // token hash (sign-in-link.ts).
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: {
-          emailRedirectTo: next ? `${callback}?next=${encodeURIComponent(next)}` : callback,
-        },
+        options: { emailRedirectTo: signInRedirectUrl(window.location.origin, next) },
       });
       return error ? error.message : null;
     } catch (err) {
@@ -130,9 +159,37 @@ function SignInPage() {
                 <CanvasHeading size="md">Check your email</CanvasHeading>
                 <p className={leadClass}>
                   If <strong className="font-semibold text-ink break-all">{email}</strong> belongs to a
-                  member, a sign-in link is on its way. It works once, and only for a limited time.
+                  member, a sign-in email is on its way. Open the link in it, or type its 6-digit code
+                  here. Either works once, for about an hour.
                 </p>
               </div>
+
+              <form onSubmit={onCode} className="flex flex-col gap-2">
+                <label htmlFor="signin-code" className={labelClass}>
+                  Code from the email
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="signin-code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="123456"
+                    aria-invalid={codeState === "error" ? true : undefined}
+                    aria-describedby={codeError ? "signin-code-error" : undefined}
+                    className={`${inputClass} h-[52px] min-w-0 flex-1 tracking-[0.3em]`}
+                  />
+                  <button type="submit" disabled={codeState === "checking"} className={cn(primaryButtonClass, "h-[52px] w-auto shrink-0 px-5")}>
+                    {codeState === "checking" ? "Checking…" : "Sign in"}
+                  </button>
+                </div>
+                {codeError && (
+                  <p id="signin-code-error" role="alert" className="text-[13px] text-danger">
+                    {codeError}
+                  </p>
+                )}
+              </form>
 
               <div className="flex flex-col gap-2.5">
                 <button

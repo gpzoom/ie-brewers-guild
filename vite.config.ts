@@ -402,6 +402,13 @@ export default defineConfig(async ({ command, mode }) => {
             // only imported by src/server.ts's scheduled handler, so it
             // stays protected.
             "src/lib/members/members-v2.server.ts",
+            // Sign-in that works in any browser (2026-10-05):
+            // sign-in-verify.server.ts's createServerFn exports
+            // (confirmEmailLink, verifyEmailCode) are called from
+            // routes/auth.confirm.tsx and routes/signin.tsx. The redirect
+            // logic they use, after-sign-in.server.ts, is imported only
+            // inside handlers and stays protected.
+            "src/lib/auth/sign-in-verify.server.ts",
             // The Member Portal, phase 5 -- same reasoning again, each file
             // is a set of createServerFn exports the portal's routes and
             // components call: portal-shell.server.ts (getPortalShell in
