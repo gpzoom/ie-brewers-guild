@@ -20,7 +20,7 @@ What's new:
 - the layout;
 - search, a member-type filter and Near me;
 - map highlighting on hover;
-- food trucks' pins for today's stop.
+- mobile members' pins for today's stop, with an icon for what they do.
 
 ## Page layout
 
@@ -34,7 +34,7 @@ What's new:
 - **One card per member (business).** It shows:
   - the logo;
   - the name;
-  - the type tag (MOBILE or ALLIED; producers have no tag).
+  - the type tag: an Allied Member shows ALLIED, a mobile member shows its first category (FOOD TRUCK, ENTERTAINMENT, POP-UP FOOD VENDOR, or MOBILE with none); producers have no tag.
 - **One location:** the card shows that address with **Directions**, **Website** and **Profile →**.
 - **Several locations:** the card says "N locations" and lists them, one row each, as **city · street address** with its own Directions arrow.
   - It shows the first two rows, then "+ N more locations", which opens the rest in place.
@@ -73,7 +73,7 @@ What's new:
   1. The browser asks the visitor for their location.
   2. The cards are ordered by their nearest location, and a card's location rows by distance.
   3. Each address shows the distance in miles with one decimal, for example "1.2 mi".
-  4. A food truck counts at today's stop, when it has a pin. A member with no pin goes to the end, A–Z.
+  4. A mobile member counts at today's stop, when it has a pin. A member with no pin goes to the end, A–Z.
   5. The location stays in the browser. It's never sent to the server or saved.
   6. If location is blocked or fails, the list stays A–Z and a one-line note explains how to allow it (B6, state 8).
 - **Nothing matches:** "No members match "…"." with a link to clear the search and filters (B6, state 7).
@@ -91,7 +91,7 @@ The map is still Google Maps, through the existing `@vis.gl/react-google-maps` s
   - The pop-up's "Visit"/"Website" link stays as it is.
 - **First load:** the map fits all pins, unless the address bar already holds a saved map position.
 
-## Food trucks: today's stop
+## Mobile members: today's stop
 
 ### Which stop is today's
 
@@ -109,20 +109,28 @@ Use the first rule that applies:
    - If that business has several locations, use the one whose city matches the stop's city.
    - If none matches, this rule doesn't apply.
 
-   The truck's pin sits right beside that member's pin, offset slightly so both show.
+   The mobile member's pin sits right beside that member's pin, offset slightly so both show.
 2. **At a street address.** The stop has map coordinates looked up from its address (see "Data" below). The pin goes there.
 3. **City only, or the address couldn't be found:** no pin.
 4. **No stop today:** no pin.
 
-### The truck pin and card
+### The mobile pin and card
 
-- **The pin** is a teal circle with a white truck icon, so it looks different from the red location pins. Clicking it opens a pop-up (B6, state 9): the truck's name, "Today 5–9 pm at …", Directions and Profile →.
-- **The truck's card** (B6, states 1–4):
+- **The pin** is a teal circle with a white icon, so it looks different from the red location pins. Clicking it opens a pop-up (B6, state 9): the member's name, "Today 5–9 pm at …", Directions and Profile →.
+- **The icon comes from the member's first category,** in the Guild Categories page's order (B6, item 11). The icons are a fixed list in the code:
+  - Food Truck: truck;
+  - Pop-up Food Vendor: tent;
+  - Entertainment: microphone;
+  - any other category, or none: star.
+
+  A new category shows the star until it's given its own icon in the code.
+- **Not tags (owner, 5 October 2026).** Icons don't come from calendar tags. A per-stop icon tag was considered and turned down, so it adds nothing to the member's profile or calendar.
+- **The mobile member's card** (B6, states 1–4 and 10). The line before the stop shows the same icon:
   - today at a Guild member: "Today at **All Points Brewing Co.** · 5–9 pm";
   - today at an address: "Today at [venue] · 4–10 pm", with the address under it;
   - today in a city only: "Today in Corona · 6–9 pm";
   - no stop today: "No stop today. Next: Fri · Riverside", taken from the next stop in the coming 14 days. With none in that time: "No stops scheduled".
-- In states 3 and 4 the card shows **Schedule** in place of Directions. It goes to the truck's profile, where its upcoming stops are.
+- In states 3 and 4 the card shows **Schedule** in place of Directions. It goes to the member's profile, where its upcoming stops are.
 
 ## Data
 
@@ -170,7 +178,8 @@ Use the first rule that applies:
   - picking today's stop, including the Pacific-time day boundary, events happening now, and canceled or hidden events;
   - pin placement rules 1–4, including venue-name matching and a business with several locations;
   - the "+ N more locations" split;
-  - the card text for each truck state.
+  - the card text for each mobile state;
+  - the category → icon and tag choice, including several categories, none, and an unknown one.
 - **Database tests (pgTAP):**
   - the new columns exist;
   - visitors can read them;
