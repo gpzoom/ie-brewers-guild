@@ -14,6 +14,7 @@ import { Route as SurveyRouteImport } from './routes/survey'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as Members2RouteImport } from './routes/members-2'
+import { Route as Members1RouteImport } from './routes/members-1'
 import { Route as MembersRouteImport } from './routes/members'
 import { Route as GuildRouteImport } from './routes/guild'
 import { Route as EventsRouteImport } from './routes/events'
@@ -77,6 +78,11 @@ const NewsRoute = NewsRouteImport.update({
 const Members2Route = Members2RouteImport.update({
   id: '/members-2',
   path: '/members-2',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Members1Route = Members1RouteImport.update({
+  id: '/members-1',
+  path: '/members-1',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MembersRoute = MembersRouteImport.update({
@@ -283,6 +289,7 @@ export interface FileRoutesByFullPath {
   '/events': typeof EventsRoute
   '/guild': typeof GuildRouteWithChildren
   '/members': typeof MembersRoute
+  '/members-1': typeof Members1Route
   '/members-2': typeof Members2Route
   '/news': typeof NewsRoute
   '/signin': typeof SigninRoute
@@ -327,6 +334,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/members': typeof MembersRoute
+  '/members-1': typeof Members1Route
   '/members-2': typeof Members2Route
   '/news': typeof NewsRoute
   '/signin': typeof SigninRoute
@@ -372,6 +380,7 @@ export interface FileRoutesById {
   '/events': typeof EventsRoute
   '/guild': typeof GuildRouteWithChildren
   '/members': typeof MembersRoute
+  '/members-1': typeof Members1Route
   '/members-2': typeof Members2Route
   '/news': typeof NewsRoute
   '/signin': typeof SigninRoute
@@ -420,6 +429,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/guild'
     | '/members'
+    | '/members-1'
     | '/members-2'
     | '/news'
     | '/signin'
@@ -464,6 +474,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/events'
     | '/members'
+    | '/members-1'
     | '/members-2'
     | '/news'
     | '/signin'
@@ -508,6 +519,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/guild'
     | '/members'
+    | '/members-1'
     | '/members-2'
     | '/news'
     | '/signin'
@@ -555,6 +567,7 @@ export interface RootRouteChildren {
   EventsRoute: typeof EventsRoute
   GuildRoute: typeof GuildRouteWithChildren
   MembersRoute: typeof MembersRoute
+  Members1Route: typeof Members1Route
   Members2Route: typeof Members2Route
   NewsRoute: typeof NewsRoute
   SigninRoute: typeof SigninRoute
@@ -608,6 +621,13 @@ declare module '@tanstack/react-router' {
       path: '/members-2'
       fullPath: '/members-2'
       preLoaderRoute: typeof Members2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/members-1': {
+      id: '/members-1'
+      path: '/members-1'
+      fullPath: '/members-1'
+      preLoaderRoute: typeof Members1RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/members': {
@@ -972,6 +992,7 @@ const rootRouteChildren: RootRouteChildren = {
   EventsRoute: EventsRoute,
   GuildRoute: GuildRouteWithChildren,
   MembersRoute: MembersRoute,
+  Members1Route: Members1Route,
   Members2Route: Members2Route,
   NewsRoute: NewsRoute,
   SigninRoute: SigninRoute,

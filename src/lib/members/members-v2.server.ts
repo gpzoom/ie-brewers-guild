@@ -1,20 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { loadDirectory } from "@/lib/members/directory.server";
-import { isMembersV2Host } from "@/lib/members/members-v2-gate";
 import { buildV2, type V2Card, type V2Pin } from "@/lib/members/members-v2";
 import { STOP_EVENT_COLUMNS, type StopEvent } from "@/lib/members/mobile-stops";
 import type { MobileCategory } from "@/lib/members/mobile-category";
 
 /**
- * Everything /members-2 shows, read with the ANON client (the public view;
+ * Everything the Members page (/members) shows, read with the ANON client (the public view;
  * RLS keeps it to published members and their unhidden events). Mobile
  * members' stops: from a day back (stops still on) to 15 days out.
  */
 export const getMembersV2Data = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ enabled: false } | { enabled: true; cards: V2Card[]; pins: V2Pin[] }> => {
-    if (!isMembersV2Host(getRequest().url)) return { enabled: false };
+  async (): Promise<{ cards: V2Card[]; pins: V2Pin[] }> => {
     const supabase = await getSupabaseServerClient();
     const { rows, members } = await loadDirectory(supabase);
     const mobileIds = rows.filter((r) => r.member_type === "mobile").map((r) => r.id);
@@ -52,6 +49,6 @@ export const getMembersV2Data = createServerFn({ method: "GET" }).handler(
       }
     }
 
-    return { enabled: true, ...buildV2({ members, rows, categoriesByMemberId, stopsByMemberId, now }) };
+    return buildV2({ members, rows, categoriesByMemberId, stopsByMemberId, now });
   },
 );

@@ -714,14 +714,9 @@ It is also materially less to build and less to get wrong. No focus trap, no scr
 
 **Routes:**
 
-- `/members` — the Members page, map and card grid. Lists every published member from the database, one card per business, alphabetical, with pins from stored coordinates. It replaced the hard-coded list.
-- `/members-2` — **Members page v2, a trial (5 October 2026).** Staging only: it's `noindex`, not in the menu, and returns 404 on the live site's hostnames (`members-v2-gate.ts`). The layout follows artboards B2–B6:
-  - a list beside the map, one card per member with its locations inside;
-  - search, member type and Near me;
-  - pins that highlight on hover, with the map moving only when a pin is off-screen;
-  - on a phone: a List/Map switch, a Filters panel and swipe cards.
-
-  It also shows mobile members' pins for today's stop, with an icon from their first category: truck, tent, microphone, or a star for anything else. Stops get map positions from the 15-minute cron (`events.latitude/longitude/geocoded_address`). The design is `docs/superpowers/specs/2026-10-05-members-page-v2-design.md`. `/members` is unchanged; whether v2 replaces it is the owner's call.
+- `/members` — **the Members page (since 5 October 2026):** a list beside the map, one card per member with its locations inside, search, member type, Near me, pins that highlight on hover (the map moves only when a pin is off-screen), and on a phone a List/Map switch, a Filters panel and swipe cards. Mobile members show a pin for today's stop with an icon from their first category (truck, tent, microphone, or a star), placed by the venue picked from Google suggestions in Events, or looked up from its address by the 15-minute cron (`events.latitude/longitude/geocoded_address`). Design: `docs/superpowers/specs/2026-10-05-members-page-v2-design.md`; artboards B1–B6.
+- `/members-1` — the previous Members page (map above a card grid), kept for comparison: `noindex`, not in the menu.
+- `/members-2` — the new page's trial address; redirects to `/members`.
 - `/members/[slug]` — a member profile.
 - `/admin` — member admin, behind auth.
 - `/guild` — Guild admin, behind auth and `is_guild_admin`.

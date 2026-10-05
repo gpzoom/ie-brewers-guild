@@ -22,7 +22,7 @@ export const getDirectoryMembers = createServerFn({ method: "GET" }).handler(
   async (): Promise<DirectoryMember[]> => (await loadDirectory(await getSupabaseServerClient())).members,
 );
 
-/** The directory reads, shared by /members (getDirectoryMembers) and /members-2 (getMembersV2Data). */
+/** The directory reads, shared by /members (getMembersV2Data) and /members-1 (getDirectoryMembers). */
 export async function loadDirectory(
   supabase: SupabaseClient,
 ): Promise<{ rows: DirectoryMemberRow[]; members: DirectoryMember[] }> {

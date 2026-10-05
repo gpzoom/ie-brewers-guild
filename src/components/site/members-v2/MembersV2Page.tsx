@@ -26,7 +26,7 @@ export function visibleCards(cards: V2Card[], opts: { query: string; type?: Memb
 }
 
 export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: DirectorySearch }) {
-  const navigate = useNavigate({ from: "/members-2" });
+  const navigate = useNavigate({ from: "/members" });
   const [query, setQuery] = useState("");
   const [hoverCard, setHoverCard] = useState<string | null>(null);
   const [focusedSlug, setFocusedSlug] = useState<string | null>(null);
