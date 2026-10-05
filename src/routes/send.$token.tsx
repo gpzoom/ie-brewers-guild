@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type DragEvent, type FormEvent } from "react";
 import { submitCreatorUpload } from "@/lib/media/creator-upload.server";
 import { appendMeasuredDimensions } from "@/lib/media/image-dimensions";
+import { normalizePhotoForUpload } from "@/lib/media/normalize-photo";
 import {
   BrandBar,
   CanvasCard,
@@ -43,7 +44,8 @@ export const Route = createFileRoute("/send/$token")({
 });
 
 /** Formats the server actually accepts (validate-file.ts: JPEG/PNG, 25MB cap). */
-const ACCEPTED_TYPES = "image/png,image/jpeg";
+// Any image: the browser redraws it as a clean JPEG/PNG before sending.
+const ACCEPTED_TYPES = "image/*";
 
 type DeadLinkReason = "invalid" | "revoked" | "expired" | "full";
 
@@ -142,10 +144,12 @@ function SendPage() {
     formData.set("creatorName", creatorName);
     formData.set("creditRequested", String(creditRequested));
     formData.set("permissionAccepted", String(permissionAccepted));
-    formData.set("file", file);
+    // A clean JPEG/PNG redrawn in the browser (WebP, HEIC, motion photos...).
+    const clean = await normalizePhotoForUpload(file);
+    formData.set("file", clean);
     // Fallback only -- the server reads the size from the file itself
     // first (see image-dimensions.ts).
-    await appendMeasuredDimensions(formData, file);
+    await appendMeasuredDimensions(formData, clean);
 
     try {
       await submitCreatorUpload({ data: formData });
@@ -267,7 +271,7 @@ function SendPage() {
                 <path d="M4.5 19.5v1a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
               <span className="text-[15px] font-semibold text-ink">Choose a photo</span>
-              <span className="text-xs text-ink-muted">JPG or PNG · up to 25 MB</span>
+              <span className="text-xs text-ink-muted">Any photo (JPG, PNG, iPhone or WebP) · up to 25 MB</span>
             </button>
           )}
 

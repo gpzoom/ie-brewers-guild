@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { deleteMemberMedia, uploadMemberMedia } from "@/lib/media/media-gallery.server";
+import { normalizePhotoForUpload } from "@/lib/media/normalize-photo";
 import { appendMeasuredDimensions } from "@/lib/media/image-dimensions";
 import type { MediaAssetRow } from "@/lib/supabase/types";
 import {
@@ -76,8 +77,10 @@ export function MediaGallery({ memberId, assets }: { memberId: string; assets: M
     if (file) void uploadFile(file);
   }
 
-  async function uploadFile(file: File) {
+  async function uploadFile(picked: File) {
     setUploadState({ status: "uploading" });
+    // A clean JPEG/PNG redrawn in the browser (WebP, HEIC, motion photos...).
+    const file = await normalizePhotoForUpload(picked);
     const formData = new FormData();
     formData.append("memberId", memberId);
     formData.append("file", file);
@@ -172,7 +175,7 @@ export function MediaGallery({ memberId, assets }: { memberId: string; assets: M
       >
         <p className="text-[14px] font-semibold text-ink">Drop a photo here</p>
         <p className="text-[12px] leading-[1.5] text-ink-muted">
-          JPG or PNG, up to 25 MB. Once it's in your gallery, add it as a slide and choose what
+          Any photo (JPG, PNG, iPhone or WebP), up to 25 MB. Once it's in your gallery, add it as a slide and choose what
           stays in the portrait frame.
         </p>
         <label htmlFor="gallery-upload" className="sr-only">
@@ -182,7 +185,7 @@ export function MediaGallery({ memberId, assets }: { memberId: string; assets: M
           ref={fileInputRef}
           id="gallery-upload"
           type="file"
-          accept="image/png,image/jpeg"
+          accept="image/*"
           className="hidden"
           onChange={onFileSelected}
           disabled={uploadState.status === "uploading"}

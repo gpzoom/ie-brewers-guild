@@ -3,6 +3,7 @@ import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { hashUploadToken } from "@/lib/media/upload-tokens";
 import { validateUploadedImage } from "@/lib/media/validate-file";
 import { stripImageMetadata } from "@/lib/media/strip-exif";
+import { recordUploadFailure } from "@/lib/media/upload-failures.server";
 import { resolveImageDimensions } from "@/lib/media/image-dimensions";
 import { sanitizeFilename } from "@/lib/media/media-gallery.server";
 import { sendTransactionalEmail } from "@/lib/email/send";
@@ -166,7 +167,21 @@ export const submitCreatorUpload = createServerFn({ method: "POST" })
         claimedMimeType: file.type,
         allowSvg: false,
       });
-      if (!validation.valid) throw new UserFacingUploadError(validation.reason);
+      const failure = (reason: string) =>
+        recordUploadFailure({
+          source: "creator",
+          memberId: token.member_id,
+          userId: null,
+          filename: file.name,
+          claimedType: file.type,
+          byteSize: bytes.byteLength,
+          reason,
+          bytes,
+        });
+      if (!validation.valid) {
+        await failure(validation.reason);
+        throw new UserFacingUploadError(validation.reason);
+      }
 
       let stripped: Uint8Array;
       try {
@@ -180,8 +195,9 @@ export const submitCreatorUpload = createServerFn({ method: "POST" })
         // anonymous caller, so it's logged here and replaced with a plain
         // one.
         console.error("submitCreatorUpload: stripImageMetadata rejected the file", err);
+        await failure(`could not strip metadata: ${err instanceof Error ? err.message : String(err)}`);
         throw new UserFacingUploadError(
-          "This file couldn't be processed. Please upload a JPEG or PNG photo.",
+          "We couldn't read this photo. Open it and save or export it as a JPEG (or take a screenshot of it), then send that.",
         );
       }
 

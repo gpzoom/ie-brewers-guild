@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { recordUploadFailure } from "@/lib/media/upload-failures.server";
 import { fileTypeFromBuffer } from "file-type";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { validateUploadedImage } from "@/lib/media/validate-file";
@@ -53,7 +54,7 @@ export function sanitizeFilename(rawName: string): string {
 }
 
 const FRIENDLY_UNSUPPORTED_FORMAT_MESSAGE =
-  "Please upload a JPEG or PNG photo — other formats (including HEIC, Live Photos, and WebP) aren't supported yet.";
+  "We couldn't read this photo. Open it and save or export it as a JPEG (or take a screenshot of it), then upload that.";
 
 // validateUploadedImage's failure result carries only a `reason` string,
 // not the format it actually detected -- so a real HEIC/WebP/etc. photo
@@ -106,6 +107,17 @@ export const uploadMemberMedia = createServerFn({ method: "POST" })
       claimedMimeType: file.type,
       allowSvg: false,
     });
+    const failure = (reason: string) =>
+      recordUploadFailure({
+        source: "gallery",
+        memberId: memberId || null,
+        userId: userData.user.id,
+        filename: file.name,
+        claimedType: file.type,
+        byteSize: bytes.byteLength,
+        reason,
+        bytes,
+      });
     if (!validation.valid) {
       // A real HEIC/WebP/etc. photo fails validateUploadedImage's mime
       // allowlist -- it never reaches stripImageMetadata below at all --
@@ -113,8 +125,10 @@ export const uploadMemberMedia = createServerFn({ method: "POST" })
       // "unsupported format" message for that case, not the catch below.
       // See isKnownUnsupportedImageFormat's doc comment.
       if (await isKnownUnsupportedImageFormat(bytes)) {
+        await failure(`unsupported format: ${validation.reason}`);
         throw new Error(FRIENDLY_UNSUPPORTED_FORMAT_MESSAGE);
       }
+      await failure(validation.reason);
       throw new Error(validation.reason);
     }
 
@@ -133,7 +147,8 @@ export const uploadMemberMedia = createServerFn({ method: "POST" })
     let stripped: Uint8Array;
     try {
       stripped = stripImageMetadata(bytes, validation.detectedMimeType);
-    } catch {
+    } catch (err) {
+      await failure(`could not strip metadata: ${err instanceof Error ? err.message : String(err)}`);
       throw new Error(FRIENDLY_UNSUPPORTED_FORMAT_MESSAGE);
     }
 
