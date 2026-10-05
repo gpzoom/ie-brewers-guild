@@ -714,6 +714,13 @@ It is also materially less to build and less to get wrong. No focus trap, no scr
 **Routes:**
 
 - `/members` — the Members page, map and card grid. Lists every published member from the database, one card per business, alphabetical, with pins from stored coordinates. It replaced the hard-coded list.
+- `/members-2` — **Members page v2, a trial (5 October 2026).** Staging only: it's `noindex`, not in the menu, and returns 404 on the live site's hostnames (`members-v2-gate.ts`). The layout follows artboards B2–B6:
+  - a list beside the map, one card per member with its locations inside;
+  - search, member type and Near me;
+  - pins that highlight on hover, with the map moving only when a pin is off-screen;
+  - on a phone: a List/Map switch, a Filters panel and swipe cards.
+
+  It also shows mobile members' pins for today's stop, with an icon from their first category: truck, tent, microphone, or a star for anything else. Stops get map positions from the 15-minute cron (`events.latitude/longitude/geocoded_address`). The design is `docs/superpowers/specs/2026-10-05-members-page-v2-design.md`. `/members` is unchanged; whether v2 replaces it is the owner's call.
 - `/members/[slug]` — a member profile.
 - `/admin` — member admin, behind auth.
 - `/guild` — Guild admin, behind auth and `is_guild_admin`.
