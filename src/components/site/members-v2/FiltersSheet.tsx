@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import type { MemberType } from "@/lib/supabase/types";
@@ -22,6 +22,15 @@ export function FiltersSheet(props: {
 }) {
   const [type, setType] = useState(props.type);
   const [nearest, setNearest] = useState(props.nearest);
+  // Start from the page's current choices every time the panel opens (it's
+  // opened by the page's Filters button, which Radix doesn't report back
+  // through onOpenChange).
+  useEffect(() => {
+    if (props.open) {
+      setType(props.type);
+      setNearest(props.nearest);
+    }
+  }, [props.open, props.type, props.nearest]);
   const n = props.countFor(type);
   return (
     <Sheet

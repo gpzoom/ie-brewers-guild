@@ -14,33 +14,43 @@ function lookOf(pin: V2Pin, highlightCard: string | null, focusedSlug: string | 
   return pin.cardKey === highlightCard ? "member" : "normal";
 }
 
-function FitOnce({ pins }: { pins: V2Pin[] }) {
+function FitOnce({ pins, padding }: { pins: V2Pin[]; padding: number | google.maps.Padding }) {
   const map = useMap();
   const done = useRef(false);
   useEffect(() => {
     if (!map || done.current || pins.length === 0) return;
     const bounds = new google.maps.LatLngBounds();
     pins.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
-    map.fitBounds(bounds, 60);
+    map.fitBounds(bounds, padding);
     done.current = true;
   }, [map, pins]);
   return null;
 }
 
 /** Spec "Map behavior": the map only moves when a highlighted pin is off-screen. */
-function PanToHighlighted({ targets }: { targets: Array<{ lat: number; lng: number }> }) {
+function PanToHighlighted({ targets, padding }: { targets: Array<{ lat: number; lng: number }>; padding: number | google.maps.Padding }) {
   const map = useMap();
   const signature = targets.map((t) => `${t.lat},${t.lng}`).join("|");
   useEffect(() => {
     if (!map) return;
     const bounds = map.getBounds();
     if (!bounds) return;
-    const decision = panDecision(targets, (p) => bounds.contains(p));
-    if (decision.kind === "pan") map.panTo(decision.to);
+    // A pin under the phone's card rail (bottom padding) counts as off-screen.
+    const bottom = typeof padding === "number" ? 0 : (padding.bottom ?? 0);
+    const div = map.getDiv();
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+    const hiddenLat = div.clientHeight > 0 ? ((ne.lat() - sw.lat()) * bottom) / div.clientHeight : 0;
+    const visible = new google.maps.LatLngBounds({ lat: sw.lat() + hiddenLat, lng: sw.lng() }, ne);
+    const decision = panDecision(targets, (p) => visible.contains(p));
+    if (decision.kind === "pan") {
+      map.panTo(decision.to);
+      if (bottom) map.panBy(0, bottom / 2);
+    }
     if (decision.kind === "fit") {
       const b = new google.maps.LatLngBounds();
       decision.points.forEach((p) => b.extend(p));
-      map.fitBounds(b, 60);
+      map.fitBounds(b, padding);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run only when the targets change
   }, [map, signature]);
@@ -98,7 +108,10 @@ export function MembersV2Map(props: {
   initialView?: { lat: number; lng: number; zoom: number };
   onViewChange?: (v: { lat: number; lng: number; zoom: number }) => void;
   className?: string;
+  /** Room to leave around pins when framing them (the phone's card rail covers the bottom). */
+  fitPadding?: number | google.maps.Padding;
 }) {
+  const padding = props.fitPadding ?? 60;
   const [active, setActive] = useState<V2Pin | null>(null);
   const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(debounce.current), []);
@@ -129,8 +142,8 @@ export function MembersV2Map(props: {
             );
           }}
         >
-          {!props.initialView && <FitOnce pins={props.pins} />}
-          <PanToHighlighted targets={targets} />
+          {!props.initialView && <FitOnce pins={props.pins} padding={padding} />}
+          <PanToHighlighted targets={targets} padding={padding} />
           <PinMarkers
             pins={props.pins}
             highlightCard={props.highlightCard}

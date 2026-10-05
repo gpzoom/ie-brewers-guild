@@ -1,3 +1,4 @@
+/// <reference types="google.maps" />
 import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Crosshair, List, Map as MapIcon, Search, SlidersHorizontal, X } from "lucide-react";
@@ -65,7 +66,7 @@ export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: D
       onClick={() => (near.status === "on" ? near.turnOff() : near.turnOn())}
       aria-pressed={near.status === "on"}
       className={cn(
-        "inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 text-[13px] font-semibold lg:h-[46px] lg:rounded-[10px] lg:px-3.5 lg:text-sm",
+        "inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 text-[13px] font-semibold lg:h-[46px] lg:gap-2 lg:rounded-[10px] lg:px-3.5 lg:text-sm",
         near.status === "on" ? "border-primary bg-primary/15 text-primary" : "border-border",
       )}
     >
@@ -114,7 +115,7 @@ export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: D
       onHoverLocation={setFocusedSlug}
     />
   ));
-  const map = (className: string) => (
+  const map = (className: string, fitPadding?: google.maps.Padding) => (
     <MembersV2Map
       pins={pins}
       highlightCard={hoverCard}
@@ -125,6 +126,7 @@ export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: D
       initialView={initialView}
       onViewChange={onViewChange}
       className={className}
+      fitPadding={fitPadding}
     />
   );
 
@@ -170,11 +172,11 @@ export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: D
       </div>
 
       {/* Phone and tablet (B3-B5). */}
-      <div className="lg:hidden">
+      <div className="overflow-x-clip lg:hidden">
         <div className="sticky top-14 z-20 flex flex-col gap-2.5 border-b border-border bg-background px-4 pb-3 pt-2.5">
           {searchBox}
           <div className="flex items-center gap-2">
-            <button type="button" onClick={() => setFiltersOpen(true)} className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-full border border-border px-3 text-[13px] font-semibold">
+            <button type="button" onClick={() => setFiltersOpen(true)} className="inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border px-2.5 text-[13px] font-semibold">
               <SlidersHorizontal className="h-4 w-4" /> Filters
               {(type || near.status === "on") && (
                 <span className="ml-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">
@@ -183,9 +185,9 @@ export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: D
               )}
             </button>
             {nearButton}
-            <div className="ml-auto flex rounded-full border border-border p-[3px]">
+            <div className="ml-auto flex shrink-0 rounded-full border border-border p-[3px]">
               {(["list", "map"] as const).map((v) => (
-                <button key={v} type="button" aria-pressed={phoneView === v} onClick={() => setPhoneView(v)} className={cn("inline-flex h-[34px] items-center gap-1.5 rounded-full px-2.5 text-[13px] font-semibold", phoneView === v ? "bg-foreground text-background" : "text-muted-foreground")}>
+                <button key={v} type="button" aria-pressed={phoneView === v} onClick={() => setPhoneView(v)} className={cn("inline-flex h-[34px] items-center gap-1 whitespace-nowrap rounded-full px-2 text-[13px] font-semibold", phoneView === v ? "bg-foreground text-background" : "text-muted-foreground")}>
                   {v === "list" ? <List className="h-[15px] w-[15px]" /> : <MapIcon className="h-[15px] w-[15px]" />}
                   {v === "list" ? "List" : "Map"}
                 </button>
@@ -225,7 +227,7 @@ export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: D
 function PhoneMapView(props: {
   cards: V2Card[];
   pins: V2Pin[];
-  map: (className: string) => ReactElement;
+  map: (className: string, fitPadding?: google.maps.Padding) => ReactElement;
   onFocusCard: (key: string) => void;
   linkSearch: DirectorySearch;
   origin: LatLng | null;
@@ -248,7 +250,7 @@ function PhoneMapView(props: {
   }, [props.cards]);
   return (
     <div className="relative h-[calc(100dvh-3.5rem-118px)]">
-      {props.map("absolute inset-0 [&>div]:h-full")}
+      {props.map("absolute inset-0 [&>div]:h-full", { top: 30, right: 30, bottom: 230, left: 30 })}
       <div ref={rail} className="absolute inset-x-0 bottom-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 [scrollbar-width:none]">
         {props.cards.map((card) => (
           <div key={card.key} data-rail-key={card.key} className="w-[85%] shrink-0 snap-center overflow-hidden rounded-[14px] border border-border bg-[#1E1915] shadow-xl">

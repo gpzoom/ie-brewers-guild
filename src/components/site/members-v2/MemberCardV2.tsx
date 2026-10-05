@@ -133,7 +133,7 @@ export function MemberCardV2(props: {
           </p>
         )}
 
-        <div className="mt-1 flex items-center justify-between">
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3">
           {card.memberType === "mobile" && !hasPinToday ? (
             <Link to="/members/$slug" params={{ slug: first.slug }} search={linkSearch} className={actionClass}>
               <CalendarDays className="h-[15px] w-[15px]" /> Schedule
@@ -143,7 +143,8 @@ export function MemberCardV2(props: {
               <Navigation className="h-[15px] w-[15px]" /> Directions
             </a>
           ) : null}
-          {website}
+          {/* The phone map's swipe cards stay short: Website is on the profile and in the list. */}
+          {!props.compact && website}
           {profile}
         </div>
       </div>
