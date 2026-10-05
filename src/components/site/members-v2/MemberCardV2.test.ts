@@ -60,4 +60,25 @@ describe("MemberCardV2", () => {
     expect(html).toContain("Schedule");
     expect(html).not.toContain("Directions");
   });
+
+  it("a stop at a street address shows the address under the stop line", () => {
+    const html = render(card({ memberType: "mobile", tag: "FOOD TRUCK", mobileIcon: "truck", stopPin: { lat: 33.98, lng: -117.37 },
+      stop: { state: "at-address", venue: "Riverside Food Truck Night", address: "3900 Main St, Riverside", time: "4–10 pm" } }));
+    expect(html).toContain("3900 Main St, Riverside");
+  });
+
+  it("the whole card opens the profile (stretched link on the name)", () => {
+    const html = render(card({}));
+    expect(html).toMatch(/<article[^>]*class="relative /);
+    expect(html).toContain("after:absolute");
+  });
+
+  it("Near me: a card's location rows are ordered by distance", () => {
+    const html = renderToStaticMarkup(createElement(MemberCardV2, { card: card({}), linkSearch: {}, origin: { lat: 33.9806, lng: -117.3755 }, highlighted: false, focusedSlug: null, onHoverCard: () => {}, onHoverLocation: () => {} }));
+    // From Riverside: Riverside, then Redlands; Irvine (farthest) is behind "+ 1 more location".
+    const riverside = html.indexOf(">Riverside<");
+    expect(riverside).toBeGreaterThan(-1);
+    expect(riverside).toBeLessThan(html.indexOf(">Redlands<"));
+    expect(html).not.toContain(">Irvine<");
+  });
 });

@@ -227,3 +227,14 @@ describe("needsStopGeocode / stopCoordinates", () => {
     expect(stopCoordinates(stop({ address: "x", geocoded_address: addr, latitude: 1, longitude: 1 }))).toBeNull();
   });
 });
+
+describe("needsStopGeocode: a stop added after it started", () => {
+  it("still looks up a stop that is on now (started hours ago, ends later)", () => {
+    const allDayish = stop({ starts_at: "2026-10-05T18:00:00Z", ends_at: "2026-10-06T04:00:00Z", address: "3900 Main St, Riverside" });
+    expect(needsStopGeocode(allDayish, NOW)).toBe(true);
+  });
+  it("doesn't look up a stop that has ended", () => {
+    const over = stop({ starts_at: "2026-10-05T15:00:00Z", ends_at: "2026-10-05T19:00:00Z", address: "3900 Main St, Riverside" });
+    expect(needsStopGeocode(over, NOW)).toBe(false);
+  });
+});

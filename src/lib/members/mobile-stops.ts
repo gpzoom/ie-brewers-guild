@@ -214,5 +214,6 @@ export function needsStopGeocode(e: StopEvent, now: Date, hours = LOOKUP_WINDOW_
   if (!address || !/\d/.test(address)) return false;
   if (clean(e.geocoded_address) === address) return false;
   const start = new Date(stopStart(e)).getTime();
-  return start >= now.getTime() - DEFAULT_LENGTH_MS && start <= now.getTime() + hours * 3600 * 1000;
+  // Still on or yet to come (a stop added after it started still gets its pin).
+  return stopEnd(e) > now.getTime() && start <= now.getTime() + hours * 3600 * 1000;
 }

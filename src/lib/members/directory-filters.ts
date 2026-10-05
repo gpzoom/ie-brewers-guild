@@ -62,3 +62,10 @@ export function formatMiles(miles: number): string {
 export function splitLocations<T>(locations: T[], shown = 2): { shown: T[]; hidden: T[] } {
   return { shown: locations.slice(0, shown), hidden: locations.slice(shown) };
 }
+
+/** Near me: a card's location rows nearest first, rows with no pin last; no origin keeps the order. */
+export function orderLocations<T extends { lat: number | null; lng: number | null }>(locations: T[], origin: LatLng | null): T[] {
+  if (!origin) return locations;
+  const d = (l: T) => (l.lat === null || l.lng === null ? Infinity : distanceMiles(origin, { lat: l.lat, lng: l.lng }));
+  return [...locations].sort((a, b) => d(a) - d(b));
+}

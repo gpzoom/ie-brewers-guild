@@ -72,3 +72,17 @@ describe("splitLocations", () => {
     expect(splitLocations([1, 2])).toEqual({ shown: [1, 2], hidden: [] });
   });
 });
+
+describe("orderLocations (Near me: a card's rows by distance)", () => {
+  it("nearest first, no-pin rows last; no origin keeps the given order", async () => {
+    const { orderLocations } = await import("./directory-filters");
+    const rows = [
+      { city: "Irvine", lat: 33.69, lng: -117.85 },
+      { city: "Lake Havasu City", lat: null, lng: null },
+      { city: "Riverside", lat: 33.955, lng: -117.33 },
+    ];
+    const riverside = { lat: 33.9806, lng: -117.3755 };
+    expect(orderLocations(rows, riverside).map((r) => r.city)).toEqual(["Riverside", "Irvine", "Lake Havasu City"]);
+    expect(orderLocations(rows, null).map((r) => r.city)).toEqual(["Irvine", "Lake Havasu City", "Riverside"]);
+  });
+});

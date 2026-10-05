@@ -98,6 +98,23 @@ function PinMarkers(props: {
   );
 }
 
+/** A pin's pop-up: name, its line, Directions, Website (as on /members) and Profile. */
+export function PinPopup({ pin, linkSearch }: { pin: V2Pin; linkSearch: DirectorySearch }) {
+  return (
+    <div className="font-sans" style={{ minWidth: 220, maxWidth: 280 }}>
+      <div className="text-[15px] font-bold text-gray-900">{pin.name}</div>
+      <div className="mt-1 text-xs text-gray-600">{pin.stopLine ?? pin.address}</div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px] font-semibold text-amber-700">
+        <a href={`https://www.google.com/maps/dir/?api=1&destination=${pin.lat},${pin.lng}`} target="_blank" rel="noreferrer">Directions</a>
+        {pin.website && (
+          <a href={pin.website} target="_blank" rel="noreferrer">Website</a>
+        )}
+        <Link to="/members/$slug" params={{ slug: pin.slug }} search={linkSearch}>Profile →</Link>
+      </div>
+    </div>
+  );
+}
+
 export function MembersV2Map(props: {
   pins: V2Pin[];
   highlightCard: string | null;
@@ -156,14 +173,7 @@ export function MembersV2Map(props: {
           />
           {active && (
             <InfoWindow position={{ lat: active.lat, lng: active.lng }} pixelOffset={[0, -36]} onCloseClick={() => setActive(null)}>
-              <div className="font-sans" style={{ minWidth: 220, maxWidth: 280 }}>
-                <div className="text-[15px] font-bold text-gray-900">{active.name}</div>
-                <div className="mt-1 text-xs text-gray-600">{active.stopLine ?? active.address}</div>
-                <div className="mt-2 flex gap-4 text-[13px] font-semibold text-amber-700">
-                  <a href={`https://www.google.com/maps/dir/?api=1&destination=${active.lat},${active.lng}`} target="_blank" rel="noreferrer">Directions</a>
-                  <Link to="/members/$slug" params={{ slug: active.slug }} search={props.linkSearch}>Profile →</Link>
-                </div>
-              </div>
+              <PinPopup pin={active} linkSearch={props.linkSearch} />
             </InfoWindow>
           )}
         </Map>

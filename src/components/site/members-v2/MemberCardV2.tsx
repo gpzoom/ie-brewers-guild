@@ -5,7 +5,7 @@ import type { V2Card } from "@/lib/members/members-v2";
 import type { MobileIcon } from "@/lib/members/mobile-category";
 import { directionsUrl } from "@/lib/members/directory";
 import type { DirectorySearch } from "@/lib/directory/search-params";
-import { distanceMiles, formatMiles, splitLocations, type LatLng } from "@/lib/members/directory-filters";
+import { distanceMiles, formatMiles, orderLocations, splitLocations, type LatLng } from "@/lib/members/directory-filters";
 import { cn } from "@/lib/utils";
 
 const STOP_ICON: Record<MobileIcon, typeof Truck> = { truck: Truck, tent: Tent, mic: Mic, star: Star };
@@ -26,7 +26,7 @@ function miles(origin: LatLng | null, lat: number | null, lng: number | null): s
   return origin && lat !== null && lng !== null ? formatMiles(distanceMiles(origin, { lat, lng })) : null;
 }
 
-const actionClass = "inline-flex min-h-8 items-center gap-1.5 text-[13px] font-semibold text-muted-foreground hover:text-foreground";
+const actionClass = "relative z-10 inline-flex min-h-8 items-center gap-1.5 text-[13px] font-semibold text-muted-foreground hover:text-foreground";
 
 export function MemberCardV2(props: {
   card: V2Card;
@@ -42,14 +42,16 @@ export function MemberCardV2(props: {
   const [expanded, setExpanded] = useState(false);
   const first = card.locations[0];
   const multi = card.memberType !== "mobile" && card.locations.length > 1;
-  const { shown, hidden } = splitLocations(card.locations);
-  const rows = expanded ? card.locations : shown;
+  // Near me: the nearest location first, so the row that put this card at the top shows.
+  const locations = orderLocations(card.locations, origin);
+  const { shown, hidden } = splitLocations(locations);
+  const rows = expanded ? locations : shown;
   const StopIcon = card.mobileIcon ? STOP_ICON[card.mobileIcon] : Truck;
   const stopText = stopLineText(card);
   const hasPinToday = card.stopPin !== null;
 
   const profile = (
-    <Link to="/members/$slug" params={{ slug: first.slug }} search={linkSearch} className="inline-flex min-h-8 items-center gap-1.5 text-[13px] font-bold text-primary">
+    <Link to="/members/$slug" params={{ slug: first.slug }} search={linkSearch} className="relative z-10 inline-flex min-h-8 items-center gap-1.5 text-[13px] font-bold text-primary">
       Profile <span aria-hidden="true">→</span>
     </Link>
   );
@@ -65,7 +67,7 @@ export function MemberCardV2(props: {
       onMouseEnter={() => props.onHoverCard(card.key)}
       onMouseLeave={() => props.onHoverCard(null)}
       className={cn(
-        "flex gap-4 border-b border-border border-l-[3px] px-5 py-[18px] transition-colors",
+        "relative flex gap-4 border-b border-border border-l-[3px] px-5 py-[18px] transition-colors",
         highlighted ? "border-l-primary bg-[#2A221B]" : "border-l-transparent",
         props.compact && "px-4 py-4",
       )}
@@ -79,15 +81,20 @@ export function MemberCardV2(props: {
             {card.tag}
           </span>
         )}
-        <Link to="/members/$slug" params={{ slug: first.slug }} search={linkSearch} className="font-display text-base font-extrabold uppercase leading-tight text-foreground hover:underline">
+        <Link to="/members/$slug" params={{ slug: first.slug }} search={linkSearch} className="font-display text-base font-extrabold uppercase leading-tight text-foreground after:absolute after:inset-0 hover:underline">
           {card.name}
         </Link>
 
         {card.memberType === "mobile" ? (
-          <p className="flex gap-2 text-[13px] leading-snug text-foreground">
-            <StopIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <span>{stopText}</span>
-          </p>
+          <>
+            <p className="flex gap-2 text-[13px] leading-snug text-foreground">
+              <StopIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>{stopText}</span>
+            </p>
+            {card.stop?.state === "at-address" && card.stop.address && (
+              <p className="pl-[22px] text-xs text-muted-foreground">{card.stop.address}</p>
+            )}
+          </>
         ) : multi ? (
           <>
             <p className="text-xs text-muted-foreground">{card.locations.length} locations</p>
@@ -100,7 +107,7 @@ export function MemberCardV2(props: {
                     key={l.slug}
                     onMouseEnter={() => props.onHoverLocation(l.slug)}
                     onMouseLeave={() => props.onHoverLocation(null)}
-                    className={cn("flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px]", focused && "bg-[#2A221B]")}
+                    className={cn("relative z-10 flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px]", focused && "bg-[#2A221B]")}
                   >
                     <MapPin className={cn("h-3.5 w-3.5 shrink-0", focused ? "text-primary" : "text-muted-foreground")} />
                     <span className="min-w-0 flex-1 text-muted-foreground">
@@ -116,7 +123,7 @@ export function MemberCardV2(props: {
               })}
               {hidden.length > 0 && !expanded && (
                 <li>
-                  <button type="button" onClick={() => setExpanded(true)} className="px-2.5 py-1.5 text-[13px] font-semibold text-primary">
+                  <button type="button" onClick={() => setExpanded(true)} className="relative z-10 px-2.5 py-1.5 text-[13px] font-semibold text-primary">
                     + {hidden.length} more location{hidden.length === 1 ? "" : "s"}
                   </button>
                 </li>

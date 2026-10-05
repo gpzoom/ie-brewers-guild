@@ -11,6 +11,7 @@ import { MembersV2Map } from "./MembersV2Map";
 import { FiltersSheet } from "./FiltersSheet";
 import { useNearMe } from "./useNearMe";
 import { cn } from "@/lib/utils";
+import { pickVisible } from "./reveal";
 
 function pointsOf(card: V2Card): LatLng[] {
   if (card.memberType === "mobile") return card.stopPin ? [card.stopPin] : [];
@@ -32,7 +33,6 @@ export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: D
   const [phoneView, setPhoneView] = useState<"list" | "map">("list");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const near = useNearMe();
-  const listRef = useRef<HTMLDivElement>(null);
   const type = props.search.filter;
 
   const cards = useMemo(() => visibleCards(props.cards, { query, type, origin: near.origin }), [props.cards, query, type, near.origin]);
@@ -48,7 +48,7 @@ export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: D
   const revealCard = (key: string | null) => {
     setHoverCard(key);
     if (!key) return;
-    listRef.current?.querySelector(`[data-card-key="${CSS.escape(key)}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    pickVisible([...document.querySelectorAll<HTMLElement>(`[data-card-key="${CSS.escape(key)}"]`)])?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     // Phone map view: bring the pin's card into the swipe rail.
     document.querySelector(`[data-rail-key="${CSS.escape(key)}"]`)?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
   };
@@ -145,7 +145,7 @@ export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: D
       </section>
 
       {/* Desktop: list beside the map (B2). */}
-      <div className="hidden lg:flex lg:h-[calc(100dvh-4rem)]">
+      <div className="hidden lg:flex lg:h-[calc(100dvh-73px)]">
         <div className="flex w-[440px] shrink-0 flex-col border-r border-border">
           <div className="flex flex-col gap-2.5 border-b border-border px-5 pb-3 pt-[18px]">
             <div className="flex gap-2.5">{searchBox}{nearButton}</div>
@@ -166,14 +166,14 @@ export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: D
             </p>
           </div>
           {blockedNote}
-          <div ref={listRef} className="flex-1 overflow-y-auto">{empty}{list}</div>
+          <div className="flex-1 overflow-y-auto">{empty}{list}</div>
         </div>
         {map("min-w-0 flex-1 [&>div]:h-full")}
       </div>
 
       {/* Phone and tablet (B3-B5). */}
       <div className="overflow-x-clip lg:hidden">
-        <div className="sticky top-14 z-20 flex flex-col gap-2.5 border-b border-border bg-background px-4 pb-3 pt-2.5">
+        <div className="sticky top-[73px] z-20 flex flex-col gap-2.5 border-b border-border bg-background px-4 pb-3 pt-2.5">
           {searchBox}
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => setFiltersOpen(true)} className="inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border px-2.5 text-[13px] font-semibold">
@@ -197,7 +197,7 @@ export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: D
         </div>
         {blockedNote}
         {phoneView === "list" ? (
-          <div ref={listRef}>
+          <div>
             <p className="px-4 pt-2.5 text-xs text-muted-foreground">
               {near.status === "on" ? "Nearest first · " : ""}{memberCount} member{memberCount === 1 ? "" : "s"}
             </p>
@@ -249,7 +249,7 @@ function PhoneMapView(props: {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- re-observe when the cards change
   }, [props.cards]);
   return (
-    <div className="relative h-[calc(100dvh-3.5rem-118px)]">
+    <div className="relative h-[calc(100dvh-73px-118px)]">
       {props.map("absolute inset-0 [&>div]:h-full", { top: 30, right: 30, bottom: 230, left: 30 })}
       <div ref={rail} className="absolute inset-x-0 bottom-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 [scrollbar-width:none]">
         {props.cards.map((card) => (
