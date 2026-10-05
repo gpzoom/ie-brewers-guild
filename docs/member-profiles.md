@@ -1036,3 +1036,4 @@ The general principle: a member who has filled in almost nothing should still ge
 - [x] Super admin — separate account boblelle77+sa@gmail.com, seeded only; owns Brand & theme, Delete member, sign-in email changes, Guild admins, Audit log, Trail switch and category delete; enforced on the server and in the database
 
 Nothing is open. This is ready to hand to Claude Code.
+- [ ] **Later (owner, 5 October 2026): venue suggestions from Google Places.** In the Events editor, the Venue box suggests places as the member types (Google Places, like the Basics address box). Picking one fills in the venue name, address and city, so a food truck's stop lands on the right spot without typing mistakes. Today a stop's Venue is free text, and it lands beside a Guild member's pin only when it matches that member's business name.
