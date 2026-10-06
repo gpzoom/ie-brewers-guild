@@ -108,8 +108,8 @@
       "y": 0
     },
     "SignIn.dc.html": {
-      "h": 1180,
-      "title": "T · Member sign in",
+      "h": 1160,
+      "title": "T · Member sign in (and Check your email, with the code box)",
       "w": 390,
       "x": 3400,
       "y": 0
@@ -217,14 +217,14 @@
       "y": 9000,
       "w": 1440,
       "h": 1130,
-      "title": "B1 · Members v2 (/members-2) — desktop, one card per location"
+      "title": "B1 · Members page — desktop, one card per location (not chosen; B2 is live)"
     },
     "MembersV2DesktopB.dc.html": {
       "x": 1520,
       "y": 9000,
       "w": 1440,
       "h": 1100,
-      "title": "B2 · Members v2 — desktop, one card per member (compare with B1)"
+      "title": "B2 · Members page — desktop, one card per member (live at /members)"
     },
     "MembersV2Phone.dc.html": {
       "x": 3040,
@@ -253,6 +253,20 @@
       "w": 1340,
       "h": 1360,
       "title": "B6 · Members v2 — card states (mobile members, Allied, Near me, empty) and mobile pin icons"
+    },
+    "AuthConfirm.dc.html": {
+      "x": 3870,
+      "y": 0,
+      "w": 390,
+      "h": 860,
+      "title": "T2 · Finish signing in (where the email link lands)"
+    },
+    "SignInEmail.dc.html": {
+      "x": 4340,
+      "y": 0,
+      "w": 600,
+      "h": 560,
+      "title": "T3 · The sign-in email (link and code)"
     }
   },
   "createdOnFiles": {
@@ -266,7 +280,7 @@
   "notes": {
     "hdr": {
       "kind": "title1",
-      "maxW": 3790,
+      "maxW": 4940,
       "text": "Public — profiles and contact",
       "w": 240,
       "x": 0,
@@ -299,7 +313,7 @@
     "hdr6": {
       "kind": "title1",
       "maxW": 5790,
-      "text": "Public — Members page v2 (/members-2, staging only)",
+      "text": "Public — Members page (live at /members since 5 Oct 2026)",
       "w": 240,
       "x": 0,
       "y": 8700
@@ -323,6 +337,8 @@
     "GuildMembers.dc.html",
     "GuildBrand.dc.html",
     "SignIn.dc.html",
+    "AuthConfirm.dc.html",
+    "SignInEmail.dc.html",
     "AdminLinks.dc.html",
     "GuildCategories.dc.html",
     "GuildAdmins.dc.html",

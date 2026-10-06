@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Finish signing in</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#171410}
+a{color:#E08440}a:hover{color:#F0A268}
+</style>
+</helmet>
+
+<div style="width: 390px; height: 860px; box-sizing: border-box; background: #171410; display: flex; flex-direction: column;">
+  <div style="height: 58px; flex-shrink: 0; display: flex; align-items: center; padding: 0 14px;">
+    <a href="#home" style="display: flex; align-items: center; gap: 9px; min-height: 44px; text-decoration: none;">
+      <span style="display: block; width: 22px; height: 22px; border-radius: 5px; background: #38322A;"></span>
+      <span style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">IE BREWERS GUILD</span>
+    </a>
+  </div>
+  <div style="margin: 0 10px; padding: 28px 18px 26px; box-sizing: border-box; background: #F9F6F0; border-radius: 22px; display: flex; flex-direction: column; gap: 18px;">
+    <div style="width: 52px; height: 52px; border-radius: 13px; background: #EFEAE1; display: flex; align-items: center; justify-content: center;">
+      <svg width="24" height="24" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1.8" y="3.4" width="12.4" height="9.2" rx="1.6" stroke="#6B6156" stroke-width="1.4"/><path d="m2.4 4.4 5.6 4 5.6-4" stroke="#6B6156" stroke-width="1.4" stroke-linejoin="round"/></svg>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 9px;">
+      <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 26px; font-weight: 700; color: #241F1A; line-height: 1.08; letter-spacing: -0.015em;">Finish signing in</div>
+      <div style="font-size: 15px; color: #564E45; line-height: 1.55;">Press the button to sign in to the Member Portal.</div>
+    </div>
+    <button type="button" style="height: 54px; border-radius: 11px; border: 0; background: #B3591F; font-family: inherit; font-size: 16px; font-weight: 600; color: #FFFFFF;">Sign in</button>
+  </div>
+  <div style="padding: 34px 26px 12px; display: flex; align-items: center; gap: 12px;">
+    <span style="display: block; height: 1px; flex-grow: 1; background: #2B261F;"></span>
+    <span style="font-size: 10px; letter-spacing: 0.15em; color: #9A9184;">IF THE LINK WAS USED OR EXPIRED</span>
+    <span style="display: block; height: 1px; flex-grow: 1; background: #2B261F;"></span>
+  </div>
+  <div style="margin: 12px 10px 0; padding: 28px 18px 26px; box-sizing: border-box; background: #F9F6F0; border-radius: 22px; display: flex; flex-direction: column; gap: 18px;">
+    <div style="width: 52px; height: 52px; border-radius: 13px; background: #EFEAE1; display: flex; align-items: center; justify-content: center;">
+      <svg width="24" height="24" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1.8" y="3.4" width="12.4" height="9.2" rx="1.6" stroke="#6B6156" stroke-width="1.4"/><path d="m2.4 4.4 5.6 4 5.6-4" stroke="#6B6156" stroke-width="1.4" stroke-linejoin="round"/></svg>
+    </div>
+    <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 26px; font-weight: 700; color: #241F1A; line-height: 1.08;">Finish signing in</div>
+    <button type="button" style="height: 54px; border-radius: 11px; border: 0; background: #B3591F; font-family: inherit; font-size: 16px; font-weight: 600; color: #FFFFFF;">Sign in</button>
+    <div role="alert" style="font-size: 13px; line-height: 1.5; color: #B42318;">That sign-in link has already been used or has expired. Request a new one below, or use the code from the email. <a href="SignIn.dc.html" style="color: #B3591F; font-weight: 500;">Get a new sign-in email</a></div>
+  </div>
+  <div style="padding: 22px 22px 0; font-size: 12px; line-height: 1.55; color: #9A9184;">Where the sign-in email&rsquo;s link lands (/auth/confirm). It works in any browser or on any device. Opening the page signs nobody in, so an email scanner that opens links can&rsquo;t use it up; only the button does.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

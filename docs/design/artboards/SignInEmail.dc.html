@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sign-in email</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#171410}
+a{color:#E08440}a:hover{color:#F0A268}
+</style>
+</helmet>
+
+<div style="width: 600px; height: 560px; box-sizing: border-box; background: #171410; padding: 34px 30px; display: flex; flex-direction: column; gap: 18px;">
+  <div style="font-size: 11px; letter-spacing: 0.15em; font-weight: 600; color: #B6AC9D;">THE SIGN-IN EMAIL (SUPABASE TEMPLATES: MAGIC LINK AND CONFIRM SIGNUP)</div>
+  <div style="background: #FFFFFF; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column;">
+    <div style="padding: 14px 20px; background: #EFEAE1; border-bottom: 1px solid #DED7CB; display: flex; flex-direction: column; gap: 3px;">
+      <div style="font-size: 11px; color: #6B6156;">From: ISC Brewers Guild &middot; To: [THEIR EMAIL]</div>
+      <div style="font-size: 15px; font-weight: 600; color: #241F1A;">Your ISC Brewers Guild sign-in link</div>
+    </div>
+    <div style="padding: 22px 24px 26px; display: flex; flex-direction: column; gap: 14px; font-size: 14px; line-height: 1.5; color: #3A332C;">
+      <div style="font-size: 20px; font-weight: 700; color: #241F1A;">Sign in to the ISC Brewers Guild</div>
+      <div>Click the button to finish signing in to the Member Portal:</div>
+      <a href="AuthConfirm.dc.html" style="align-self: flex-start; padding: 12px 22px; background: #BE5A0A; color: #FFFFFF; text-decoration: none; border-radius: 8px; font-weight: 600;">Sign in</a>
+      <div>Or type this code on the sign-in page:</div>
+      <div style="font-size: 28px; font-weight: 700; letter-spacing: 6px; color: #241F1A;">482915</div>
+      <div style="color: #6B6156;">The link and the code work once, for about an hour. If you didn&rsquo;t ask to sign in, you can ignore this email.</div>
+    </div>
+  </div>
+  <div style="font-size: 12px; line-height: 1.55; color: #9A9184;">The button opens &ldquo;Finish signing in&rdquo; (T2). The code goes in the box on &ldquo;Check your email&rdquo; (T). The text to paste is in docs/auth-email-templates.md.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":600,"height":560}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

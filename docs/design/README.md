@@ -40,6 +40,8 @@ Placeholders like `[MEMBER NAME]` in the artboards are stand-ins for real data. 
 | L `DesktopProfile` | Profile, desktop | same |
 | O `ContactForm` | Contact & membership inquiry | `routes/contact.tsx` |
 | T `SignIn` | Member sign in | `routes/signin.tsx` |
+| T2 `AuthConfirm` | Finish signing in: where the email link lands (works in any browser; only the button signs in) | `routes/auth.confirm.tsx` |
+| T3 `SignInEmail` | The sign-in email: a link and a 6-digit code (Supabase templates, `docs/auth-email-templates.md`) | Supabase dashboard |
 | F `AdminBasics` | Basics & hours (one page) | `routes/admin.basics.tsx` → `admin/BasicsForm`, `admin/HoursEditor` |
 | G `AdminMedia` | Photos (was "Photos & video") | `routes/admin.media.tsx` → `admin/*` media editors |
 | H `AdminPublish` | Publish gate dialog | `admin/PublishGateDialog` |
