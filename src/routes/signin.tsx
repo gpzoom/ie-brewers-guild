@@ -74,7 +74,7 @@ function SignInPage() {
   const [codeState, setCodeState] = useState<"idle" | "checking" | "error">("idle");
   const [codeError, setCodeError] = useState<string | null>(null);
 
-  // The code from the email (8 digits on this project): works on any device, whatever opened the email.
+  // The code from the email (6 digits on this project): works on any device, whatever opened the email.
   const onCode = async (event: FormEvent) => {
     event.preventDefault();
     if (!normalizeEmailCode(code)) {
@@ -175,7 +175,7 @@ function SignInPage() {
                     onChange={(e) => setCode(e.target.value)}
                     inputMode="numeric"
                     autoComplete="one-time-code"
-                    placeholder="12345678"
+                    placeholder="123456"
                     aria-invalid={codeState === "error" ? true : undefined}
                     aria-describedby={codeError ? "signin-code-error" : undefined}
                     className={`${inputClass} h-[52px] min-w-0 flex-1 tracking-[0.3em]`}

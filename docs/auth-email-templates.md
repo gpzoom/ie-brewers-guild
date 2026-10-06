@@ -3,7 +3,7 @@
 These replace Supabase's default **Magic Link** and **Confirm signup** emails. That makes sign-in work in any browser or on any device (owner, 5 October 2026). The emails carry two things:
 
 - **A link to the site's "Finish signing in" page** (`/auth/confirm`). It works in any browser or on any device. Opening the page doesn't sign anyone in until they press the button, so email security scanners can't use the link up.
-- **The sign-in code**, 8 digits on this project. The member types it on the sign-in page if the link gives them any trouble.
+- **The sign-in code**, 6 digits on this project. The member types it on the sign-in page if the link gives them any trouble.
 
 The site code that reads these links is `src/lib/auth/sign-in-link.ts`, `src/routes/auth.callback.tsx`, `src/routes/auth.confirm.tsx` and `src/routes/signin.tsx`.
 
