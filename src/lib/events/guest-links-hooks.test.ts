@@ -23,4 +23,9 @@ describe("the linker runs after every stop change", () => {
     expect(src("src/server.ts")).toContain("relinkGuestStops");
     expect(src("src/server.ts")).toContain("sendGuestStopNotices");
   });
+  it("the linker writes only through apply_guest_links (compare-and-set, emails queued with the write)", () => {
+    const s = src("src/lib/events/guest-links.server.ts");
+    expect(s).toContain('rpc("apply_guest_links"');
+    expect(s).not.toMatch(/\.(insert|upsert|update|delete)\(/);
+  });
 });

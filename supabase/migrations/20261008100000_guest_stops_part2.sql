@@ -125,6 +125,7 @@ begin
      and old.guest_name is not null
      and old.notified_starts_at is not null
      and coalesce(old.notified_ends_at, old.notified_starts_at + interval '2 hours') > now()
+     and exists (select 1 from public.members m where m.id = old.host_member_id)
   then
     insert into public.guest_stop_notices
       (host_member_id, event_id, kind, guest_name, title, starts_at, ends_at, all_day)
@@ -140,7 +141,7 @@ create trigger event_hosts_note_removed
   for each row execute function public.event_hosts_note_removed();
 
 -- The 15-minute job's claim: unsent notes not claimed in the last 10 minutes
--- (a crashed send is retried), under 5 attempts. `for update skip locked`, so
+-- (a crashed send is retried), under 5 attempts -- each claim counts one. `for update skip locked`, so
 -- two Workers running at once never take the same note. p_sample_only:
 -- staging (true) takes only the Sample test taprooms; the live site (false)
 -- takes everything else.
@@ -153,7 +154,7 @@ as $$
 begin
   return query
   update public.guest_stop_notices n
-     set claimed_at = now()
+     set claimed_at = now(), attempts = n.attempts + 1
    where n.id in (
      select g.id
        from public.guest_stop_notices g
@@ -171,3 +172,91 @@ end;
 $$;
 revoke all on function public.claim_guest_stop_notices(int, boolean) from public, anon, authenticated;
 grant execute on function public.claim_guest_stop_notices(int, boolean) to service_role;
+
+-- The linker's writes (src/lib/events/guest-links.ts decides,
+-- guest-links.server.ts calls this). Each write says what it expects to find
+-- -- no row for a new link; otherwise the taproom, status and what was last
+-- told -- and applies only if the row is still like that. So two Workers
+-- running at once, or a taproom's Approve/Decline/Hide landing between the
+-- linker's read and its write, can neither double an email nor undo a
+-- choice: the write that lost simply doesn't happen, and the next run
+-- looks again. A write's email notes are queued only when the write took
+-- effect, in the same transaction. Same-taproom writes never touch status.
+create or replace function public.apply_guest_links(p_writes jsonb, p_deletes jsonb)
+returns integer
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  w jsonb;
+  l jsonb;
+  e jsonb;
+  n jsonb;
+  d jsonb;
+  v_done boolean;
+  v_notes integer := 0;
+begin
+  for w in select * from jsonb_array_elements(coalesce(p_writes, '[]'::jsonb))
+  loop
+    l := w->'link';
+    e := w->'expect';
+    if e is null or jsonb_typeof(e) = 'null' then
+      insert into public.event_hosts
+        (event_id, host_member_id, status, guest_name, title, notified_starts_at, notified_ends_at, notified_all_day, cancel_notified)
+      values
+        ((l->>'event_id')::uuid, (l->>'host_member_id')::uuid, l->>'status', l->>'guest_name', l->>'title',
+         (l->>'notified_starts_at')::timestamptz, (l->>'notified_ends_at')::timestamptz,
+         coalesce((l->>'notified_all_day')::boolean, false), coalesce((l->>'cancel_notified')::boolean, false))
+      on conflict (event_id) do nothing;
+      v_done := found;
+    else
+      update public.event_hosts h
+         set host_member_id = (l->>'host_member_id')::uuid,
+             -- A move starts fresh under the new taproom's setting; the same
+             -- taproom keeps whatever status it has now.
+             status = case when (e->>'host_member_id') = (l->>'host_member_id') then h.status else l->>'status' end,
+             status_set_by_user_id = case when (e->>'host_member_id') = (l->>'host_member_id') then h.status_set_by_user_id else null end,
+             guest_name = l->>'guest_name',
+             title = l->>'title',
+             notified_starts_at = (l->>'notified_starts_at')::timestamptz,
+             notified_ends_at = (l->>'notified_ends_at')::timestamptz,
+             notified_all_day = coalesce((l->>'notified_all_day')::boolean, false),
+             cancel_notified = coalesce((l->>'cancel_notified')::boolean, false),
+             updated_at = now()
+       where h.event_id = (l->>'event_id')::uuid
+         and h.host_member_id = (e->>'host_member_id')::uuid
+         and h.status = e->>'status'
+         and h.notified_starts_at is not distinct from (e->>'notified_starts_at')::timestamptz
+         and h.notified_ends_at is not distinct from (e->>'notified_ends_at')::timestamptz
+         and h.cancel_notified = coalesce((e->>'cancel_notified')::boolean, false);
+      v_done := found;
+    end if;
+
+    if v_done then
+      for n in select * from jsonb_array_elements(coalesce(w->'notices', '[]'::jsonb))
+      loop
+        insert into public.guest_stop_notices
+          (host_member_id, event_id, kind, guest_name, title, starts_at, ends_at, all_day, old_starts_at, old_ends_at)
+        values
+          ((n->>'host_member_id')::uuid, (n->>'event_id')::uuid, n->>'kind', n->>'guest_name', n->>'title',
+           (n->>'starts_at')::timestamptz, (n->>'ends_at')::timestamptz, coalesce((n->>'all_day')::boolean, false),
+           (n->>'old_starts_at')::timestamptz, (n->>'old_ends_at')::timestamptz);
+        v_notes := v_notes + 1;
+      end loop;
+    end if;
+  end loop;
+
+  -- No longer at a Guild taproom: only if it's still at the one the linker saw.
+  -- The delete trigger above queues the taproom's Canceled note.
+  for d in select * from jsonb_array_elements(coalesce(p_deletes, '[]'::jsonb))
+  loop
+    delete from public.event_hosts
+     where event_id = (d->>'event_id')::uuid and host_member_id = (d->>'host_member_id')::uuid;
+  end loop;
+
+  return v_notes;
+end;
+$$;
+revoke all on function public.apply_guest_links(jsonb, jsonb) from public, anon, authenticated;
+grant execute on function public.apply_guest_links(jsonb, jsonb) to service_role;

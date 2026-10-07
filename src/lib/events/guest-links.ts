@@ -95,23 +95,49 @@ function isLive(s: GuestStop): boolean {
 const sameInstant = (a: string | null, b: string | null) =>
   a === b || (a !== null && b !== null && new Date(a).getTime() === new Date(b).getTime());
 
+/**
+ * What a write expects to find, so it applies only if nothing changed the
+ * row since the linker read it (another Worker's run, or a taproom's
+ * Approve/Decline/Hide): null for a new link (there must be no row).
+ * apply_guest_links (20261008100000_guest_stops_part2.sql) checks it and
+ * queues the write's notes only when the write took effect.
+ */
+export type LinkExpect = {
+  host_member_id: string;
+  status: EventHostStatus;
+  notified_starts_at: string | null;
+  notified_ends_at: string | null;
+  cancel_notified: boolean;
+};
+
+export type LinkOp = { link: LinkWrite; expect: LinkExpect | null; notices: NoticeWrite[] };
+
+function expectOf(l: ExistingLink): LinkExpect {
+  return {
+    host_member_id: l.host_member_id,
+    status: l.status,
+    notified_starts_at: l.notified_starts_at,
+    notified_ends_at: l.notified_ends_at,
+    cancel_notified: l.cancel_notified,
+  };
+}
+
 export function decideGuestLinks(args: {
   stops: GuestStop[];
   hosts: LinkHost[];
   existing: ExistingLink[];
   guestNames: Map<string, string>;
   now: Date;
-}): { upserts: LinkWrite[]; deletes: string[]; notices: NoticeWrite[] } {
+}): { writes: LinkOp[]; deletes: Array<{ event_id: string; host_member_id: string }> } {
   const existing = new Map(args.existing.map((l) => [l.event_id, l]));
-  const upserts: LinkWrite[] = [];
-  const deletes: string[] = [];
-  const notices: NoticeWrite[] = [];
+  const writes: LinkOp[] = [];
+  const deletes: Array<{ event_id: string; host_member_id: string }> = [];
   for (const s of args.stops) {
     if (!inWindow(s, args.now)) continue;
     const host = matchHost(s, args.hosts);
     const before = existing.get(s.id);
     if (!host) {
-      if (before) deletes.push(s.id); // the delete trigger tells the taproom
+      if (before) deletes.push({ event_id: s.id, host_member_id: before.host_member_id }); // the delete trigger tells the taproom
       continue;
     }
     const rescheduled = s.overlay_status === "rescheduled" && Boolean(s.overlay_starts_at);
@@ -145,14 +171,17 @@ export function decideGuestLinks(args: {
     });
 
     if (!before || before.host_member_id !== host.id) {
+      const notices: NoticeWrite[] = [];
       if (before && (before.status === "shown" || before.status === "pending") && !before.cancel_notified && before.notified_starts_at) {
         notices.push(note("canceled", before.host_member_id, before));
       }
       const status: EventHostStatus = host.mode === "ask" ? "pending" : "shown";
-      upserts.push(told(status, !live));
       if (live) notices.push(note(status === "pending" ? "request" : "new", host.id));
+      writes.push({ link: told(status, !live), expect: before ? expectOf(before) : null, notices });
       continue;
     }
+
+    const notices: NoticeWrite[] = [];
 
     // A link from Part 1 has nothing recorded as told yet: record it quietly.
     const watching = (before.status === "shown" || before.status === "pending") && before.notified_starts_at !== null;
@@ -175,7 +204,7 @@ export function decideGuestLinks(args: {
       !sameInstant(next.notified_ends_at, before.notified_ends_at) ||
       next.notified_all_day !== before.notified_all_day ||
       next.cancel_notified !== before.cancel_notified;
-    if (changed) upserts.push(next);
+    if (changed) writes.push({ link: next, expect: expectOf(before), notices });
   }
-  return { upserts, deletes, notices };
+  return { writes, deletes };
 }

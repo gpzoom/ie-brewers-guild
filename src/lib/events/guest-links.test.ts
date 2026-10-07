@@ -22,8 +22,13 @@ const link = (o: Partial<ExistingLink>): ExistingLink => ({
   notified_starts_at: "2026-10-09T00:00:00Z", notified_ends_at: "2026-10-09T04:00:00Z", notified_all_day: false,
   cancel_notified: false, ...o,
 });
-const decide = (stops: GuestStop[], existing: ExistingLink[] = [], h: LinkHost[] = hosts) =>
+const decideRaw = (stops: GuestStop[], existing: ExistingLink[] = [], h: LinkHost[] = hosts) =>
   decideGuestLinks({ stops, hosts: h, existing, guestNames: names, now: NOW });
+// The tests below read the writes flattened: every link written, every email note, every link removed.
+const decide = (stops: GuestStop[], existing: ExistingLink[] = [], h: LinkHost[] = hosts) => {
+  const r = decideRaw(stops, existing, h);
+  return { upserts: r.writes.map((w) => w.link), deletes: r.deletes.map((d) => d.event_id), notices: r.writes.flatMap((w) => w.notices) };
+};
 
 describe("decideGuestLinks", () => {
   it("a new stop at a taproom: link it, shown", () => {
@@ -130,5 +135,29 @@ describe("decideGuestLinks, Part 2 (Ask me first and notes)", () => {
     expect(r.upserts[0].cancel_notified).toBe(true);
     const next = decide([stop({ overlay_status: "canceled" })], [link({ cancel_notified: true })]);
     expect(next.notices).toEqual([]);
+  });
+});
+
+describe("decideGuestLinks: each write says what it expects to find (so a racing run or a click in between wins)", () => {
+  it("a new link expects no row; its email goes with it", () => {
+    const [w] = decideRaw([stop({})]).writes;
+    expect(w.expect).toBeNull();
+    expect(w.notices.map((n) => n.kind)).toEqual(["new"]);
+  });
+  it("a same-taproom change expects the row as read, status included", () => {
+    const [w] = decideRaw([stop({ starts_at: "2026-10-10T00:00:00Z" })], [link({ status: "pending" })]).writes;
+    expect(w.expect).toEqual({
+      host_member_id: "mars", status: "pending", notified_starts_at: "2026-10-09T00:00:00Z",
+      notified_ends_at: "2026-10-09T04:00:00Z", cancel_notified: false,
+    });
+    expect(w.notices.map((n) => n.kind)).toEqual(["changed"]);
+  });
+  it("a move expects the old taproom's row; the old taproom's Canceled goes with the move", () => {
+    const [w] = decideRaw([stop({ venue_name: "Sample Brewing Co." })], [link({})]).writes;
+    expect(w.expect?.host_member_id).toBe("mars");
+    expect(w.notices.map((n) => [n.kind, n.host_member_id])).toEqual([["canceled", "mars"], ["new", "sample"]]);
+  });
+  it("a removal names the taproom it expects", () => {
+    expect(decideRaw([stop({ venue_name: "Downtown farmers market" })], [link({})]).deletes).toEqual([{ event_id: "e1", host_member_id: "mars" }]);
   });
 });

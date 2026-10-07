@@ -14,27 +14,14 @@ export async function relinkGuestStops(scope: { memberId?: string } = {}): Promi
     const inputs = await loadLinkerInputs(db, scope, now);
     if (!inputs) return;
 
-    const { upserts, deletes, notices } = decideGuestLinks({ ...inputs, now });
-    if (upserts.length) {
-      const { error } = await db
-        .from("event_hosts")
-        .upsert(
-          upserts.map((u) => ({ ...u, updated_at: now.toISOString() })),
-          { onConflict: "event_id" },
-        );
-      if (error) throw error;
-    }
-    if (deletes.length) {
-      const { error } = await db.from("event_hosts").delete().in("event_id", deletes);
-      if (error) throw error;
-    }
-    // Part 2: what the taproom should hear about; the 15-minute job sends it
-    // (guest-stop-notices.server.ts). A link that disappears leaves its own
-    // note through the event_hosts delete trigger.
-    if (notices.length) {
-      const { error } = await db.from("guest_stop_notices").insert(notices);
-      if (error) throw error;
-    }
+    const { writes, deletes } = decideGuestLinks({ ...inputs, now });
+    if (writes.length === 0 && deletes.length === 0) return;
+    // Each write applies only if the link is still as read, with its email
+    // notes queued in the same step (apply_guest_links); a link that
+    // disappears leaves its own note through the event_hosts delete trigger.
+    // The 15-minute job sends them (guest-stop-notices.server.ts).
+    const { error } = await db.rpc("apply_guest_links", { p_writes: writes, p_deletes: deletes });
+    if (error) throw error;
   } catch (err) {
     console.error("relinkGuestStops failed", err);
   }
