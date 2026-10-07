@@ -11,11 +11,11 @@ type HeaderNavProps = {
 };
 
 // The phone bar's back label names the list the visitor is walking
-// (artboard V reads "ALLIED" while browsing Allied Members).
+// (artboard V reads "AFFILIATE" while browsing Affiliate Members).
 const BACK_LABEL: Record<MemberType, string> = {
   producer: "Producers",
   mobile: "Mobile",
-  allied: "Allied",
+  allied: "Affiliate",
 };
 
 function ChevronLeftIcon({ size = 15 }: { size?: number }) {

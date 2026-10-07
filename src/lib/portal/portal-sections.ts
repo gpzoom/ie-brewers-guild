@@ -14,7 +14,7 @@ import type { CompletenessStep } from "@/lib/portal/section-completeness";
  *   events       yes    yes     yes
  *   food         yes    yes     --        (Producers only: the food truck calendar)
  *   links        yes    yes     --
- *   discount     yes    yes     --        (Allied Members only)
+ *   discount     yes    yes     --        (Affiliate Members only)
  *   theme        yes    yes     --
  *   people       yes    --      --
  *

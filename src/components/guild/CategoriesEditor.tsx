@@ -66,10 +66,10 @@ const TAB_COPY: Record<
   { tab: string; who: string; lede: string; empty: string; example: string }
 > = {
   allied: {
-    tab: "Allied categories",
-    who: "Allied Members",
-    lede: "What Allied Members can check to say what they supply.",
-    empty: "No categories yet. Add the first one so Allied Members can say what they supply.",
+    tab: "Affiliate categories",
+    who: "Affiliate Members",
+    lede: "What Affiliate Members can check to say what they supply.",
+    empty: "No categories yet. Add the first one so Affiliate Members can say what they supply.",
     example: "e.g. Malt & grain",
   },
   mobile: {
@@ -85,7 +85,7 @@ const TABS: CategoryMemberType[] = ["allied", "mobile"];
 
 /**
  * Guild categories (artboard S, GuildCategories): name/slug/sort_order CRUD
- * over the categories table, with a tab per member type -- Allied Members'
+ * over the categories table, with a tab per member type -- Affiliate Members'
  * supply categories and Mobile members' categories (owner's request,
  * 2026-09-26). Rename happens in place on the row; order is changed with
  * the row's up/down buttons (each tab's list is renumbered 0..n so ties
@@ -391,7 +391,7 @@ function AddCategoryDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdd: (name: string) => Promise<void>;
-  /** "Allied Members" or "Mobile members": whose list it's added to. */
+  /** "Affiliate Members" or "Mobile members": whose list it's added to. */
   who: string;
   example: string;
 }) {

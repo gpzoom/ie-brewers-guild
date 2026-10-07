@@ -215,7 +215,7 @@ export function BasicsForm({
   /**
    * A Mobile member's "What you offer" category picker
    * (SupplyCategoriesPicker), shown under the member type. Pages pass it
-   * only for Mobile members; Allied Members pick theirs under Discount.
+   * only for Mobile members; Affiliate Members pick theirs under Discount.
    */
   categories?: ReactNode;
   /** False where the page around it has its own heading (the setup wizard's step chrome). */
@@ -419,7 +419,7 @@ export function BasicsForm({
   const isMobile = local.member_type === "mobile";
   const showStreet = isFieldVisibleForMemberType(local.member_type, "street_address");
   const showServiceArea = isFieldVisibleForMemberType(local.member_type, "service_area");
-  // The profile shows a sales email for Allied Members only (ContactBlock).
+  // The profile shows a sales email for Affiliate Members only (ContactBlock).
   const showSalesEmail = local.member_type === "allied";
 
   return (

@@ -5,8 +5,8 @@ type DiscountBlockProps = {
 };
 
 /**
- * Allied Member only. Renders large, in `--brand` with white text --
- * never `--brand-bright` (spec, "Allied Member discount": "The block
+ * Affiliate Member only. Renders large, in `--brand` with white text --
+ * never `--brand-bright` (spec, "Affiliate Member discount": "The block
  * uses --brand, the deeper amber, because it carries white text. Never
  * build it on --brand-bright."). Omitted entirely when no discount is
  * set (spec, "Empty and error states"). Look: artboard V.

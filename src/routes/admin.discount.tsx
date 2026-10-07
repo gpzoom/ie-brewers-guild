@@ -6,7 +6,7 @@ import { SupplyCategoriesPicker } from "@/components/admin/SupplyCategoriesPicke
 import { SameMemberGuard } from "@/components/admin/SameMemberGuard";
 
 /**
- * The Allied Member discount plus "What you supply" (plan Decision 8) --
+ * The Affiliate Member discount plus "What you supply" (plan Decision 8) --
  * reads and saves the draft's `discount` section, the same editors as the
  * portal's Discount & supplies section. Any number of categories can be
  * picked.

@@ -1,7 +1,7 @@
 import type { MemberType } from "@/lib/supabase/types";
 import { MEMBER_TYPE_SHORT_LABEL } from "@/lib/members/member-type-options";
 
-/** The guide's type colors (Producer orange, Mobile teal, Allied blue). */
+/** The guide's type colors (Producer orange, Mobile teal, Affiliate blue). */
 const TAG_COLORS: Record<MemberType, { bg: string; fg: string }> = {
   producer: { bg: "#F5E2D0", fg: "#7A4413" },
   mobile: { bg: "#DCEDEC", fg: "#17605F" },

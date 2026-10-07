@@ -10,7 +10,7 @@ import {
 } from "@/lib/portal/portal-sections";
 
 describe("portalSectionsFor", () => {
-  it("gives the owner every section, with Discount only for Allied Members", () => {
+  it("gives the owner every section, with Discount only for Affiliate Members", () => {
     expect(portalSectionsFor({ role: "owner", memberType: "producer" })).toEqual([
       "basics",
       "logo-cover",

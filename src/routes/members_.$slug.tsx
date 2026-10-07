@@ -21,7 +21,7 @@ export const Route = createFileRoute("/members_/$slug")({
         ? `${member.business_name} — an independent producer member of the Inland Southern California Brewers Guild in ${member.city}.`
         : member.member_type === "mobile"
           ? `${member.business_name} — an independent mobile member of the Inland Southern California Brewers Guild in ${member.city}.`
-          : `${member.business_name} — an Allied Member of the Inland Southern California Brewers Guild in ${member.city}.`;
+          : `${member.business_name} — an Affiliate Member of the Inland Southern California Brewers Guild in ${member.city}.`;
     const description = member.tagline?.trim() || fallbackDescription;
     const canonicalUrl = `${siteOrigin}/members/${member.slug}`;
 

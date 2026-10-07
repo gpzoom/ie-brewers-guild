@@ -74,8 +74,8 @@ export function LogoCoverStep({
 }
 
 /**
- * Step 5. Producers and Allied Members: weekly hours and holidays
- * (HoursEditor). HoursEditor has no five-day mode, so an Allied Member
+ * Step 5. Producers and Affiliate Members: weekly hours and holidays
+ * (HoursEditor). HoursEditor has no five-day mode, so an Affiliate Member
  * sees all seven days, with a note to mark the weekend closed. Mobile
  * members: "Where we'll be" -- the calendar subscription link plus dates
  * by hand (plan Decision 7), which is why they have no separate Events
@@ -109,19 +109,19 @@ export function HoursStep({
     );
   }
 
-  const isAllied = shell.memberType === "allied";
+  const isAffiliate = shell.memberType === "allied";
   return (
     <WizardStep
       step="hours"
       title="When you're open"
       lede={
-        isAllied
+        isAffiliate
           ? "Your business hours, so members know when to reach you."
           : 'Visitors see "Open now" or "Opens Thursday 3pm" from this.'
       }
       skipNote={`Not ready? Skip it. Your page will say "Hours not listed" and show your phone number until you add them.`}
     >
-      {isAllied && (
+      {isAffiliate && (
         <WizardInfoBox>
           Open Monday to Friday? Set those five days and mark Saturday and Sunday closed.
         </WizardInfoBox>
@@ -138,14 +138,14 @@ export function HoursStep({
   );
 }
 
-/** Step 6's lede: taprooms host trivia and releases, Allied Members tastings and workshops. */
+/** Step 6's lede: taprooms host trivia and releases, Affiliate Members tastings and workshops. */
 export function eventsLede(memberType: PortalSetupShell["memberType"]): string {
   const kinds =
     memberType === "allied" ? "Tastings, open houses, workshops." : "Trivia nights, releases, open houses.";
   return `${kinds} Connect a calendar (only the events you tag come in) or add them by hand.`;
 }
 
-/** Step 6 (producers and Allied Members): events -- not drafted, live straight away. */
+/** Step 6 (producers and Affiliate Members): events -- not drafted, live straight away. */
 export function EventsStep({
   shell,
   schedule,
@@ -214,7 +214,7 @@ export function LinksStep({ shell, draft }: { shell: PortalSetupShell; draft: Me
   );
 }
 
-/** Step 9 (Allied Members only): member discount plus what they supply (plan Decision 8). */
+/** Step 9 (Affiliate Members only): member discount plus what they supply (plan Decision 8). */
 export function DiscountStep({
   draft,
   categories,

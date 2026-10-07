@@ -127,7 +127,7 @@ export function EventsModule({ events, memberType, timezone }: EventsModuleProps
 
     // Spec's general rule: a module with nothing in it disappears rather
     // than rendering an empty container -- this is the "no exceptions
-    // listed" case for producer/Allied Member.
+    // listed" case for producer/Affiliate Member.
     return null;
   }
 

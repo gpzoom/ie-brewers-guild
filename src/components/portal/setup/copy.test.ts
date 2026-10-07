@@ -9,7 +9,7 @@ describe("Welcome copy (redesign)", () => {
     expect(items[1].body.startsWith("JPG or PNG.")).toBe(true);
   });
 
-  it("Allied Members also see the member discount item", () => {
+  it("Affiliate Members also see the member discount item", () => {
     expect(welcomeHandyItems("allied").map((i) => i.title)).toContain("Your member discount");
   });
 
@@ -19,7 +19,7 @@ describe("Welcome copy (redesign)", () => {
 });
 
 describe("Events lede (redesign)", () => {
-  it("speaks to taprooms and to Allied Members separately", () => {
+  it("speaks to taprooms and to Affiliate Members separately", () => {
     expect(eventsLede("producer")).toMatch(/^Trivia nights, releases, open houses\./);
     expect(eventsLede("allied")).toMatch(/^Tastings, open houses, workshops\./);
   });

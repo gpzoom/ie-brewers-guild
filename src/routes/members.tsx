@@ -16,9 +16,9 @@ export const Route = createFileRoute("/members")({
   head: () => ({
     meta: [
       { title: "Member Directory — Inland Southern California Brewers Guild" },
-      { name: "description", content: "Discover the independent producers, mobile members, and Allied Members that make up the Inland Southern California Brewers Guild." },
+      { name: "description", content: "Discover the independent producers, mobile members, and Affiliate Members that make up the Inland Southern California Brewers Guild." },
       { property: "og:title", content: "Member Directory" },
-      { property: "og:description", content: "The independent producers, mobile members, and Allied Members behind the guild." },
+      { property: "og:description", content: "The independent producers, mobile members, and Affiliate Members behind the guild." },
     ],
   }),
   component: MembersRoute,

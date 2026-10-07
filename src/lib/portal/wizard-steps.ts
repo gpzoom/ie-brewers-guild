@@ -21,7 +21,7 @@ import type { PortalRole } from "@/lib/portal/portal-destination";
  *   8   discount     --        --      yes
  *   9   theme        yes       yes     yes     (Pick your theme)
  *
- * Producers see 8, mobile members 7, Allied Members 9. The old Photos step
+ * Producers see 8, mobile members 7, Affiliate Members 9. The old Photos step
  * is part of step 4 since the redesign (2026-10-02).
  *
  * After the numbered steps come the finish screens, which have no number:

@@ -62,7 +62,7 @@ const AUDIENCE = [
   ["member_brewers", "Member brewers", "current members getting ongoing value"],
   ["prospect_brewers", "Prospective brewers", "the ones we're trying to recruit"],
   ["beer_drinkers", "Beer drinkers / the public", "driving traffic to member breweries"],
-  ["allied", "Allied trade", "suppliers, distributors, partners"],
+  ["allied", "Affiliate trade", "suppliers, distributors, partners"],
   ["sponsors", "Sponsors / advertisers", ""],
 ];
 const VALUE_FEATURES = [

@@ -34,7 +34,7 @@ function pickFields<T, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
 
 /**
  * Only rendered for member_type = allied (spec: "The field only appears
- * for the Allied Member type"). Values are never cleared by a type
+ * for the Affiliate Member type"). Values are never cleared by a type
  * switch -- this route/component simply doesn't render for other types,
  * and member-basics.server.ts's own patch-only-what-changed model means
  * switching away from allied and back leaves these columns untouched.
@@ -84,7 +84,7 @@ export function DiscountEditor({
             />
           </svg>
           <p className="text-[13px] leading-normal text-ink">
-            This section is only for Allied Members.
+            This section is only for Affiliate Members.
           </p>
         </div>
       </div>

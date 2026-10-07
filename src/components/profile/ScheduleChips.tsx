@@ -47,11 +47,11 @@ function formatHoursConfirmedLabel(hoursConfirmedAt: string | null, now: Date, t
 }
 
 /**
- * Seven-day hour chips (spec, "Member types": producer and Allied Member
+ * Seven-day hour chips (spec, "Member types": producer and Affiliate Member
  * both get this module, mobile members get EventsModule instead). Today's
  * chip -- in the member's own timezone -- is the dark one (artboards D/V/L).
  * The "five-day business hour chips" in the spec's comparison table is a
- * typical Allied Member's actual schedule, not a different component: the
+ * typical Affiliate Member's actual schedule, not a different component: the
  * same seven chips just show closed days as a dash.
  */
 export function ScheduleChips({ hours, memberType, hoursConfirmedAt, timezone, now }: ScheduleChipsProps) {

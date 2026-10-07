@@ -69,7 +69,7 @@ function MembersPage() {
       <PageHero
         image={heroImg}
         eyebrow="Our members"
-        title="The independent producers, mobile members, and Allied Members behind the guild."
+        title="The independent producers, mobile members, and Affiliate Members behind the guild."
         subtitle="Every member is independently owned and proud of it."
         minHeight="min-h-[50vh]"
       />

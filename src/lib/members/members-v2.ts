@@ -6,7 +6,7 @@ import { summarizeStops, type HostLocation, type StopEvent, type StopSummary } f
 export type V2Card = DirectoryMember & {
   /** Stable key: the business name (cards are one per business). */
   key: string;
-  /** ALLIED, a mobile member's first category (or MOBILE), or null for producers. */
+  /** AFFILIATE, a mobile member's first category (or MOBILE), or null for producers. */
   tag: string | null;
   mobileIcon: MobileIcon | null;
   stop: StopSummary | null;
@@ -85,7 +85,7 @@ export function buildV2(args: {
       }
       continue;
     }
-    cards.push({ ...m, key, tag: m.memberType === "allied" ? "ALLIED" : null, mobileIcon: null, stop: null, stopPin: null });
+    cards.push({ ...m, key, tag: m.memberType === "allied" ? "AFFILIATE" : null, mobileIcon: null, stop: null, stopPin: null });
     for (const l of m.locations) {
       if (l.lat === null || l.lng === null) continue;
       pins.push({

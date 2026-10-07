@@ -120,7 +120,7 @@ export function CreateMemberDialog() {
             >
               <option value="producer">Producer</option>
               <option value="mobile">Mobile</option>
-              <option value="allied">Allied Member</option>
+              <option value="allied">Affiliate Member</option>
             </select>
           </div>
           <div className="flex flex-col gap-2">

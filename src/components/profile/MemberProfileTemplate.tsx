@@ -35,7 +35,7 @@ type MemberProfileTemplateProps = {
  * forked into three templates (spec, "Member types": "Build it that way
  * from the start -- forking the template per type is the failure mode").
  *
- * Visual reference: artboards D (producer), E (mobile) and V (Allied
+ * Visual reference: artboards D (producer), E (mobile) and V (Affiliate
  * Member) on the phone, L on desktop (docs/design/). The dark site ground
  * holds the edges -- the directory bar above, the cross-link card below --
  * and the light profile card owns the middle. The card carries
@@ -45,7 +45,7 @@ type MemberProfileTemplateProps = {
  *
  * Mobile-first, genuinely (spec, "Layout and breakpoints"): below the
  * hero, a single column stacks in the phone order -- status block
- * (+ discount and categories for an Allied Member), media carousel,
+ * (+ discount and categories for an Affiliate Member), media carousel,
  * schedule, events, link pills, contact -- simply by DOM order. From `lg`
  * (1024px) the carousel takes a fixed 420px left column and everything
  * else stacks beside it (artboard L). `lg`, not `md`: at 768px the 420px

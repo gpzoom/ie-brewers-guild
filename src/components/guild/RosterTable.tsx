@@ -34,7 +34,7 @@ import {
 const MEMBER_TYPE_LABEL: Record<MemberType, string> = {
   producer: "Producer",
   mobile: "Mobile",
-  allied: "Allied Member",
+  allied: "Affiliate Member",
 };
 
 type RowStatus = { label: string; dot: string };
@@ -244,7 +244,7 @@ export function RosterTable({
           <option value="all">All member types</option>
           <option value="producer">Producers</option>
           <option value="mobile">Mobile members</option>
-          <option value="allied">Allied Members</option>
+          <option value="allied">Affiliate Members</option>
         </select>
         <select
           aria-label="Filter by sign-in state"

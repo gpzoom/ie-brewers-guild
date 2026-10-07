@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 /** Step 1's "What to have handy" list, per member type. */
 export function welcomeHandyItems(memberType: MemberType): { title: string; body: string }[] {
   const isMobile = memberType === "mobile";
-  const isAllied = memberType === "allied";
+  const isAffiliate = memberType === "allied";
   return [
     {
       title: "Your logo, as a PNG",
@@ -34,10 +34,10 @@ export function welcomeHandyItems(memberType: MemberType): { title: string; body
           body: "Your calendar's subscription link, or the dates and places you'll be out, to add by hand.",
         }
       : {
-          title: isAllied ? "Your business hours" : "Your hours",
+          title: isAffiliate ? "Your business hours" : "Your hours",
           body: "The days and times you're open, plus any holidays coming up.",
         },
-    ...(isAllied
+    ...(isAffiliate
       ? [
           {
             title: "Your member discount",

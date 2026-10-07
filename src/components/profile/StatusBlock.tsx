@@ -64,12 +64,12 @@ type Action = { href: string; label: ReactNode; external?: boolean };
  * The dark status card (artboards D/E/V/L): a big status line, one or two
  * quiet lines, then the primary action in the member's theme color and a
  * Call button. Switched per the spec's "Member types" table -- producer
- * and Allied Member show open/closed ("Hours not listed", with the phone
+ * and Affiliate Member show open/closed ("Hours not listed", with the phone
  * as the action, when there are no hours at all); mobile shows the next
  * appearance instead, since mobile members have no weekly hours.
  *
  * Primary actions (spec): Directions (producer, to maps), Book us (mobile,
- * the booking phone -- so no second Call button), Request a quote (Allied
+ * the booking phone -- so no second Call button), Request a quote (Affiliate
  * Member, by email to their sales address when they list one).
  */
 export function StatusBlock({ member, hours, specialHours, tonightEvent, now }: StatusBlockProps) {
@@ -116,7 +116,7 @@ export function StatusBlock({ member, hours, specialHours, tonightEvent, now }: 
     if (openNow.status !== "unknown" && openNow.note) lines.push(openNow.note);
 
     // Second line, per the spec's "Member types" table: producers get
-    // tonight's event; Allied Members get their service area. (Typical lead
+    // tonight's event; Affiliate Members get their service area. (Typical lead
     // time was dropped on 2026-09-27; a stored value isn't shown.)
     if (member.member_type === "allied") {
       if (member.service_area) lines.push(`Serves ${member.service_area}`);

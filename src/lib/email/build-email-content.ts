@@ -193,7 +193,7 @@ const SUPPORT_SENDER_LABEL = {
 const MEMBER_TYPE_EMAIL_LABEL: Record<MemberType, string> = {
   producer: "Producer",
   mobile: "Mobile member",
-  allied: "Allied Member",
+  allied: "Affiliate Member",
 };
 
 export function buildEmailContent(payload: TransactionalEmailPayload, siteUrl: string = SITE_URL): EmailContent {

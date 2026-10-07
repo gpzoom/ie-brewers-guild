@@ -7,7 +7,7 @@ type CategoryChipsProps = {
 };
 
 /**
- * "What they supply" (artboard V) for an Allied Member, "What they offer"
+ * "What they supply" (artboard V) for an Affiliate Member, "What they offer"
  * for a Mobile member. Only the categories of the member's current type
  * show (a type change keeps the old picks but doesn't display them).
  * Omitted entirely when empty.

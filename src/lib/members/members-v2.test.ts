@@ -50,10 +50,10 @@ describe("buildV2", () => {
     expect(pin.stopLine).toBe("Today 5–9 pm at All Points Brewing Co.");
   });
 
-  it("an Allied Member is tagged ALLIED", () => {
+  it("an Affiliate Member is tagged AFFILIATE", () => {
     const allied = buildDirectoryMembers({ rows: [row({ id: "a1", slug: "supply", member_type: "allied", business_name: "Sample Supply Co." })], links: [], logoUrls: new Map() });
     const r = buildV2({ members: allied, rows: [row({ id: "a1", slug: "supply", member_type: "allied", business_name: "Sample Supply Co." })], categoriesByMemberId: new Map(), stopsByMemberId: new Map(), now: NOW });
-    expect(r.cards[0].tag).toBe("ALLIED");
+    expect(r.cards[0].tag).toBe("AFFILIATE");
   });
 
   it("a mobile pin is labeled with today's stop city, not the member's home city", () => {

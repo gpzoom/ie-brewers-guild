@@ -53,8 +53,8 @@ function Row({ href, external, icon, children }: { href?: string; external?: boo
 
 /**
  * Location field + contact, switched per type per the comparison table:
- * street address for producer/Allied Member, service area for mobile;
- * phone for producer/mobile, phone + email for Allied Member. Address
+ * street address for producer/Affiliate Member, service area for mobile;
+ * phone for producer/mobile, phone + email for Affiliate Member. Address
  * links out to maps, phone is tel:, email is mailto: (spec's tap-target
  * rules). Look: artboards D/E/V (stacked rows under a hairline) and L (one
  * row on desktop). Phone first, as drawn.

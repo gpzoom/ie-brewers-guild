@@ -261,7 +261,7 @@ export type CategoryRow = {
   name: string;
   slug: string;
   sort_order: number;
-  /** Which member type picks it: Allied Members (what they supply) or Mobile members (what they offer). */
+  /** Which member type picks it: Affiliate Members (what they supply) or Mobile members (what they offer). */
   member_type: CategoryMemberType;
 };
 

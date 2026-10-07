@@ -20,7 +20,7 @@ export const getCategories = createServerFn({ method: "GET" }).handler(async ():
 
 export const createCategory = createServerFn({ method: "POST" })
   .inputValidator((data: { name: string; sortOrder: number; memberType: CategoryMemberType }) => {
-    if (!CATEGORY_MEMBER_TYPES.includes(data?.memberType)) throw new Error("Choose Allied or Mobile.");
+    if (!CATEGORY_MEMBER_TYPES.includes(data?.memberType)) throw new Error("Choose Affiliate or Mobile.");
     return data;
   })
   .handler(async ({ data }) => {

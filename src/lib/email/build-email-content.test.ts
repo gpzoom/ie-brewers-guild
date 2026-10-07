@@ -265,7 +265,7 @@ describe("buildEmailContent: type_change_requested", () => {
   it("names the member, both types, who asked and their note", () => {
     const content = buildEmailContent(payload);
     expect(content.text).toContain(
-      "Hop House asked to change their member type from Producer to Allied Member.",
+      "Hop House asked to change their member type from Producer to Affiliate Member.",
     );
     expect(content.text).toContain("Requested by: owner@hophouse.com");
     expect(content.text).toContain("Their note: We sell grain now <3");

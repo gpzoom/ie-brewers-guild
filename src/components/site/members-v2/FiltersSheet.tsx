@@ -8,7 +8,7 @@ const TYPES: Array<{ value: MemberType | undefined; label: string }> = [
   { value: undefined, label: "All" },
   { value: "producer", label: "Producers" },
   { value: "mobile", label: "Mobile" },
-  { value: "allied", label: "Allied" },
+  { value: "allied", label: "Affiliate" },
 ];
 
 /** Phone Filters panel: choices apply on "Show N members", not while tapping. */

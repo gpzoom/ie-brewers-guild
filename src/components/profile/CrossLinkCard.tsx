@@ -18,7 +18,7 @@ type CrossLinkCardProps = {
 const CROSS_LINK_HEADING: Record<MemberType, string> = {
   producer: "Next on the trail",
   mobile: "Playing nearby",
-  allied: "Another Allied Member",
+  allied: "Another Affiliate Member",
 };
 
 /**

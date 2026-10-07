@@ -137,7 +137,7 @@ describe("sectionCompleteness", () => {
     );
   });
 
-  it("counts any discount field or a supply category for an Allied Member", () => {
+  it("counts any discount field or a supply category for an Affiliate Member", () => {
     const allied = { ...producer, memberType: "allied" as const };
     expect(doneMap(sectionCompleteness(draft(), allied)).discount).toBe(false);
     expect(

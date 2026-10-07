@@ -5,7 +5,7 @@ export type MemberFieldKey = "street_address" | "service_area" | "lead_time" | "
 const FIELDS_BY_TYPE: Record<MemberType, MemberFieldKey[]> = {
   producer: ["street_address"],
   mobile: ["service_area"],
-  // lead_time was dropped from the Allied Member's fields (owner, 2026-09-27);
+  // lead_time was dropped from the Affiliate Member's fields (owner, 2026-09-27);
   // the column and any stored value are kept, just never shown.
   allied: ["street_address", "service_area", "contact_email", "discount"],
 };

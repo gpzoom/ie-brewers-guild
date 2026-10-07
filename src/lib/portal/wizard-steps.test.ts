@@ -37,7 +37,7 @@ describe("numberedStepsForType", () => {
     ]);
   });
 
-  it("an Allied Member sees all nine", () => {
+  it("an Affiliate Member sees all nine", () => {
     expect(numberedStepsForType("allied")).toHaveLength(9);
     expect(numberedStepsForType("allied")).toContain("discount");
   });

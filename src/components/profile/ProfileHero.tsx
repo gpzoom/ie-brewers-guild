@@ -19,12 +19,12 @@ type ProfileHeroProps = {
 };
 
 // Producers carry no badge on the artboard (D/L show "[CITY], CA ·
-// Member since [YEAR]"); mobile and Allied Member profiles get the small
+// Member since [YEAR]"); mobile and Affiliate Member profiles get the small
 // dark pill (E/V) in place of the city.
 const MEMBER_TYPE_BADGE: Record<MemberRow["member_type"], string | null> = {
   producer: null,
   mobile: "Mobile",
-  allied: "Allied Member",
+  allied: "Affiliate Member",
 };
 
 /**

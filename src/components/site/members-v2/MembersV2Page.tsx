@@ -148,7 +148,7 @@ export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: D
         </div>
         <p className="mt-1.5 text-sm text-muted-foreground lg:max-w-[470px] lg:text-right lg:text-[15px]">
           <span className="lg:hidden">Search by name, or see who is near you.</span>
-          <span className="hidden lg:inline">The independent producers, mobile members and Allied Members behind the Guild. Point at a member to find them on the map; click for their profile.</span>
+          <span className="hidden lg:inline">The independent producers, mobile members and Affiliate Members behind the Guild. Point at a member to find them on the map; click for their profile.</span>
         </p>
       </section>
 
@@ -162,7 +162,7 @@ export function MembersV2Page(props: { cards: V2Card[]; pins: V2Pin[]; search: D
                 <option value="">All member types</option>
                 <option value="producer">Producers</option>
                 <option value="mobile">Mobile members</option>
-                <option value="allied">Allied Members</option>
+                <option value="allied">Affiliate Members</option>
               </select>
               <select aria-label="Order" value={near.status === "on" ? "near" : "az"} onChange={(e) => (e.target.value === "near" ? near.turnOn() : near.turnOff())} className="h-[46px] w-[150px] rounded-[10px] border border-border bg-[#211C17] px-3.5 text-sm">
                 <option value="az">A–Z</option>

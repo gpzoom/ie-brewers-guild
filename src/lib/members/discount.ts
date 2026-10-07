@@ -1,5 +1,5 @@
 /**
- * Pure rules for the Allied Member discount (spec, "Allied Member
+ * Pure rules for the Affiliate Member discount (spec, "Affiliate Member
  * discount"). Shared by DiscountEditor.tsx's optimistic state and the draft
  * save validator (src/lib/drafts/validate-patch.ts), so the client copy
  * can't drift from what's actually saved.

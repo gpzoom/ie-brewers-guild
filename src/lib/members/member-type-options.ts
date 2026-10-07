@@ -4,6 +4,9 @@ import type { MemberType } from "@/lib/supabase/types";
  * The three member types as members see them: artboard AdminBasics's
  * MEMBER TYPE cards. Shared by BasicsForm and the wizard's Confirm your
  * member type step, so both describe the types in the same words.
+ *
+ * "allied" is the stored value for Affiliate Members (renamed on screen
+ * 2026-10-07; the database, URLs and file names keep "allied").
  */
 export const MEMBER_TYPE_OPTIONS: { value: MemberType; title: string; description: string }[] = [
   {
@@ -20,7 +23,7 @@ export const MEMBER_TYPE_OPTIONS: { value: MemberType; title: string; descriptio
   },
   {
     value: "allied",
-    title: "Allied Member",
+    title: "Affiliate Member",
     description:
       "Supply house, ingredients, equipment or services. Same layout as a producer, with business hours and a trade contact.",
   },
@@ -30,5 +33,5 @@ export const MEMBER_TYPE_OPTIONS: { value: MemberType; title: string; descriptio
 export const MEMBER_TYPE_SHORT_LABEL: Record<MemberType, string> = {
   producer: "Producer",
   mobile: "Mobile member",
-  allied: "Allied Member",
+  allied: "Affiliate Member",
 };
