@@ -4,6 +4,7 @@ import { BasicsForm } from "@/components/admin/BasicsForm";
 import { HoursEditor } from "@/components/admin/HoursEditor";
 import { LogoPhotosCoverSection } from "@/components/admin/LogoPhotosCoverSection";
 import { EventsEditor } from "@/components/admin/EventsEditor";
+import { GuestStopsBox } from "@/components/admin/GuestStopsBox";
 import { CalendarConnectionPanel } from "@/components/admin/CalendarConnectionPanel";
 import { FoodCalendarSection } from "@/components/admin/FoodCalendarSection";
 import { LinksContactEditor } from "@/components/admin/LinksContactEditor";
@@ -145,6 +146,10 @@ export function PortalSectionView({ data, shell }: { data: PortalSectionData; sh
             initialEvents={data.events}
             memberTimezone={data.memberTimezone}
           />
+          {/* Guild Mobile members at taprooms (artboard GV1): producers only. */}
+          {shell.memberType === "producer" && (
+            <GuestStopsBox memberId={shell.memberId} timezone={data.memberTimezone} />
+          )}
         </div>
       );
 

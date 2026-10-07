@@ -5,6 +5,8 @@ import { FoodCalendarModule } from "@/components/profile/FoodCalendarModule";
 import { HelpVideoButton } from "@/components/admin/HelpVideoButton";
 import { HELP_VIDEOS } from "@/data/help-videos";
 import type { FoodCalendarData } from "@/lib/portal/section-data.server";
+import { GuestStopRows, useGuestStops } from "@/components/admin/GuestStopsBox";
+import { toGuestSlot } from "@/lib/events/guest-stops";
 
 /**
  * A producer's food calendar (docs/member-profiles.md, "Events" > "Food
@@ -29,6 +31,11 @@ export function FoodCalendarSection({
 }) {
   const Heading = asPage ? "h1" : "h2";
   const router = useRouter();
+  // Guild food vendors' stops here (Guild Mobile members at taprooms): in
+  // the preview when shown, and listed under it with Hide/Show.
+  const guestStops = useGuestStops(memberId);
+  const foodStops = (guestStops.stops ?? []).filter((stop) => stop.food);
+  const guestSlots = foodStops.filter((stop) => stop.status === "shown").map(toGuestSlot);
   return (
     <div className={asPage ? "flex flex-col gap-[26px]" : "flex flex-col gap-3.5"}>
       <div className={asPage ? "flex flex-col gap-1.5" : "flex flex-col gap-1"}>
@@ -73,7 +80,7 @@ export function FoodCalendarSection({
         canEdit={canEdit}
         purpose="food"
       />
-      {(food.connection || food.hasKitchen) && (
+      {(food.connection || food.hasKitchen || guestSlots.length > 0) && (
         <div className="rounded-[14px] border border-canvas-border bg-canvas px-4 py-4 md:px-5">
           <FoodCalendarModule
             label="Next 7 days on your profile"
@@ -83,7 +90,22 @@ export function FoodCalendarSection({
             hours={food.hours}
             specialHours={food.specialHours}
             hasKitchen={food.hasKitchen}
+            guestSlots={guestSlots}
           />
+        </div>
+      )}
+      {foodStops.length > 0 && (
+        <div className="flex flex-col gap-2.5">
+          <h2 className="text-[15px] font-semibold text-ink">Guild food vendors at your taproom</h2>
+          <p className="text-pretty text-[13px] text-ink-muted">
+            From their own schedules. Hide any you don&rsquo;t want on your page.
+          </p>
+          {guestStops.error && (
+            <p role="alert" className="text-[13px] text-[#B42318]">
+              {guestStops.error}
+            </p>
+          )}
+          <GuestStopRows stops={foodStops} timezone={memberTimezone} onToggle={guestStops.toggle} />
         </div>
       )}
     </div>

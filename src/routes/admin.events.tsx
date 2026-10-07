@@ -5,6 +5,7 @@ import { getMemberBasics } from "@/lib/members/member-basics.server";
 import { EventsEditor } from "@/components/admin/EventsEditor";
 import { CalendarConnectionPanel } from "@/components/admin/CalendarConnectionPanel";
 import { SameMemberGuard } from "@/components/admin/SameMemberGuard";
+import { GuestStopsBox } from "@/components/admin/GuestStopsBox";
 
 export const Route = createFileRoute("/admin/events")({
   // Never reuse a previous visit's data: every member shares these URLs, so a
@@ -22,7 +23,13 @@ export const Route = createFileRoute("/admin/events")({
       getMemberBasics({ data: { memberId: context.memberId } }),
       getCalendarConnection({ data: { memberId: context.memberId } }),
     ]);
-    return { dataMemberId: member.id, events, memberTimezone: member.timezone, calendarConnection };
+    return {
+      dataMemberId: member.id,
+      events,
+      memberTimezone: member.timezone,
+      memberType: member.member_type,
+      calendarConnection,
+    };
   },
   component: EventsRoute,
 });
@@ -45,7 +52,7 @@ function InfoIcon() {
 
 /** Artboard M (AdminEvents): heading, calendar connection, upcoming list, note. */
 function EventsRoute() {
-  const { dataMemberId, events, memberTimezone, calendarConnection } = Route.useLoaderData();
+  const { dataMemberId, events, memberTimezone, memberType, calendarConnection } = Route.useLoaderData();
   const { memberId } = Route.useRouteContext();
   return (
     <SameMemberGuard memberId={memberId} dataMemberId={dataMemberId}>
@@ -60,6 +67,8 @@ function EventsRoute() {
 
       <CalendarConnectionPanel memberId={memberId} initialConnection={calendarConnection} />
       <EventsEditor memberId={memberId} initialEvents={events} memberTimezone={memberTimezone} />
+      {/* Guild Mobile members at taprooms (artboard GV1): producers only. */}
+      {memberType === "producer" && <GuestStopsBox memberId={memberId} timezone={memberTimezone} />}
 
       <div className="flex items-start gap-3 rounded-[11px] bg-canvas-2 px-[17px] py-[15px] text-ink-muted">
         <InfoIcon />

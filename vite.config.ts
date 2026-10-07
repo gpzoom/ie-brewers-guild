@@ -402,6 +402,13 @@ export default defineConfig(async ({ command, mode }) => {
             // only imported by src/server.ts's scheduled handler, so it
             // stays protected.
             "src/lib/members/members-v2.server.ts",
+            // Guild Mobile members at taprooms (2026-10-07): guest-stops.server.ts's
+            // createServerFn exports (listGuestStops, setGuestStopStatus) are
+            // called from GuestStopsBox, a client component. The linker,
+            // guest-links.server.ts (service role), is only imported inside
+            // events.server.ts / calendar-connection.server.ts handlers and by
+            // src/server.ts's scheduled handler, so it stays protected.
+            "src/lib/events/guest-stops.server.ts",
             // Sign-in that works in any browser (2026-10-05):
             // sign-in-verify.server.ts's createServerFn exports
             // (confirmEmailLink, verifyEmailCode) are called from

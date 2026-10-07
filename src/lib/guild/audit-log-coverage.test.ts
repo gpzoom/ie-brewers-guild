@@ -60,7 +60,10 @@ describe("audit-log coverage", () => {
 describe("audit-log coverage, per server function", () => {
   // A file-level check passes as soon as one function audits; these
   // immediate (not drafted) saves each need their own call.
-  it.each([["src/lib/events/calendar-connection.server.ts", "setMemberHasKitchen"]])(
+  it.each([
+    ["src/lib/events/calendar-connection.server.ts", "setMemberHasKitchen"],
+    ["src/lib/events/guest-stops.server.ts", "setGuestStopStatus"],
+  ])(
     "%s: %s records a Guild admin's change",
     (relativePath, fn) => {
       const source = readFileSync(resolve(process.cwd(), relativePath), "utf-8");
