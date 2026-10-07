@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatStopDay,
   formatStopTime,
+  matchHost,
   pickNextStop,
   pickTodaysStop,
   needsStopGeocode,
@@ -247,5 +248,26 @@ describe("placeStop with a Google-picked venue", () => {
       HOSTS,
     );
     expect(p.kind === "member" && p.host.slug).toBe("all-points");
+  });
+});
+
+describe("matchHost (the one rule for which taproom a stop is at)", () => {
+  const hosts = [
+    { id: "a", name: "Mars Brewing Co.", slug: "mars", city: "Rancho Cucamonga", street: "9728 6th St" },
+    { id: "b", name: "Sample Brewing Co.", slug: "s-riv", city: "Riverside", street: "3750 Main Street" },
+    { id: "c", name: "Sample Brewing Co.", slug: "s-ont", city: "Ontario", street: "100 Euclid Ave" },
+  ];
+  it("by Google's name for the venue", () => {
+    expect(matchHost({ venue_name: "Mars Brewing Company", address: null, city: null }, hosts)?.id).toBe("a");
+  });
+  it("by the picked address", () => {
+    expect(matchHost({ venue_name: "Somewhere", address: "9728 6th St, Rancho Cucamonga, CA 91730, USA", city: null }, hosts)?.id).toBe("a");
+  });
+  it("several locations: the one in the stop's city, else none", () => {
+    expect(matchHost({ venue_name: "Sample Brewing Co.", address: null, city: "Ontario" }, hosts)?.id).toBe("c");
+    expect(matchHost({ venue_name: "Sample Brewing Co.", address: null, city: "Corona" }, hosts)).toBeNull();
+  });
+  it("no venue and no address: none", () => {
+    expect(matchHost({ venue_name: null, address: null, city: "Riverside" }, hosts)).toBeNull();
   });
 });

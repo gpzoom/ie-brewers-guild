@@ -149,7 +149,13 @@ export function stopCoordinates(e: StopEvent): { lat: number; lng: number } | nu
   return lat === null || lng === null ? null : { lat, lng };
 }
 
-function hostFor(e: StopEvent, hosts: HostLocation[]): HostLocation | null {
+export type HostCandidate = { id: string; name: string; slug: string; city: string; street: string | null };
+
+/** Which taproom a stop is at: by venue name, else by street address; several locations -> the one in the stop's city. */
+export function matchHost<T extends { name: string; city: string; street: string | null }>(
+  e: Pick<StopEvent, "venue_name" | "address" | "city">,
+  hosts: T[],
+): T | null {
   const venue = clean(e.venue_name);
   const address = clean(e.address).toLowerCase();
   const byName = venue ? hosts.filter((h) => normalizeBusinessName(h.name) === normalizeBusinessName(venue)) : [];
@@ -164,7 +170,7 @@ function hostFor(e: StopEvent, hosts: HostLocation[]): HostLocation | null {
 }
 
 export function placeStop(e: StopEvent, hosts: HostLocation[]): StopPlacement {
-  const host = hostFor(e, hosts);
+  const host = matchHost(e, hosts);
   if (host) return { kind: "member", host, lat: host.lat, lng: host.lng + MOBILE_PIN_OFFSET_LNG };
   const own = stopCoordinates(e);
   if (own) return { kind: "address", ...own };
