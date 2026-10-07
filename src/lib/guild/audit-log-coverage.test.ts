@@ -63,6 +63,7 @@ describe("audit-log coverage, per server function", () => {
   it.each([
     ["src/lib/events/calendar-connection.server.ts", "setMemberHasKitchen"],
     ["src/lib/events/guest-stops.server.ts", "setGuestStopStatus"],
+    ["src/lib/events/guest-stops.server.ts", "setGuestStopsMode"],
   ])(
     "%s: %s records a Guild admin's change",
     (relativePath, fn) => {

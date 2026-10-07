@@ -105,7 +105,7 @@ export function FoodCalendarSection({
               {guestStops.error}
             </p>
           )}
-          <GuestStopRows stops={foodStops} timezone={memberTimezone} onToggle={guestStops.toggle} />
+          <GuestStopRows stops={foodStops} timezone={memberTimezone} onSetStatus={guestStops.setStatus} />
         </div>
       )}
     </div>

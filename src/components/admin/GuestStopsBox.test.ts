@@ -17,7 +17,7 @@ const row = (o: Partial<GuestStopRow>): GuestStopRow => ({
 });
 const render = (stops: GuestStopRow[]) =>
   renderToStaticMarkup(
-    createElement(GuestStopsList, { stops, timezone: "America/Los_Angeles", street: "3750 Main Street", onToggle: () => {} }),
+    createElement(GuestStopsList, { stops, timezone: "America/Los_Angeles", street: "3750 Main Street", mode: "show", canChangeMode: true, onSetStatus: () => {}, onSetMode: () => {} }),
   );
 
 describe("GuestStopsList (GV1)", () => {
@@ -42,5 +42,26 @@ describe("GuestStopsList (GV1)", () => {
   });
   it("none yet", () => {
     expect(render([])).toContain("No Guild members have listed a stop here yet.");
+  });
+  it("a waiting visit: 'Waiting for approval' with Approve and Decline", () => {
+    const html = render([row({ status: "pending" })]);
+    expect(html).toContain("Waiting for approval");
+    expect(html).toContain(">Approve<");
+    expect(html).toContain(">Decline<");
+  });
+  it("a declined visit: 'Declined' with Show", () => {
+    const html = render([row({ status: "declined" })]);
+    expect(html).toContain("Declined");
+    expect(html).toContain(">Show<");
+  });
+  it("the setting: both choices, the current one checked; read-only without permission", () => {
+    const html = render([]);
+    expect(html).toContain("Show them on my page right away");
+    expect(html).toContain("Ask me first");
+    expect(html).toMatch(/<input[^>]*checked[^>]*value="show"|<input[^>]*value="show"[^>]*checked/);
+    const ro = renderToStaticMarkup(createElement(GuestStopsList, { stops: [], timezone: "America/Los_Angeles", street: null, mode: "ask", canChangeMode: false, onSetStatus: () => {}, onSetMode: () => {} }));
+    expect(ro).toMatch(/<input[^>]*checked[^>]*value="ask"|<input[^>]*value="ask"[^>]*checked/);
+    expect(ro).toContain("disabled");
+    expect(ro).toContain("Only the owner or a full editor can change this.");
   });
 });
