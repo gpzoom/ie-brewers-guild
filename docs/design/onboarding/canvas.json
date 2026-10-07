@@ -50,7 +50,7 @@
     "W03-Basics-Allied.dc.html": {
       "h": 1406,
       "is_interactive": true,
-      "title": "3 · The basics — Allied",
+      "title": "3 · The basics — Affiliate",
       "w": 1280,
       "x": 6243,
       "y": 3700
@@ -98,7 +98,7 @@
     "W05-Hours-Allied.dc.html": {
       "h": 1525,
       "is_interactive": true,
-      "title": "5 · When you're open — Allied",
+      "title": "5 · When you're open — Affiliate",
       "w": 1280,
       "x": 2163,
       "y": 8533
@@ -122,7 +122,7 @@
     "W06-Events-Allied.dc.html": {
       "h": 938,
       "is_interactive": true,
-      "title": "6 · Events — Allied",
+      "title": "6 · Events — Affiliate",
       "w": 1280,
       "x": 803,
       "y": 10218
@@ -154,7 +154,7 @@
     "W08-Discount-Allied.dc.html": {
       "h": 1177,
       "is_interactive": true,
-      "title": "8 · Member discount & supplies — Allied",
+      "title": "8 · Member discount & supplies — Affiliate",
       "w": 1280,
       "x": 4883,
       "y": 10218
@@ -292,7 +292,7 @@
     "wn2": {
       "fill": "blue",
       "size": 24,
-      "text": "WHICH TYPE?\nThe colored tag on every screen names the member type: PRODUCER, MOBILE MEMBER or ALLIED MEMBER. In the guide, each screenshot also gets a big tag, or \"All members\".",
+      "text": "WHICH TYPE?\nThe colored tag on every screen names the member type: PRODUCER, MOBILE MEMBER or AFFILIATE MEMBER. In the guide, each screenshot also gets a big tag, or \"All members\".",
       "w": 440,
       "x": 7603,
       "y": 4220
@@ -324,7 +324,7 @@
     "wn6": {
       "fill": "blue",
       "size": 24,
-      "text": "STEP NUMBERS\nBoards use the guide's numbers (1–9). The screen counts only your type's steps: Producer 8, Mobile 7, Allied 9. Back and Continue are clickable in Play.",
+      "text": "STEP NUMBERS\nBoards use the guide's numbers (1–9). The screen counts only your type's steps: Producer 8, Mobile 7, Affiliate 9. Back and Continue are clickable in Play.",
       "w": 440,
       "x": 7603,
       "y": 5780

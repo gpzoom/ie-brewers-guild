@@ -32,7 +32,7 @@
     },
     "AdminPhone.dc.html": {
       "h": 1560,
-      "title": "I · Admin phone — Allied Member, with discount",
+      "title": "I · Admin phone — Affiliate Member, with discount",
       "w": 390,
       "x": 3560,
       "y": 2300
@@ -88,7 +88,7 @@
     },
     "GuildCategories.dc.html": {
       "h": 1000,
-      "title": "S · Guild admin — categories (Allied / Mobile tabs)",
+      "title": "S · Guild admin — categories (Affiliate / Mobile tabs)",
       "w": 1280,
       "x": 12660,
       "y": 2300
@@ -123,7 +123,7 @@
     },
     "VendorProfile.dc.html": {
       "h": 1830,
-      "title": "V · Allied Member",
+      "title": "V · Affiliate Member",
       "w": 390,
       "x": 940,
       "y": 0
@@ -252,7 +252,7 @@
       "y": 9000,
       "w": 1340,
       "h": 1360,
-      "title": "B6 · Members v2 — card states (mobile members, Allied, Near me, empty) and mobile pin icons"
+      "title": "B6 · Members v2 — card states (mobile members, Affiliate, Near me, empty) and mobile pin icons"
     },
     "AuthConfirm.dc.html": {
       "x": 3870,

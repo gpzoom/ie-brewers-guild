@@ -10,7 +10,7 @@ Each step says who does it. "Claude" steps happen only when the owner says go.
   - [ ] Sign in with the **Member Portal** link as a member. Finish the setup wizard, publish, and check the public profile.
   - [ ] Test a **Producer**: hours, events calendar, the **Food** page with a food calendar, and "Food for the next week" (all seven days; under the photos on desktop).
   - [ ] Test a **Mobile member**: "Where we'll be" and booking links.
-  - [ ] Test an **Allied Member**: business address, and Discount & supplies.
+  - [ ] Test an **Affiliate Member**: business address, and Discount & supplies.
   - [ ] **Edit as them** from the Guild roster on a member who has never signed in.
   - [ ] Send a **Help** message. Check it arrives at boblelle77@gmail.com with "[Staging]" in the subject, and that the super admin's bell counts it.
   - [ ] **Super admin → Settings:** the calendar sync interval and the carousel's dwell time save; upload a hero image, then try "Use the built-in image".

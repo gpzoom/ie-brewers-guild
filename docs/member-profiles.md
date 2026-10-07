@@ -6,7 +6,7 @@ IE Brewers Guild · as of 21 September 2026 · Bob Lelle
 
 This covers the public member profile page and the member-facing admin panel that fills it. It is the written form of the decisions settled on the design canvas — the canvas shows what it looks like, this says what must be true when it is built.
 
-The canvas has eighteen artboards, all current — nothing on it is superseded. **Public:** D taproom, E mobile, V Allied Member, L desktop, O contact and membership inquiry, T member sign in. **Member admin:** F basics and hours, G media and crop, H publish gate, I phone, K member theme, M events, R links and contact. **Creator upload:** J. **Guild admin:** N inquiries, P members and impersonation, Q brand and theme, S supply categories.
+The canvas has eighteen artboards, all current — nothing on it is superseded. **Public:** D taproom, E mobile, V Affiliate Member, L desktop, O contact and membership inquiry, T member sign in. **Member admin:** F basics and hours, G media and crop, H publish gate, I phone, K member theme, M events, R links and contact. **Creator upload:** J. **Guild admin:** N inquiries, P members and impersonation, Q brand and theme, S supply categories.
 
 Those are the visual reference. Where this document and an artboard disagree, this document wins.
 
@@ -18,7 +18,9 @@ Out of scope: redesigning the Members page — its map and card grid keep their 
 
 There is one profile template with a member type flag, not three templates. The flag drives which modules render and what the primary action says. Build it that way from the start — forking the template per type is the failure mode.
 
-|  | Producer | Mobile | Allied Member |
+Affiliate Members were called Allied Members until 7 October 2026. Only the words on screen changed: the stored `member_type` value, URLs (`?type=allied`), file names and the code still say `allied`.
+
+|  | Producer | Mobile | Affiliate Member |
 | --- | --- | --- | --- |
 | Who | Brewery, meadery, cidery, distillery with a taproom | Entertainment, food truck, pop-up | Supply house, ingredients, equipment, services |
 | Status line | Open now / closed, with closing time | Next appearance, with date | Open now / closed, with closing time |
@@ -33,7 +35,7 @@ There is one profile template with a member type flag, not three templates. The 
 | Third link button | Tap list | Press kit | Catalog |
 | On the Guild Trail | Yes | No | No |
 | Trail progress strip | Yes | No | No |
-| Cross-link card | Next on the trail | Playing nearby | Another Allied Member |
+| Cross-link card | Next on the trail | Playing nearby | Another Affiliate Member |
 
 Changing a member's type must not delete data from the modules that type doesn't render. A producer who switches to mobile and back should find their hours intact.
 
@@ -135,15 +137,15 @@ Two mechanisms that look alike and must not be conflated.
 
 **The Trail (the passport)** is the collectible: visited state, the progress strip, the "8 of 24 visited" count. Producers with taprooms only. A supply house is not a trail stop and neither is a band.
 
-**Cross-linking** is the card at the bottom of every profile, and every member gets one regardless of type. A profile that ends in a dead end wastes the exit. Producers point at the next trail stop, mobile members at another act playing nearby, Allied Members at another Allied Member.
+**Cross-linking** is the card at the bottom of every profile, and every member gets one regardless of type. A profile that ends in a dead end wastes the exit. Producers point at the next trail stop, mobile members at another act playing nearby, Affiliate Members at another Affiliate Member.
 
 Because the Guild takes meaderies, cideries and distilleries, no member-facing copy should say "brewery." The producer cross-link card reads "Next on the trail," not "Next brewery." If the Guild has its own name for the trail concept, that name replaces this one throughout — worth settling before copy gets written twice.
 
-Allied Member cross-links point to another Allied Member. Pointing one at a producer they supply is more interesting, but needs a supplier relationship in the data model that does not exist yet. Revisit if that relationship ever lands.
+Affiliate Member cross-links point to another Affiliate Member. Pointing one at a producer they supply is more interesting, but needs a supplier relationship in the data model that does not exist yet. Revisit if that relationship ever lands.
 
-## Allied Member discount
+## Affiliate Member discount
 
-Allied Member profiles carry a discount block, set by the member in their admin panel. It renders large and in the accent color, directly under the status block and above the supply categories — deliberately the loudest thing on the page after the business name.
+Affiliate Member profiles carry a discount block, set by the member in their admin panel. It renders large and in the accent color, directly under the status block and above the supply categories — deliberately the loudest thing on the page after the business name.
 
 This is the most concrete answer the site has to "what does Guild membership get me," so it earns the prominence.
 
@@ -154,7 +156,7 @@ The member sets:
 
 With a percentage, the block reads `[XX]% off` over "for members in good standing." With the checkbox ticked, it reads "Discounts available to members in good standing" at the same visual weight. The redemption line sits underneath in both cases.
 
-The field only appears for the Allied Member type. A member who switches type keeps the values; they just stop rendering.
+The field only appears for the Affiliate Member type. A member who switches type keeps the values; they just stop rendering.
 
 The block uses `--brand`, the deeper amber, because it carries white text. Never build it on `--brand-bright`.
 
@@ -191,11 +193,11 @@ A member with no cover photo gets their theme color filling the band. That is th
 
 **Every member type can list events**, not just mobile members. A taproom runs trivia nights and release parties; a supply house runs open houses and workshops; a band plays gigs. One module, one table, one admin screen, on every profile.
 
-What differs is the relationship to the schedule module. For a producer or Allied Member, events sit alongside weekly hours — "we're open these hours, and these things are happening." For a mobile member, events *are* the schedule; there are no hours at all.
+What differs is the relationship to the schedule module. For a producer or Affiliate Member, events sit alongside weekly hours — "we're open these hours, and these things are happening." For a mobile member, events *are* the schedule; there are no hours at all.
 
-The heading differs to match: "Upcoming events" (was "Coming up" until 27 September 2026) for producers and Allied Members, "Where we'll be" for mobile members, since a mobile member's event is somewhere else and a taproom's is at home. That is a label, not a different component.
+The heading differs to match: "Upcoming events" (was "Coming up" until 27 September 2026) for producers and Affiliate Members, "Where we'll be" for mobile members, since a mobile member's event is somewhere else and a taproom's is at home. That is a label, not a different component.
 
-An event's venue fields are nullable. Null means the event is at the member's own address, which is the normal case for a producer or Allied Member — don't make them retype their own name as the venue.
+An event's venue fields are nullable. Null means the event is at the member's own address, which is the normal case for a producer or Affiliate Member — don't make them retype their own name as the venue.
 
 Events come from a connected calendar, not hand entry. Hand entry is the fallback for members with no calendar. These are two different integrations: Google is OAuth against the Calendar API and reflects edits within seconds; Apple has no equivalent, so it is an ICS subscription URL the member pastes in, which is read-only and lags behind their actual calendar by however long Apple takes to regenerate the published feed — often tens of minutes, sometimes longer. A scheduled refresh fixes our staleness but cannot beat the feed (Google's own ICS links also update only every few hours), so the admin also carries a manual **Refresh now** button. Refresh now reloads the page's data when it finishes (owner, 28 September 2026), so newly synced events show in the list straight away, in `/admin` (Edit as them), the portal and the wizard. How often the scheduled refresh runs is the super admin's setting (Super admin > Settings), every 15 minutes by default.
 
@@ -222,7 +224,7 @@ The overlay is the member's, stored against the calendar event id — not writte
 
 A canceled event stays visible rather than disappearing. Someone who saw it on the calendar needs to learn it is off, and a silently vanished row teaches them nothing.
 
-A mobile member's "Next appearance" block skips anything postponed or canceled and shows the next live one. On a producer or Allied Member profile the same data feeds the "Tonight—" line inside the status block, so there is no separate free-text field for it: today's event is the one source of truth.
+A mobile member's "Next appearance" block skips anything postponed or canceled and shows the next live one. On a producer or Affiliate Member profile the same data feeds the "Tonight—" line inside the status block, so there is no separate free-text field for it: today's event is the one source of truth.
 
 Sync is tag-based opt-in: only events matching the member's chosen tag are imported. Most members' calendars contain private entries, and pulling everything would publish them.
 
@@ -532,13 +534,13 @@ Imported members already have a business name and city, but their setup is still
 
 Redesigned with the owner on 2 October 2026 (spec `docs/superpowers/specs/2026-10-02-wizard-redesign-design.md`; artboards on the onboarding canvas, mirrored in `docs/design/onboarding/wizard/`).
 
-One step per screen. Every step after Welcome has **Back**, every optional step **Skip for now**, and every step **Continue**, plus **Save & exit** in the top bar. A progress line reads "Step N of M", where M depends on the member type: **8 for a producer, 7 for a Mobile member, 9 for an Allied Member**. Beside it, a large colored tag names the type (PRODUCER orange, MOBILE MEMBER teal, ALLIED MEMBER blue), so anyone, and any screenshot, shows which type a screen is for.
+One step per screen. Every step after Welcome has **Back**, every optional step **Skip for now**, and every step **Continue**, plus **Save & exit** in the top bar. A progress line reads "Step N of M", where M depends on the member type: **8 for a producer, 7 for a Mobile member, 9 for an Affiliate Member**. Beside it, a large colored tag names the type (PRODUCER orange, MOBILE MEMBER teal, AFFILIATE MEMBER blue), so anyone, and any screenshot, shows which type a screen is for.
 
-| # | Step | Producer | Mobile | Allied | Required | Reuses |
+| # | Step | Producer | Mobile | Affiliate | Required | Reuses |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Welcome: what to have handy, about 10 minutes, what can be skipped | ✓ | ✓ | ✓ | — | new |
 | 2 | Confirm your member type | ✓ | ✓ | ✓ | yes | new |
-| 3 | The basics: name, city, tagline, phone, member since, plus the type's location fields (address with suggestions and ZIP; an Allied Member's is their business address); Mobile members also pick "What you offer" categories here, and their Booking phone notes that more booking links go on Links & contact | ✓ | ✓ | ✓ | name and city | F |
+| 3 | The basics: name, city, tagline, phone, member since, plus the type's location fields (address with suggestions and ZIP; an Affiliate Member's is their business address); Mobile members also pick "What you offer" categories here, and their Booking phone notes that more booking links go on Links & contact | ✓ | ✓ | ✓ | name and city | F |
 | 4 | **Logo, Photos & Cover**: the logo (with "You don't have a PNG format?" and a link to Canva's Background Removal tool, above Logo background), the gallery (camera-roll hint, creator upload link), the four carousel slides, and the cover picked from the gallery; a live preview of the top of the profile sits beside them on a computer, below them on a phone | ✓ | ✓ | ✓ | — | G, J |
 | 5 | When you're open: 7-day hours / business hours / Where we'll be (calendar or hand entry) | hours | calendar | hours | — | F, M |
 | 6 | Events (producers also: Food, with the "We have our own kitchen" switch) | ✓ | — (step 5 covered it) | ✓ | — | M, M2 |
@@ -758,7 +760,7 @@ The card button and the map pin's callout become ordinary links. To avoid dumpin
 
 Distance is the wrong rule for this Guild. Membership is geographically uneven, so "nearby" is meaningless for a remote member and misleading for a dense cluster. It also needs distance maths and a fallback for when nothing is in range.
 
-Use the visitor's own list position instead. The previous / next links in the header, and the card at the foot of the profile, move through the directory **in the order and filter the visitor is browsing** — if they filtered to Allied Members, next is the next Allied Member. That carries their intent rather than overriding it, needs no geography, and behaves the same for a remote member as a clustered one.
+Use the visitor's own list position instead. The previous / next links in the header, and the card at the foot of the profile, move through the directory **in the order and filter the visitor is browsing** — if they filtered to Affiliate Members, next is the next Affiliate Member. That carries their intent rather than overriding it, needs no geography, and behaves the same for a remote member as a clustered one.
 
 The `latitude` and `longitude` columns stay, because the existing map needs them. They no longer drive this.
 
@@ -786,21 +788,21 @@ One row per member. Type-specific fields live here as nullable columns with a ch
 | tagline | text | check length <= 70 |
 | city | text not null |  |
 | state | text not null default 'CA' |  |
-| street\_address | text | producer and Allied Member |
+| street\_address | text | producer and Affiliate Member |
 | postal\_code | text |  |
 | latitude | numeric(9,6) | for the nearby-member card |
 | longitude | numeric(9,6) |  |
-| service\_area | text | mobile and Allied Member |
-| lead\_time | text | No longer shown or edited (dropped for Allied Members on 27 September 2026); the column and any value are kept |
+| service\_area | text | mobile and Affiliate Member |
+| lead\_time | text | No longer shown or edited (dropped for Affiliate Members on 27 September 2026); the column and any value are kept |
 | phone | text | E.164 |
-| contact\_email | text | Allied Member sales address |
+| contact\_email | text | Affiliate Member sales address |
 | timezone | text not null default 'America/Los\_Angeles' | IANA, never hardcode |
 | theme | text not null default 'amber' | check in the eight theme names |
 | logo\_asset\_id | uuid | fk media\_assets, on delete set null |
 | cover\_asset\_id | uuid | fk media\_assets, on delete set null |
 | cover\_crop | jsonb | see crop shape below |
 | member\_since\_year | smallint |  |
-| discount\_percent | smallint | Allied Member only, null when no fixed percentage |
+| discount\_percent | smallint | Affiliate Member only, null when no fixed percentage |
 | discount\_no\_fixed\_percent | boolean not null default false |  |
 | discount\_redeem\_text | text |  |
 | status | text not null default 'applied' | check in (applied, declined, draft, published, suspended) |
@@ -954,7 +956,7 @@ Unique on (calendar\_connection\_id, external\_event\_id). **A re-sync reconcile
 
 ### categories and member\_categories
 
-`categories` holds member categories as `(id, name, slug, sort_order, member_type)`, where `member_type` is `allied` (supply categories) or `mobile` (Entertainment, Food Truck, Pop-up Food Vendor, …), checked in (`allied`, `mobile`). A member may pick any number of categories of their own type. The Guild Categories page has Allied and Mobile tabs; `member_categories` joins `(member_id, category_id)`. A join table rather than a text array, so the directory can filter by category later without a migration.
+`categories` holds member categories as `(id, name, slug, sort_order, member_type)`, where `member_type` is `allied` (supply categories) or `mobile` (Entertainment, Food Truck, Pop-up Food Vendor, …), checked in (`allied`, `mobile`). A member may pick any number of categories of their own type. The Guild Categories page has Affiliate and Mobile tabs; `member_categories` joins `(member_id, category_id)`. A join table rather than a text array, so the directory can filter by category later without a migration.
 
 ### Trail hooks — not built
 
@@ -1020,12 +1022,12 @@ Every module needs a defined absence. The rule is that a module with nothing in 
 | One slide | Module renders, no dots |
 | No cover photo | Theme color fills the band |
 | No tagline | Line omitted, name and badge close up |
-| No hours at all (producer or Allied Member) | Status block shows "Hours not listed" with the phone number as the action, instead of open/closed |
+| No hours at all (producer or Affiliate Member) | Status block shows "Hours not listed" with the phone number as the action, instead of open/closed |
 | Hours stale past 90 days | Status still computes, plus a quiet "Hours confirmed \[Month Year\]" line |
 | Mobile member, no upcoming events | "No dates announced yet" with the booking button still present — never an empty list |
 | Calendar sync failing | Nothing on the public page. The admin shows the failure and the last successful sync. |
-| Allied Member, no discount set | Block omitted entirely |
-| Allied or Mobile member, no categories | Module omitted |
+| Affiliate Member, no discount set | Block omitted entirely |
+| Affiliate or Mobile member, no categories | Module omitted |
 | An image fails to load | Theme-colored block in its place, never a broken-image icon or alt text alone |
 | Profile is a draft or still an application | 404 to the public, preview banner to its own members |
 | Slug not found | The directory's own 404, offering the member list — not a bare error |
@@ -1044,7 +1046,7 @@ The general principle: a member who has filled in almost nothing should still ge
 - [x] Media — 4:5 portrait, originals plus crop rectangles, creator upload links
 - [x] Events — all member types, calendar sync with member status overlays
 - [x] Trail — deferred, hooks only, nothing about visitors stored
-- [x] Naming — Allied Member, and no "brewery" in member-facing copy; US spelling ("color") in all member-facing copy
+- [x] Naming — Affiliate Member, and no "brewery" in member-facing copy; US spelling ("color") in all member-facing copy
 - [x] Setup wizard — steps 1–3 required (welcome, confirm type, basics), the rest skippable; never shown again once setup completes
 - [x] Member type — confirmed once in the wizard, then locked; changes by request to the Guild admin
 - [x] Drafts — all edits save to a draft; Publish pushes live in one transaction; Discard resets to live; events and overlays stay live
