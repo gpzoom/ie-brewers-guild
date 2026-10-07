@@ -10,10 +10,12 @@ const v = (kind: "new" | "request" | "changed" | "canceled") => ({
 });
 
 describe("siteRole", () => {
-  it("staging by its own origin; anything else is the live site", () => {
+  it("staging by its own origin, the live site by its own; anything else is unknown (send nothing)", () => {
     expect(siteRole("https://ie-brewers-guild-staging.boblelle77.workers.dev")).toEqual({ origin: "https://ie-brewers-guild-staging.boblelle77.workers.dev", staging: true });
     expect(siteRole("https://iscbrewersguild.org")).toEqual({ origin: "https://iscbrewersguild.org", staging: false });
-    expect(siteRole(undefined)).toEqual({ origin: "https://iscbrewersguild.org", staging: false });
+    // A dashboard edit once dropped staging's SITE_ORIGIN (2026-10-07): staging must never send as the live site.
+    expect(siteRole(undefined)).toBeNull();
+    expect(siteRole("https://example.com")).toBeNull();
   });
 });
 

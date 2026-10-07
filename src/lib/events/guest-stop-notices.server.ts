@@ -22,6 +22,10 @@ export async function sendGuestStopNotices(): Promise<void> {
       return;
     }
     const role = siteRole(vars.SITE_ORIGIN);
+    if (!role) {
+      console.error(`sendGuestStopNotices: unknown SITE_ORIGIN (${vars.SITE_ORIGIN ?? "not set"}) -- sending nothing`);
+      return;
+    }
     const db = await getSupabaseServiceRoleClient();
 
     await runGuestStopSend({
