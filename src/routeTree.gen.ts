@@ -25,6 +25,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as GuildIndexRouteImport } from './routes/guild.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as VisitTokenRouteImport } from './routes/visit.$token'
 import { Route as SendTokenRouteImport } from './routes/send.$token'
 import { Route as PortalSetupRouteImport } from './routes/portal.setup'
 import { Route as PortalPreviewRouteImport } from './routes/portal.preview'
@@ -135,6 +136,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const VisitTokenRoute = VisitTokenRouteImport.update({
+  id: '/visit/$token',
+  path: '/visit/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const SendTokenRoute = SendTokenRouteImport.update({
   id: '/send/$token',
@@ -325,6 +331,7 @@ export interface FileRoutesByFullPath {
   '/portal/preview': typeof PortalPreviewRoute
   '/portal/setup': typeof PortalSetupRouteWithChildren
   '/send/$token': typeof SendTokenRoute
+  '/visit/$token': typeof VisitTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/guild/': typeof GuildIndexRoute
   '/portal/': typeof PortalIndexRoute
@@ -370,6 +377,7 @@ export interface FileRoutesByTo {
   '/portal': typeof PortalIndexRoute
   '/portal/preview': typeof PortalPreviewRoute
   '/send/$token': typeof SendTokenRoute
+  '/visit/$token': typeof VisitTokenRoute
   '/admin': typeof AdminIndexRoute
   '/guild': typeof GuildIndexRoute
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
@@ -418,6 +426,7 @@ export interface FileRoutesById {
   '/portal/preview': typeof PortalPreviewRoute
   '/portal/setup': typeof PortalSetupRouteWithChildren
   '/send/$token': typeof SendTokenRoute
+  '/visit/$token': typeof VisitTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/guild/': typeof GuildIndexRoute
   '/portal/': typeof PortalIndexRoute
@@ -468,6 +477,7 @@ export interface FileRouteTypes {
     | '/portal/preview'
     | '/portal/setup'
     | '/send/$token'
+    | '/visit/$token'
     | '/admin/'
     | '/guild/'
     | '/portal/'
@@ -513,6 +523,7 @@ export interface FileRouteTypes {
     | '/portal'
     | '/portal/preview'
     | '/send/$token'
+    | '/visit/$token'
     | '/admin'
     | '/guild'
     | '/api/admin-media/$assetId'
@@ -560,6 +571,7 @@ export interface FileRouteTypes {
     | '/portal/preview'
     | '/portal/setup'
     | '/send/$token'
+    | '/visit/$token'
     | '/admin/'
     | '/guild/'
     | '/portal/'
@@ -593,6 +605,7 @@ export interface RootRouteChildren {
   PortalPreviewRoute: typeof PortalPreviewRoute
   PortalSetupRoute: typeof PortalSetupRouteWithChildren
   SendTokenRoute: typeof SendTokenRoute
+  VisitTokenRoute: typeof VisitTokenRoute
   PortalIndexRoute: typeof PortalIndexRoute
   ApiAdminMediaAssetIdRoute: typeof ApiAdminMediaAssetIdRoute
   ApiConfirmHoursTokenRoute: typeof ApiConfirmHoursTokenRoute
@@ -712,6 +725,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/visit/$token': {
+      id: '/visit/$token'
+      path: '/visit/$token'
+      fullPath: '/visit/$token'
+      preLoaderRoute: typeof VisitTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/send/$token': {
       id: '/send/$token'
@@ -1026,6 +1046,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortalPreviewRoute: PortalPreviewRoute,
   PortalSetupRoute: PortalSetupRouteWithChildren,
   SendTokenRoute: SendTokenRoute,
+  VisitTokenRoute: VisitTokenRoute,
   PortalIndexRoute: PortalIndexRoute,
   ApiAdminMediaAssetIdRoute: ApiAdminMediaAssetIdRoute,
   ApiConfirmHoursTokenRoute: ApiConfirmHoursTokenRoute,

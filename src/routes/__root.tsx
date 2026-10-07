@@ -173,7 +173,7 @@ const BARE_ROUTES = ["/survey-results"];
 // Guild mark above a light card, no site menu.
 // /portal (the Member Portal: wizard and portal) is chrome-less for the same
 // reasons as /admin.
-const BARE_ROUTE_PREFIXES = ["/admin", "/guild", "/signin", "/send", "/portal", "/auth"];
+const BARE_ROUTE_PREFIXES = ["/admin", "/guild", "/signin", "/send", "/portal", "/auth", "/visit"];
 
 function isBarePathname(pathname: string) {
   const normalized = pathname.replace(/\/+$/, "") || "/";

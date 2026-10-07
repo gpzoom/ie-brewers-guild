@@ -409,6 +409,12 @@ export default defineConfig(async ({ command, mode }) => {
             // events.server.ts / calendar-connection.server.ts handlers and by
             // src/server.ts's scheduled handler, so it stays protected.
             "src/lib/events/guest-stops.server.ts",
+            // Part 2 (2026-10-07): visit-link.server.ts's checkVisitLink and
+            // actOnVisitLink are called from routes/visit.$token.tsx and
+            // VisitLinkPage (the email buttons' page). The sender,
+            // guest-stop-notices.server.ts (service role + Resend), is only
+            // imported by src/server.ts's scheduled handler, so it stays protected.
+            "src/lib/events/visit-link.server.ts",
             // Sign-in that works in any browser (2026-10-05):
             // sign-in-verify.server.ts's createServerFn exports
             // (confirmEmailLink, verifyEmailCode) are called from
