@@ -131,6 +131,26 @@ export function normalizeBusinessName(name: string): string {
     .trim();
 }
 
+const STREET_WORDS: Readonly<Record<string, string>> = {
+  street: "st", avenue: "ave", boulevard: "blvd", road: "rd", drive: "dr", lane: "ln", court: "ct",
+  place: "pl", parkway: "pkwy", highway: "hwy", circle: "cir", terrace: "ter", trail: "trl", way: "way",
+  north: "n", south: "s", east: "e", west: "w", suite: "ste",
+};
+
+/**
+ * A street address's first part (before the first comma), lowercased, with
+ * punctuation dropped and St/Street, Ave/Avenue, N/North and the like made
+ * the same. Empty unless it starts with a house number.
+ */
+export function normalizeStreet(value: string | null | undefined): string {
+  const first = (value ?? "").split(",")[0].toLowerCase().replace(/[.#']/g, "").trim();
+  if (!/^\d/.test(first)) return "";
+  return first
+    .split(/\s+/)
+    .map((word) => STREET_WORDS[word] ?? word)
+    .join(" ");
+}
+
 function clean(value: string | null | undefined): string {
   return (value ?? "").trim();
 }
@@ -157,9 +177,17 @@ export function matchHost<T extends { name: string; city: string; street: string
   hosts: T[],
 ): T | null {
   const venue = clean(e.venue_name);
-  const address = clean(e.address).toLowerCase();
   const byName = venue ? hosts.filter((h) => normalizeBusinessName(h.name) === normalizeBusinessName(venue)) : [];
-  const byStreet = address ? hosts.filter((h) => h.street && address.startsWith(h.street.trim().toLowerCase())) : [];
+  // The address Google gives ("3750 Main St, Riverside, ...") or a venue
+  // that is just a street ("3750 Main Street", a picked address), against
+  // the taproom's street, however each spells St/Street, N/North, etc.
+  const places = [normalizeStreet(e.address), normalizeStreet(e.venue_name)].filter(Boolean);
+  const byStreet = places.length
+    ? hosts.filter((h) => {
+        const street = normalizeStreet(h.street);
+        return Boolean(street) && places.some((p) => p === street || p.startsWith(`${street} `));
+      })
+    : [];
   const candidates = byName.length ? byName : byStreet;
   if (candidates.length === 1) return candidates[0];
   if (candidates.length > 1) {

@@ -271,3 +271,23 @@ describe("matchHost (the one rule for which taproom a stop is at)", () => {
     expect(matchHost({ venue_name: null, address: null, city: "Riverside" }, hosts)).toBeNull();
   });
 });
+
+describe("matchHost: street addresses written differently (Sample Brewing, 2026-10-07)", () => {
+  const hosts = [{ id: "sample", name: "Sample Brewing Co.", slug: "sample", city: "Riverside", street: "3750 Main Street" }];
+  it("Google's 'St' matches the taproom's 'Street'", () => {
+    expect(matchHost({ venue_name: "Sample Brewery", address: "3750 Main St, Riverside, CA 92501, USA", city: "Riverside" }, hosts)?.id).toBe("sample");
+  });
+  it("a venue that is just the taproom's street (a picked address) matches", () => {
+    expect(matchHost({ venue_name: "3750 Main Street", address: null, city: "Riverside" }, hosts)?.id).toBe("sample");
+  });
+  it("Avenue/Ave, Boulevard/Blvd, North/N, and periods", () => {
+    const h = [{ id: "x", name: "X", slug: "x", city: "Ontario", street: "100 N. Euclid Avenue" }];
+    expect(matchHost({ venue_name: null, address: "100 North Euclid Ave, Ontario, CA", city: null }, h)?.id).toBe("x");
+    const b = [{ id: "y", name: "Y", slug: "y", city: "Fontana", street: "9 Sierra Blvd" }];
+    expect(matchHost({ venue_name: null, address: "9 Sierra Boulevard Suite 4, Fontana, CA", city: null }, b)?.id).toBe("y");
+  });
+  it("a different house number doesn't match", () => {
+    expect(matchHost({ venue_name: null, address: "375 Main St, Riverside, CA", city: null }, hosts)).toBeNull();
+    expect(matchHost({ venue_name: null, address: "37500 Main St, Riverside, CA", city: null }, hosts)).toBeNull();
+  });
+});
