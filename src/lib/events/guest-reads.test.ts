@@ -54,3 +54,20 @@ describe("bounded reads (Guild Mobile members at taprooms)", () => {
     expectUpcomingWindow(opsOf(calls, "events"));
   });
 });
+
+describe("the linker's inputs, Part 2", () => {
+  it("hosts carry their setting; guests' names come with the Mobile members; links carry what was told", async () => {
+    const { client, calls } = fakeSupabase({
+      members: [{ id: "truck", business_name: "Sample Taco Truck", slug: "taco", city: "Riverside", street_address: null, guest_stops_mode: "ask" }],
+      events: [{ ...event, is_hidden: false }],
+      event_hosts: [],
+    });
+    const inputs = await loadLinkerInputs(client, { memberId: "truck" }, NOW);
+    expect(inputs?.guestNames.get("truck")).toBe("Sample Taco Truck");
+    expect(inputs?.hosts[0].mode).toBe("ask");
+    const memberSelects = calls.filter((c) => c.table === "members").flatMap((c) => c.ops.filter(([op]) => op === "select").map(([, a]) => String(a[0])));
+    expect(memberSelects.some((s) => s.includes("guest_stops_mode"))).toBe(true);
+    const linkSelect = calls.find((c) => c.table === "event_hosts")?.ops.find(([op]) => op === "select");
+    expect(String(linkSelect?.[1][0] ?? "")).toContain("notified_starts_at");
+  });
+});

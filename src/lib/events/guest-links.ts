@@ -154,7 +154,8 @@ export function decideGuestLinks(args: {
       continue;
     }
 
-    const watching = before.status === "shown" || before.status === "pending";
+    // A link from Part 1 has nothing recorded as told yet: record it quietly.
+    const watching = (before.status === "shown" || before.status === "pending") && before.notified_starts_at !== null;
     let cancelNotified = before.cancel_notified;
     if (watching && live && before.cancel_notified) {
       notices.push(note(before.status === "pending" ? "request" : "new", host.id));

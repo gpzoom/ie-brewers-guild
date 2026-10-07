@@ -119,4 +119,9 @@ describe("decideGuestLinks, Part 2 (Ask me first and notes)", () => {
     expect(r.upserts).toEqual([W({ title: "Taco Tuesday" })]);
     expect(r.notices).toEqual([]);
   });
+  it("a link from Part 1 (nothing told yet): its snapshot is recorded quietly, no email", () => {
+    const r = decide([stop({})], [link({ guest_name: null, notified_starts_at: null, notified_ends_at: null })]);
+    expect(r.notices).toEqual([]);
+    expect(r.upserts).toEqual([W({})]);
+  });
 });
