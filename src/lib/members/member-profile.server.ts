@@ -15,8 +15,8 @@ import {
   type ProfileRows,
 } from "@/lib/members/profile-object";
 import { loadMemberDraftBundle } from "@/lib/drafts/drafts.server";
-import { loadGuestEventsForHost, loadTaproomHosts } from "@/lib/events/guest-info";
-import { withHosts } from "@/lib/events/guest-display";
+import { loadGuestEventsForHost, loadShownHostsForGuest } from "@/lib/events/guest-info";
+import { attachHosts } from "@/lib/events/guest-display";
 import { DRAFT_SECTIONS, isFullEditor, type DraftSection } from "@/lib/drafts/sections";
 import type {
   CarouselSlideRow,
@@ -161,8 +161,10 @@ async function assembleProfile(args: {
     member.member_type === "producer"
       ? loadGuestEventsForHost(supabase, member.id).catch(() => [])
       : Promise.resolve([]),
-    // A Mobile member's own stops link to the Guild taproom they're at.
-    member.member_type === "mobile" ? loadTaproomHosts(supabase).catch(() => []) : Promise.resolve([]),
+    // A Mobile member's own stops link to the Guild taproom that shows them (Part 2).
+    member.member_type === "mobile"
+      ? loadShownHostsForGuest(supabase, member.id, args.now).catch(() => new Map<string, { name: string; slug: string }>())
+      : Promise.resolve(new Map<string, { name: string; slug: string }>()),
   ]);
 
   const assets = (assetsResult.data ?? []) as MediaAssetRow[];
@@ -202,7 +204,7 @@ async function assembleProfile(args: {
   return buildProfileObject({
     rows,
     assets,
-    events: withHosts((eventsResult.data ?? []) as EventRow[], taproomHosts),
+    events: attachHosts((eventsResult.data ?? []) as EventRow[], taproomHosts),
     categories: (categoriesResult.data ?? []) as CategoryRow[],
     logoPublicUrl,
     directoryEntries: toEntries(directoryResult.data),

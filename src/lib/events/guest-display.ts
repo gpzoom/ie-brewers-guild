@@ -1,6 +1,6 @@
 import type { EventRow } from "@/lib/supabase/types";
 import type { MobileCategory } from "@/lib/members/mobile-category";
-import { matchHost, normalizeBusinessName, type HostCandidate } from "@/lib/members/mobile-stops";
+import { normalizeBusinessName } from "@/lib/members/mobile-stops";
 import { getZonedNow } from "@/lib/hours/open-now";
 
 /**
@@ -57,16 +57,11 @@ export function eventDisplayTitle(e: { title: string | null; venue_name: string 
   return e.title ?? e.guest?.name ?? e.venue_name ?? null;
 }
 
-/**
- * A Mobile member's own stops, each with the Guild taproom it's at (live
- * matching, the map's rule): their page links there whatever the taproom
- * chose to show.
- */
-export function withHosts<T extends EventRow>(events: T[], hosts: HostCandidate[]): Array<T & { host?: { name: string; slug: string } }> {
-  if (hosts.length === 0) return events;
+/** A Mobile member's own stops, each with the Guild taproom that shows it (Part 2: only while shown). */
+export function attachHosts<T extends EventRow>(events: T[], hosts: Map<string, { name: string; slug: string }>): Array<T & { host?: { name: string; slug: string } }> {
+  if (hosts.size === 0) return events;
   return events.map((event) => {
-    if ((event.kind ?? "event") !== "event") return event;
-    const host = matchHost(event, hosts);
-    return host ? { ...event, host: { name: host.name, slug: host.slug } } : event;
+    const host = hosts.get(event.id);
+    return host ? { ...event, host } : event;
   });
 }

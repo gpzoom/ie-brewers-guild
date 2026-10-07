@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { fakeSupabase, opsOf } from "./fake-supabase.test-helper";
-import { loadGuestEventsForHost, loadGuestStopRows } from "./guest-info";
+import { loadGuestEventsForHost, loadGuestStopRows, loadShownHostsForGuest } from "./guest-info";
 import { loadLinkerInputs } from "./guest-links-load";
 
 const NOW = new Date("2026-10-07T18:00:00Z");
@@ -69,5 +69,19 @@ describe("the linker's inputs, Part 2", () => {
     expect(memberSelects.some((s) => s.includes("guest_stops_mode"))).toBe(true);
     const linkSelect = calls.find((c) => c.table === "event_hosts")?.ops.find(([op]) => op === "select");
     expect(String(linkSelect?.[1][0] ?? "")).toContain("notified_starts_at");
+  });
+});
+
+describe("a Mobile member's shown links", () => {
+  it("one bounded query: shown links of this member's upcoming events, with the taproom", async () => {
+    const { client, calls } = fakeSupabase({
+      event_hosts: [{ event_id: "e1", events: { member_id: "truck" }, host: { slug: "mars", business_name: "Mars Brewing Co." } }],
+    });
+    const map = await loadShownHostsForGuest(client, "truck", NOW);
+    expect(map.get("e1")).toEqual({ name: "Mars Brewing Co.", slug: "mars" });
+    const ops = opsOf(calls, "event_hosts");
+    expect(ops).toContainEqual(["eq", ["status", "shown"]]);
+    expect(ops).toContainEqual(["eq", ["events.member_id", "truck"]]);
+    expectUpcomingWindow(ops, "events");
   });
 });

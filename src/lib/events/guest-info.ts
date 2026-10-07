@@ -2,7 +2,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { EventHostStatus, EventRow } from "@/lib/supabase/types";
 import { upcomingStopsFilter } from "@/lib/events/guest-links";
 import { buildGuestStopRows, type GuestStopRow } from "@/lib/events/guest-stops";
-import type { HostCandidate } from "@/lib/members/mobile-stops";
 import { mobileTagFor, type MobileCategory } from "@/lib/members/mobile-category";
 import { guestEventsForHost, isFoodCategory, type GuestInfo, type ProfileEvent } from "@/lib/events/guest-display";
 
@@ -100,18 +99,23 @@ export async function loadGuestStopRows(supabase: SupabaseClient, hostMemberId: 
   });
 }
 
-/** Every published producer as a possible host (one row per location). */
-export async function loadTaproomHosts(supabase: SupabaseClient): Promise<HostCandidate[]> {
-  const { data } = await supabase
-    .from("members")
-    .select("id, slug, business_name, city, street_address")
-    .eq("status", "published")
-    .eq("member_type", "producer");
-  return ((data ?? []) as Array<Record<string, string | null>>).map((h) => ({
-    id: h.id as string,
-    slug: h.slug as string,
-    name: h.business_name as string,
-    city: h.city ?? "",
-    street: h.street_address ?? null,
-  }));
+/** A Mobile member's own stops that a Guild taproom shows: their page links only these (Part 2). */
+export async function loadShownHostsForGuest(
+  supabase: SupabaseClient,
+  guestMemberId: string,
+  now: Date,
+): Promise<Map<string, { name: string; slug: string }>> {
+  const { data, error } = await supabase
+    .from("event_hosts")
+    .select("event_id, events!inner(member_id), host:members!event_hosts_host_member_id_fkey(slug, business_name)")
+    .eq("status", "shown")
+    .eq("events.member_id", guestMemberId)
+    .or(upcomingStopsFilter(now), { referencedTable: "events" });
+  if (error) throw error;
+  const out = new Map<string, { name: string; slug: string }>();
+  for (const row of (data ?? []) as unknown as Array<{ event_id: string; host: { slug: string; business_name: string } | Array<{ slug: string; business_name: string }> | null }>) {
+    const host = Array.isArray(row.host) ? row.host[0] : row.host;
+    if (host) out.set(row.event_id, { name: host.business_name, slug: host.slug });
+  }
+  return out;
 }

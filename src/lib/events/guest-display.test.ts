@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EventRow } from "@/lib/supabase/types";
-import { dedupeFoodSlots, eventDisplayTitle, guestEventsForHost, isFoodCategory, withHosts } from "./guest-display";
+import { dedupeFoodSlots, eventDisplayTitle, guestEventsForHost, isFoodCategory, attachHosts } from "./guest-display";
 
 const ev = (o: Partial<EventRow>): EventRow => ({
   id: "e", member_id: "m", calendar_connection_id: null, source: "manual", kind: "event", external_event_id: null,
@@ -51,11 +51,11 @@ describe("eventDisplayTitle", () => {
   });
 });
 
-describe("withHosts (a Mobile member's own stops)", () => {
-  const hosts = [{ id: "mars", name: "Mars Brewing Co.", slug: "mars", city: "Rancho Cucamonga", street: "9728 6th St" }];
-  it("a stop at a Guild taproom gets its host; elsewhere, none", () => {
-    const out = withHosts([ev({ id: "a" }), ev({ id: "b", venue_name: "Farmers market" })], hosts);
+describe("attachHosts (a Mobile member's own stops)", () => {
+  it("only stops with a shown link get the taproom", () => {
+    const out = attachHosts([ev({ id: "a" }), ev({ id: "b" })], new Map([["a", { name: "Mars Brewing Co.", slug: "mars" }]]));
     expect(out[0].host).toEqual({ name: "Mars Brewing Co.", slug: "mars" });
     expect(out[1].host).toBeUndefined();
   });
 });
+
