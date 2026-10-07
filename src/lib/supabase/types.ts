@@ -213,6 +213,18 @@ export type EventRow = {
   geocoded_address?: string | null;
 };
 
+/** Guild Mobile members at taprooms (20261007100000_event_hosts.sql). Part 2 adds pending/declined. */
+export type EventHostStatus = "shown" | "hidden";
+
+export type EventHostRow = {
+  event_id: string;
+  host_member_id: string;
+  status: EventHostStatus;
+  status_set_by_user_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type CategoryRow = {
   id: string;
   name: string;
