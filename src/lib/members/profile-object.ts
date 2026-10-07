@@ -1,6 +1,7 @@
 import { getAdjacentInList, type DirectoryEntry } from "@/lib/directory/list-position";
 import { getOgPlaceholderPath } from "@/lib/media/og-placeholder";
 import type { DraftSection, MemberDraftData } from "@/lib/drafts/sections";
+import { dedupeFoodSlots, effectiveStart, type ProfileEvent } from "@/lib/events/guest-display";
 import type {
   CarouselSlideRow,
   CategoryRow,
@@ -34,11 +35,16 @@ export type MemberProfileData = {
   specialHours: SpecialHoursRow[];
   carouselSlides: (CarouselSlideRow & { asset: MediaAssetRow })[];
   links: MemberLinkRow[];
-  events: EventRow[];
+  /** The member's own events plus, at a taproom, Guild Mobile members' shown stops there (`guest` set). */
+  events: ProfileEvent[];
   /** Food vendors from a producer's food calendar ("Food for the next week"); empty otherwise. */
   foodSlots: EventRow[];
+  /** Guild food vendors' stops at this taproom, for the food week (Guild Mobile members at taprooms). */
+  guestFoodSlots: ProfileEvent[];
   /** Whether "Food for the next week" shows: a producer with a food calendar connected. */
   hasFoodCalendar: boolean;
+  /** A Guild food vendor has an upcoming stop here: the food week shows even with no calendar or kitchen. */
+  hasGuestFood: boolean;
   categories: CategoryRow[];
   logoAsset: MediaAssetRow | null;
   coverAsset: MediaAssetRow | null;
@@ -215,7 +221,7 @@ export function upcomingFoodSlots(events: EventRow[], now: Date): EventRow[] {
   );
 }
 
-export function upcomingOrCanceledEvents(events: EventRow[], now: Date): EventRow[] {
+export function upcomingOrCanceledEvents<T extends EventRow>(events: T[], now: Date): T[] {
   return events.filter((event) => {
     if (event.overlay_status === "canceled") return true;
     const effectiveEnd = event.overlay_starts_at
@@ -242,6 +248,8 @@ export type BuildProfileInput = {
   crossLinkLogoBackground: string | null;
   /** A producer with a food calendar connected (member_has_food_calendar). */
   hasFoodCalendar?: boolean;
+  /** Guild Mobile members' shown stops at this taproom (already live: no canceled, postponed or hidden). */
+  guestEvents?: ProfileEvent[];
   siteOrigin: string;
   now: Date;
   flags: {
@@ -275,6 +283,20 @@ export function buildProfileObject(input: BuildProfileInput): MemberProfileData 
     ? `${siteOrigin}/api/member-media/${member.og_image_asset_id}`
     : `${siteOrigin}${getOgPlaceholderPath(member.member_type)}`;
 
+  // Guild Mobile members at taprooms: their stops count as the taproom's
+  // events; food vendors also fill its food week, over the taproom's own
+  // food-calendar entry for the same vendor that day.
+  const guestEvents = member.member_type === "producer" ? upcomingOrCanceledEvents(input.guestEvents ?? [], now) : [];
+  const ownEvents = upcomingOrCanceledEvents(
+    input.events.filter((event) => (event.kind ?? "event") === "event"),
+    now,
+  );
+  const food = dedupeFoodSlots(
+    upcomingFoodSlots(input.events, now),
+    guestEvents.filter((event) => event.guest?.food),
+    member.timezone,
+  );
+
   return {
     member,
     hours: rows.hours,
@@ -293,12 +315,16 @@ export function buildProfileObject(input: BuildProfileInput): MemberProfileData 
     links: [...rows.links].sort((a, b) => a.sort_order - b.sort_order),
     // The same rows carry the member's events and, for a producer with a
     // food calendar, its food vendors (kind 'food'): kept apart here.
-    events: upcomingOrCanceledEvents(
-      input.events.filter((event) => (event.kind ?? "event") === "event"),
-      now,
-    ),
-    foodSlots: upcomingFoodSlots(input.events, now),
+    events: guestEvents.length
+      ? [...ownEvents, ...guestEvents].sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+      : ownEvents,
+    foodSlots: food.own,
+    guestFoodSlots: food.guests,
     hasFoodCalendar: member.member_type === "producer" && input.hasFoodCalendar === true,
+    // Only a stop within the week drawn turns it on (never a week of "Bring your own food").
+    hasGuestFood: food.guests.some(
+      (event) => new Date(effectiveStart(event)).getTime() < now.getTime() + 7 * 24 * 60 * 60 * 1000,
+    ),
     categories: input.categories,
     logoAsset: member.logo_asset_id ? (assetsById.get(member.logo_asset_id) ?? null) : null,
     coverAsset: member.cover_asset_id ? (assetsById.get(member.cover_asset_id) ?? null) : null,

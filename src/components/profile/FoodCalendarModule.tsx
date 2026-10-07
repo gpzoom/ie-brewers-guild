@@ -3,7 +3,9 @@ import type { SpecialHoursDay, WeekdayHours } from "@/lib/hours/open-now";
 import { buildFoodWeek, type FoodDay } from "@/lib/events/food-week";
 import { SectionLabel } from "@/components/profile/SectionLabel";
 import { EventDescription } from "@/components/profile/EventDescription";
-import { formatTimeRange } from "@/components/profile/EventsModule";
+import { formatTimeRange, GuildMemberPill } from "@/components/profile/EventsModule";
+import { Link } from "@tanstack/react-router";
+import type { ProfileEvent } from "@/lib/events/guest-display";
 import { cn } from "@/lib/utils";
 
 // A local YYYY-MM-DD, drawn as the date column (weekday / day / month) --
@@ -53,8 +55,21 @@ function FoodDayRow({
           {day.vendors.map((vendor) => (
             <div key={vendor.id} className="flex min-w-0 items-start gap-3">
               <div className="flex min-w-0 flex-1 flex-col gap-[3px] lg:gap-1">
-                <span className="text-[13px] font-semibold text-ink lg:text-[15px]">
-                  {vendor.title}
+                <span className="flex flex-wrap items-center gap-x-[7px] gap-y-1 text-[13px] font-semibold text-ink lg:text-[15px]">
+                  {vendor.guest ? (
+                    <>
+                      <Link
+                        to="/members/$slug"
+                        params={{ slug: vendor.guest.slug }}
+                        className="underline underline-offset-2 hover:text-brand"
+                      >
+                        {vendor.title}
+                      </Link>
+                      <GuildMemberPill />
+                    </>
+                  ) : (
+                    vendor.title
+                  )}
                 </span>
                 <span className="text-xs text-ink-muted lg:text-[13px]">
                   {vendor.allDay
@@ -97,9 +112,12 @@ export function FoodCalendarModule({
   hours,
   specialHours,
   hasKitchen = false,
+  guestSlots = [],
   label = "Food for the next week",
 }: {
   slots: EventRow[];
+  /** Guild food vendors' stops at this taproom (Guild Mobile members at taprooms). */
+  guestSlots?: ProfileEvent[];
   now: Date;
   timezone: string;
   hours: WeekdayHours[];
@@ -108,7 +126,7 @@ export function FoodCalendarModule({
   hasKitchen?: boolean;
   label?: string;
 }) {
-  const week = buildFoodWeek({ slots, now, timezone, hours, specialHours, hasKitchen });
+  const week = buildFoodWeek({ slots, now, timezone, hours, specialHours, hasKitchen, guestSlots });
   return (
     <section className="flex flex-col gap-[9px] lg:gap-[11px]">
       <SectionLabel>{label}</SectionLabel>

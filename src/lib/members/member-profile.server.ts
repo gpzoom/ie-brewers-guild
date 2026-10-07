@@ -15,6 +15,7 @@ import {
   type ProfileRows,
 } from "@/lib/members/profile-object";
 import { loadMemberDraftBundle } from "@/lib/drafts/drafts.server";
+import { loadGuestEventsForHost } from "@/lib/events/guest-info";
 import { DRAFT_SECTIONS, isFullEditor, type DraftSection } from "@/lib/drafts/sections";
 import type {
   CarouselSlideRow,
@@ -122,6 +123,7 @@ async function assembleProfile(args: {
     sameTypeResult,
     siblingResult,
     foodCalendarResult,
+    guestEvents,
   ] = await Promise.all([
     assetIds.length
       ? supabase.from("media_assets").select("*").in("id", assetIds)
@@ -152,6 +154,11 @@ async function assembleProfile(args: {
     member.member_type === "producer"
       ? supabase.rpc("member_has_food_calendar", { target_member_id: member.id })
       : Promise.resolve({ data: false }),
+    // Guild Mobile members' stops at this taproom (spec 2026-10-07): shown
+    // links only. A failed read just leaves them off.
+    member.member_type === "producer"
+      ? loadGuestEventsForHost(supabase, member.id).catch(() => [])
+      : Promise.resolve([]),
   ]);
 
   const assets = (assetsResult.data ?? []) as MediaAssetRow[];
@@ -200,6 +207,7 @@ async function assembleProfile(args: {
     crossLinkLogoUrl,
     crossLinkLogoBackground,
     hasFoodCalendar: foodCalendarResult.data === true,
+    guestEvents,
     siteOrigin: args.siteOrigin,
     now: args.now,
     flags: args.flags,

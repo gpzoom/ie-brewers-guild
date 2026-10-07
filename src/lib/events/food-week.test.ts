@@ -221,3 +221,29 @@ describe("showsFoodWeek", () => {
   });
 });
 
+
+describe("Guild food vendors in the food week", () => {
+  const guest = { name: "Sample Taco Truck", slug: "taco", tag: "FOOD TRUCK", food: true };
+  it("a guest food stop fills its day; closed days stay closed", () => {
+    const week = buildFoodWeek({
+      slots: [],
+      // Thursday Oct 1, 6pm local (open); Monday Oct 5, 6pm local (closed).
+      guestSlots: [
+        { ...slot({ id: "g1", kind: "event", title: null, starts_at: "2026-10-02T01:00:00Z" }), guest },
+        { ...slot({ id: "g2", kind: "event", title: null, starts_at: "2026-10-06T01:00:00Z" }), guest },
+      ],
+      now: NOW,
+      timezone: TZ,
+      hours: HOURS,
+      specialHours: [],
+    });
+    expect(week[1]).toMatchObject({ date: "2026-10-01", status: "vendors" });
+    expect(week[1].vendors[0].title).toBe("Sample Taco Truck");
+    expect(week[1].vendors[0].guest?.slug).toBe("taco");
+    expect(week[5]).toMatchObject({ date: "2026-10-05", status: "closed", vendors: [] });
+  });
+  it("showsFoodWeek: a producer with a Guild food stop this week shows the week even with no calendar or kitchen", () => {
+    expect(showsFoodWeek({ memberType: "producer", hasFoodCalendar: false, hasKitchen: false, hasGuestFood: true })).toBe(true);
+    expect(showsFoodWeek({ memberType: "producer", hasFoodCalendar: false, hasKitchen: false, hasGuestFood: false })).toBe(false);
+  });
+});

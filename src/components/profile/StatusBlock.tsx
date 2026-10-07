@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import { computeOpenNow, type OpenNowResult, type SpecialHoursDay, type WeekdayHours } from "@/lib/hours/open-now";
-import type { EventRow, MemberRow } from "@/lib/supabase/types";
+import type { MemberRow } from "@/lib/supabase/types";
 import { getMemberThemeHex } from "@/lib/theme/member-themes";
+import { eventDisplayTitle, type ProfileEvent } from "@/lib/events/guest-display";
 
 type StatusBlockProps = {
   member: MemberRow;
   hours: WeekdayHours[];
   specialHours: SpecialHoursDay[];
-  tonightEvent: EventRow | null; // the earliest non-postponed/canceled event starting today, if any
+  tonightEvent: ProfileEvent | null; // the earliest non-postponed/canceled event starting today, if any
   // Server-computed instant (MemberProfileData.now, reconstructed by the
   // caller), not read fresh here via `new Date()`/`Date.now()`. Cloudflare
   // Workers render in UTC and the visitor's browser renders in its own
@@ -126,7 +127,7 @@ export function StatusBlock({ member, hours, specialHours, tonightEvent, now }: 
         };
       }
     } else {
-      if (tonightEvent) lines.push(`Tonight — ${tonightEvent.title ?? tonightEvent.venue_name ?? "on tap"}`);
+      if (tonightEvent) lines.push(`Tonight — ${eventDisplayTitle(tonightEvent) ?? "on tap"}`);
       const directions = mapsDirectionsUrl(member);
       if (directions) {
         primary = {

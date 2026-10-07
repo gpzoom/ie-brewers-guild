@@ -369,3 +369,40 @@ describe("buildProfileObject", () => {
     expect(data.member.theme).toBe("teal");
   });
 });
+
+describe("buildProfileObject with Guild members at the taproom", () => {
+  const truck = { name: "Sample Taco Truck", slug: "taco", tag: "FOOD TRUCK", food: true };
+  const singer = { name: "Karaoke Kim", slug: "kim", tag: "ENTERTAINMENT", food: false };
+  it("guest stops join Upcoming events in date order; food guests fill the food week, over the taproom's own entry for them", () => {
+    const data = buildProfileObject(
+      input({
+        events: [
+          event({ id: "own1", starts_at: "2026-09-26T02:00:00Z" }),
+          event({ id: "own3", starts_at: "2026-09-28T02:00:00Z" }),
+          event({ id: "ownfood", kind: "food", title: "Sample Taco Truck Co.", starts_at: "2026-09-27T01:30:00Z" }),
+        ],
+        guestEvents: [
+          { ...event({ id: "g2", member_id: "t", title: null, starts_at: "2026-09-27T01:00:00Z" }), guest: truck },
+          { ...event({ id: "g4", member_id: "k", title: "Karaoke Night", starts_at: "2026-09-29T03:00:00Z" }), guest: singer },
+        ],
+      }),
+    );
+    expect(data.events.map((e) => e.id)).toEqual(["own1", "g2", "own3", "g4"]);
+    expect(data.foodSlots.map((e) => e.id)).toEqual([]);
+    expect(data.guestFoodSlots.map((e) => e.id)).toEqual(["g2"]);
+    expect(data.hasGuestFood).toBe(true);
+  });
+  it("a food guest weeks away doesn't turn the food week on", () => {
+    const data = buildProfileObject(
+      input({ guestEvents: [{ ...event({ id: "later", member_id: "t", title: null, starts_at: "2026-10-20T01:00:00Z" }), guest: truck }] }),
+    );
+    expect(data.hasGuestFood).toBe(false);
+    expect(data.events.map((e) => e.id)).toEqual(["later"]);
+  });
+  it("no guests: unchanged", () => {
+    const data = buildProfileObject(input({ events: [event({ id: "own1", starts_at: "2026-09-26T02:00:00Z" })] }));
+    expect(data.events.map((e) => e.id)).toEqual(["own1"]);
+    expect(data.guestFoodSlots).toEqual([]);
+    expect(data.hasGuestFood).toBe(false);
+  });
+});

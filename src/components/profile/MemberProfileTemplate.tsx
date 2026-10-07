@@ -74,6 +74,7 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
     memberType: member.member_type,
     hasFoodCalendar: data.hasFoodCalendar,
     hasKitchen: member.has_kitchen === true,
+    hasGuestFood: data.hasGuestFood,
   });
   const linksVisible = links.some((link) => isHttpUrl(link.url));
   const contactLocationText = member.member_type === "mobile" ? member.service_area : member.street_address;
@@ -154,6 +155,7 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
   const foodWeek = foodVisible ? (
     <FoodCalendarModule
       slots={data.foodSlots}
+      guestSlots={data.guestFoodSlots}
       now={now}
       timezone={member.timezone}
       hours={weekdayHours}

@@ -6,6 +6,7 @@ import {
   type WeekdayHours,
 } from "@/lib/hours/open-now";
 import type { EventRow } from "@/lib/supabase/types";
+import { effectiveStart, type GuestInfo, type ProfileEvent } from "@/lib/events/guest-display";
 
 /**
  * "Food for the next week" (docs/member-profiles.md, "Events" > "Food calendar"):
@@ -29,8 +30,13 @@ export function showsFoodWeek(params: {
   memberType: string;
   hasFoodCalendar: boolean;
   hasKitchen: boolean;
+  /** A Guild food vendor has a stop at this taproom (Guild Mobile members at taprooms, 2026-10-07). */
+  hasGuestFood?: boolean;
 }): boolean {
-  return params.memberType === "producer" && (params.hasFoodCalendar || params.hasKitchen);
+  return (
+    params.memberType === "producer" &&
+    (params.hasFoodCalendar || params.hasKitchen || params.hasGuestFood === true)
+  );
 }
 
 export type FoodVendor = {
@@ -40,6 +46,8 @@ export type FoodVendor = {
   endsAt: string | null;
   allDay: boolean;
   description: string | null;
+  /** A Guild Mobile member's linked stop: the title links to their profile. */
+  guest?: GuestInfo;
 };
 
 export type FoodDay = {
@@ -86,8 +94,10 @@ export function buildFoodWeek(params: {
   specialHours: SpecialHoursDay[];
   /** The member's "We have our own kitchen" switch. */
   hasKitchen?: boolean;
+  /** Guild food vendors' linked stops here (already filtered to shown, live ones). Closed days stay closed. */
+  guestSlots?: ProfileEvent[];
 }): FoodDay[] {
-  const { slots, now, timezone, hours, specialHours, hasKitchen = false } = params;
+  const { slots, now, timezone, hours, specialHours, hasKitchen = false, guestSlots = [] } = params;
   const today = getZonedNow(now, timezone).date;
 
   const byDate = new Map<string, FoodVendor[]>();
@@ -103,6 +113,25 @@ export function buildFoodWeek(params: {
       allDay: slot.all_day === true,
       description: slot.description?.trim() || null,
     });
+    byDate.set(date, list);
+  }
+
+  for (const slot of guestSlots) {
+    if (!slot.guest) continue;
+    const startsAt = effectiveStart(slot);
+    const date = localDate(startsAt, timezone);
+    if (isClosedOnDate(date, hours, specialHours)) continue;
+    const list = byDate.get(date) ?? [];
+    list.push({
+      id: slot.id,
+      title: slot.guest.name,
+      startsAt,
+      endsAt: slot.overlay_status === "rescheduled" ? null : slot.ends_at,
+      allDay: slot.all_day === true,
+      description: null,
+      guest: slot.guest,
+    });
+    list.sort((a, b) => a.startsAt.localeCompare(b.startsAt));
     byDate.set(date, list);
   }
 

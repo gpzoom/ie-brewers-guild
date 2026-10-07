@@ -1,10 +1,12 @@
+import { Link } from "@tanstack/react-router";
 import type { EventRow, MemberType } from "@/lib/supabase/types";
+import type { ProfileEvent } from "@/lib/events/guest-display";
 import { SectionLabel } from "@/components/profile/SectionLabel";
 import { cn } from "@/lib/utils";
 import { EventDescription } from "@/components/profile/EventDescription";
 
 type EventsModuleProps = {
-  events: EventRow[];
+  events: ProfileEvent[];
   memberType: MemberType;
   // The member's own IANA timezone (spec, "Computing 'open now'", rule 1 --
   // the same rule applies to displaying an event's time: it must be the
@@ -56,12 +58,31 @@ export function formatTimeRange(startIso: string, endIso: string | null, timezon
   return startPeriod === endPeriod ? `${start.slice(0, -3)} – ${end}` : `${start} – ${end}`;
 }
 
-function syncedLabel(events: EventRow[]): string | null {
+function syncedLabel(all: ProfileEvent[]): string | null {
+  // A Guild member's stop here comes from their schedule, not this member's calendar.
+  const events = all.filter((event) => !event.guest);
   if (events.length === 0) return null;
   if (events.every((event) => event.source === "google")) return "Synced from Google Calendar";
   if (events.every((event) => event.source === "google" || event.source === "ics"))
     return "Synced from calendar";
   return null;
+}
+
+/** The mark on a Guild Mobile member's stop at a taproom (artboard GV3). */
+export function GuildMemberPill() {
+  return (
+    <span className="rounded-full bg-[#F5E2D0] px-2 py-0.5 text-[9px] font-semibold tracking-[0.08em] text-[#7A4413]">
+      GUILD MEMBER
+    </span>
+  );
+}
+
+function GuestLink({ guest }: { guest: NonNullable<ProfileEvent["guest"]> }) {
+  return (
+    <Link to="/members/$slug" params={{ slug: guest.slug }} className="underline underline-offset-2 hover:text-brand">
+      {guest.name}
+    </Link>
+  );
 }
 
 const BADGE_STYLES: Record<NonNullable<EventRow["overlay_status"]>, string> = {
@@ -133,10 +154,12 @@ export function EventsModule({ events, memberType, timezone }: EventsModuleProps
           // Title line: the event's own name, else its venue. The detail
           // line carries the time plus whatever of venue/city isn't already
           // the title (venue null = at the member's own address).
+          const guest = event.guest;
           const title = event.title ?? event.venue_name ?? "Event";
-          const place = [event.title ? event.venue_name : null, event.city]
-            .filter(Boolean)
-            .join(", ");
+          // A Guild member's stop here: the venue is this taproom, so no place.
+          const place = guest
+            ? ""
+            : [event.title ? event.venue_name : null, event.city].filter(Boolean).join(", ");
           const struck = isPostponed || isCanceled;
           const description = event.description?.trim() || null;
 
@@ -189,8 +212,9 @@ export function EventsModule({ events, memberType, timezone }: EventsModuleProps
                       isCanceled ? "text-ink-muted" : "text-ink",
                     )}
                   >
-                    {title}
+                    {guest && !event.title ? <GuestLink guest={guest} /> : title}
                   </span>
+                  {guest && <GuildMemberPill />}
                   {event.overlay_status && (
                     <span
                       className={cn(
@@ -215,6 +239,18 @@ export function EventsModule({ events, memberType, timezone }: EventsModuleProps
                       .filter(Boolean)
                       .join(" · ")}
                   </span>
+                  {guest && (
+                    <>
+                      {" · "}
+                      {event.title ? (
+                        <>
+                          with <GuestLink guest={guest} />
+                        </>
+                      ) : (
+                        guest.tag.toLowerCase()
+                      )}
+                    </>
+                  )}
                 </span>
                 {event.overlay_note && (
                   <span
