@@ -253,7 +253,19 @@ Decided with the owner on 6 and 7 October 2026 (spec `docs/superpowers/specs/202
 - **Where it shows:** in the taproom's **Upcoming events** (the guest's title, or their name, with a **GUILD MEMBER** mark and a link to them; "with *Name*" when the stop has its own title), and in the producer's "Tonight —" line. For **food** members (first category Food Truck or Pop-up Food Vendor) also in **Food for the next week**, over the taproom's own food-calendar entry for the same vendor that day; a Guild food stop this week turns the food week on even with no food calendar or kitchen. Closed days stay Closed. On the **homepage** it's one card, the taproom's, "with a Guild member". Canceled, postponed and member-hidden stops show nowhere, but keep their link.
 - **The member's own page** links each such stop to the taproom: "Guild taproom →", or "at *Taproom* →" after the stop's own title. This follows the stop, whatever the taproom chose.
 - **Hide and Show:** "Guild members at your taproom" on the taproom's **Events** page (and the Food page lists its Guild food vendors), for the owner and both editor roles, and Guild admins through Edit as them (audited). Through `set_event_host_status`. Hidden stops come off the taproom's profile, food week and homepage, not the member's own page.
-- **Part 2 (next):** "Ask me first" (Approve or Decline) and emails to the taproom (GV2).
+- **The member's own page** (Part 2) links a stop to the taproom only while the taproom **shows** it; hidden, declined or waiting visits are listed without the link.
+
+#### Part 2: "Ask me first" and emails (owner, 7 October 2026)
+
+Spec `docs/superpowers/specs/2026-10-07-guild-members-at-taprooms-part-2-design.md`; artboards GV1 and GV2.
+
+- **The setting**, on the Events page box: **Show them on my page right away** (default) or **Ask me first** (`members.guest_stops_mode`, through `set_guest_stops_mode`). The owner and full editors change it (and Guild admins through Edit as them, audited); a Photos & events editor sees it read-only. Switching back to Show right away turns waiting visits into shown ones.
+- **Statuses:** shown ("On your page", Hide), hidden ("Hidden from your page", Show), **pending** ("Waiting for approval", **Approve** / **Decline**), **declined** ("Declined", Show). A new visit starts shown or pending by the taproom's setting; a date or time change keeps the status; a move to another taproom starts fresh there. The Food page lists its Guild food vendors with the same buttons.
+- **Emails** to the taproom's **owner and full editors**, only about visits that are shown or waiting, and only upcoming ones: a new visit ("…is coming to…", with **Hide this visit**), a request ("Approve a visit?", with **Approve** / **Decline**), a change ("Changed: … moved to …") and a cancel ("Canceled: …", also when the stop is deleted, postponed, hidden by the member, or moved away). Everything for one taproom from one 15-minute run is **one email** ("4 Guild member visits at …").
+- **How it's sent:** the linker writes notes into `guest_stop_notices` (a delete trigger adds one when a link disappears); the 15-minute job claims them (`claim_guest_stop_notices`, so the two Workers never send the same one), groups them per taproom and sends through Resend; a failed send is retried, up to 5 times.
+- **The buttons** open `/visit/<signed link>`: it shows the visit and one button (Approve this visit / Decline this visit / Hide it from my page). Opening it changes nothing, so an email scanner can't answer for the taproom. The link lasts until the visit is over.
+- **Staging vs the live site:** each Worker knows which it is from `SITE_ORIGIN` (in `wrangler.jsonc` / `wrangler.staging.jsonc`). The live site sends for every taproom except the **Sample** test members; staging sends only theirs, to the test inbox (boblelle77+iscadmin@gmail.com).
+- **Secret:** `GUEST_STOP_LINK_SECRET` (both Workers, Cloudflare → Settings → Variables and Secrets) signs the button links. Without it nothing is sent.
 
 ## Homepage
 
@@ -446,6 +458,7 @@ Resend, called from a Worker. Supabase Auth sends the magic link; everything els
 | Hours stale past 90 days | the member | One-click confirmation — the link itself sets the timestamp, no login |
 | Creator uploads to a gallery | the member | Something is waiting for review |
 | Super admin invites a Guild admin | the invitee | Who invited them, what a Guild admin does, and a sign-in link; the invite lasts 14 days |
+| A Guild member lists, changes or cancels a visit at a taproom | the taproom's owner and full editors | One email per taproom per 15 minutes, with Hide, or Approve / Decline when Ask me first is on (see Guild Mobile members at taprooms, Part 2) |
 | Help button message | the site owner | The bug report or feature request, with who sent it, the profile, the page and the device (see Help button) |
 
 On staging, Guild-bound mail (contact form, type changed in setup) goes to the test inbox **boblelle77+iscadmin@gmail.com** instead of the real Guild inbox; production and local dev use the real one. The public contact address shown on the site doesn't change.
