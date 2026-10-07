@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { EventRow } from "@/lib/supabase/types";
+import type { EventHostStatus, EventRow } from "@/lib/supabase/types";
+import { upcomingStopsFilter } from "@/lib/events/guest-links";
+import { buildGuestStopRows, type GuestStopRow } from "@/lib/events/guest-stops";
 import type { HostCandidate } from "@/lib/members/mobile-stops";
 import { mobileTagFor, type MobileCategory } from "@/lib/members/mobile-category";
 import { guestEventsForHost, isFoodCategory, type GuestInfo, type ProfileEvent } from "@/lib/events/guest-display";
@@ -37,28 +39,65 @@ export async function loadGuestInfo(supabase: SupabaseClient, memberIds: string[
   return out;
 }
 
+const LINKED_EVENT_COLUMNS =
+  "id, member_id, calendar_connection_id, source, kind, external_event_id, title, description, starts_at, ends_at, all_day, venue_name, city, address, overlay_status, overlay_starts_at, overlay_note, overlay_set_at, is_hidden";
+
+/**
+ * A taproom's links joined to their upcoming events, in one query bounded
+ * by date (links are never pruned, so they pile up over the years). The
+ * inner join also drops links to events the viewer can't read.
+ */
+async function loadUpcomingLinks(
+  supabase: SupabaseClient,
+  hostMemberId: string,
+  now: Date,
+  onlyShown: boolean,
+): Promise<Array<{ status: EventHostStatus; event: EventRow }>> {
+  let query = supabase
+    .from("event_hosts")
+    .select(`event_id, status, events!inner(${LINKED_EVENT_COLUMNS})`)
+    .eq("host_member_id", hostMemberId);
+  if (onlyShown) query = query.eq("status", "shown");
+  const { data, error } = await query.or(upcomingStopsFilter(now), { referencedTable: "events" });
+  if (error) throw error;
+  return ((data ?? []) as unknown as Array<{ status: EventHostStatus; events: EventRow | EventRow[] }>).flatMap((row) => {
+    const event = Array.isArray(row.events) ? row.events[0] : row.events;
+    return event ? [{ status: row.status, event }] : [];
+  });
+}
+
 /**
  * The Guild members' stops a taproom shows: its shown links (filtered here
  * too, since the host's own people can read hidden ones), their events and
  * guests, minus canceled, postponed and hidden stops.
  */
-export async function loadGuestEventsForHost(supabase: SupabaseClient, hostMemberId: string): Promise<ProfileEvent[]> {
-  const { data: links } = await supabase
-    .from("event_hosts")
-    .select("event_id")
-    .eq("host_member_id", hostMemberId)
-    .eq("status", "shown");
-  const ids = ((links ?? []) as Array<{ event_id: string }>).map((l) => l.event_id);
-  if (ids.length === 0) return [];
-  const { data: events } = await supabase.from("events").select("*").in("id", ids);
-  const rows = (events ?? []) as EventRow[];
-  const guests = await loadGuestInfo(supabase, rows.map((e) => e.member_id));
+export async function loadGuestEventsForHost(
+  supabase: SupabaseClient,
+  hostMemberId: string,
+  now: Date = new Date(),
+): Promise<ProfileEvent[]> {
+  const links = await loadUpcomingLinks(supabase, hostMemberId, now, true);
+  if (links.length === 0) return [];
+  const guests = await loadGuestInfo(supabase, links.map((l) => l.event.member_id));
   return guestEventsForHost(
-    rows.flatMap((event) => {
+    links.flatMap(({ event }) => {
       const guest = guests.get(event.member_id);
       return guest ? [{ event, guest }] : [];
     }),
   );
+}
+
+/** The taproom's Events box (GV1): every upcoming link, hidden ones included. */
+export async function loadGuestStopRows(supabase: SupabaseClient, hostMemberId: string, now: Date): Promise<GuestStopRow[]> {
+  const links = await loadUpcomingLinks(supabase, hostMemberId, now, false);
+  if (links.length === 0) return [];
+  const guests = await loadGuestInfo(supabase, links.map((l) => l.event.member_id));
+  return buildGuestStopRows({
+    links: links.map((l) => ({ event_id: l.event.id, status: l.status })),
+    events: links.map((l) => l.event),
+    guests,
+    now,
+  });
 }
 
 /** Every published producer as a possible host (one row per location). */

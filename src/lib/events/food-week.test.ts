@@ -247,3 +247,18 @@ describe("Guild food vendors in the food week", () => {
     expect(showsFoodWeek({ memberType: "producer", hasFoodCalendar: false, hasKitchen: false, hasGuestFood: false })).toBe(false);
   });
 });
+
+describe("buildFoodWeek: no doubles with a Guild vendor", () => {
+  it("the taproom's own entry for the same vendor that day gives way to the Guild entry (profile and Food page alike)", () => {
+    const guest = { name: "Sample Taco Truck", slug: "taco", tag: "FOOD TRUCK", food: true };
+    const week = buildFoodWeek({
+      slots: [slot({ id: "own", title: "Sample Taco Truck Co.", starts_at: "2026-10-02T01:30:00Z" })],
+      guestSlots: [{ ...slot({ id: "g1", kind: "event", title: null, starts_at: "2026-10-02T01:00:00Z" }), guest }],
+      now: NOW,
+      timezone: TZ,
+      hours: HOURS,
+      specialHours: [],
+    });
+    expect(week[1].vendors.map((v) => v.id)).toEqual(["g1"]);
+  });
+});

@@ -6,7 +6,7 @@ import {
   type WeekdayHours,
 } from "@/lib/hours/open-now";
 import type { EventRow } from "@/lib/supabase/types";
-import { effectiveStart, type GuestInfo, type ProfileEvent } from "@/lib/events/guest-display";
+import { dedupeFoodSlots, effectiveStart, type GuestInfo, type ProfileEvent } from "@/lib/events/guest-display";
 
 /**
  * "Food for the next week" (docs/member-profiles.md, "Events" > "Food calendar"):
@@ -97,7 +97,9 @@ export function buildFoodWeek(params: {
   /** Guild food vendors' linked stops here (already filtered to shown, live ones). Closed days stay closed. */
   guestSlots?: ProfileEvent[];
 }): FoodDay[] {
-  const { slots, now, timezone, hours, specialHours, hasKitchen = false, guestSlots = [] } = params;
+  const { now, timezone, hours, specialHours, hasKitchen = false, guestSlots = [] } = params;
+  // No doubles: the taproom's own entry for a Guild vendor that day gives way to the linked one.
+  const slots = dedupeFoodSlots(params.slots, guestSlots, timezone).own;
   const today = getZonedNow(now, timezone).date;
 
   const byDate = new Map<string, FoodVendor[]>();

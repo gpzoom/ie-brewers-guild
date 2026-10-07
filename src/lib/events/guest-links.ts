@@ -26,6 +26,18 @@ export type GuestStop = {
   overlay_starts_at: string | null;
 };
 
+/**
+ * A PostgREST .or() filter for stops that could be in the linking window:
+ * starting (or rescheduled to start) from two days back -- an all-day or
+ * long stop still going on -- to just past GUEST_LINK_DAYS ahead. Every
+ * read of stops or links uses it, so none grows with a member's history.
+ */
+export function upcomingStopsFilter(now: Date): string {
+  const from = new Date(now.getTime() - 2 * DAY_MS).toISOString();
+  const to = new Date(now.getTime() + (GUEST_LINK_DAYS + 1) * DAY_MS).toISOString();
+  return `and(starts_at.gte.${from},starts_at.lt.${to}),and(overlay_starts_at.gte.${from},overlay_starts_at.lt.${to})`;
+}
+
 export type ExistingLink = { event_id: string; host_member_id: string; status: EventHostStatus };
 
 /** A rescheduled stop counts by its new start time (the same rule as stopStart in mobile-stops). */

@@ -1,13 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
-import { loadGuestInfo } from "@/lib/events/guest-info";
-import {
-  buildGuestStopRows,
-  GUEST_STOP_EVENT_COLUMNS,
-  type GuestStopEvent,
-  type GuestStopRow,
-} from "@/lib/events/guest-stops";
+import { loadGuestStopRows } from "@/lib/events/guest-info";
+import type { GuestStopRow } from "@/lib/events/guest-stops";
 import type { EventHostStatus } from "@/lib/supabase/types";
 
 /**
@@ -21,22 +16,14 @@ export const listGuestStops = createServerFn({ method: "GET" })
     const supabase = await getSupabaseServerClientForRequest();
     const { data: auth } = await supabase.auth.getUser();
     if (!auth.user) throw new Error("Please sign in again.");
-    const [linksResult, memberResult] = await Promise.all([
-      supabase.from("event_hosts").select("event_id, status").eq("host_member_id", data.memberId),
+    const [stops, memberResult] = await Promise.all([
+      loadGuestStopRows(supabase, data.memberId, new Date()).catch(() => {
+        throw new Error("Couldn't load the Guild members at your taproom.");
+      }),
       supabase.from("members").select("street_address").eq("id", data.memberId).maybeSingle(),
     ]);
-    if (linksResult.error) throw new Error("Couldn't load the Guild members at your taproom.");
     const street = (memberResult.data?.street_address as string | null | undefined) ?? null;
-    const links = (linksResult.data ?? []) as Array<{ event_id: string; status: EventHostStatus }>;
-    if (links.length === 0) return { street, stops: [] };
-    const { data: events, error } = await supabase
-      .from("events")
-      .select(GUEST_STOP_EVENT_COLUMNS)
-      .in("id", links.map((l) => l.event_id));
-    if (error) throw new Error("Couldn't load the Guild members at your taproom.");
-    const rows = (events ?? []) as GuestStopEvent[];
-    const guests = await loadGuestInfo(supabase, rows.map((e) => e.member_id));
-    return { street, stops: buildGuestStopRows({ links, events: rows, guests, now: new Date() }) };
+    return { street, stops };
   });
 
 export const setGuestStopStatus = createServerFn({ method: "POST" })
