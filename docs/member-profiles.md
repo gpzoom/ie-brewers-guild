@@ -244,6 +244,17 @@ Decided with the owner on 27 September 2026. **Producers only.** A taproom can c
 - Below the connection box, the member sees **Next 7 days on your profile**, drawn the same way; Refresh now reloads it.
 - Food entries are stored in `events` with `kind = 'food'`, so the sync, the removal of deleted or untagged entries, hiding, the public read policy and the super admin's sync timer all apply unchanged. Everything that means "events" (the Events list, "Upcoming events", "Tonight", "Next appearance", the publish check, the Finish-your-profile check) reads `kind = 'event'` only.
 
+### Guild Mobile members at taprooms (Part 1)
+
+Decided with the owner on 6 and 7 October 2026 (spec `docs/superpowers/specs/2026-10-07-guild-members-at-taprooms-design.md`; artboards GV1, GV3, GV4). A Guild **Mobile** member (a food truck, a pop-up, an entertainer) who lists a stop at a Guild **producer's** taproom gets that stop counted as **one of the taproom's events**. The member does nothing new.
+
+- **Which taproom:** the Members map's rule (`matchHost`): the stop's venue name matches the business name (ignoring case, punctuation and a trailing "Co."), or its address starts with the taproom's street address (what a Google-picked venue gives). Several locations: the one in the stop's city. Hosts are published producers only.
+- **The link:** `event_hosts` (one row per stop, `shown` or `hidden`), written only by the linker (`relinkGuestStops`, service role) after a Mobile member saves a stop, after "Refresh now" on their calendar, and every 15 minutes. Only stops ending in the next 60 days are linked. A hide stays while the stop stays at that taproom; a stop moved to another taproom starts shown there.
+- **Where it shows:** in the taproom's **Upcoming events** (the guest's title, or their name, with a **GUILD MEMBER** mark and a link to them; "with *Name*" when the stop has its own title), and in the producer's "Tonight —" line. For **food** members (first category Food Truck or Pop-up Food Vendor) also in **Food for the next week**, over the taproom's own food-calendar entry for the same vendor that day; a Guild food stop this week turns the food week on even with no food calendar or kitchen. Closed days stay Closed. On the **homepage** it's one card, the taproom's, "with a Guild member". Canceled, postponed and member-hidden stops show nowhere, but keep their link.
+- **The member's own page** links each such stop to the taproom: "Guild taproom →", or "at *Taproom* →" after the stop's own title. This follows the stop, whatever the taproom chose.
+- **Hide and Show:** "Guild members at your taproom" on the taproom's **Events** page (and the Food page lists its Guild food vendors), for the owner and both editor roles, and Guild admins through Edit as them (audited). Through `set_event_host_status`. Hidden stops come off the taproom's profile, food week and homepage, not the member's own page.
+- **Part 2 (next):** "Ask me first" (Approve or Decline) and emails to the taproom (GV2).
+
 ## Homepage
 
 Decided with the owner on 28 September 2026 (artboards A, A2, A3). The three placeholder pillars (Advocacy, Education, Events) and the Featured Event section are gone. In their place, right under the hero:

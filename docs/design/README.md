@@ -67,6 +67,10 @@ Placeholders like `[MEMBER NAME]` in the artboards are stand-ins for real data. 
 | B2 `MembersV2DesktopB` | The same, one card per member with its locations inside (alternative to B1) | same |
 | B3 `MembersV2Phone` · B4 `MembersV2PhoneFilters` · B5 `MembersV2PhoneMap` | Members page v2 on a phone: list, Filters panel, map view | same |
 | B6 `MembersV2States` | Members page v2 card states: food truck's stop today, Allied Member, Near me, no results | same |
+| GV1 `GuildVendorFood` | Events page: "Guild members at your taproom", Hide/Show (producers; the Food page's preview lists Guild food vendors with the same buttons). Built 2026-10-07 | `admin/GuestStopsBox` in `routes/admin.events.tsx` and `portal/PortalSectionView`; `admin/FoodCalendarSection` |
+| GV2 `GuildVendorEmails` | Part 2 (not built): "Ask me first" and the taproom's emails | — |
+| GV3 `GuildVendorProfiles` | The taproom's profile (guest stops in Upcoming events and Food this week) and the Mobile member's own stops linking to the taproom. Built 2026-10-07 | `profile/EventsModule`, `profile/FoodCalendarModule`; `lib/events/guest-display.ts`, `guest-info.ts` |
+| GV4 `GuildVendorHomepage` | Homepage card: a Guild member's stop as the taproom's event, "with a Guild member". Built 2026-10-07 | `home/MemberEventsCarousel`; `lib/home/member-events.ts` |
 
 Screens with no artboard (e.g. `/admin/discount`) follow the same shell and design language.
 
