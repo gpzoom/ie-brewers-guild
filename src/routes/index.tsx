@@ -9,9 +9,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Inland Southern California Brewers Guild — Home" },
-      { name: "description", content: "The home of independent craft breweries. Advocacy, education, and events that strengthen our local brewing community." },
+      { name: "description", content: "The home of independent craft alcohol producers. The Guild promotes, supports, and connects independently owned producers and industry partners throughout our region." },
       { property: "og:title", content: "Inland Southern California Brewers Guild — Home" },
-      { property: "og:description", content: "The home of independent craft breweries." },
+      { property: "og:description", content: "The home of independent craft alcohol producers." },
       { property: "og:image", content: heroImg },
       { property: "twitter:image", content: heroImg },
     ],
@@ -28,12 +28,12 @@ function HomePage() {
           super admin uploaded on Settings, or the built-in one. */}
       <PageHero
         image={heroImageUrl ?? heroImg}
-        title="Welcome to the home of independent craft breweries."
-        subtitle="The Inland Southern California Brewers Guild promotes and protects local independently-owned breweries and advocates for the strengthening of the craft beer industry."
+        title="Welcome to the home of independent craft alcohol producers."
+        subtitle="The Inland Southern California Brewers Guild promotes, supports, and connects independently owned craft alcohol producers and industry partners throughout our region."
         minHeight="min-h-[42vh]"
         paddingY="py-10 md:py-12"
       >
-        <Button asChild size="lg"><Link to="/members">Meet our members</Link></Button>
+        <Button asChild size="lg"><Link to="/members">Meet our members & partners</Link></Button>
         <Button asChild size="lg" variant="outline"><a href="#coming-up">Upcoming events</a></Button>
       </PageHero>
 

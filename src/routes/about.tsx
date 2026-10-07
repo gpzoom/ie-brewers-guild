@@ -7,7 +7,7 @@ export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
       { title: "About — Inland Southern California Brewers Guild" },
-      { name: "description", content: "Learn about the Inland Southern California Brewers Guild's mission, history, and leadership team supporting independent breweries." },
+      { name: "description", content: "Learn about the Inland Southern California Brewers Guild's mission, history, and leadership team supporting independent craft alcohol producers." },
       { property: "og:title", content: "About — Inland Southern California Brewers Guild" },
       { property: "og:description", content: "Our mission, history, and leadership." },
       { property: "og:image", content: heroImg },
@@ -33,21 +33,28 @@ function AboutPage() {
         image={heroImg}
         eyebrow="About the guild"
         title="Independent. Local. Together."
-        subtitle="A nonprofit trade association representing independently-owned craft breweries — built by brewers, for brewers."
+        subtitle="A nonprofit trade association bringing together independent craft alcohol producers and the businesses that support them — built by our local industry, for our local industry."
       />
 
       <section className="mx-auto max-w-4xl px-4 py-20 md:px-6">
         <SectionHeader eyebrow="Our mission" title="Why the guild exists." />
         <div className="mt-6 space-y-5 text-foreground/85">
           <p>
-            The Inland Southern California Brewers Guild promotes and protects local independently-owned craft breweries
-            and advocates for the strengthening of the craft beer industry. We believe a thriving
-            local brewing scene means better beer, stronger small businesses, and more vibrant
-            neighborhoods.
+            The Inland Southern California Brewers Guild promotes, supports, and advocates for
+            independently owned craft alcohol producers throughout our region. Our membership
+            includes breweries, wineries, cideries, meaderies, distilleries, and other independent
+            craft beverage producers.
           </p>
           <p>
-            Our members range from one-barrel taprooms to regional standouts. Together they share
-            knowledge, raw materials, advocacy power, and a stage at our community events.
+            Our Guild also welcomes brewing and beverage supply companies, equipment manufacturers,
+            service providers, retailers, and other affiliate businesses that support the craft
+            alcohol industry.
+          </p>
+          <p>
+            From small independent producers to established regional businesses, our members share
+            knowledge, resources, education, advocacy, and opportunities to collaborate. By bringing
+            producers, suppliers, and industry partners together, we can strengthen local businesses
+            and build a more connected craft alcohol community.
           </p>
         </div>
       </section>
