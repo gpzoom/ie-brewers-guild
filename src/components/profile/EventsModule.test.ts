@@ -41,3 +41,17 @@ describe("EventsModule: Guild members at the taproom", () => {
     expect(html).not.toContain("GUILD MEMBER");
   });
 });
+
+describe("EventsModule: a Mobile member's stop at a Guild taproom", () => {
+  const host = { name: "Mars Brewing Co.", slug: "mars" };
+  it("venue as the title: 'Guild taproom →' links to the taproom", () => {
+    const html = render([ev({ host })], "mobile");
+    expect(html).toContain("Mars Brewing Co.");
+    expect(html).toMatch(/<a href="\/members\/mars"[^>]*>Guild taproom →<\/a>/);
+  });
+  it("with its own title: 'at Mars Brewing Co. →'", () => {
+    const html = render([ev({ title: "Karaoke Night", host })], "mobile");
+    expect(html).toContain("Karaoke Night");
+    expect(html).toMatch(/<a href="\/members\/mars"[^>]*>at Mars Brewing Co\. →<\/a>/);
+  });
+});

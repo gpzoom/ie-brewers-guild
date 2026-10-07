@@ -215,6 +215,17 @@ export function EventsModule({ events, memberType, timezone }: EventsModuleProps
                     {guest && !event.title ? <GuestLink guest={guest} /> : title}
                   </span>
                   {guest && <GuildMemberPill />}
+                  {event.host && (
+                    // A Mobile member's own stop at a Guild taproom links to it
+                    // (artboard GV3), whatever the taproom chose to show.
+                    <Link
+                      to="/members/$slug"
+                      params={{ slug: event.host.slug }}
+                      className="text-xs font-semibold text-brand hover:text-brand-hover"
+                    >
+                      {event.title ? `at ${event.host.name} →` : "Guild taproom →"}
+                    </Link>
+                  )}
                   {event.overlay_status && (
                     <span
                       className={cn(

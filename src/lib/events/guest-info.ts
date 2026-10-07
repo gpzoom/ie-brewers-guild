@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { EventRow } from "@/lib/supabase/types";
+import type { HostCandidate } from "@/lib/members/mobile-stops";
 import { mobileTagFor, type MobileCategory } from "@/lib/members/mobile-category";
 import { guestEventsForHost, isFoodCategory, type GuestInfo, type ProfileEvent } from "@/lib/events/guest-display";
 
@@ -58,4 +59,20 @@ export async function loadGuestEventsForHost(supabase: SupabaseClient, hostMembe
       return guest ? [{ event, guest }] : [];
     }),
   );
+}
+
+/** Every published producer as a possible host (one row per location). */
+export async function loadTaproomHosts(supabase: SupabaseClient): Promise<HostCandidate[]> {
+  const { data } = await supabase
+    .from("members")
+    .select("id, slug, business_name, city, street_address")
+    .eq("status", "published")
+    .eq("member_type", "producer");
+  return ((data ?? []) as Array<Record<string, string | null>>).map((h) => ({
+    id: h.id as string,
+    slug: h.slug as string,
+    name: h.business_name as string,
+    city: h.city ?? "",
+    street: h.street_address ?? null,
+  }));
 }
