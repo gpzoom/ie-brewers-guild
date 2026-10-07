@@ -195,22 +195,22 @@
       "x": 0,
       "y": 7000,
       "w": 1280,
-      "h": 1400,
-      "title": "GV1 · Proposal — Food page: Guild food vendors (auto or ask first)"
+      "h": 920,
+      "title": "GV1 · Events page — Guild members at your taproom (Part 1: Hide/Show)"
     },
     "GuildVendorEmails.dc.html": {
       "x": 1360,
       "y": 7000,
       "w": 1500,
       "h": 1000,
-      "title": "GV2 · Proposal — emails to the taproom"
+      "title": "GV2 · Emails to the taproom (Part 2 — not yet)"
     },
     "GuildVendorProfiles.dc.html": {
       "x": 2940,
       "y": 7000,
-      "w": 960,
-      "h": 1000,
-      "title": "GV3 · Proposal — one stop on both profiles"
+      "w": 1400,
+      "h": 880,
+      "title": "GV3 · One stop, two profiles — food truck and entertainer"
     },
     "MembersV2Desktop.dc.html": {
       "x": 0,
@@ -267,6 +267,13 @@
       "w": 600,
       "h": 560,
       "title": "T3 · The sign-in email (link and code)"
+    },
+    "GuildVendorHomepage.dc.html": {
+      "x": 4420,
+      "y": 7000,
+      "w": 1000,
+      "h": 660,
+      "title": "GV4 · Homepage — once, as the taproom's event"
     }
   },
   "createdOnFiles": {
@@ -304,8 +311,8 @@
     },
     "hdr5": {
       "kind": "title1",
-      "maxW": 3900,
-      "text": "Proposal — Guild food vendor stops (Phase 1)",
+      "maxW": 5420,
+      "text": "Guild Mobile members at taprooms — Part 1 now (link, show, Hide); Part 2 next (Ask me first, emails)",
       "w": 240,
       "x": 0,
       "y": 6700
@@ -352,6 +359,7 @@
     "GuildVendorFood.dc.html",
     "GuildVendorEmails.dc.html",
     "GuildVendorProfiles.dc.html",
+    "GuildVendorHomepage.dc.html",
     "MembersV2Desktop.dc.html",
     "MembersV2DesktopB.dc.html",
     "MembersV2Phone.dc.html",
