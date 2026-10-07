@@ -195,15 +195,15 @@
       "x": 0,
       "y": 7000,
       "w": 1280,
-      "h": 920,
-      "title": "GV1 · Events page — Guild members at your taproom (Part 1: Hide/Show)"
+      "h": 1060,
+      "title": "GV1 · Events page — Guild members at your taproom (Show right away / Ask me first; Hide, Approve, Decline)"
     },
     "GuildVendorEmails.dc.html": {
       "x": 1360,
       "y": 7000,
       "w": 1500,
-      "h": 1000,
-      "title": "GV2 · Emails to the taproom (Part 2 — not yet)"
+      "h": 1480,
+      "title": "GV2 · Emails to the taproom, and the page their buttons open"
     },
     "GuildVendorProfiles.dc.html": {
       "x": 2940,
@@ -312,7 +312,7 @@
     "hdr5": {
       "kind": "title1",
       "maxW": 5420,
-      "text": "Guild Mobile members at taprooms — Part 1 now (link, show, Hide); Part 2 next (Ask me first, emails)",
+      "text": "Guild Mobile members at taprooms — Part 1 (link, show, Hide) and Part 2 (Ask me first, emails)",
       "w": 240,
       "x": 0,
       "y": 6700

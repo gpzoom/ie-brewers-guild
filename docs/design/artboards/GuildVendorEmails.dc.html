@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Guild food vendors — emails</title>
+<title>Guild member visits — emails and the visit page</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -14,55 +14,84 @@ body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#1
 a{color:#E8913A}a:hover{color:#F2B070}
 </style>
 </helmet>
-<div style="width: 1500px; height: 1000px; box-sizing: border-box; background: #171410; padding: 56px 60px; display: flex; flex-direction: column; gap: 34px;">
+<div style="width: 1500px; height: 1480px; box-sizing: border-box; background: #171410; padding: 56px 60px; display: flex; flex-direction: column; gap: 34px;">
   <div style="display: flex; flex-direction: column; gap: 8px;">
-    <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 34px; font-weight: 800; color: #F9F6F0;">Emails to the taproom's owner</div>
-    <div style="font-size: 15px; color: #B6AC9D; max-width: 1100px; line-height: 1.5;">One email per visit in the coming weeks. When a vendor first connects a calendar full of dates, the taproom gets <b style="color: #F9F6F0;">one summary email</b> listing them, not one each.</div>
+    <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 34px; font-weight: 800; color: #F9F6F0;">Emails to the taproom (owner and full editors)</div>
+    <div style="font-size: 15px; color: #B6AC9D; max-width: 1240px; line-height: 1.5;">Only about upcoming visits the taproom shows or is asked about &mdash; never hidden, declined or past ones. Everything for one taproom from one 15-minute run is <b style="color: #F9F6F0;">one email</b> (&ldquo;4 Guild member visits at Bob&rsquo;s Brewery&rdquo;), each visit with its own buttons. The setting, Show right away or Ask me first, is on the Events page.</div>
   </div>
-  <div style="display: flex; gap: 30px; align-items: flex-start;">
-  <div style="width: 440px; display: flex; flex-direction: column; gap: 12px;">
-    <div style="font-size: 11px; letter-spacing: 0.15em; font-weight: 600; color: #B6AC9D;">1 · SHOWN RIGHT AWAY</div>
+  <div style="display: flex; gap: 30px; align-items: flex-start; flex-wrap: wrap;">
+  <div style="width: 670px; display: flex; flex-direction: column; gap: 12px;">
+    <div style="font-size: 11px; letter-spacing: 0.15em; font-weight: 600; color: #B6AC9D;">1 · NEW VISIT · SHOW RIGHT AWAY</div>
     <div style="background: #FFFFFF; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column;">
       <div style="padding: 14px 20px; background: #EFEAE1; border-bottom: 1px solid #DED7CB; display: flex; flex-direction: column; gap: 3px;">
-        <div style="font-size: 11px; color: #6B6156;">From: ISC Brewers Guild · To: [OWNER EMAIL]</div>
-        <div style="font-size: 15px; font-weight: 600; color: #241F1A; line-height: 1.35;">Tacos El Gordo is coming to Bob's Brewery · Fri, Oct 2</div>
+        <div style="font-size: 11px; color: #6B6156;">From: ISC Brewers Guild · To: the taproom&rsquo;s owner and editors</div>
+        <div style="font-size: 15px; font-weight: 600; color: #241F1A; line-height: 1.35;">Tacos El Gordo is coming to Bob&rsquo;s Brewery · Fri, Oct 2</div>
       </div>
-      <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px; font-size: 14px; line-height: 1.5; color: #3A332C;"><div>Tacos El Gordo, a Guild member, listed a stop at your taproom:</div><div style="display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 10px; background: #F9F6F0; border: 1px solid #EFEAE1;"><div style="font-weight: 600; color: #241F1A;">Friday, October 2</div><div>5:00 – 9:00 pm</div><div style="color: #6B6156;">Bob's Brewery · 9373 Coca Street</div></div><div>It's on your <b>Food for the next week</b> now.</div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;"><a href="#see" style="height: 44px; padding: 0 18px; border-radius: 9px; display: flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none; background: #241F1A; color: #FFFFFF;">See your page</a><a href="#hide" style="height: 44px; padding: 0 18px; border-radius: 9px; display: flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none; border: 1px solid #D3CBBD; background: #F9F6F0; color: #241F1A;">Hide this visit</a></div>
-        <div style="font-size: 12px; color: #6B6156; border-top: 1px solid #EFEAE1; padding-top: 12px;">You get this because "Show it on my page right away" is on. Change it on your Food page.</div>
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px; font-size: 14px; line-height: 1.5; color: #3A332C;"><div>Tacos El Gordo, a Guild member, listed a stop at your taproom:</div><div style="display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 10px; background: #F9F6F0; border: 1px solid #EFEAE1;"><div style="font-weight: 600; color: #241F1A;">Friday, October 2 · 5:00 – 9:00 pm</div><div style="color: #6B6156;">Bob&rsquo;s Brewery · 9373 Coca Street</div></div><div>It&rsquo;s on your page now.</div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;"><a href="#see-your-page" style="height: 44px; padding: 0 18px; border-radius: 9px; display: flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none; border: 1px solid #D3CBBD; background: #F9F6F0; color: #241F1A;">See your page</a><a href="#hide-this-visit" style="height: 44px; padding: 0 18px; border-radius: 9px; display: flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none; background: #BE5A0A; color: #FFFFFF;">Hide this visit</a></div>
+        <div style="font-size: 12px; color: #6B6156; border-top: 1px solid #EFEAE1; padding-top: 12px;">You get this because you&rsquo;re an owner or editor of Bob&rsquo;s Brewery on the ISC Brewers Guild site. Choose Show right away or Ask me first on your Events page.</div>
       </div>
     </div>
   </div>
-  <div style="width: 440px; display: flex; flex-direction: column; gap: 12px;">
-    <div style="font-size: 11px; letter-spacing: 0.15em; font-weight: 600; color: #B6AC9D;">2 · ASK ME FIRST</div>
+  <div style="width: 670px; display: flex; flex-direction: column; gap: 12px;">
+    <div style="font-size: 11px; letter-spacing: 0.15em; font-weight: 600; color: #B6AC9D;">2 · NEW VISIT · ASK ME FIRST</div>
     <div style="background: #FFFFFF; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column;">
       <div style="padding: 14px 20px; background: #EFEAE1; border-bottom: 1px solid #DED7CB; display: flex; flex-direction: column; gap: 3px;">
-        <div style="font-size: 11px; color: #6B6156;">From: ISC Brewers Guild · To: [OWNER EMAIL]</div>
+        <div style="font-size: 11px; color: #6B6156;">From: ISC Brewers Guild · To: the taproom&rsquo;s owner and editors</div>
         <div style="font-size: 15px; font-weight: 600; color: #241F1A; line-height: 1.35;">Approve a visit? Rolling Smoke BBQ · Sat, Oct 3</div>
       </div>
-      <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px; font-size: 14px; line-height: 1.5; color: #3A332C;"><div>Rolling Smoke BBQ, a Guild member, would like to be listed at your taproom:</div><div style="display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 10px; background: #F9F6F0; border: 1px solid #EFEAE1;"><div style="font-weight: 600; color: #241F1A;">Saturday, October 3</div><div>5:00 – 9:00 pm</div><div style="color: #6B6156;">Bob's Brewery · 9373 Coca Street</div></div><div>Nothing shows on your page until you approve.</div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;"><a href="#approve" style="height: 44px; padding: 0 18px; border-radius: 9px; display: flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none; background: #241F1A; color: #FFFFFF;">Approve</a><a href="#decline" style="height: 44px; padding: 0 18px; border-radius: 9px; display: flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none; border: 1px solid #D3CBBD; background: #F9F6F0; color: #241F1A;">Decline</a></div>
-        <div style="font-size: 12px; color: #6B6156; border-top: 1px solid #EFEAE1; padding-top: 12px;">The buttons work without signing in. You can also answer on your Food page.</div>
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px; font-size: 14px; line-height: 1.5; color: #3A332C;"><div>Rolling Smoke BBQ, a Guild member, would like to be listed at your taproom:</div><div style="display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 10px; background: #F9F6F0; border: 1px solid #EFEAE1;"><div style="font-weight: 600; color: #241F1A;">Saturday, October 3 · 5:00 – 9:00 pm</div><div style="color: #6B6156;">Bob&rsquo;s Brewery · 9373 Coca Street</div></div><div>Nothing shows on your page until you approve.</div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;"><a href="#see-your-page" style="height: 44px; padding: 0 18px; border-radius: 9px; display: flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none; border: 1px solid #D3CBBD; background: #F9F6F0; color: #241F1A;">See your page</a><a href="#approve" style="height: 44px; padding: 0 18px; border-radius: 9px; display: flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none; background: #BE5A0A; color: #FFFFFF;">Approve</a><a href="#decline" style="height: 44px; padding: 0 18px; border-radius: 9px; display: flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none; background: #BE5A0A; color: #FFFFFF;">Decline</a></div>
+        <div style="font-size: 12px; color: #6B6156; border-top: 1px solid #EFEAE1; padding-top: 12px;">You get this because you&rsquo;re an owner or editor of Bob&rsquo;s Brewery on the ISC Brewers Guild site. Choose Show right away or Ask me first on your Events page.</div>
       </div>
     </div>
   </div>
-  <div style="width: 440px; display: flex; flex-direction: column; gap: 12px;">
-    <div style="font-size: 11px; letter-spacing: 0.15em; font-weight: 600; color: #B6AC9D;">3 · CHANGED OR CANCELED</div>
+  <div style="width: 670px; display: flex; flex-direction: column; gap: 12px;">
+    <div style="font-size: 11px; letter-spacing: 0.15em; font-weight: 600; color: #B6AC9D;">3 · CHANGED</div>
     <div style="background: #FFFFFF; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column;">
       <div style="padding: 14px 20px; background: #EFEAE1; border-bottom: 1px solid #DED7CB; display: flex; flex-direction: column; gap: 3px;">
-        <div style="font-size: 11px; color: #6B6156;">From: ISC Brewers Guild · To: [OWNER EMAIL]</div>
+        <div style="font-size: 11px; color: #6B6156;">From: ISC Brewers Guild · To: the taproom&rsquo;s owner and editors</div>
         <div style="font-size: 15px; font-weight: 600; color: #241F1A; line-height: 1.35;">Changed: Tacos El Gordo moved to Sat, Oct 3</div>
       </div>
-      <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px; font-size: 14px; line-height: 1.5; color: #3A332C;"><div>Tacos El Gordo changed their stop at your taproom:</div><div style="display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 10px; background: #F9F6F0; border: 1px solid #EFEAE1;"><div style="color: #6B6156; text-decoration: line-through;">Friday, October 2 · 5:00 – 9:00 pm</div><div style="font-weight: 600; color: #241F1A;">Saturday, October 3 · 5:00 – 9:00 pm</div></div><div>Your page already shows the new date. A canceled stop reads "Canceled: …" and comes off your page.</div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;"><a href="#see" style="height: 44px; padding: 0 18px; border-radius: 9px; display: flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none; background: #241F1A; color: #FFFFFF;">See your page</a></div>
-        <div style="font-size: 12px; color: #6B6156; border-top: 1px solid #EFEAE1; padding-top: 12px;">Sent for changes to visits in the coming weeks, never for past ones.</div>
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px; font-size: 14px; line-height: 1.5; color: #3A332C;"><div>Tacos El Gordo changed their stop at your taproom:</div><div style="display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 10px; background: #F9F6F0; border: 1px solid #EFEAE1;"><div style="color: #6B6156; text-decoration: line-through;">Friday, October 2 · 5:00 – 9:00 pm</div><div style="font-weight: 600; color: #241F1A;">→ Saturday, October 3 · 5:00 – 9:00 pm</div><div style="color: #6B6156;">Bob&rsquo;s Brewery · 9373 Coca Street</div></div><div>Your page already shows the new date. (Still waiting? &ldquo;It&rsquo;s still waiting for your approval.&rdquo; with Approve and Decline.)</div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;"><a href="#see-your-page" style="height: 44px; padding: 0 18px; border-radius: 9px; display: flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none; border: 1px solid #D3CBBD; background: #F9F6F0; color: #241F1A;">See your page</a><a href="#hide-this-visit" style="height: 44px; padding: 0 18px; border-radius: 9px; display: flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none; background: #BE5A0A; color: #FFFFFF;">Hide this visit</a></div>
+        <div style="font-size: 12px; color: #6B6156; border-top: 1px solid #EFEAE1; padding-top: 12px;">You get this because you&rsquo;re an owner or editor of Bob&rsquo;s Brewery on the ISC Brewers Guild site. Choose Show right away or Ask me first on your Events page.</div>
       </div>
     </div>
   </div>
+  <div style="width: 670px; display: flex; flex-direction: column; gap: 12px;">
+    <div style="font-size: 11px; letter-spacing: 0.15em; font-weight: 600; color: #B6AC9D;">4 · CANCELED</div>
+    <div style="background: #FFFFFF; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column;">
+      <div style="padding: 14px 20px; background: #EFEAE1; border-bottom: 1px solid #DED7CB; display: flex; flex-direction: column; gap: 3px;">
+        <div style="font-size: 11px; color: #6B6156;">From: ISC Brewers Guild · To: the taproom&rsquo;s owner and editors</div>
+        <div style="font-size: 15px; font-weight: 600; color: #241F1A; line-height: 1.35;">Canceled: Tacos El Gordo · Sat, Oct 3</div>
+      </div>
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px; font-size: 14px; line-height: 1.5; color: #3A332C;"><div>Tacos El Gordo canceled their stop at your taproom:</div><div style="display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 10px; background: #F9F6F0; border: 1px solid #EFEAE1;"><div style="font-weight: 600; color: #241F1A;">Saturday, October 3 · 5:00 – 9:00 pm</div><div style="color: #6B6156;">Bob&rsquo;s Brewery · 9373 Coca Street</div></div><div>It&rsquo;s off your page. (Also sent when the stop is deleted, postponed, hidden by the member, or moved somewhere else.)</div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;"><a href="#see-your-page" style="height: 44px; padding: 0 18px; border-radius: 9px; display: flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none; border: 1px solid #D3CBBD; background: #F9F6F0; color: #241F1A;">See your page</a></div>
+        <div style="font-size: 12px; color: #6B6156; border-top: 1px solid #EFEAE1; padding-top: 12px;">You get this because you&rsquo;re an owner or editor of Bob&rsquo;s Brewery on the ISC Brewers Guild site. Choose Show right away or Ask me first on your Events page.</div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 14px;">
+    <div style="font-size: 11px; letter-spacing: 0.15em; font-weight: 600; color: #B6AC9D;">5 · WHERE A BUTTON LANDS (/visit/…) — OPENING IT CHANGES NOTHING; ONLY ITS BUTTON DOES</div>
+    <div style="display: flex; gap: 30px; align-items: flex-start;">
+    <div style="width: 390px; box-sizing: border-box; background: #F9F6F0; border-radius: 22px; padding: 28px 18px 26px; display: flex; flex-direction: column; gap: 18px;">
+      <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 26px; font-weight: 700; color: #241F1A; line-height: 1.08;">A Guild member&rsquo;s visit</div>
+      <div style="display: flex; flex-direction: column; gap: 3px; padding: 14px 16px; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF;"><div style="font-size: 15px; font-weight: 600; color: #241F1A;">Rolling Smoke BBQ</div><div style="font-size: 13px; color: #6B6156;">Saturday, October 3 · 5:00 – 9:00 pm</div><div style="font-size: 13px; color: #6B6156;">Bob&rsquo;s Brewery</div></div>
+      <div style="font-size: 14px; color: #564E45; line-height: 1.5;">Nothing shows on your page until you approve.</div><a href="#act" style="height: 54px; border-radius: 11px; background: #B3591F; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; text-decoration: none;">Approve this visit</a>
+    </div>
+    <div style="width: 390px; box-sizing: border-box; background: #F9F6F0; border-radius: 22px; padding: 28px 18px 26px; display: flex; flex-direction: column; gap: 18px;">
+      <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 26px; font-weight: 700; color: #241F1A; line-height: 1.08;">A Guild member&rsquo;s visit</div>
+      <div style="display: flex; flex-direction: column; gap: 3px; padding: 14px 16px; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF;"><div style="font-size: 15px; font-weight: 600; color: #241F1A;">Rolling Smoke BBQ</div><div style="font-size: 13px; color: #6B6156;">Saturday, October 3 · 5:00 – 9:00 pm</div><div style="font-size: 13px; color: #6B6156;">Bob&rsquo;s Brewery</div></div>
+      <div style="font-size: 15px; font-weight: 600; color: #241F1A;">Approved. It&rsquo;s on your page now.</div><div style="font-size: 14px; color: #564E45; line-height: 1.5;">Changed your mind? Your Events page has every visit. <a href="#events" style="color: #B3591F; font-weight: 500;">Your Events page</a></div>
+    </div>
+      <div style="width: 520px; font-size: 13px; color: #B6AC9D; line-height: 1.6;">Decline and Hide work the same way: <b style="color: #F9F6F0;">Decline this visit</b> &rarr; &ldquo;Declined. It won&rsquo;t show on your page.&rdquo;; <b style="color: #F9F6F0;">Hide it from my page</b> &rarr; &ldquo;Hidden. It&rsquo;s off your page.&rdquo; Already answered on the Events page: the current choice (&ldquo;This visit is already on your page.&rdquo;). Moved, deleted or over: &ldquo;This visit is no longer at your taproom.&rdquo; The link is signed and lasts until the visit is over. Email scanners that open links can&rsquo;t answer for the taproom.</div>
+    </div>
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1500,"height":1000}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1500,"height":1480}}'>
 class Component extends DCLogic {
   renderVals() {
     return {};
