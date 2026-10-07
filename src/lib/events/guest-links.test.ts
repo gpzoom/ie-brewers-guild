@@ -124,4 +124,11 @@ describe("decideGuestLinks, Part 2 (Ask me first and notes)", () => {
     expect(r.notices).toEqual([]);
     expect(r.upserts).toEqual([W({})]);
   });
+  it("a Part 1 link for a stop already canceled: recorded quietly as told-canceled, and no email on later runs", () => {
+    const r = decide([stop({ overlay_status: "canceled" })], [link({ guest_name: null, notified_starts_at: null, notified_ends_at: null })]);
+    expect(r.notices).toEqual([]);
+    expect(r.upserts[0].cancel_notified).toBe(true);
+    const next = decide([stop({ overlay_status: "canceled" })], [link({ cancel_notified: true })]);
+    expect(next.notices).toEqual([]);
+  });
 });

@@ -24,6 +24,14 @@ describe("groupNotices", () => {
     const g = groupNotices([n({ id: "1", kind: "new" }), n({ id: "2", kind: "changed", starts_at: "2026-10-04T00:00:00Z", created_at: "2026-10-01T00:05:00Z" })]);
     expect(g.get("mars")).toEqual([expect.objectContaining({ kind: "new", starts_at: "2026-10-04T00:00:00Z" })]);
   });
+  it("canceled, then back on in the same run: the comeback is sent, not the cancel", () => {
+    const g = groupNotices([n({ id: "1", kind: "canceled" }), n({ id: "2", kind: "request", created_at: "2026-10-01T00:05:00Z" })]);
+    expect(g.get("mars")?.map((x) => x.kind)).toEqual(["request"]);
+  });
+  it("new, then canceled in the same run: the taproom never heard of it, so nothing is sent", () => {
+    const g = groupNotices([n({ id: "1", kind: "new" }), n({ id: "2", kind: "canceled", created_at: "2026-10-01T00:05:00Z" })]);
+    expect(g.has("mars")).toBe(false);
+  });
   it("two changes: earliest old time, latest new time", () => {
     const g = groupNotices([
       n({ id: "1", kind: "changed", old_starts_at: "2026-10-02T00:00:00Z", starts_at: "2026-10-03T00:00:00Z" }),

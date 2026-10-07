@@ -13,15 +13,24 @@ export function groupNotices(notes: GuestStopNoticeRow[]): Map<string, GuestStop
   }
   const out = new Map<string, GuestStopNoticeRow[]>();
   for (const list of byHostEvent.values()) {
+    // What the taproom should hear is decided by where the visit ended up
+    // in this run: the notes after the last cancel are what's new since.
     const last = list[list.length - 1];
-    const canceled = list.find((x) => x.kind === "canceled");
+    const lastCancel = list.map((x) => x.kind).lastIndexOf("canceled");
     const opening = list.find((x) => x.kind === "new" || x.kind === "request");
-    const firstChange = list.find((x) => x.kind === "changed");
-    const merged: GuestStopNoticeRow = canceled
-      ? { ...canceled, kind: "canceled" }
-      : opening
-        ? { ...last, kind: opening.kind, old_starts_at: null, old_ends_at: null }
+    let merged: GuestStopNoticeRow | null;
+    if (last.kind === "canceled") {
+      // Announced and canceled within one run: the taproom never heard of it.
+      merged = opening && list.indexOf(opening) < lastCancel ? null : last;
+    } else {
+      const since = list.slice(lastCancel + 1);
+      const reopened = since.find((x) => x.kind === "new" || x.kind === "request");
+      const firstChange = since.find((x) => x.kind === "changed");
+      merged = reopened
+        ? { ...last, kind: reopened.kind, old_starts_at: null, old_ends_at: null }
         : { ...last, kind: "changed", old_starts_at: firstChange?.old_starts_at ?? null, old_ends_at: firstChange?.old_ends_at ?? null };
+    }
+    if (!merged) continue;
     const host = merged.host_member_id;
     out.set(host, [...(out.get(host) ?? []), merged]);
   }
