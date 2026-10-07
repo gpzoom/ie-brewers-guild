@@ -3,6 +3,7 @@ import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { EventOverlayStatus, EventRow } from "@/lib/supabase/types";
 import { positionColumns } from "@/lib/events/venue-place";
+import { relinkGuestStops } from "@/lib/events/guest-links.server";
 
 export const listEvents = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => data)
@@ -67,6 +68,9 @@ export const createEvent = createServerFn({ method: "POST" })
       action: "insert",
     });
 
+    // Guild Mobile members at taprooms: relink this member's stops (never fails the save).
+    await relinkGuestStops({ memberId: data.memberId });
+
     return row as EventRow;
   });
 
@@ -114,6 +118,8 @@ export const updateEvent = createServerFn({ method: "POST" })
       action: "update",
     });
 
+    await relinkGuestStops({ memberId: updated[0].member_id as string });
+
     return { ok: true as const };
   });
 
@@ -139,6 +145,8 @@ export const deleteEvent = createServerFn({ method: "POST" })
       rowId: data.id,
       action: "delete",
     });
+
+    await relinkGuestStops({ memberId: deleted[0].member_id as string });
 
     return { ok: true as const };
   });
@@ -176,6 +184,8 @@ export const setEventOverlay = createServerFn({ method: "POST" })
       action: "update",
     });
 
+    await relinkGuestStops({ memberId: updated[0].member_id as string });
+
     return { ok: true as const };
   });
 
@@ -201,6 +211,8 @@ export const clearEventOverlay = createServerFn({ method: "POST" })
       action: "update",
     });
 
+    await relinkGuestStops({ memberId: updated[0].member_id as string });
+
     return { ok: true as const };
   });
 
@@ -225,6 +237,8 @@ export const toggleEventHidden = createServerFn({ method: "POST" })
       rowId: data.eventId,
       action: "update",
     });
+
+    await relinkGuestStops({ memberId: updated[0].member_id as string });
 
     return { ok: true as const };
   });

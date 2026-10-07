@@ -5,6 +5,7 @@ import { buildEventUpsertRows, parseIcsFeedForTag, staleSyncedEventIds } from "@
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import { canonicalTag, foodCalendarProblem, parseCalendarPurpose } from "@/lib/events/calendar-purpose";
 import type { CalendarConnectionRow, MemberType } from "@/lib/supabase/types";
+import { relinkGuestStops } from "@/lib/events/guest-links.server";
 
 /**
  * This is the first place in this repo where the server fetches an
@@ -453,6 +454,10 @@ export const refreshIcsConnectionNow = createServerFn({ method: "POST" })
     // member, or a Guild admin.
     const service = await getSupabaseServiceRoleClient();
     await syncOneIcsConnection(service, connection as CalendarConnectionRow);
+    // Guild Mobile members at taprooms: relink this member's stops (never throws).
+    // Here in the handler, not in syncOneIcsConnection, which is bundled for the
+    // client and unit tested; the cron relinks everyone after its own syncs.
+    await relinkGuestStops({ memberId: (connection as CalendarConnectionRow).member_id });
 
     // syncOneIcsConnection itself stays free of impersonation-specific
     // logic -- it's shared verbatim with the Task 29 cron, which runs on

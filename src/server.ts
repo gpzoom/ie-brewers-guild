@@ -90,7 +90,10 @@ export default {
   async scheduled(controller: { cron: string }, _env: unknown, ctx: { waitUntil: (promise: Promise<unknown>) => void }) {
     if (controller.cron === "*/15 * * * *") {
       const { refreshAllIcsConnections } = await import("./lib/events/ics-refresh-cron.server");
-      ctx.waitUntil(refreshAllIcsConnections());
+      // Guild Mobile members at taprooms: relink every Mobile member's upcoming
+      // stops once the calendars are refreshed.
+      const { relinkGuestStops } = await import("./lib/events/guest-links.server");
+      ctx.waitUntil(refreshAllIcsConnections().finally(() => relinkGuestStops()));
       // Members page v2: map positions for mobile members' upcoming stops.
       const { geocodeUpcomingMobileStops } = await import("./lib/events/stop-geocode-cron.server");
       ctx.waitUntil(geocodeUpcomingMobileStops());
