@@ -72,11 +72,12 @@ function Description({ text }: { text: string }) {
 }
 
 /** One tear-off calendar page (artboard A3 shows its states). */
-function CalendarPage({ card }: { card: HomeEventCard }) {
+export function CalendarPage({ card }: { card: HomeEventCard }) {
   const { member } = card;
   const date = calendarPageDate(card.startsAt, member.timezone);
   const time = card.allDay ? "All day" : formatTimeRange(card.startsAt, card.endsAt, member.timezone);
-  const place = [card.venue, card.city].filter(Boolean).join(" · ");
+  // A Guild member's stop here is at the taproom itself (artboard GV4).
+  const place = (card.guest ? ["At the taproom", card.city] : [card.venue, card.city]).filter(Boolean).join(" · ");
   return (
     <div className="relative w-full max-w-[440px]">
       {/* The pad's next two pages, peeking out underneath. */}
@@ -146,6 +147,17 @@ function CalendarPage({ card }: { card: HomeEventCard }) {
               {card.title}
             </a>
           </p>
+          {card.guest && (
+            <p className="flex flex-wrap items-center gap-2 text-[13px]" style={{ color: INK_MUTED }}>
+              <span>with a Guild member</span>
+              <span className="rounded-full bg-[#F5E2D0] px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-[#7A4413]">
+                GUILD MEMBER
+              </span>
+              <span className="rounded-full bg-[#DCEDEC] px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-[#17605F]">
+                {card.guest.tag}
+              </span>
+            </p>
+          )}
           {place && (
             <p className="flex items-center gap-1.5 text-[13px]" style={{ color: INK_MUTED }}>
               <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />

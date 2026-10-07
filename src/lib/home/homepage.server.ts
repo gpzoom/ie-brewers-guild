@@ -6,6 +6,7 @@ import {
   selectCarouselEvents,
   type GuildEvent,
   type HomeEventCard,
+  type HomeEventHost,
   type HomeEventInputRow,
   type HomeEventMember,
 } from "@/lib/home/member-events";
@@ -19,6 +20,7 @@ import {
 import { getMemberThemeHex, type MemberThemeName } from "@/lib/theme/member-themes";
 import { logoBackgroundColor } from "@/lib/members/logo-background";
 import { guildEvents } from "@/data/site";
+import { loadGuestInfo } from "@/lib/events/guest-info";
 
 export type HomepageData = {
   cards: HomeEventCard[];
@@ -57,8 +59,29 @@ async function loadCards(now: Date): Promise<HomeEventCard[]> {
     );
   if (error) throw new Error(error.message);
   const rows = (eventRows ?? []) as HomeEventInputRow[];
-  const memberIds = [...new Set(rows.map((row) => row.member_id))];
-  if (memberIds.length === 0) return [];
+  if (rows.length === 0) return [];
+
+  // Guild Mobile members at taprooms: a stop with a shown link is the
+  // taproom's card. A failed read just leaves every card as it was.
+  const hostsByEventId = new Map<string, HomeEventHost>();
+  const { data: linkRows } = await supabase
+    .from("event_hosts")
+    .select("event_id, host_member_id")
+    .in("event_id", rows.map((row) => row.id))
+    .eq("status", "shown");
+  const links = (linkRows ?? []) as Array<{ event_id: string; host_member_id: string }>;
+  if (links.length) {
+    const memberOf = new Map(rows.map((row) => [row.id, row.member_id]));
+    const guests = await loadGuestInfo(supabase, links.map((l) => memberOf.get(l.event_id) ?? ""));
+    for (const l of links) {
+      const guest = guests.get(memberOf.get(l.event_id) ?? "");
+      if (guest) hostsByEventId.set(l.event_id, { hostMemberId: l.host_member_id, guest: { name: guest.name, tag: guest.tag } });
+    }
+  }
+
+  const memberIds = [
+    ...new Set([...rows.map((row) => row.member_id), ...[...hostsByEventId.values()].map((h) => h.hostMemberId)]),
+  ];
 
   const { data: memberRows, error: memberError } = await supabase
     .from("members")
@@ -98,7 +121,7 @@ async function loadCards(now: Date): Promise<HomeEventCard[]> {
       coverAssetId: m.cover_asset_id,
     });
   }
-  return selectCarouselEvents(rows, members, now);
+  return selectCarouselEvents(rows, members, now, {}, hostsByEventId);
 }
 
 /**

@@ -61,7 +61,15 @@ export type HomeEventCard = {
   rescheduled: boolean;
   venue: string | null;
   city: string | null;
+  /**
+   * A Guild Mobile member's stop at this taproom (Guild Mobile members at
+   * taprooms, artboard GV4): the card is the taproom's, naming the guest.
+   */
+  guest?: { name: string; tag: string };
 };
+
+/** A shown link from a Mobile member's stop to the taproom it's at, by event id. */
+export type HomeEventHost = { hostMemberId: string; guest: { name: string; tag: string } };
 
 function toCard(row: HomeEventInputRow, member: HomeEventMember): HomeEventCard {
   const rescheduled = row.overlay_status === "rescheduled" && Boolean(row.overlay_starts_at);
@@ -91,6 +99,7 @@ export function selectCarouselEvents(
   members: Map<string, HomeEventMember>,
   now: Date,
   options: { days?: number; max?: number } = {},
+  hostsByEventId: Map<string, HomeEventHost> = new Map(),
 ): HomeEventCard[] {
   const days = options.days ?? CAROUSEL_WINDOW_DAYS;
   const max = options.max ?? CAROUSEL_MAX_CARDS;
@@ -100,9 +109,16 @@ export function selectCarouselEvents(
     if ((row.kind ?? "event") !== "event") continue;
     if (row.is_hidden) continue;
     if (row.overlay_status === "canceled" || row.overlay_status === "postponed") continue;
-    const member = members.get(row.member_id);
+    // A Guild member's stop at a taproom is the taproom's event: one card,
+    // under the host, counted in the host's turn of the rotation.
+    const link = hostsByEventId.get(row.id);
+    const host = link ? members.get(link.hostMemberId) : undefined;
+    const member = host ?? members.get(row.member_id);
     if (!member) continue;
-    const card = toCard(row, member);
+    const card =
+      host && link
+        ? { ...toCard(row, host), title: row.title ?? link.guest.name, venue: null, guest: link.guest }
+        : toCard(row, member);
     if (!isInWindow(card, now, days)) continue;
     const list = byMember.get(member.id) ?? [];
     list.push(card);

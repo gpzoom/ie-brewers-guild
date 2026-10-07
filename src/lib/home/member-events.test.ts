@@ -136,3 +136,36 @@ describe("nextGuildEvent", () => {
     expect(nextGuildEvent([fest("2026-05-30")], now)).toBeNull();
   });
 });
+
+describe("Guild members at taprooms on the homepage", () => {
+  const withTruck = new Map([...members, ["truck", member("truck")]]);
+  const guest = { name: "Sample Taco Truck", tag: "FOOD TRUCK" };
+  it("a linked stop is one card under the taproom, with the guest named", () => {
+    const stop = row("truck", days(1), { title: null, venue_name: "A" });
+    const cards = selectCarouselEvents([stop], withTruck, now, {}, new Map([[stop.id, { hostMemberId: "a", guest }]]));
+    expect(cards).toHaveLength(1);
+    expect(cards[0].member.id).toBe("a");
+    expect(cards[0].guest).toEqual(guest);
+    expect(cards[0].title).toBe("Sample Taco Truck");
+    expect(cards[0].venue).toBeNull();
+  });
+  it("with its own title, the title stays", () => {
+    const stop = row("truck", days(1), { title: "Taco Tuesday", venue_name: "A" });
+    const cards = selectCarouselEvents([stop], withTruck, now, {}, new Map([[stop.id, { hostMemberId: "a", guest }]]));
+    expect(cards[0].title).toBe("Taco Tuesday");
+    expect(cards[0].venue).toBeNull();
+  });
+  it("no link (or hidden): the guest's own card, as today", () => {
+    const stop = row("truck", days(1), { title: null, venue_name: "A" });
+    const cards = selectCarouselEvents([stop], withTruck, now);
+    expect(cards[0].member.id).toBe("truck");
+    expect(cards[0].guest).toBeUndefined();
+  });
+  it("the host counts for the one-per-member rotation", () => {
+    const stop = row("truck", days(1), { title: null });
+    const own = row("a", hours(25));
+    const other = row("b", days(2));
+    const ids = selectCarouselEvents([stop, own, other], withTruck, now, {}, new Map([[stop.id, { hostMemberId: "a", guest }]])).map((c) => c.id);
+    expect(ids).toEqual([stop.id, other.id, own.id]);
+  });
+});
