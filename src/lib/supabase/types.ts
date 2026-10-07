@@ -213,16 +213,47 @@ export type EventRow = {
   geocoded_address?: string | null;
 };
 
-/** Guild Mobile members at taprooms (20261007100000_event_hosts.sql). Part 2 adds pending/declined. */
-export type EventHostStatus = "shown" | "hidden";
+/** Guild Mobile members at taprooms (Part 1 20261007100000_event_hosts.sql; Part 2 20261008100000_guest_stops_part2.sql). */
+export type EventHostStatus = "shown" | "hidden" | "pending" | "declined";
+
+/** A taproom's choice: show Guild members' stops right away, or ask first. */
+export type GuestStopsMode = "show" | "ask";
 
 export type EventHostRow = {
   event_id: string;
   host_member_id: string;
   status: EventHostStatus;
   status_set_by_user_id: string | null;
+  /** What the taproom was last told (Part 2): the linker compares these to spot a change. */
+  guest_name: string | null;
+  title: string | null;
+  notified_starts_at: string | null;
+  notified_ends_at: string | null;
+  notified_all_day: boolean;
+  cancel_notified: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type GuestStopNoticeKind = "new" | "request" | "changed" | "canceled";
+
+export type GuestStopNoticeRow = {
+  id: string;
+  host_member_id: string;
+  event_id: string | null;
+  kind: GuestStopNoticeKind;
+  guest_name: string;
+  title: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  all_day: boolean;
+  old_starts_at: string | null;
+  old_ends_at: string | null;
+  created_at: string;
+  claimed_at: string | null;
+  sent_at: string | null;
+  attempts: number;
+  last_error: string | null;
 };
 
 export type CategoryRow = {
