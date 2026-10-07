@@ -21,5 +21,6 @@ describe("the linker runs after every stop change", () => {
   });
   it("the 15-minute cron", () => {
     expect(src("src/server.ts")).toContain("relinkGuestStops");
+    expect(src("src/server.ts")).toContain("sendGuestStopNotices");
   });
 });

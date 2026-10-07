@@ -4,6 +4,10 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
+  // Which site this Worker is: the 15-minute job has no request to read it from
+  // (Guild member visit emails: staging sends only the Sample test taprooms).
+  "keep_vars": true,
+  "vars": { "SITE_ORIGIN": "https://ie-brewers-guild-staging.boblelle77.workers.dev" },
   "ratelimits": [
     {
       "name": "CREATOR_UPLOAD_RATE_LIMITER",

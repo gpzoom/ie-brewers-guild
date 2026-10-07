@@ -100,3 +100,18 @@ export async function sendTransactionalEmail(payload: TransactionalEmailPayload)
     );
   }
 }
+
+/** A prebuilt email to several addresses (Guild member visit emails). Throws on a Resend error. */
+export async function sendRawEmail(p: { to: string[]; subject: string; html: string; text: string }): Promise<void> {
+  const env = await getEmailWorkerEnv();
+  if (!env.RESEND_API_KEY) throw new Error("Missing RESEND_API_KEY in the Worker environment.");
+  const response = await fetch(RESEND_API_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: TRANSACTIONAL_FROM_ADDRESS, to: p.to, subject: p.subject, html: p.html, text: p.text }),
+  });
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`Resend request failed (${response.status} ${response.statusText}): ${body}`);
+  }
+}
