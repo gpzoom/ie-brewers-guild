@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { locationPinSvg, mobilePinSvg } from "./pin-icons";
+import { clusterPinSvg, locationPinSvg, mobilePinSvg } from "./pin-icons";
 
 function svgOf(url: string): string {
   return decodeURIComponent(url.replace("data:image/svg+xml;charset=UTF-8,", ""));
@@ -24,5 +24,16 @@ describe("pin icons", () => {
     const svg = svgOf(mobilePinSvg(icon, "normal").url);
     expect(svg).toContain("#17605F");
     expect(svg).toContain(`data-icon="${icon}"`);
+  });
+  it("cluster bubbles: a dark circle with the count, anchored at its center", () => {
+    const small = clusterPinSvg(3);
+    const svg = svgOf(small.url);
+    expect(svg).toContain("#171410");
+    expect(svg).toContain(">3</text>");
+    expect(small.anchorX).toBe(small.width / 2);
+    expect(small.anchorY).toBe(small.height / 2);
+  });
+  it("bigger groups get a slightly bigger bubble", () => {
+    expect(clusterPinSvg(5).width).toBeGreaterThan(clusterPinSvg(4).width);
   });
 });

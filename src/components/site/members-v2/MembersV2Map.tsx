@@ -4,10 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { V2Pin } from "@/lib/members/members-v2";
 import type { DirectorySearch } from "@/lib/directory/search-params";
-import { locationPinSvg, mobilePinSvg, type PinLook } from "@/lib/maps/pin-icons";
+import { clusterPinSvg, locationPinSvg, mobilePinSvg, type PinLook } from "@/lib/maps/pin-icons";
+import { clusterPins } from "@/lib/maps/cluster-pins";
 import { panDecision } from "@/lib/maps/pan-decision";
 
 const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+/** Clicking a bubble never zooms closer than this (neighborhood level). */
+const CLUSTER_CLICK_MAX_ZOOM = 15;
 
 function lookOf(pin: V2Pin, highlightCard: string | null, focusedSlug: string | null): PinLook {
   if (focusedSlug && pin.slug === focusedSlug && pin.cardKey === highlightCard) return "focused";
@@ -58,22 +61,62 @@ function PanToHighlighted({ targets, padding }: { targets: Array<{ lat: number; 
 }
 
 /**
- * The pins. Their icons need google.maps.Size/Point, which exist only once
- * the Maps script has loaded (and never on the server), so nothing renders
- * until then.
+ * The pins, with crowded ones grouped into count bubbles (spec "Map
+ * behavior" > "Clustering"). The highlighted member's pins and the pin
+ * whose pop-up is open always show on their own. Icons need
+ * google.maps.Size/Point, which exist only once the Maps script has loaded
+ * (and never on the server), so nothing renders until then.
  */
 function PinMarkers(props: {
   pins: V2Pin[];
+  zoom: number;
   highlightCard: string | null;
   focusedSlug: string | null;
+  activeKey: string | null;
+  padding: number | google.maps.Padding;
   onPinHover: (cardKey: string | null) => void;
   onPinClick: (pin: V2Pin) => void;
 }) {
   const loaded = useApiIsLoaded();
+  const map = useMap();
+  const { pins, zoom, highlightCard, activeKey } = props;
+  const items = useMemo(
+    () => clusterPins(pins, zoom, (p) => p.cardKey === highlightCard || p.key === activeKey),
+    [pins, zoom, highlightCard, activeKey],
+  );
   if (!loaded || typeof google === "undefined") return null;
   return (
     <>
-      {props.pins.map((p) => {
+      {items.map((item) => {
+        if (item.kind === "cluster") {
+          const icon = clusterPinSvg(item.count);
+          return (
+            <Marker
+              key={`cluster-${item.id}`}
+              position={{ lat: item.lat, lng: item.lng }}
+              title={`${item.count} members here — click to zoom in`}
+              zIndex={10}
+              icon={{
+                url: icon.url,
+                scaledSize: new google.maps.Size(icon.width, icon.height),
+                anchor: new google.maps.Point(icon.anchorX, icon.anchorY),
+              }}
+              onClick={() => {
+                // Frame all of the bubble's pins, clear of the phone's card
+                // rail, but stop short of street level for pins that are
+                // nearly on top of each other.
+                if (!map) return;
+                const bounds = new google.maps.LatLngBounds();
+                item.points.forEach((pt) => bounds.extend(pt));
+                map.fitBounds(bounds, props.padding);
+                google.maps.event.addListenerOnce(map, "idle", () => {
+                  if ((map.getZoom() ?? 0) > CLUSTER_CLICK_MAX_ZOOM) map.setZoom(CLUSTER_CLICK_MAX_ZOOM);
+                });
+              }}
+            />
+          );
+        }
+        const p = item.pin;
         const look = lookOf(p, props.highlightCard, props.focusedSlug);
         const label = `${p.name} · ${p.city}`.toUpperCase();
         const icon = p.kind === "mobile" && p.icon ? mobilePinSvg(p.icon, look, label) : locationPinSvg(look, label);
@@ -130,6 +173,7 @@ export function MembersV2Map(props: {
 }) {
   const padding = props.fitPadding ?? 60;
   const [active, setActive] = useState<V2Pin | null>(null);
+  const [zoom, setZoom] = useState(props.initialView?.zoom ?? 9);
   const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(debounce.current), []);
 
@@ -150,6 +194,7 @@ export function MembersV2Map(props: {
           mapTypeControl={false}
           streetViewControl={false}
           fullscreenControl={false}
+          onZoomChanged={(e) => setZoom(Math.floor(e.detail.zoom))}
           onCameraChanged={(e) => {
             if (!props.onViewChange) return;
             clearTimeout(debounce.current);
@@ -163,8 +208,11 @@ export function MembersV2Map(props: {
           <PanToHighlighted targets={targets} padding={padding} />
           <PinMarkers
             pins={props.pins}
+            zoom={zoom}
             highlightCard={props.highlightCard}
             focusedSlug={props.focusedSlug}
+            activeKey={active?.key ?? null}
+            padding={padding}
             onPinHover={props.onPinHover}
             onPinClick={(p) => {
               setActive(p);

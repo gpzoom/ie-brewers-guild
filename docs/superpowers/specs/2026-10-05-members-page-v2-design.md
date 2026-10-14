@@ -90,6 +90,11 @@ The map is still Google Maps, through the existing `@vis.gl/react-google-maps` s
   - Clicking a pin opens the existing pop-up, with the name, address, Directions and Profile →.
   - The pop-up's "Visit"/"Website" link stays as it is.
 - **First load:** the map fits all pins, unless the address bar already holds a saved map position.
+- **Clustering (added 14 October 2026):** pins that crowd together at the current zoom become one dark round bubble showing how many there are (`src/lib/maps/cluster-pins.ts`).
+  - Clicking a bubble zooms in to frame all of its pins (clear of the phone's card rail), never closer than zoom 15.
+  - At zoom 12 and closer (city level) there are no bubbles, only real pins.
+  - The highlighted member's pins, and the pin whose pop-up is open, are never hidden inside a bubble.
+  - The bubble's hover text reads "N members here — click to zoom in".
 
 ## Mobile members: today's stop
 
@@ -166,7 +171,6 @@ Use the first rule that applies:
 
 - Replacing `/members`, changing the site menu, or anything on the live site.
 - "Open now" on the cards.
-- Clustering pins.
 - A new map provider.
 
 ## Testing

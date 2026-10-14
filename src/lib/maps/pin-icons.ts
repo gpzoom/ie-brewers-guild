@@ -69,3 +69,20 @@ export function mobilePinSvg(icon: MobileIcon, look: PinLook, label?: string): P
   // A circle's "tip" is its center-bottom, like the location pins.
   return pin;
 }
+
+const INK = "#171410";
+
+/**
+ * A cluster's count bubble (spec "Map behavior" > "Clustering"): neutral
+ * dark ink so it never reads as a member's red or teal pin. It marks an
+ * area, not a spot, so it's anchored at its center.
+ */
+export function clusterPinSvg(count: number): PinIcon {
+  const d = count >= 5 ? 40 : 34;
+  const r = d / 2;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${d}" height="${d}" viewBox="0 0 ${d} ${d}">` +
+    `<circle cx="${r}" cy="${r}" r="${r - 1.5}" fill="${INK}" stroke="#FFFFFF" stroke-width="2"/>` +
+    `<text x="${r}" y="${r + 5}" text-anchor="middle" font-family="Chivo, Arial, sans-serif" font-size="14" font-weight="700" fill="#FFFFFF">${count}</text></svg>`;
+  return { url: toUrl(svg), width: d, height: d, anchorX: r, anchorY: r };
+}
