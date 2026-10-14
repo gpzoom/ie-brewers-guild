@@ -4,7 +4,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(151);
+insert into _tap (line) select plan(155);
 
 -- ---------------------------------------------------------------------
 -- Photos & events editor (media_events) on m1
@@ -324,6 +324,15 @@ insert into _tap (line) select is(
 insert into _tap (line) select throws_ok(
   $q$ select public.save_member_draft_section('f1000000-0000-4000-8000-000000000001', 'media', '{"slides":[]}') $q$,
   '42501', null, 'unlinked user: save refused');
+insert into _tap (line) select throws_ok(
+  $q$ select public.publish_member_draft('f1000000-0000-4000-8000-000000000001', array['theme'], false) $q$,
+  '42501', null, 'unlinked user: publish refused');
+insert into _tap (line) select throws_ok(
+  $q$ select public.discard_member_draft_sections('f1000000-0000-4000-8000-000000000001', array['theme']) $q$,
+  '42501', null, 'unlinked user: discard refused');
+insert into _tap (line) select throws_ok(
+  $q$ select public.unpublish_member('f1000000-0000-4000-8000-000000000001') $q$,
+  '42501', null, 'unlinked user: unpublish refused');
 
 -- ---------------------------------------------------------------------
 -- Guild admin (impersonating): allowed, and audited against themselves
@@ -404,6 +413,9 @@ insert into _tap (line) select throws_ok(
 insert into _tap (line) select throws_ok(
   $q$ select public.discard_member_draft_sections('f1000000-0000-4000-8000-000000000001', array['theme']) $q$,
   '42501', null, 'owner of m2: discard on m1 refused');
+insert into _tap (line) select throws_ok(
+  $q$ select public.unpublish_member('f1000000-0000-4000-8000-000000000001') $q$,
+  '42501', null, 'owner of m2: unpublish on m1 refused');
 insert into _tap (line) select is(
   (select count(*)::int from public.member_drafts where member_id = 'f1000000-0000-4000-8000-000000000001'),
   0, 'owner of m2: cannot read m1''s draft');
