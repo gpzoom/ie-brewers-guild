@@ -312,26 +312,98 @@ export const guildEvents: readonly GuildEvent[] = [
   },
 ];
 
-export const news = [
+export type NewsResult = {
+  /** "Gold", "Silver", "Bronze" or "Finalist". */
+  award: string;
+  beer: string;
+  brewery: string;
+  city: string;
+  category: string;
+  /** A published member's slug, for a link to their profile. */
+  memberSlug?: string;
+};
+
+export type NewsStory = {
+  slug: string;
+  date: string;
+  title: string;
+  excerpt: string;
+  body?: string[];
+  results?: { heading: string; items: NewsResult[] }[];
+};
+
+/** Newest first. Each story shows in full on the News page. */
+export const news: NewsStory[] = [
   {
-    slug: "guild-grows-to-50",
-    date: "April 28, 2026",
-    title: "Guild Welcomes Three New Member Breweries",
+    slug: "gabf-2026-results",
+    date: "October 15, 2026",
+    title: "Inland Southern California Brewers Shine at the 2026 Great American Beer Festival",
     excerpt:
-      "We're thrilled to announce that Cascade & Crown, Mesa Verde, and Granary Street have joined the guild this spring.",
+      "Breweries from our region brought home two gold medals and a bronze from the Great American Beer Festival in Denver, and four more beers reached the final table.",
+    body: [
+      "The Great American Beer Festival competition is one of the toughest in the country, with dozens to hundreds of entries in every category. This year, brewers from across Inland Southern California earned three medals and four final-table spots. Congratulations to everyone who entered, and to these winners and finalists.",
+    ],
+    results: [
+      {
+        heading: "Medals",
+        items: [
+          {
+            award: "Gold",
+            beer: "No Fly Zone",
+            brewery: "8 Bit Brewing Co.",
+            city: "Murrieta",
+            category: "New Zealand-Style India Pale Ale (89 entries)",
+          },
+          {
+            award: "Gold",
+            beer: "Happy Days",
+            brewery: "Claremont Craft Ales",
+            city: "Claremont",
+            category: "Strong Red Ale (32 entries)",
+          },
+          {
+            award: "Bronze",
+            beer: "Pepper and Peaches",
+            brewery: "Claremont Craft Ales",
+            city: "Claremont",
+            category: "Specialty India Pale Ale (65 entries)",
+          },
+        ],
+      },
+      {
+        heading: "Final table",
+        items: [
+          {
+            award: "Finalist",
+            beer: "Festbier",
+            brewery: "Claremont Craft Ales",
+            city: "Claremont",
+            category: "Dortmunder or German-Style Festbier (161 entries)",
+          },
+          {
+            award: "Finalist",
+            beer: "Uncle Fester",
+            brewery: "Evans Brewing Co.",
+            city: "Corona",
+            category: "Dortmunder or German-Style Festbier (161 entries)",
+          },
+          {
+            award: "Finalist",
+            beer: "My Favorite Marzen",
+            brewery: "Mars Brewing Co.",
+            city: "Rancho Cucamonga",
+            category: "German-Style Maerzen (184 entries)",
+            memberSlug: "mars-brewing-co",
+          },
+          {
+            award: "Finalist",
+            beer: "Munich Lager Bavarian Style-Maerzen",
+            brewery: "Ritual Brewing Co.",
+            city: "Redlands",
+            category: "German-Style Maerzen (184 entries)",
+          },
+        ],
+      },
+    ],
   },
-  {
-    slug: "advocacy-win-2026",
-    date: "March 12, 2026",
-    title: "State Legislature Passes Small-Brewer Tax Relief",
-    excerpt:
-      "After two years of guild-led advocacy, independent breweries under 60,000 barrels qualify for renewed excise relief.",
-  },
-  {
-    slug: "beer-week-recap",
-    date: "February 4, 2026",
-    title: "Beer Week 2026: A Look Back",
-    excerpt:
-      "Recap of more than 80 events across the region, the highest member participation in guild history.",
-  },
-] as const;
+];
