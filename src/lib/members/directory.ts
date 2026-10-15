@@ -8,20 +8,21 @@ import type { MemberLinkKind, MemberType } from "@/lib/supabase/types";
  * so it can be unit tested.
  *
  * One card per BUSINESS, like the old hard-coded list in src/data/site.ts:
- * a multi-location business is several member rows sharing a
- * business_name (the same rule the profile page's "Next location" uses),
- * shown as one card with one clickable city per location.
+ * a multi-location business is several member rows sharing a `business_id`
+ * (the same rule the profile page's "Next location" uses), shown as one card
+ * with one clickable city per location.
  */
 
 /** The members columns the directory reads -- all in anon's column grant. */
 export const DIRECTORY_MEMBER_COLUMNS =
-  "id, slug, member_type, business_name, city, state, street_address, postal_code, latitude, longitude, logo_asset_id";
+  "id, slug, member_type, business_name, city, state, street_address, postal_code, latitude, longitude, logo_asset_id, business_id";
 
 export type DirectoryMemberRow = {
   id: string;
   slug: string;
   member_type: MemberType;
   business_name: string;
+  business_id: string | null;
   city: string;
   state: string;
   street_address: string | null;
@@ -55,6 +56,8 @@ export type DirectoryLocation = {
 
 export type DirectoryMember = {
   name: string;
+  /** Stable grouping key: the business id, or the member's own id for a single location. */
+  groupKey: string;
   memberType: MemberType;
   locations: DirectoryLocation[];
   website: string | null;
@@ -133,16 +136,18 @@ export function buildDirectoryMembers(args: {
 
   const byBusiness = new Map<string, DirectoryMemberRow[]>();
   for (const row of args.rows) {
-    const list = byBusiness.get(row.business_name) ?? [];
+    const groupKey = row.business_id ?? row.id;
+    const list = byBusiness.get(groupKey) ?? [];
     list.push(row);
-    byBusiness.set(row.business_name, list);
+    byBusiness.set(groupKey, list);
   }
 
   const cards: DirectoryMember[] = [];
-  for (const [name, rows] of byBusiness) {
+  for (const [groupKey, rows] of byBusiness) {
     const sorted = [...rows].sort(
       (a, b) => a.city.localeCompare(b.city) || a.slug.localeCompare(b.slug),
     );
+    const name = sorted[0].business_name.trim();
     const allLinks = sorted.flatMap((row) => linksByMember.get(row.id) ?? []);
     const firstUrl = (match: (link: DirectoryLinkRow) => boolean) =>
       allLinks.find(match)?.url ?? undefined;
@@ -152,6 +157,7 @@ export function buildDirectoryMembers(args: {
 
     const card: DirectoryMember = {
       name,
+      groupKey,
       memberType: sorted[0].member_type,
       locations: sorted.map(toLocation),
       website: firstUrl((link) => link.kind === "website") ?? null,

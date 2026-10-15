@@ -4,7 +4,7 @@ import { summarizeStops, type HostLocation, type StopEvent, type StopSummary } f
 
 /** Members page v2's cards and pins (spec; artboards B2-B6). Pure: the server function loads the inputs. */
 export type V2Card = DirectoryMember & {
-  /** Stable key: the business name (cards are one per business). */
+  /** Stable key: the business group (cards are one per business). */
   key: string;
   /** AFFILIATE, a mobile member's first category (or MOBILE), or null for producers. */
   tag: string | null;
@@ -58,7 +58,7 @@ export function buildV2(args: {
   const pins: V2Pin[] = [];
 
   for (const m of args.members) {
-    const key = m.name;
+    const key = m.groupKey;
     if (m.memberType === "mobile") {
       const memberId = idBySlug.get(m.locations[0]?.slug ?? "") ?? "";
       const categories = args.categoriesByMemberId.get(memberId) ?? [];

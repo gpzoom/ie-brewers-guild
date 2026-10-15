@@ -14,6 +14,7 @@ function row(overrides: Partial<DirectoryMemberRow>): DirectoryMemberRow {
     slug: "euryale-brewing-co",
     member_type: "producer",
     business_name: "Euryale Brewing Co.",
+    business_id: null,
     city: "Riverside",
     state: "CA",
     street_address: "2060 Chicago Ave STE A17",
@@ -59,6 +60,7 @@ describe("buildDirectoryMembers", () => {
     });
     expect(card).toEqual({
       name: "Euryale Brewing Co.",
+      groupKey: "m1",
       memberType: "producer",
       locations: [
         {
@@ -81,8 +83,8 @@ describe("buildDirectoryMembers", () => {
   it("groups a multi-location business into one card, locations by city, each with its own slug", () => {
     const cards = buildDirectoryMembers({
       rows: [
-        row({ id: "a", slug: "metabolic-brewing-co-ontario", business_name: "Metabolic Brewing Co.", city: "Ontario" }),
-        row({ id: "b", slug: "metabolic-brewing-co-chino", business_name: "Metabolic Brewing Co.", city: "Chino" }),
+        row({ id: "a", slug: "metabolic-brewing-co-ontario", business_name: "Metabolic Brewing Co.", city: "Ontario", business_id: "biz-m" }),
+        row({ id: "b", slug: "metabolic-brewing-co-chino", business_name: "Metabolic Brewing Co.", city: "Chino", business_id: "biz-m" }),
       ],
       links: [link({ member_id: "b", url: "https://metabolicbrewing.com/" })],
       logoUrls: new Map(),
@@ -93,6 +95,45 @@ describe("buildDirectoryMembers", () => {
       "metabolic-brewing-co-ontario",
     ]);
     expect(cards[0].website).toBe("https://metabolicbrewing.com/");
+  });
+
+  it("groups locations by business, not by name (spec 2026-10-15)", () => {
+    const cards = buildDirectoryMembers({
+      rows: [
+        row({ id: "a", slug: "hangar-24-redlands", business_name: "Hangar 24", city: "Redlands", business_id: "biz-1" }),
+        row({ id: "b", slug: "hangar-24-riverside", business_name: "Hangar 24 Riverside", city: "Riverside", business_id: "biz-1" }),
+      ],
+      links: [],
+      logoUrls: new Map(),
+    });
+    expect(cards).toHaveLength(1);
+    expect(cards[0].groupKey).toBe("biz-1");
+    expect(cards[0].locations.map((l) => l.city)).toEqual(["Redlands", "Riverside"]);
+  });
+
+  it("two single locations that share a name stay two cards with distinct keys", () => {
+    const cards = buildDirectoryMembers({
+      rows: [
+        row({ id: "x", slug: "same-name-1", business_name: "Same Name", city: "Chino", business_id: null }),
+        row({ id: "y", slug: "same-name-2", business_name: "Same Name", city: "Corona", business_id: null }),
+      ],
+      links: [],
+      logoUrls: new Map(),
+    });
+    expect(cards).toHaveLength(2);
+    expect(new Set(cards.map((c) => c.groupKey))).toEqual(new Set(["x", "y"]));
+  });
+
+  it("a card is named after its first location (by city)", () => {
+    const [card] = buildDirectoryMembers({
+      rows: [
+        row({ id: "b", slug: "z-riverside", business_name: "Zed Brewing Riverside", city: "Riverside", business_id: "biz-z" }),
+        row({ id: "a", slug: "z-chino", business_name: "Zed Brewing", city: "Chino", business_id: "biz-z" }),
+      ],
+      links: [],
+      logoUrls: new Map(),
+    });
+    expect(card.name).toBe("Zed Brewing");
   });
 
   it("orders cards by business name", () => {

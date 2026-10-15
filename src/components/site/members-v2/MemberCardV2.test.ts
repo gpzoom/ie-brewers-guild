@@ -12,7 +12,7 @@ import type { V2Card } from "@/lib/members/members-v2";
 
 function card(o: Partial<V2Card>): V2Card {
   return {
-    key: "Hangar 24 Brewing Co.", name: "Hangar 24 Brewing Co.", memberType: "producer", website: "https://hangar24.example",
+    key: "Hangar 24 Brewing Co.", groupKey: "Hangar 24 Brewing Co.", name: "Hangar 24 Brewing Co.", memberType: "producer", website: "https://hangar24.example",
     logo: null, tag: null, mobileIcon: null, stop: null, stopPin: null,
     locations: [
       { slug: "h24-irvine", city: "Irvine", street: "17877 Von Karman Ave", address: "17877 Von Karman Ave, Irvine, CA", lat: 33.69, lng: -117.85 },

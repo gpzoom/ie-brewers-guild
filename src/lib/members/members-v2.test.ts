@@ -5,7 +5,7 @@ import type { StopEvent } from "./mobile-stops";
 
 function row(o: Partial<DirectoryMemberRow>): DirectoryMemberRow {
   return {
-    id: "p1", slug: "all-points", member_type: "producer", business_name: "All Points Brewing Co.",
+    id: "p1", slug: "all-points", member_type: "producer", business_name: "All Points Brewing Co.", business_id: null,
     city: "Riverside", state: "CA", street_address: "2023 Chicago Ave Unit B8", postal_code: "92507",
     latitude: 33.977, longitude: -117.353, logo_asset_id: null, ...o,
   };
@@ -67,5 +67,26 @@ describe("buildV2", () => {
       now: NOW,
     });
     expect(r.pins.find((p) => p.kind === "mobile")?.city).toBe("Rancho Cucamonga");
+  });
+
+  it("card and pin keys come from the business group, not the display name", () => {
+    const { cards, pins } = buildV2({
+      members: [
+        {
+          name: "Same Name",
+          groupKey: "biz-1",
+          memberType: "producer",
+          locations: [{ slug: "s1", city: "Chino", street: "1 Main St", address: "1 Main St, Chino, CA", lat: 34, lng: -117.7 }],
+          website: null,
+          logo: null,
+        },
+      ],
+      rows: [],
+      categoriesByMemberId: new Map(),
+      stopsByMemberId: new Map(),
+      now: new Date("2026-10-16T12:00:00Z"),
+    });
+    expect(cards[0].key).toBe("biz-1");
+    expect(pins[0].cardKey).toBe("biz-1");
   });
 });
