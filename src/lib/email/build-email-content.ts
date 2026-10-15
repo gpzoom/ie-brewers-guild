@@ -12,7 +12,6 @@
  * from server-only code.
  */
 import type { MemberType } from "@/lib/supabase/types";
-import { MEMBER_GUIDE_PATH } from "@/lib/member-guide";
 
 export type TransactionalEmailPayload =
   | { trigger: "creator_upload_pending"; memberId: string; assetId: string; creatorName: string | null }
@@ -135,6 +134,13 @@ export function guildInboxFor(siteUrl: string | null): string {
   }
 }
 
+/**
+ * Where a reply to the Member invited email goes (owner, 2026-10-15): the
+ * webmaster for now, info@ once that address is set up. The sending
+ * address, notifications@mail..., has no inbox.
+ */
+export const MEMBER_INVITE_REPLY_TO = "webmaster@iscbrewersguild.org";
+
 /** The Guild's real domain, confirmed against the spec and this session's own research. */
 export const SITE_URL = "https://iscbrewersguild.org";
 
@@ -230,21 +236,20 @@ export function buildEmailContent(payload: TransactionalEmailPayload, siteUrl: s
     }
 
     case "member_invited": {
+      // One link only (owner, 2026-10-15): fewer links reads less like bulk
+      // mail. The Member Guide is linked from the sign-in page and the
+      // portal sidebar instead.
       const signInUrl = `${siteUrl}/signin?next=/portal`;
-      const guideUrl = `${siteUrl}${MEMBER_GUIDE_PATH}`;
-      const text =
+      const welcome =
         `Welcome to the ${ORG_NAME}! The Guild has created a profile for your business on the ` +
-        `member directory. Sign in anytime with this email address to start filling it in:\n\n${signInUrl}` +
-        `\n\nNew to the site? Here's the step-by-step Member Guide (PDF):\n\n${guideUrl}`;
+        "member directory.";
+      const howTo = "Sign in anytime with this email address to start filling it in:";
+      const guide = "The sign-in page also links to our step-by-step Member Guide. Questions? Just reply to this email.";
       return {
         subject: `You're invited to the ${ORG_SHORT_NAME} member directory`,
-        text,
-        html: wrapHtml([
-          `Welcome to the ${ORG_NAME}! The Guild has created a profile for your business on the ` +
-            "member directory.",
-          `Sign in anytime with this email address to start filling it in: <a href="${signInUrl}">${signInUrl}</a>`,
-          `New to the site? Here's the <a href="${guideUrl}">step-by-step Member Guide (PDF)</a>.`,
-        ]),
+        replyTo: MEMBER_INVITE_REPLY_TO,
+        text: `${welcome} ${howTo}\n\n${signInUrl}\n\n${guide}`,
+        html: wrapHtml([welcome, `${howTo} <a href="${signInUrl}">${signInUrl}</a>`, guide]),
       };
     }
 

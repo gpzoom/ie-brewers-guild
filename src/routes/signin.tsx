@@ -2,6 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
+import { MEMBER_GUIDE_PATH } from "@/lib/member-guide";
 import { cn } from "@/lib/utils";
 import { normalizeEmailCode, signInRedirectUrl } from "@/lib/auth/sign-in-link";
 import { verifyEmailCode } from "@/lib/auth/sign-in-verify.server";
@@ -269,6 +270,13 @@ function SignInPage() {
               </form>
 
               <div className="flex flex-col gap-2.5 border-t border-canvas-border pt-[18px]">
+                <p className="text-[13px] leading-[1.55] text-ink-muted text-pretty">
+                  New to the site?{" "}
+                  <a href={MEMBER_GUIDE_PATH} target="_blank" rel="noopener" className={cardLinkClass}>
+                    Read the Member Guide (PDF)
+                  </a>
+                  , with a picture of each screen.
+                </p>
                 <p className="text-[13px] leading-[1.55] text-ink-muted text-pretty">
                   Not sure which address? It's whatever the Guild sent your invitation to. If that's
                   changed,{" "}

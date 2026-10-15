@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildEmailContent,
   GUILD_NOTIFICATION_EMAIL,
+  MEMBER_INVITE_REPLY_TO,
   ORG_NAME,
   ORG_SHORT_NAME,
   resolveEmailSiteUrl,
@@ -99,13 +100,17 @@ describe("buildEmailContent: member_invited", () => {
     expect(content.text).not.toContain(SITE_URL);
   });
 
-  it("links to the Member Guide PDF on the same site", () => {
+  it("has one link, to sign in, and points to the guide on the sign-in page instead (owner, 2026-10-15)", () => {
     const content = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" });
-    expect(content.text).toContain(`${SITE_URL}/member-guide.pdf`);
-    expect(content.html).toContain(`href="${SITE_URL}/member-guide.pdf"`);
-    const staging = "https://ie-brewers-guild-staging.boblelle77.workers.dev";
-    const onStaging = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" }, staging);
-    expect(onStaging.text).toContain(`${staging}/member-guide.pdf`);
+    expect(content.html.match(/<a /g)).toHaveLength(1);
+    expect(content.text).not.toContain("member-guide.pdf");
+    expect(content.text).toContain("The sign-in page also links to our step-by-step Member Guide.");
+  });
+
+  it("replies go to the webmaster, since the sending address has no inbox", () => {
+    const content = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" });
+    expect(content.replyTo).toBe(MEMBER_INVITE_REPLY_TO);
+    expect(MEMBER_INVITE_REPLY_TO).toBe("webmaster@iscbrewersguild.org");
   });
 
   it("uses the Guild's current name, never the outdated IE Brewers Guild", () => {
