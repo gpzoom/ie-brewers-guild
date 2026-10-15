@@ -4,6 +4,7 @@ import {
   getSiteSettingsCore,
   saveCalendarSyncIntervalCore,
   saveCarouselDwellCore,
+  saveSpotlightEnabledCore,
   setHeroImageCore,
   type SiteSettingsView,
 } from "@/lib/guild/site-settings";
@@ -38,6 +39,13 @@ export const saveCarouselDwell = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<SiteSettingsView> => {
     const supabase = await getSupabaseServerClientForRequest();
     return saveCarouselDwellCore(supabase, data.seconds, new Date());
+  });
+
+export const saveSpotlightEnabled = createServerFn({ method: "POST" })
+  .inputValidator((data: { enabled: boolean }) => ({ enabled: data?.enabled }))
+  .handler(async ({ data }): Promise<SiteSettingsView> => {
+    const supabase = await getSupabaseServerClientForRequest();
+    return saveSpotlightEnabledCore(supabase, data.enabled, new Date());
   });
 
 const HERO_MAX_BYTES = 10 * 1024 * 1024;

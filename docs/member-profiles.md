@@ -289,6 +289,15 @@ A carousel of member events drawn as **tear-off calendar pages**, built only fro
 
 **Half its old height** (owner, 28 September 2026). Its image is the one the super admin uploads on **Settings > Homepage hero image**, or the built-in one until then (members asked for a real photo instead of the AI-generated one). **Upcoming events** in the hero jumps down to the carousel.
 
+### Spotlight
+
+A **temporary** section between the hero and the carousel, for news worth celebrating (owner, 14 October 2026). The first one is the Great American Beer Festival 2026 results: five award slides, with our region's medalists and finalists highlighted.
+
+- **On and off:** the super admin flips **Settings > Homepage spotlight**. It's off by default, and it shows only when it's on **and** there's content. Staging and production share the setting.
+- **Content lives in the code:** `src/lib/home/spotlight.ts` (`CURRENT_SPOTLIGHT`), with the slide images in `public/spotlight/`. Each slide lists the names to highlight as boxes in the slide's own pixels (slides are 1920×1080). For new news, send the webmaster the slides and the names; with nothing to show, `CURRENT_SPOTLIGHT` is `null`.
+- **For each name:** the slide shows in full, glides in close (more on phones, so the name is readable), dims everything else, and an orange marker loop draws around the name. A caption under the slide says the same in text: award, beer, brewery and city, category, and "See their profile" when the brewery is a published member.
+- **Controls:** like the carousel. It plays by itself and stops on Pause, while hovered, while keyboard focus is inside it and while it's off screen. Arrows, dots, arrow keys and swipe move by hand. With reduced motion there's no glide or drawing, and it doesn't play by itself.
+
 ### No Events page
 
 The **Events** page and its menu and footer links are gone: member and Guild events live in the carousel. `/events` redirects (301) to the homepage's carousel, so old links still land somewhere useful.

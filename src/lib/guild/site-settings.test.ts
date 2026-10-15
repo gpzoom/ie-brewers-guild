@@ -5,6 +5,7 @@ import {
   saveCalendarSyncIntervalCore,
   getSiteSettingsCore,
   saveCarouselDwellCore,
+  saveSpotlightEnabledCore,
   setHeroImageCore,
   toSiteSettingsView,
 } from "./site-settings";
@@ -94,6 +95,7 @@ function fakeSession(isSuperAdmin: boolean) {
                     carousel_dwell_seconds: values.carousel_dwell_seconds ?? 6,
                     hero_image_path:
                       "hero_image_path" in values ? values.hero_image_path : "hero/old-photo.jpg",
+                    spotlight_enabled: values.spotlight_enabled ?? false,
                     updated_at: values.updated_at,
                   },
                 ],
@@ -172,12 +174,38 @@ describe("Homepage settings", () => {
     expect(session.updates).toHaveLength(1);
   });
 
+  it("the spotlight is off unless the row says it's on", () => {
+    expect(toSiteSettingsView(null).spotlightEnabled).toBe(false);
+    expect(
+      toSiteSettingsView({
+        calendar_sync_interval_minutes: 15,
+        calendar_sync_last_run_at: null,
+        spotlight_enabled: true,
+        updated_at: null,
+      }).spotlightEnabled,
+    ).toBe(true);
+  });
+
+  it("the super admin turns the spotlight on and off; anything but true/false is refused", async () => {
+    const session = fakeSession(true);
+    expect((await saveSpotlightEnabledCore(session.client, true, now)).spotlightEnabled).toBe(true);
+    expect(session.updates[0]).toMatchObject({ spotlight_enabled: true, updated_by_user_id: "user-1" });
+    expect((await saveSpotlightEnabledCore(session.client, false, now)).spotlightEnabled).toBe(false);
+    await expect(saveSpotlightEnabledCore(session.client, "yes", now)).rejects.toThrow(
+      "Choose on or off.",
+    );
+    expect(session.updates).toHaveLength(2);
+  });
+
   it("a Guild admin can't change the dwell time or the hero", async () => {
     const session = fakeSession(false);
     await expect(saveCarouselDwellCore(session.client, 8, now)).rejects.toThrow(
       "Only the super admin",
     );
     await expect(setHeroImageCore(session.client, "hero/new.jpg", now)).rejects.toThrow(
+      "Only the super admin",
+    );
+    await expect(saveSpotlightEnabledCore(session.client, true, now)).rejects.toThrow(
       "Only the super admin",
     );
     expect(session.updates).toEqual([]);

@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/site/PageHero";
 import { MemberEventsCarousel } from "@/components/home/MemberEventsCarousel";
+import { SpotlightShowcase } from "@/components/home/SpotlightShowcase";
+import { CURRENT_SPOTLIGHT } from "@/lib/home/spotlight";
 import { getHomepageData } from "@/lib/home/homepage.server";
 import heroImg from "@/assets/hero-home.jpg";
 
@@ -21,7 +23,7 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const { cards, guildEvent, dwellSeconds, heroImageUrl } = Route.useLoaderData();
+  const { cards, guildEvent, dwellSeconds, heroImageUrl, spotlightEnabled } = Route.useLoaderData();
   return (
     <>
       {/* Half its old height (owner, 2026-09-28); the image is the one the
@@ -36,6 +38,14 @@ function HomePage() {
         <Button asChild size="lg"><Link to="/members">Meet our members & partners</Link></Button>
         <Button asChild size="lg" variant="outline"><a href="#coming-up">Upcoming events</a></Button>
       </PageHero>
+
+      {/* Temporary news (src/lib/home/spotlight.ts), shown when the super
+          admin turns it on in Settings and there's content for it. */}
+      {spotlightEnabled && CURRENT_SPOTLIGHT && (
+        <section className="mx-auto max-w-7xl px-4 pt-16 md:px-6 md:pt-20">
+          <SpotlightShowcase spotlight={CURRENT_SPOTLIGHT} />
+        </section>
+      )}
 
       {/* Replaces the three placeholder pillars and the Featured Event section. */}
       <section id="coming-up" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-16 md:px-6 md:py-20">

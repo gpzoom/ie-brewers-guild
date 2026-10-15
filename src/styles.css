@@ -277,3 +277,20 @@
 @media (prefers-reduced-motion: reduce) {
   .calendar-tear-off { animation: calendar-page-in 250ms ease-out reverse forwards; }
 }
+
+/* Homepage spotlight (src/components/home/SpotlightShowcase.tsx): each slide
+   fades in, and the marker loop draws itself around the name (pathLength=1).
+   With reduced motion the component skips the drawing; these only fade. */
+@keyframes spotlight-draw {
+  from { stroke-dasharray: 1; stroke-dashoffset: 1; }
+  to { stroke-dasharray: 1; stroke-dashoffset: 0; }
+}
+.spotlight-draw {
+  stroke-dasharray: 1;
+  animation: spotlight-draw 900ms cubic-bezier(0.55, 0.1, 0.35, 1) forwards;
+}
+.spotlight-slide-in { animation: calendar-page-in 600ms ease-out; }
+.spotlight-caption-in { animation: calendar-page-in 450ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .spotlight-slide-in, .spotlight-caption-in { animation-duration: 1ms; }
+}

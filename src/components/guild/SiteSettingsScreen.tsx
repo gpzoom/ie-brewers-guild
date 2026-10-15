@@ -3,6 +3,7 @@ import {
   removeHeroImage,
   saveCalendarSyncInterval,
   saveCarouselDwell,
+  saveSpotlightEnabled,
   uploadHeroImage,
 } from "@/lib/guild/site-settings.server";
 import {
@@ -13,6 +14,8 @@ import {
   type CarouselDwellSeconds,
   type SiteSettingsView,
 } from "@/lib/guild/site-settings";
+import { CURRENT_SPOTLIGHT } from "@/lib/home/spotlight";
+import { Switch } from "@/components/ui/switch";
 import defaultHeroImg from "@/assets/hero-home.jpg";
 
 const fieldClass =
@@ -153,6 +156,7 @@ export function SiteSettingsScreen({ initial }: { initial: SiteSettingsView }) {
 
       <CarouselDwellCard settings={settings} onSaved={setSettings} />
       <HeroImageCard settings={settings} onSaved={setSettings} />
+      <SpotlightCard settings={settings} onSaved={setSettings} />
     </div>
   );
 }
@@ -237,6 +241,67 @@ function CarouselDwellCard({ settings, onSaved }: CardProps) {
         Shows member events from the next 14 days, taking turns between members.
       </p>
     </form>
+  );
+}
+
+/**
+ * Homepage spotlight: show or hide the temporary section under the hero.
+ * The slides come from the code (src/lib/home/spotlight.ts); this is only
+ * the switch, and it saves as soon as it's flipped.
+ */
+function SpotlightCard({ settings, onSaved }: CardProps) {
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<Message>(null);
+  const spotlight = CURRENT_SPOTLIGHT;
+
+  async function onToggle(enabled: boolean) {
+    setSaving(true);
+    setMessage(null);
+    try {
+      onSaved(await saveSpotlightEnabled({ data: { enabled } }));
+      setMessage({
+        kind: "ok",
+        text: enabled ? "It's on the homepage now." : "It's off the homepage now.",
+      });
+    } catch (err) {
+      setMessage({ kind: "error", text: errorText(err) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className={cardClass}>
+      <div className="flex flex-col gap-1">
+        <h2 className="text-[16px] font-semibold text-ink">Homepage spotlight</h2>
+        <p className="text-pretty text-[13px] leading-[1.5] text-ink-muted">
+          A temporary section under the homepage image for news worth celebrating, like awards.
+          Turn it off when it's no longer news.
+        </p>
+      </div>
+      {spotlight ? (
+        <>
+          <div className="rounded-[9px] border border-canvas-border bg-canvas px-3 py-2.5 text-[13px] text-ink">
+            <span className="font-semibold">{spotlight.eyebrow}</span>
+            <span className="text-ink-muted"> · {spotlight.slides.length} slides</span>
+          </div>
+          <label className="flex min-h-11 cursor-pointer items-center justify-between gap-4">
+            <span className="text-[14px] font-medium text-ink">Show on the homepage</span>
+            <Switch
+              checked={settings.spotlightEnabled}
+              disabled={saving}
+              onCheckedChange={(checked) => void onToggle(checked)}
+              aria-label="Show the spotlight on the homepage"
+            />
+          </label>
+        </>
+      ) : (
+        <p className="text-[13px] text-ink-muted">
+          No spotlight content right now. Send new slides to your webmaster.
+        </p>
+      )}
+      <StatusMessage message={message} />
+    </div>
   );
 }
 

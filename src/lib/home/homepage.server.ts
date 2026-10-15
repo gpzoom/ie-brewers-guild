@@ -28,6 +28,8 @@ export type HomepageData = {
   dwellSeconds: CarouselDwellSeconds;
   /** The uploaded hero image, or null for the built-in one. */
   heroImageUrl: string | null;
+  /** Settings > Homepage spotlight; it shows only if there's content too. */
+  spotlightEnabled: boolean;
 };
 
 const EVENT_COLUMNS =
@@ -129,7 +131,11 @@ async function loadCards(now: Date): Promise<HomeEventCard[]> {
  * only by the super admin, so this public read uses the service role (like
  * getActiveBrandTokens) and falls back to the defaults if it can't.
  */
-async function loadSettings(): Promise<{ dwellSeconds: CarouselDwellSeconds; heroImageUrl: string | null }> {
+async function loadSettings(): Promise<{
+  dwellSeconds: CarouselDwellSeconds;
+  heroImageUrl: string | null;
+  spotlightEnabled: boolean;
+}> {
   try {
     const service = await getSupabaseServiceRoleClient();
     const { data } = await service
@@ -143,10 +149,11 @@ async function loadSettings(): Promise<{ dwellSeconds: CarouselDwellSeconds; her
       heroImageUrl: view.heroImagePath
         ? service.storage.from("site-images").getPublicUrl(view.heroImagePath).data.publicUrl
         : null,
+      spotlightEnabled: view.spotlightEnabled,
     };
   } catch (err) {
     console.error("getHomepageData: couldn't read site_settings, using defaults", err);
-    return { dwellSeconds: DEFAULT_CAROUSEL_DWELL_SECONDS, heroImageUrl: null };
+    return { dwellSeconds: DEFAULT_CAROUSEL_DWELL_SECONDS, heroImageUrl: null, spotlightEnabled: false };
   }
 }
 
