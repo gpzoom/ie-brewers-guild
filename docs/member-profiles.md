@@ -751,7 +751,7 @@ It is also materially less to build and less to get wrong. No focus trap, no scr
 
 **Routes:**
 
-- `/members` — **the Members page (since 5 October 2026):** a list beside the map, one card per member with its locations inside, search, member type, Near me, pins that highlight on hover (the map moves only when a pin is off-screen), and on a phone a List/Map switch, a Filters panel and swipe cards. Mobile members show a pin for today's stop with an icon from their first category (truck, tent, microphone, or a star), placed by the venue picked from Google suggestions in Events, or looked up from its address by the 15-minute cron (`events.latitude/longitude/geocoded_address`). Design: `docs/superpowers/specs/2026-10-05-members-page-v2-design.md`; artboards B1–B6.
+- `/members` — **the Members page (since 5 October 2026):** a list beside the map, one card per business (its locations inside), search, member type, Near me, pins that highlight on hover (the map moves only when a pin is off-screen), and on a phone a List/Map switch, a Filters panel and swipe cards. Mobile members show a pin for today's stop with an icon from their first category (truck, tent, microphone, or a star), placed by the venue picked from Google suggestions in Events, or looked up from its address by the 15-minute cron (`events.latitude/longitude/geocoded_address`). Design: `docs/superpowers/specs/2026-10-05-members-page-v2-design.md`; artboards B1–B6.
 - `/members-1` — the previous Members page (map above a card grid), kept for comparison: `noindex`, not in the menu.
 - `/members-2` — the new page's trial address; redirects to `/members`.
 - `/members/[slug]` — a member profile.
@@ -784,6 +784,10 @@ Use `text` columns with `check` constraints rather than Postgres enum types. Add
 ## Data model
 
 All tables carry `id uuid primary key default gen_random_uuid()`, `created_at timestamptz not null default now()` and `updated_at timestamptz not null default now()` unless noted. Foreign keys cascade on delete from `members` unless noted.
+
+### Businesses (multi-location)
+
+A business ties a member's locations together (`businesses`, `members.business_id`, migration `20261016100000_businesses.sql`). The Members page card and the profile's Next location group by it. Every business starts "Each location separately"; one-manager mode, the switcher, the shared look and hand-off come in later parts (spec `docs/superpowers/specs/2026-10-15-multi-location-businesses-design.md`). Until the roster's Part of choice exists, a new member whose name matches an existing member joins its business automatically.
 
 ### members
 

@@ -314,6 +314,10 @@ describe("buildProfileObject", () => {
     expect(data.ogImageUrl).toBe("https://site.test/og/producer.png");
   });
 
+  it("has no Next location for a single-location member (no sibling entries)", () => {
+    expect(buildProfileObject(input({ siblingEntries: [] })).nextLocation).toBeNull();
+  });
+
   it("drops a slide whose photo isn't readable instead of crashing", () => {
     const data = buildProfileObject(input({ assets: [] }));
     expect(data.carouselSlides).toEqual([]);

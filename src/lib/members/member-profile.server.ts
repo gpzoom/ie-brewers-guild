@@ -46,7 +46,7 @@ export type { MemberProfileData } from "@/lib/members/profile-object";
 // anon at the column level, and Postgres expands "*" to every column before
 // checking permission, so "*" would break anon's published-row reads.
 const MEMBER_COLUMNS =
-  "id, slug, member_type, business_name, tagline, city, state, street_address, postal_code, latitude, longitude, service_area, lead_time, phone, contact_email, timezone, theme, logo_asset_id, logo_background, cover_asset_id, cover_crop, og_image_asset_id, member_since_year, discount_percent, discount_no_fixed_percent, discount_redeem_text, status, hours_confirmed_at, published_at, trail_eligible, has_kitchen, created_at, updated_at";
+  "id, slug, member_type, business_name, business_id, tagline, city, state, street_address, postal_code, latitude, longitude, service_area, lead_time, phone, contact_email, timezone, theme, logo_asset_id, logo_background, cover_asset_id, cover_crop, og_image_asset_id, member_since_year, discount_percent, discount_no_fixed_percent, discount_redeem_text, status, hours_confirmed_at, published_at, trail_eligible, has_kitchen, created_at, updated_at";
 
 function toEntries(rows: unknown[] | null): DirectoryEntry[] {
   return (rows ?? []).map((raw) => {
@@ -142,14 +142,16 @@ async function assembleProfile(args: {
       .eq("status", "published")
       .eq("member_type", member.member_type)
       .order("business_name"),
-    // Next location: this business's other published rows (business_name is
-    // the only thing tying sibling locations together), by city.
-    supabase
-      .from("members")
-      .select("id, slug, business_name, city, member_type")
-      .eq("status", "published")
-      .eq("business_name", member.business_name)
-      .order("city"),
+    // Next location: the other published locations of this business, by city.
+    // A single location (no business) has none.
+    member.business_id
+      ? supabase
+          .from("members")
+          .select("id, slug, business_name, city, member_type")
+          .eq("status", "published")
+          .eq("business_id", member.business_id)
+          .order("city")
+      : Promise.resolve({ data: [] as unknown[] }),
     // "Food for the next week" shows only for a producer with a food calendar
     // connected; visitors can't read calendar_connections, so a yes/no
     // function answers it (20260927190000_food_calendar.sql).
