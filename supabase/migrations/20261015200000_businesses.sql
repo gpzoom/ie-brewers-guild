@@ -57,9 +57,10 @@ set business_id = i.id
 from inserted i
 where btrim(m.business_name) = i.name;
 
--- Until the roster's "Part of" choice exists (part 2), a new member whose
--- name matches an existing member joins that member's business (creating
--- it when needed) -- the same grouping the Members page did by name.
+-- Until the roster's "Part of" choice exists (part 2), a member who is added,
+-- or renamed, to match an existing member's name joins that member's business
+-- (creating it when needed) -- the same grouping the Members page did by name.
+-- A member already in a business is left alone.
 create or replace function public.members_join_business_by_name()
 returns trigger
 language plpgsql
@@ -98,5 +99,5 @@ end;
 $$;
 
 create trigger members_join_business_by_name
-  before insert on public.members
+  before insert or update of business_name on public.members
   for each row execute function public.members_join_business_by_name();

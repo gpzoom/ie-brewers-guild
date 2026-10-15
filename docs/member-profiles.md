@@ -787,7 +787,7 @@ All tables carry `id uuid primary key default gen_random_uuid()`, `created_at ti
 
 ### Businesses (multi-location)
 
-A business ties a member's locations together (`businesses`, `members.business_id`, migration `20261016100000_businesses.sql`). The Members page card and the profile's Next location group by it. Every business starts "Each location separately"; one-manager mode, the switcher, the shared look and hand-off come in later parts (spec `docs/superpowers/specs/2026-10-15-multi-location-businesses-design.md`). Until the roster's Part of choice exists, a new member whose name matches an existing member joins its business automatically.
+A business ties a member's locations together (`businesses`, `members.business_id`, migration `20261015200000_businesses.sql`). The Members page card and the profile's Next location group by it. Every business starts "Each location separately"; one-manager mode, the switcher, the shared look and hand-off come in later parts (spec `docs/superpowers/specs/2026-10-15-multi-location-businesses-design.md`). Until the roster's Part of choice exists, a new member whose name matches an existing member joins its business automatically.
 
 ### members
 

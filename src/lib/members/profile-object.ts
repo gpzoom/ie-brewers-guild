@@ -60,8 +60,8 @@ export type MemberProfileData = {
   crossLinkLogoUrl: string | null;
   // The cross-link member's own logo tile color (their logo_background).
   crossLinkLogoBackground: string | null;
-  // The next of this SAME business's other published locations (by
-  // business_name), not the next member in the visitor's browsing order.
+  // The next of this SAME business's other published locations (grouped
+  // by the business record, business_id), not the next member in the visitor's browsing order.
   // Null for a single-location business, or when this business's other
   // locations aren't published yet.
   nextLocation: DirectoryEntry | null;

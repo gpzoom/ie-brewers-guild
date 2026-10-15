@@ -38,7 +38,7 @@
 | `docs/design/artboards/BizShortSetup.dc.html` (new) | Short per-location setup: Logo, Photos & Cover with shared marks; "Set up Irvine next" |
 | `docs/design/artboards/BizPeople.dc.html` (new) | People page: Business manager, Hand off this location, Take back |
 | `docs/design/artboards/BizLookReadOnly.dc.html` (new) | Theme and logo/cover read-only for a location manager |
-| `supabase/migrations/20261016100000_businesses.sql` (new) | `businesses` table, RLS, grants, `members.business_id`, backfill, insert trigger |
+| `supabase/migrations/20261015200000_businesses.sql` (new) | `businesses` table, RLS, grants, `members.business_id`, backfill, insert trigger |
 | `supabase/tests/businesses.test.sql` (new) | pgTAP for the above |
 | `src/lib/supabase/types.ts` (modify) | `MemberRow.business_id`, `BusinessRow` |
 | `src/lib/members/directory.ts` (modify) | Group by `business_id`; `DirectoryMember.groupKey` |
@@ -102,7 +102,7 @@ Give the owner the canvas link and a one-line description of each board. Do not 
 ### Task 2: The `businesses` table, `members.business_id`, backfill and insert trigger
 
 **Files:**
-- Create: `supabase/migrations/20261016100000_businesses.sql`
+- Create: `supabase/migrations/20261015200000_businesses.sql`
 - Create: `supabase/tests/businesses.test.sql`
 - Modify: `src/lib/supabase/types.ts` (the `MemberRow` type near line 38, plus a new `BusinessRow`)
 
@@ -115,7 +115,7 @@ Give the owner the canvas link and a one-line description of each board. Do not 
 Create `supabase/tests/businesses.test.sql`:
 
 ```sql
--- Businesses (20261016100000_businesses.sql): the table, the backfill rule,
+-- Businesses (20261015200000_businesses.sql): the table, the backfill rule,
 -- the insert trigger that groups same-named members, and who can read/write.
 -- Runs inside one transaction that is rolled back.
 begin;
@@ -189,7 +189,7 @@ Expected: FAIL — `has_table` not ok (the table doesn't exist without the pendi
 
 - [ ] **Step 3: Write the migration**
 
-Create `supabase/migrations/20261016100000_businesses.sql`:
+Create `supabase/migrations/20261015200000_businesses.sql`:
 
 ```sql
 -- Multi-location businesses, part 1 (spec 2026-10-15-multi-location-businesses-design.md).
@@ -330,7 +330,7 @@ Expected: only the existing `src/routes/survey.tsx` error (pre-existing; /survey
 - [ ] **Step 7: Commit**
 
 ```bash
-git add supabase/migrations/20261016100000_businesses.sql supabase/tests/businesses.test.sql src/lib/supabase/types.ts
+git add supabase/migrations/20261015200000_businesses.sql supabase/tests/businesses.test.sql src/lib/supabase/types.ts
 git commit -m "feat(db): businesses table groups multi-location members (all start separate)"
 ```
 
@@ -517,7 +517,7 @@ Expected: pass (only the pre-existing `survey.tsx` error).
 
 - [ ] **Step 3: Document**
 
-In `docs/member-profiles.md`, add a short "Businesses (multi-location)" paragraph near the members data description: "A business ties a member's locations together (`businesses`, `members.business_id`, migration `20261016100000_businesses.sql`). The Members page card and the profile's Next location group by it. Every business starts 'Each location separately'; one-manager mode, the switcher, the shared look and hand-off come in later parts (spec `docs/superpowers/specs/2026-10-15-multi-location-businesses-design.md`). Until the roster's Part of choice exists, a new member whose name matches an existing member joins its business automatically." Update the Members page line (~754) "one card per member with its locations inside" to "one card per business (its locations inside)".
+In `docs/member-profiles.md`, add a short "Businesses (multi-location)" paragraph near the members data description: "A business ties a member's locations together (`businesses`, `members.business_id`, migration `20261015200000_businesses.sql`). The Members page card and the profile's Next location group by it. Every business starts 'Each location separately'; one-manager mode, the switcher, the shared look and hand-off come in later parts (spec `docs/superpowers/specs/2026-10-15-multi-location-businesses-design.md`). Until the roster's Part of choice exists, a new member whose name matches an existing member joins its business automatically." Update the Members page line (~754) "one card per member with its locations inside" to "one card per business (its locations inside)".
 
 - [ ] **Step 4: Commit**
 
@@ -539,7 +539,7 @@ The database is shared by staging and production. Tell the owner, in plain words
 - [ ] **Step 2: Push the migration**
 
 Run: `npx supabase db push --linked`
-Expected: `20261016100000_businesses.sql` applied. Then `npm run test:db -- --no-pending supabase/tests/businesses.test.sql` passes against the applied schema.
+Expected: `20261015200000_businesses.sql` applied. Then `npm run test:db -- --no-pending supabase/tests/businesses.test.sql` passes against the applied schema.
 
 - [ ] **Step 3: Read back the backfill (read-only)**
 

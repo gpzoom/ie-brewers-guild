@@ -1,10 +1,10 @@
--- Businesses (20261016100000_businesses.sql): the table, the backfill rule,
--- the insert trigger that groups same-named members, and who can read/write.
+-- Businesses (20261015200000_businesses.sql): the table, the backfill rule,
+-- the insert/rename trigger that groups same-named members, and who can read/write.
 -- Runs inside one transaction that is rolled back.
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(12);
+insert into _tap (line) select plan(14);
 
 insert into _tap (line) select has_table('public', 'businesses', 'businesses table exists');
 insert into _tap (line) select has_column('public', 'members', 'business_id', 'members.business_id exists');
@@ -39,6 +39,24 @@ insert into _tap (line) select is(
 insert into _tap (line) select is(
   (select business_id from public.members where id = 'f1000000-0000-4000-8000-000000000002'), null,
   'a single-location member has no business');
+
+-- Renaming: an unlinked location renamed to an existing chain's name joins that business.
+update public.members set business_name = 'PgTap Chain' where id = 'f1000000-0000-4000-8000-000000000002';
+insert into _tap (line) select is(
+  (select business_id from public.members where id = 'f1000000-0000-4000-8000-000000000002'),
+  (select business_id from public.members where id = 'f1000000-0000-4000-8000-0000000000a1'),
+  'rename: an unlinked member renamed to a chain''s name joins its business');
+
+-- Renaming a location that already has a business leaves its business alone.
+create temp table _before as
+  select business_id from public.members where id = 'f1000000-0000-4000-8000-0000000000a3';
+update public.members
+set business_name = (select business_name from public.members where id = 'f1000000-0000-4000-8000-000000000001')
+where id = 'f1000000-0000-4000-8000-0000000000a3';
+insert into _tap (line) select is(
+  (select business_id from public.members where id = 'f1000000-0000-4000-8000-0000000000a3'),
+  (select business_id from _before),
+  'rename: a member already in a business keeps it');
 
 -- Visitors read id and name, not the manager.
 set local role anon;

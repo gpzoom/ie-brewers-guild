@@ -154,8 +154,8 @@ export function ProfileHero({ member, coverUrl, logoUrl, nextLocation, search }:
                 {memberSince}
               </span>
               {/* This business's other published locations (same
-                  business_name, different row -- see member-profile.server.ts's
-                  nextLocation for why there's no formal link between them).
+                  business record via business_id, different row -- see
+                  member-profile.server.ts's nextLocation).
                   Cycles through the rest one at a time, wrapping back to the
                   first after the last. */}
               {nextLocation && (
