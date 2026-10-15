@@ -56,6 +56,7 @@ function makeMember(overrides: Partial<MemberRow> = {}): MemberRow {
     slug: "member-1",
     member_type: "producer",
     business_name: "Test Brewery",
+    business_id: null,
     tagline: null,
     city: "Riverside",
     state: "CA",

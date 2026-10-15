@@ -15,6 +15,7 @@ const MEMBER: MemberRow = {
   slug: "brew",
   member_type: "producer",
   business_name: "Live Brewing",
+  business_id: null,
   tagline: "Live tagline",
   city: "Riverside",
   state: "CA",

@@ -36,6 +36,7 @@ export type MemberRow = {
   slug: string;
   member_type: MemberType;
   business_name: string;
+  business_id: string | null;
   tagline: string | null;
   city: string;
   state: string;
@@ -372,4 +373,16 @@ export type BrandSettingsRow = {
   font_pairing: string;
   tokens: Record<string, string>;
   updated_by_user_id: string | null;
+};
+
+export type BusinessManagementMode = "separate" | "one_manager";
+
+/** A multi-location business (spec 2026-10-15). Visitors can read only id and name. */
+export type BusinessRow = {
+  id: string;
+  name: string;
+  management_mode: BusinessManagementMode;
+  manager_user_id: string | null;
+  created_at: string;
+  updated_at: string;
 };
