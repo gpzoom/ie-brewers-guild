@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Location switcher — computer and phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#F9F6F0}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+
+<div style="width: 1760px; height: 900px; box-sizing: border-box; background: #E9E3D8; display: flex; gap: 0; font-family: Chivo, sans-serif; color: #241F1A;">
+
+  <!-- Computer: member admin, switcher open -->
+  <div style="width: 1280px; height: 900px; flex-shrink: 0; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column; position: relative;">
+
+    <div style="height: 64px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 28px;">
+      <div style="display: flex; align-items: center; gap: 11px;">
+        <div style="width: 24px; height: 24px; border-radius: 5px; background: #38322A;"></div>
+        <div style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">IE BREWERS GUILD · MEMBER ADMIN</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="font-size: 13px; color: #A89D8E;">Hangar 24 · Riverside</div>
+        <a href="TaproomProfile.dc.html" style="height: 40px; padding: 0 16px; border-radius: 9px; border: 1px solid #4A4238; color: #F9F6F0; display: flex; align-items: center; font-size: 13px; font-weight: 500; text-decoration: none;">Preview</a>
+        <a href="AdminPublish.dc.html" style="height: 40px; padding: 0 18px; border-radius: 9px; background: #B3591F; color: #FFFFFF; display: flex; align-items: center; font-size: 13px; font-weight: 600; text-decoration: none;">Publish changes</a>
+      </div>
+    </div>
+
+    <div style="flex-grow: 1; display: flex;">
+
+      <div style="width: 236px; flex-shrink: 0; border-right: 1px solid #EFEAE1; padding: 20px 16px 26px; display: flex; flex-direction: column; gap: 3px;">
+        <button type="button" aria-expanded="true" aria-haspopup="menu" style="min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 12px; margin-bottom: 14px; border-radius: 10px; border: 1px solid #241F1A; background: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 600; color: #241F1A; text-align: left;">Hangar 24 · Riverside<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" style="flex-shrink: 0;"><path d="M2.5 7.5 6 4l3.5 3.5" stroke="#241F1A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #8C8275; padding: 0 12px 10px;">YOUR PROFILE</div>
+        <a href="#basics" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; background: #241F1A; color: #F9F6F0; font-weight: 600;">Basics &amp; hours</a>
+        <a href="AdminMedia.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Logo, Photos &amp; Cover</a>
+        <a href="AdminEvents.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Events</a>
+        <a href="AdminFood.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Food</a>
+        <a href="AdminLinks.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Links &amp; contact</a>
+        <a href="AdminTheme.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Theme</a>
+        <a href="BizPeople.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">People</a>
+        <a href="#member-guide" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Member Guide (PDF)</a>
+      </div>
+
+      <div style="flex-grow: 1; padding: 30px 36px; display: flex; flex-direction: column; gap: 22px; opacity: 0.55;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 27px; font-weight: 700; color: #241F1A;">Basics &amp; hours</div>
+          <div style="font-size: 13px; color: #6B6156;">Riverside's address, phone and hours.</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 7px; max-width: 520px;">
+          <label for="d-city" style="font-size: 13px; font-weight: 500; color: #241F1A;">City</label>
+          <input type="text" id="d-city" value="Riverside" style="height: 46px; padding: 0 13px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 7px; max-width: 520px;">
+          <label for="d-addr" style="font-size: 13px; font-weight: 500; color: #241F1A;">Street address</label>
+          <input type="text" id="d-addr" value="[STREET ADDRESS]" style="height: 46px; padding: 0 13px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+        </div>
+      </div>
+    </div>
+
+    <!-- The open menu -->
+    <div role="menu" aria-label="Hangar 24 locations" style="position: absolute; left: 16px; top: 140px; width: 300px; box-sizing: border-box; padding: 8px; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; box-shadow: 0 14px 36px rgba(36,31,26,0.18); display: flex; flex-direction: column; gap: 2px;">
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156; padding: 8px 10px 6px;">HANGAR 24 · 4 LOCATIONS</div>
+      <a role="menuitem" href="#redlands" style="min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 10px; border-radius: 8px; font-size: 14px; color: #241F1A; text-decoration: none;">Redlands<span style="padding: 3px 9px; border-radius: 99px; background: #E4F0E1; font-size: 11px; font-weight: 600; color: #2F5E2C;">Live</span></a>
+      <a role="menuitem" href="#riverside" aria-current="page" style="min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 10px; border-radius: 8px; background: #EFEAE1; font-size: 14px; font-weight: 600; color: #241F1A; text-decoration: none;"><span style="display: flex; align-items: center; gap: 8px;"><svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6.2 5 8.6l4.5-5" stroke="#241F1A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Riverside</span><span style="padding: 3px 9px; border-radius: 99px; background: #F8EBD3; font-size: 11px; font-weight: 600; color: #7A4E0E;">Setting up</span></a>
+      <a role="menuitem" href="#irvine" style="min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 10px; border-radius: 8px; font-size: 14px; color: #241F1A; text-decoration: none;">Irvine<span style="padding: 3px 9px; border-radius: 99px; background: #EFEAE1; font-size: 11px; font-weight: 600; color: #5C534A;">Not started</span></a>
+      <a role="menuitem" href="#lake-havasu-city" style="min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 10px; border-radius: 8px; font-size: 14px; color: #241F1A; text-decoration: none;">Lake Havasu City<span style="padding: 3px 9px; border-radius: 99px; background: #E4F0E1; font-size: 11px; font-weight: 600; color: #2F5E2C;">Live</span></a>
+    </div>
+
+  </div>
+
+  <!-- Phone -->
+  <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;">
+    <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #5C534A;">ON A PHONE</div>
+
+    <div style="width: 390px; height: 700px; box-sizing: border-box; background: #F9F6F0; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; position: relative; box-shadow: 0 10px 30px rgba(36,31,26,0.14);">
+
+      <div style="height: 56px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 6px;">
+        <button type="button" aria-expanded="true" aria-haspopup="dialog" style="min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 0; background: transparent; font-family: inherit; font-size: 14px; font-weight: 600; color: #F9F6F0;">Hangar 24 · Riverside<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="#F9F6F0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <a href="TaproomProfile.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 10px; font-size: 13px; font-weight: 500; color: #B6AC9D; text-decoration: none;">Preview</a>
+      </div>
+
+      <div style="flex-shrink: 0; border-bottom: 1px solid #EFEAE1; display: flex; gap: 4px; padding: 0 14px; overflow: hidden;">
+        <span style="min-height: 48px; flex-shrink: 0; display: flex; align-items: center; padding: 0 10px; border-bottom: 2px solid #241F1A; font-size: 13px; font-weight: 600; color: #241F1A;">Basics</span>
+        <span style="min-height: 48px; flex-shrink: 0; display: flex; align-items: center; padding: 0 10px; font-size: 13px; color: #6B6156;">Logo &amp; photos</span>
+        <span style="min-height: 48px; flex-shrink: 0; display: flex; align-items: center; padding: 0 10px; font-size: 13px; color: #6B6156;">Events</span>
+        <span style="min-height: 48px; flex-shrink: 0; display: flex; align-items: center; padding: 0 10px; font-size: 13px; color: #6B6156;">Food</span>
+        <span style="min-height: 48px; flex-shrink: 0; display: flex; align-items: center; padding: 0 10px; font-size: 13px; color: #6B6156;">Links</span>
+      </div>
+
+      <div style="padding: 20px 16px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 24px; font-weight: 700; color: #241F1A;">Basics</div>
+        <div style="height: 48px; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF;"></div>
+        <div style="height: 48px; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF;"></div>
+      </div>
+
+      <!-- Dim and bottom sheet -->
+      <div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(23,20,16,0.45);"></div>
+      <div role="dialog" aria-label="Choose a location" style="position: absolute; left: 0; right: 0; bottom: 0; box-sizing: border-box; padding: 10px 16px 22px; border-radius: 18px 18px 0 0; background: #FFFFFF; display: flex; flex-direction: column; gap: 4px;">
+        <div style="align-self: center; width: 40px; height: 4px; border-radius: 99px; background: #DED7CB; margin-bottom: 8px;"></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 4px 6px;">
+          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 19px; font-weight: 700; color: #241F1A;">Hangar 24 · 4 locations</div>
+          <button type="button" aria-label="Close" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0; background: transparent;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="#241F1A" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+        </div>
+        <a href="#redlands" style="min-height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 10px; font-size: 15px; color: #241F1A; text-decoration: none;">Redlands<span style="padding: 4px 10px; border-radius: 99px; background: #E4F0E1; font-size: 12px; font-weight: 600; color: #2F5E2C;">Live</span></a>
+        <a href="#riverside" aria-current="page" style="min-height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 10px; background: #EFEAE1; font-size: 15px; font-weight: 600; color: #241F1A; text-decoration: none;"><span style="display: flex; align-items: center; gap: 8px;"><svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6.2 5 8.6l4.5-5" stroke="#241F1A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Riverside</span><span style="padding: 4px 10px; border-radius: 99px; background: #F8EBD3; font-size: 12px; font-weight: 600; color: #7A4E0E;">Setting up</span></a>
+        <a href="#irvine" style="min-height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 10px; font-size: 15px; color: #241F1A; text-decoration: none;">Irvine<span style="padding: 4px 10px; border-radius: 99px; background: #EFEAE1; font-size: 12px; font-weight: 600; color: #5C534A;">Not started</span></a>
+        <a href="#lake-havasu-city" style="min-height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 10px; font-size: 15px; color: #241F1A; text-decoration: none;">Lake Havasu City<span style="padding: 4px 10px; border-radius: 99px; background: #E4F0E1; font-size: 12px; font-weight: 600; color: #2F5E2C;">Live</span></a>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1760,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

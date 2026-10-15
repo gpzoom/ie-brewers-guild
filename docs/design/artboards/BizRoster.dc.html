@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Guild admin — roster with a multi-location business</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#F9F6F0}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+
+<div style="width: 1280px; height: 1300px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column; font-family: Chivo, sans-serif; color: #241F1A;">
+
+  <div style="height: 64px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 28px;">
+    <div style="display: flex; align-items: center; gap: 11px;">
+      <div style="width: 24px; height: 24px; border-radius: 5px; background: #38322A;"></div>
+      <div style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">IE BREWERS GUILD · GUILD ADMIN</div>
+    </div>
+    <div style="font-size: 13px; color: #9A9384;">[GUILD ADMIN NAME]</div>
+  </div>
+
+  <div style="flex-grow: 1; display: flex;">
+
+    <div style="width: 236px; flex-shrink: 0; border-right: 1px solid #E6E0D6; padding: 26px 16px; display: flex; flex-direction: column; gap: 3px;">
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #8C8275; padding: 0 12px 10px;">GUILD</div>
+      <a href="GuildApprovals.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Inquiries<span style="min-width: 22px; height: 22px; padding: 0 6px; border-radius: 99px; background: #B3591F; font-size: 11px; font-weight: 600; color: #FFFFFF; display: flex; align-items: center; justify-content: center;">3</span></a>
+      <a href="#members" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; background: #241F1A; color: #F9F6F0; font-size: 14px; font-weight: 600; text-decoration: none;">Members<span style="font-size: 11px; color: #A89D8E;">27</span></a>
+      <a href="GuildCategories.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Categories</a>
+      <div style="height: 20px;"></div>
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #8C8275; padding: 0 12px 4px;">SUPER ADMIN</div>
+      <div style="font-size: 11px; color: #8C8275; padding: 0 12px 8px;">Shown only to the super admin</div>
+      <a href="GuildBrand.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Brand &amp; theme</a>
+      <a href="GuildAdmins.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Guild admins</a>
+      <a href="GuildAudit.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; color: #241F1A; font-size: 14px; text-decoration: none;">Audit log</a>
+    </div>
+
+    <div style="flex-grow: 1; min-width: 0; padding: 30px 36px; display: flex; flex-direction: column; gap: 20px;">
+
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 24px;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 28px; font-weight: 700; color: #241F1A; letter-spacing: -0.01em;">Members</div>
+          <div style="font-size: 13px; color: #564E45;">A business with several locations shows as one row, with its locations under it.</div>
+        </div>
+        <button type="button" style="height: 44px; flex-shrink: 0; padding: 0 20px; border-radius: 9px; border: 0; background: #B3591F; font-family: inherit; font-size: 14px; font-weight: 600; color: #FFFFFF;">Add a member</button>
+      </div>
+
+      <div style="border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF; overflow: hidden;">
+
+        <div style="display: flex; align-items: center; gap: 16px; padding: 12px 20px; background: #FCFAF6; border-bottom: 1px solid #E6E0D6;">
+          <div style="width: 40px; flex-shrink: 0;"></div>
+          <div style="flex-grow: 1; font-size: 10px; letter-spacing: 0.14em; font-weight: 600; color: #6B6156;">MEMBER</div>
+          <div style="width: 120px; flex-shrink: 0; font-size: 10px; letter-spacing: 0.14em; font-weight: 600; color: #6B6156;">STATUS</div>
+          <div style="width: 330px; flex-shrink: 0;"></div>
+        </div>
+
+        <!-- Business row -->
+        <div style="display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-bottom: 1px solid #F0EBE3; background: #FCFAF6;">
+          <div style="width: 40px; height: 40px; flex-shrink: 0; border-radius: 9px; background: #F2EEE7; border: 1px solid #E6E0D6; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 13px; font-weight: 800; color: #241F1A;">H24</div>
+          <div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1; min-width: 0;">
+            <div style="font-size: 15px; font-weight: 600; color: #241F1A;">Hangar 24 · 4 locations</div>
+            <div style="font-size: 12px; color: #6B6156;">Producer · no manager yet</div>
+          </div>
+          <span id="mode-label" style="flex-shrink: 0; font-size: 12px; font-weight: 600; color: #3A332C;">Managed by</span>
+          <fieldset aria-labelledby="mode-label" style="margin: 0; padding: 0; border: 0; flex-shrink: 0; display: flex; align-items: center;">
+            <div style="display: flex; padding: 3px; border-radius: 10px; background: #EFEAE1; border: 1px solid #DED7CB;">
+              <label for="mode-one" style="min-height: 38px; display: flex; align-items: center; gap: 7px; padding: 0 12px; border-radius: 8px; background: #241F1A; color: #F9F6F0; font-size: 12px; font-weight: 600; cursor: pointer;"><input type="radio" id="mode-one" name="mode" checked="checked" style="width: 14px; height: 14px; margin: 0; accent-color: #F9F6F0;">One manager</label>
+              <label for="mode-each" style="min-height: 38px; display: flex; align-items: center; gap: 7px; padding: 0 12px; border-radius: 8px; color: #3A332C; font-size: 12px; font-weight: 500; cursor: pointer;"><input type="radio" id="mode-each" name="mode" style="width: 14px; height: 14px; margin: 0; accent-color: #241F1A;">Each location separately</label>
+            </div>
+          </fieldset>
+          <button type="button" style="height: 44px; flex-shrink: 0; padding: 0 16px; border-radius: 8px; border: 0; background: #B3591F; font-family: inherit; font-size: 13px; font-weight: 600; color: #FFFFFF;">Invite</button>
+        </div>
+
+        <!-- Locations, indented -->
+        <div style="display: flex; align-items: center; gap: 16px; padding: 8px 20px 8px 50px; border-bottom: 1px solid #F0EBE3;">
+          <div style="width: 2px; height: 38px; flex-shrink: 0; background: #DED7CB;"></div>
+          <div style="flex-grow: 1; font-size: 14px; color: #241F1A;">Redlands</div>
+          <div style="width: 120px; flex-shrink: 0; display: flex; align-items: center; gap: 7px;">
+            <span style="display: block; width: 8px; height: 8px; border-radius: 99px; background: #4E9A4A;"></span>
+            <span style="font-size: 13px; color: #3A332C;">Live</span>
+          </div>
+          <div style="width: 330px; flex-shrink: 0; display: flex; justify-content: flex-end;">
+            <a href="AdminBasics.dc.html" style="height: 40px; padding: 0 13px; border-radius: 8px; border: 1px solid #241F1A; background: #241F1A; display: flex; align-items: center; font-size: 12px; font-weight: 600; color: #F9F6F0; text-decoration: none;">Edit as them</a>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px; padding: 8px 20px 8px 50px; border-bottom: 1px solid #F0EBE3;">
+          <div style="width: 2px; height: 38px; flex-shrink: 0; background: #DED7CB;"></div>
+          <div style="flex-grow: 1; font-size: 14px; color: #241F1A;">Riverside</div>
+          <div style="width: 120px; flex-shrink: 0; display: flex; align-items: center; gap: 7px;">
+            <span style="display: block; width: 8px; height: 8px; border-radius: 99px; background: #C98A2E;"></span>
+            <span style="font-size: 13px; color: #3A332C;">Setting up</span>
+          </div>
+          <div style="width: 330px; flex-shrink: 0; display: flex; justify-content: flex-end;">
+            <a href="AdminBasics.dc.html" style="height: 40px; padding: 0 13px; border-radius: 8px; border: 1px solid #241F1A; background: #241F1A; display: flex; align-items: center; font-size: 12px; font-weight: 600; color: #F9F6F0; text-decoration: none;">Edit as them</a>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px; padding: 8px 20px 8px 50px; border-bottom: 1px solid #F0EBE3;">
+          <div style="width: 2px; height: 38px; flex-shrink: 0; background: #DED7CB;"></div>
+          <div style="flex-grow: 1; font-size: 14px; color: #241F1A;">Irvine</div>
+          <div style="width: 120px; flex-shrink: 0; display: flex; align-items: center; gap: 7px;">
+            <span style="display: block; width: 8px; height: 8px; border-radius: 99px; background: #A89D8E;"></span>
+            <span style="font-size: 13px; color: #3A332C;">Not started</span>
+          </div>
+          <div style="width: 330px; flex-shrink: 0; display: flex; justify-content: flex-end;">
+            <a href="AdminBasics.dc.html" style="height: 40px; padding: 0 13px; border-radius: 8px; border: 1px solid #241F1A; background: #241F1A; display: flex; align-items: center; font-size: 12px; font-weight: 600; color: #F9F6F0; text-decoration: none;">Edit as them</a>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px; padding: 8px 20px 8px 50px; border-bottom: 1px solid #E6E0D6;">
+          <div style="width: 2px; height: 38px; flex-shrink: 0; background: #DED7CB;"></div>
+          <div style="flex-grow: 1; font-size: 14px; color: #241F1A;">Lake Havasu City</div>
+          <div style="width: 120px; flex-shrink: 0; display: flex; align-items: center; gap: 7px;">
+            <span style="display: block; width: 8px; height: 8px; border-radius: 99px; background: #4E9A4A;"></span>
+            <span style="font-size: 13px; color: #3A332C;">Live</span>
+          </div>
+          <div style="width: 330px; flex-shrink: 0; display: flex; justify-content: flex-end;">
+            <a href="AdminBasics.dc.html" style="height: 40px; padding: 0 13px; border-radius: 8px; border: 1px solid #241F1A; background: #241F1A; display: flex; align-items: center; font-size: 12px; font-weight: 600; color: #F9F6F0; text-decoration: none;">Edit as them</a>
+          </div>
+        </div>
+
+        <!-- A single-location member, for contrast -->
+        <div style="display: flex; align-items: center; gap: 16px; padding: 14px 20px;">
+          <div style="width: 40px; height: 40px; flex-shrink: 0; border-radius: 9px; background: #F2EEE7; border: 1px solid #E6E0D6; display: flex; align-items: center; justify-content: center; font-size: 7px; letter-spacing: 0.1em; color: #8C8275;">LOGO</div>
+          <div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1;">
+            <div style="font-size: 15px; font-weight: 600; color: #241F1A;">[MEMBER NAME]</div>
+            <div style="font-size: 12px; color: #6B6156;">[CITY] · Producer · one location</div>
+          </div>
+          <div style="width: 120px; flex-shrink: 0; display: flex; align-items: center; gap: 7px;">
+            <span style="display: block; width: 8px; height: 8px; border-radius: 99px; background: #4E9A4A;"></span>
+            <span style="font-size: 13px; color: #3A332C;">Live</span>
+          </div>
+          <div style="width: 330px; flex-shrink: 0; display: flex; justify-content: flex-end; gap: 8px;">
+            <a href="TaproomProfile.dc.html" style="height: 40px; padding: 0 13px; border-radius: 8px; border: 1px solid #DED7CB; background: #F9F6F0; display: flex; align-items: center; font-size: 12px; font-weight: 500; color: #241F1A; text-decoration: none;">View</a>
+            <a href="AdminBasics.dc.html" style="height: 40px; padding: 0 13px; border-radius: 8px; border: 1px solid #241F1A; background: #241F1A; display: flex; align-items: center; font-size: 12px; font-weight: 600; color: #F9F6F0; text-decoration: none;">Edit as them</a>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156; margin-top: 4px;">THE BOXES THESE OPEN</div>
+
+      <div style="display: flex; gap: 20px; align-items: flex-start;">
+
+        <!-- Switch to one manager -->
+        <div style="width: 310px; flex-shrink: 0; box-sizing: border-box; padding: 22px; border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF; box-shadow: 0 10px 30px rgba(36,31,26,0.10); display: flex; flex-direction: column; gap: 14px;">
+          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 20px; font-weight: 700; line-height: 1.2; color: #241F1A;">Switch Hangar 24 to one manager</div>
+          <div style="font-size: 13px; line-height: 1.5; color: #564E45;">One person runs all 4 locations and the logo, cover and theme are shared.</div>
+          <fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 6px;">
+            <legend style="padding: 0 0 8px; font-size: 13px; font-weight: 600; color: #241F1A;">Who manages the business?</legend>
+            <label for="mgr-1" style="min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border-radius: 9px; border: 2px solid #241F1A; font-size: 13px; color: #241F1A;"><input type="radio" id="mgr-1" name="mgr" checked="checked" style="width: 16px; height: 16px; margin: 0; accent-color: #241F1A;">[REDLANDS OWNER EMAIL]</label>
+            <label for="mgr-2" style="min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; font-size: 13px; color: #241F1A;"><input type="radio" id="mgr-2" name="mgr" style="width: 16px; height: 16px; margin: 0; accent-color: #241F1A;">[RIVERSIDE OWNER EMAIL]</label>
+            <label for="mgr-3" style="min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; font-size: 13px; color: #241F1A;"><input type="radio" id="mgr-3" name="mgr" style="width: 16px; height: 16px; margin: 0; accent-color: #241F1A;">[LAKE HAVASU OWNER EMAIL]</label>
+            <label for="mgr-new" style="min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; font-size: 13px; color: #241F1A;"><input type="radio" id="mgr-new" name="mgr" style="width: 16px; height: 16px; margin: 0; accent-color: #241F1A;">Invite someone new</label>
+            <input type="email" aria-label="New manager's email" placeholder="Their email" style="height: 46px; padding: 0 13px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 13px; color: #241F1A; box-sizing: border-box;">
+          </fieldset>
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <label for="keep-look" style="font-size: 13px; font-weight: 600; color: #241F1A;">Keep the logo, cover and theme from:</label>
+            <select id="keep-look" style="height: 46px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 13px; color: #241F1A;">
+              <option>Redlands</option>
+              <option>Riverside</option>
+              <option>Irvine</option>
+              <option>Lake Havasu City</option>
+            </select>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 8px; padding-top: 2px;">
+            <button type="button" style="height: 44px; padding: 0 16px; border-radius: 9px; border: 1px solid #DED7CB; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Cancel</button>
+            <button type="button" style="height: 44px; padding: 0 20px; border-radius: 9px; border: 0; background: #B3591F; font-family: inherit; font-size: 14px; font-weight: 600; color: #FFFFFF;">Switch</button>
+          </div>
+        </div>
+
+        <!-- Switch to each location separately -->
+        <div style="width: 310px; flex-shrink: 0; box-sizing: border-box; padding: 22px; border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF; box-shadow: 0 10px 30px rgba(36,31,26,0.10); display: flex; flex-direction: column; gap: 14px;">
+          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 20px; font-weight: 700; line-height: 1.2; color: #241F1A;">Switch to each location separately</div>
+          <div style="font-size: 13px; line-height: 1.55; color: #3A332C;">Each location keeps its current logo, cover, theme and owner. To give a location to someone new, the manager hands it off first.</div>
+          <div style="display: flex; justify-content: flex-end; gap: 8px; padding-top: 2px;">
+            <button type="button" style="height: 44px; padding: 0 16px; border-radius: 9px; border: 1px solid #DED7CB; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Cancel</button>
+            <button type="button" style="height: 44px; padding: 0 20px; border-radius: 9px; border: 0; background: #B3591F; font-family: inherit; font-size: 14px; font-weight: 600; color: #FFFFFF;">Switch</button>
+          </div>
+        </div>
+
+        <!-- Add a member, with Part of -->
+        <div style="width: 310px; flex-shrink: 0; box-sizing: border-box; padding: 22px; border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF; box-shadow: 0 10px 30px rgba(36,31,26,0.10); display: flex; flex-direction: column; gap: 12px;">
+          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 20px; font-weight: 700; line-height: 1.2; color: #241F1A;">Add a member</div>
+          <div style="font-size: 12px; line-height: 1.5; color: #564E45;">They start as a draft. Invite them from the roster when you're ready.</div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label for="am-name" style="font-size: 13px; font-weight: 600; color: #241F1A;">Business name</label>
+            <input type="text" id="am-name" style="height: 46px; padding: 0 13px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 13px; box-sizing: border-box;">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label for="am-city" style="font-size: 13px; font-weight: 600; color: #241F1A;">City</label>
+            <input type="text" id="am-city" style="height: 46px; padding: 0 13px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 13px; box-sizing: border-box;">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label for="am-type" style="font-size: 13px; font-weight: 600; color: #241F1A;">Member type</label>
+            <select id="am-type" style="height: 46px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 13px; color: #241F1A;">
+              <option>Producer</option>
+              <option>Mobile</option>
+              <option>Affiliate Member</option>
+            </select>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label for="am-part" style="font-size: 13px; font-weight: 600; color: #241F1A;">Part of</label>
+            <select id="am-part" style="height: 46px; padding: 0 12px; border-radius: 9px; border: 2px solid #B3591F; background: #FFFFFF; font-family: inherit; font-size: 13px; color: #241F1A;">
+              <option>None — a single location</option>
+              <option>Hangar 24</option>
+              <option>…</option>
+            </select>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label for="am-email" style="font-size: 13px; font-weight: 600; color: #241F1A;">Contact email <span style="font-weight: 400; color: #6B6156;">(optional)</span></label>
+            <input type="email" id="am-email" style="height: 46px; padding: 0 13px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 13px; box-sizing: border-box;">
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 8px; padding-top: 2px;">
+            <button type="button" style="height: 44px; padding: 0 16px; border-radius: 9px; border: 1px solid #DED7CB; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Cancel</button>
+            <button type="button" style="height: 44px; padding: 0 20px; border-radius: 9px; border: 0; background: #B3591F; font-family: inherit; font-size: 14px; font-weight: 600; color: #FFFFFF;">Add member</button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

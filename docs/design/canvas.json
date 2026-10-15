@@ -274,6 +274,41 @@
       "w": 1000,
       "h": 660,
       "title": "GV4 · Homepage — once, as the taproom's event"
+    },
+    "BizRoster.dc.html": {
+      "x": 0,
+      "y": 11000,
+      "w": 1280,
+      "h": 1300,
+      "title": "BZ1 · Roster — business row, Managed by, mode switches, Part of"
+    },
+    "BizSwitcher.dc.html": {
+      "x": 1360,
+      "y": 11000,
+      "w": 1760,
+      "h": 900,
+      "title": "BZ2 · Location switcher (computer and phone)"
+    },
+    "BizShortSetup.dc.html": {
+      "x": 3200,
+      "y": 11000,
+      "w": 1280,
+      "h": 1200,
+      "title": "BZ3 · Short setup for another location"
+    },
+    "BizPeople.dc.html": {
+      "x": 4560,
+      "y": 11000,
+      "w": 1280,
+      "h": 1000,
+      "title": "BZ4 · People — Business manager, hand off, take back"
+    },
+    "BizLookReadOnly.dc.html": {
+      "x": 5920,
+      "y": 11000,
+      "w": 1280,
+      "h": 900,
+      "title": "BZ5 · Shared look, read-only for a location manager"
     }
   },
   "createdOnFiles": {
@@ -324,6 +359,14 @@
       "w": 240,
       "x": 0,
       "y": 8700
+    },
+    "hdr7": {
+      "kind": "title1",
+      "text": "Multi-location businesses (spec 2026-10-15)",
+      "x": 0,
+      "y": 10700,
+      "w": 240,
+      "maxW": 7000
     }
   },
   "order": [
@@ -365,7 +408,12 @@
     "MembersV2Phone.dc.html",
     "MembersV2PhoneFilters.dc.html",
     "MembersV2PhoneMap.dc.html",
-    "MembersV2States.dc.html"
+    "MembersV2States.dc.html",
+    "BizRoster.dc.html",
+    "BizSwitcher.dc.html",
+    "BizShortSetup.dc.html",
+    "BizPeople.dc.html",
+    "BizLookReadOnly.dc.html"
   ],
   "pages": [],
   "title": "IE Brewers Guild — Member Profile"

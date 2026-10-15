@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>People — business manager, hand off, take back</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#F9F6F0}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+
+<div style="width: 1280px; height: 1000px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column; font-family: Chivo, sans-serif; color: #241F1A;">
+
+  <div style="height: 64px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 28px;">
+    <div style="display: flex; align-items: center; gap: 11px;">
+      <div style="width: 24px; height: 24px; border-radius: 5px; background: #38322A;"></div>
+      <div style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">IE BREWERS GUILD · MEMBER ADMIN</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="font-size: 13px; color: #A89D8E;">Hangar 24 · Riverside</div>
+      <a href="TaproomProfile.dc.html" style="height: 40px; padding: 0 16px; border-radius: 9px; border: 1px solid #4A4238; color: #F9F6F0; display: flex; align-items: center; font-size: 13px; font-weight: 500; text-decoration: none;">Preview</a>
+      <a href="AdminPublish.dc.html" style="height: 40px; padding: 0 18px; border-radius: 9px; background: #B3591F; color: #FFFFFF; display: flex; align-items: center; font-size: 13px; font-weight: 600; text-decoration: none;">Publish changes</a>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; display: flex;">
+
+    <div style="width: 236px; flex-shrink: 0; border-right: 1px solid #EFEAE1; padding: 20px 16px 26px; display: flex; flex-direction: column; gap: 3px;">
+      <a href="BizSwitcher.dc.html" aria-haspopup="menu" style="min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 12px; margin-bottom: 14px; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; font-size: 14px; font-weight: 600; color: #241F1A; text-decoration: none;">Hangar 24 · Riverside<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" style="flex-shrink: 0;"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="#241F1A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #8C8275; padding: 0 12px 10px;">YOUR PROFILE</div>
+      <a href="AdminBasics.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Basics &amp; hours</a>
+      <a href="AdminMedia.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Logo, Photos &amp; Cover</a>
+      <a href="AdminEvents.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Events</a>
+      <a href="AdminFood.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Food</a>
+      <a href="AdminLinks.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Links &amp; contact</a>
+      <a href="AdminTheme.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Theme</a>
+      <a href="#people" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; background: #241F1A; color: #F9F6F0; font-weight: 600;">People</a>
+      <a href="#member-guide" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Member Guide (PDF)</a>
+    </div>
+
+    <div style="flex-grow: 1; min-width: 0; padding: 30px 36px; display: flex; flex-direction: column; gap: 22px;">
+
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 27px; font-weight: 700; color: #241F1A;">People</div>
+        <div style="font-size: 13px; color: #6B6156;">Who can edit Hangar 24 · Riverside. Seen here by the business manager.</div>
+      </div>
+
+      <!-- State 1: before a hand-off -->
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">BEFORE A HAND-OFF</div>
+        <div style="display: flex; gap: 20px; align-items: flex-start;">
+
+          <div style="width: 500px; flex-shrink: 0; border-radius: 13px; border: 1px solid #DED7CB; background: #FFFFFF; overflow: hidden;">
+            <div style="min-height: 64px; display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-bottom: 1px solid #EFEAE1;">
+              <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px;">
+                <div style="font-size: 14px; font-weight: 600; color: #241F1A;">[MANAGER EMAIL]</div>
+                <div style="font-size: 12px; color: #6B6156;">Business manager · all 4 locations</div>
+              </div>
+              <span style="padding: 4px 10px; border-radius: 99px; background: #EFEAE1; font-size: 11px; font-weight: 600; color: #3A332C;">You</span>
+            </div>
+            <div style="min-height: 64px; display: flex; align-items: center; gap: 12px; padding: 10px 18px;">
+              <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px;">
+                <div style="font-size: 14px; font-weight: 600; color: #241F1A;">[EDITOR EMAIL]</div>
+                <div style="font-size: 12px; color: #6B6156;">Photos &amp; events editor · Riverside</div>
+              </div>
+              <button type="button" style="height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid #DED7CB; background: #F9F6F0; font-family: inherit; font-size: 12px; font-weight: 500; color: #241F1A;">Remove</button>
+            </div>
+          </div>
+
+          <div style="flex-grow: 1; min-width: 0; box-sizing: border-box; padding: 18px 20px; border-radius: 13px; border: 1px solid #DED7CB; background: #FFFFFF; display: flex; flex-direction: column; gap: 10px;">
+            <div style="font-size: 15px; font-weight: 600; color: #241F1A;">Hand off this location</div>
+            <label for="handoff-email" style="font-size: 13px; font-weight: 500; color: #241F1A;">Their email</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="email" id="handoff-email" placeholder="name@example.com" style="flex-grow: 1; min-width: 0; height: 46px; padding: 0 13px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 13px; color: #241F1A; box-sizing: border-box;">
+              <button type="button" style="height: 46px; flex-shrink: 0; padding: 0 18px; border-radius: 9px; border: 0; background: #B3591F; font-family: inherit; font-size: 14px; font-weight: 600; color: #FFFFFF;">Send invite</button>
+            </div>
+            <div style="font-size: 12px; line-height: 1.5; color: #6B6156;">They'll manage Riverside only. You keep access, and the logo, cover and theme stay shared.</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- State 2: after a hand-off -->
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">AFTER A HAND-OFF</div>
+        <div style="display: flex; gap: 20px; align-items: flex-start;">
+
+          <div style="width: 500px; flex-shrink: 0; border-radius: 13px; border: 1px solid #DED7CB; background: #FFFFFF; overflow: hidden;">
+            <div style="min-height: 64px; display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-bottom: 1px solid #EFEAE1;">
+              <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px;">
+                <div style="font-size: 14px; font-weight: 600; color: #241F1A;">[MANAGER EMAIL]</div>
+                <div style="font-size: 12px; color: #6B6156;">Business manager · all 4 locations</div>
+              </div>
+              <span style="padding: 4px 10px; border-radius: 99px; background: #EFEAE1; font-size: 11px; font-weight: 600; color: #3A332C;">You</span>
+            </div>
+            <div style="min-height: 64px; display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-bottom: 1px solid #EFEAE1;">
+              <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px;">
+                <div style="font-size: 14px; font-weight: 600; color: #241F1A;">[LOCATION MANAGER EMAIL]</div>
+                <div style="font-size: 12px; color: #6B6156;">Location manager · Riverside</div>
+              </div>
+            </div>
+            <div style="min-height: 64px; display: flex; align-items: center; gap: 12px; padding: 10px 18px;">
+              <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px;">
+                <div style="font-size: 14px; font-weight: 600; color: #241F1A;">[EDITOR EMAIL]</div>
+                <div style="font-size: 12px; color: #6B6156;">Photos &amp; events editor · Riverside</div>
+              </div>
+              <button type="button" style="height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid #DED7CB; background: #F9F6F0; font-family: inherit; font-size: 12px; font-weight: 500; color: #241F1A;">Remove</button>
+            </div>
+          </div>
+
+          <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px;">
+            <div style="box-sizing: border-box; padding: 18px 20px; border-radius: 13px; border: 1px solid #DED7CB; background: #FFFFFF; display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-size: 15px; font-weight: 600; color: #241F1A;">Riverside is handed off</div>
+              <div style="font-size: 12px; line-height: 1.5; color: #6B6156;">[LOCATION MANAGER EMAIL] manages Riverside. You still have access.</div>
+              <button type="button" style="align-self: flex-start; height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #241F1A; background: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600; color: #241F1A;">Take back this location</button>
+            </div>
+
+            <div style="box-sizing: border-box; padding: 18px 20px; border-radius: 13px; border: 2px solid #B3591F; background: #FCF3EA; display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-size: 15px; font-weight: 600; color: #241F1A;">Take back Riverside?</div>
+              <div style="font-size: 13px; line-height: 1.5; color: #3A332C;">[LOCATION MANAGER EMAIL] will no longer be able to edit Riverside, and you'll manage it again.</div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" style="height: 44px; padding: 0 16px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Cancel</button>
+                <button type="button" style="height: 44px; padding: 0 18px; border-radius: 9px; border: 0; background: #B3591F; font-family: inherit; font-size: 14px; font-weight: 600; color: #FFFFFF;">Take back</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
