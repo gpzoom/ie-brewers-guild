@@ -7,7 +7,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(76);
+insert into _tap (line) select plan(80);
 
 -- A three-location one-manager business. The name trigger groups them.
 insert into public.members (id, slug, member_type, business_name, city, status) values
@@ -438,6 +438,43 @@ reset role;
 insert into _tap (line) select is(
   (select data #>> '{theme,theme}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000d2'),
   'rust', 'the other location''s draft is untouched');
+
+-- A discard on a location that isn't published restores the business's
+-- live look (its own live look may be empty), on every draft.
+insert into public.members (id, slug, member_type, business_name, city, status) values
+  ('f1000000-0000-4000-8000-0000000000b5', 'pgtap-disc-a', 'producer', 'PgTap Discard', 'Redlands', 'published'),
+  ('f1000000-0000-4000-8000-0000000000b6', 'pgtap-disc-b', 'producer', 'PgTap Discard', 'Riverside', 'draft');
+insert into public.media_assets (id, member_id, storage_path, kind, mime_type, byte_size, source, review_status) values
+  ('f2000000-0000-4000-8000-0000000000b5', 'f1000000-0000-4000-8000-0000000000b5', 'pgtap/disc-x.png', 'image', 'image/png', 1000, 'member_upload', 'approved'),
+  ('f2000000-0000-4000-8000-0000000000b6', 'f1000000-0000-4000-8000-0000000000b5', 'pgtap/disc-y.png', 'image', 'image/png', 1000, 'member_upload', 'approved');
+update public.members set logo_asset_id = 'f2000000-0000-4000-8000-0000000000b5'
+where id = 'f1000000-0000-4000-8000-0000000000b5';
+update public.businesses
+set management_mode = 'one_manager', manager_user_id = 'f0000000-0000-4000-8000-000000000006'
+where id = (select business_id from public.members where id = 'f1000000-0000-4000-8000-0000000000b5');
+insert into public.member_users (member_id, user_id, role) values
+  ('f1000000-0000-4000-8000-0000000000b5', 'f0000000-0000-4000-8000-000000000006', 'owner'),
+  ('f1000000-0000-4000-8000-0000000000b6', 'f0000000-0000-4000-8000-000000000006', 'owner');
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000006","role":"authenticated"}';
+select public.save_member_draft_section('f1000000-0000-4000-8000-0000000000b5', 'basics',
+  '{"logo_asset_id":"f2000000-0000-4000-8000-0000000000b6"}');
+reset role;
+insert into _tap (line) select is(
+  (select data #>> '{basics,logo_asset_id}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000b6'),
+  'f2000000-0000-4000-8000-0000000000b6', 'setup: the manager''s new logo is in the unpublished location''s draft');
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000006","role":"authenticated"}';
+insert into _tap (line) select lives_ok(
+  $$ select public.discard_member_draft_sections('f1000000-0000-4000-8000-0000000000b6', array['basics']) $$,
+  'manager: discards basics on the unpublished location');
+reset role;
+insert into _tap (line) select is(
+  (select data #>> '{basics,logo_asset_id}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000b6'),
+  'f2000000-0000-4000-8000-0000000000b5', 'the unpublished location''s draft holds the business''s live logo, not an empty one');
+insert into _tap (line) select is(
+  (select data #>> '{basics,logo_asset_id}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000b5'),
+  'f2000000-0000-4000-8000-0000000000b5', 'and the published location''s draft is back to its live logo');
 
 -- _shared_look_source: first published (by published_at), then first set
 -- up, then oldest; the excluded location never counts.

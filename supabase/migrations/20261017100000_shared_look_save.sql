@@ -211,8 +211,11 @@ begin
           ),
           updated_by_user_id = v_uid
       where d.member_id = v_sibling;
-      perform public._draft_audit_if_guild_admin(v_sibling, 'member_drafts');
+      if v_sibling <> p_member_id then
+        perform public._draft_audit_if_guild_admin(v_sibling, 'member_drafts');
+      end if;
     end loop;
+    select * into v_row from public.member_drafts d where d.member_id = p_member_id;
   end if;
 
   perform public._draft_audit_if_guild_admin(p_member_id, 'member_drafts');
@@ -229,7 +232,9 @@ grant execute on function public.save_member_draft_section(uuid, text, jsonb) to
 -- one-manager business, the other locations' drafts get this location's
 -- live look keys too -- their drafts held the discarded look (shared
 -- saves), and a later first publish of one of them would otherwise bring
--- it back. Their own unpublished edits stay; a section that now matches
+-- it back. When this location isn't published its live look may be empty,
+-- so the business's look source's live look (_shared_look_source) is used
+-- instead, for this location's draft as well. Their own unpublished edits stay; a section that now matches
 -- that location's live profile is no longer unpublished. Anyone else's
 -- discard touches only this location, as before.
 create or replace function public.discard_member_draft_sections(p_member_id uuid, p_sections text[])
@@ -246,6 +251,7 @@ declare
   v_business uuid;
   v_sibling uuid;
   v_look_sections text[];
+  v_look_from uuid;
 begin
   v_sections := public._draft_normalize_sections(p_sections);
   foreach v_section in array v_sections loop
@@ -272,8 +278,17 @@ begin
   v_business := public._one_manager_business_id(p_member_id);
   v_look_sections := array(select s from unnest(v_sections) s where s in ('basics', 'theme'));
   if v_business is not null and cardinality(v_look_sections) > 0 and public._can_change_shared_look(p_member_id) then
+    -- The look to restore: this location's live one when it is published;
+    -- otherwise (its live look may be empty or stale) the business's look
+    -- source's, and then this location's own draft takes it too.
+    if (select status from public.members where id = p_member_id) = 'published' then
+      v_look_from := p_member_id;
+    else
+      v_look_from := coalesce(public._shared_look_source(v_business, p_member_id), p_member_id);
+    end if;
     for v_sibling in
-      select id from public.members where business_id = v_business and id <> p_member_id
+      select id from public.members
+      where business_id = v_business and (id <> p_member_id or v_look_from <> p_member_id)
     loop
       perform public._draft_ensure(v_sibling);
       update public.member_drafts d
@@ -291,15 +306,18 @@ begin
                else '{}'::jsonb end,
           updated_by_user_id = v_uid
       from public.members m
-      where m.id = p_member_id and d.member_id = v_sibling;
+      where m.id = v_look_from and d.member_id = v_sibling;
       update public.member_drafts d
       set dirty_sections = array(
         select s from unnest(d.dirty_sections) s
         where not (s = any (v_look_sections) and (d.data -> s) = public._draft_section_from_live(v_sibling, s))
       )
       where d.member_id = v_sibling;
-      perform public._draft_audit_if_guild_admin(v_sibling, 'member_drafts');
+      if v_sibling <> p_member_id then
+        perform public._draft_audit_if_guild_admin(v_sibling, 'member_drafts');
+      end if;
     end loop;
+    select * into v_row from public.member_drafts d where d.member_id = p_member_id;
   end if;
 
   perform public._draft_audit_if_guild_admin(p_member_id, 'member_drafts');
