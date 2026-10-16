@@ -8,7 +8,7 @@ export const Route = createFileRoute("/guild/roster")({
 });
 
 function RosterRoute() {
-  const entries = Route.useLoaderData();
+  const { entries, businesses } = Route.useLoaderData();
   const { isSuperAdmin } = Route.useRouteContext();
-  return <RosterTable entries={entries} isSuperAdmin={isSuperAdmin} />;
+  return <RosterTable entries={entries} businesses={businesses} isSuperAdmin={isSuperAdmin} />;
 }

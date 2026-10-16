@@ -1,13 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { resolveMemberClaimState, type MemberClaimState } from "@/lib/guild/member-claim-state";
-import type { MemberRow, MemberUserRow } from "@/lib/supabase/types";
+import type { BusinessRow, MemberRow, MemberUserRow } from "@/lib/supabase/types";
+import type { RosterBusiness } from "@/lib/guild/roster-groups";
 
 export type RosterEntry = {
   member: MemberRow;
   claimState: MemberClaimState;
   ownerEmail: string | null;
 };
+
+export type RosterData = { entries: RosterEntry[]; businesses: RosterBusiness[] };
 
 /**
  * Lists every member with its real roster state (spec, "Roles" and
@@ -18,7 +21,7 @@ export type RosterEntry = {
  * 15: acceptable at the Guild's roster scale, revisit only if it grows by
  * orders of magnitude).
  */
-export const getRoster = createServerFn({ method: "GET" }).handler(async (): Promise<RosterEntry[]> => {
+export const getRoster = createServerFn({ method: "GET" }).handler(async (): Promise<RosterData> => {
   const supabase = await getSupabaseServerClientForRequest();
 
   const { data: members, error: membersError } = await supabase.from("members").select("*").order("business_name");
@@ -56,5 +59,20 @@ export const getRoster = createServerFn({ method: "GET" }).handler(async (): Pro
     });
   }
 
-  return entries;
+  const { data: businessRows, error: businessesError } = await supabase.from("businesses").select("*").order("name");
+  if (businessesError) throw new Error(businessesError.message);
+
+  const businesses: RosterBusiness[] = [];
+  for (const row of (businessRows ?? []) as BusinessRow[]) {
+    let managerEmail: string | null = null;
+    let managerSignedIn = false;
+    if (row.manager_user_id) {
+      const { data: userData } = await serviceClient.auth.admin.getUserById(row.manager_user_id);
+      managerEmail = userData?.user?.email ?? null;
+      managerSignedIn = Boolean(userData?.user?.last_sign_in_at);
+    }
+    businesses.push({ id: row.id, name: row.name, mode: row.management_mode, managerEmail, managerSignedIn });
+  }
+
+  return { entries, businesses };
 });

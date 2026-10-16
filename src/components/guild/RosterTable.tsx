@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { MoreHorizontal } from "lucide-react";
 import type { RosterEntry } from "@/lib/guild/roster.server";
+import type { RosterBusiness } from "@/lib/guild/roster-groups";
 import type { MemberStatus, MemberType } from "@/lib/supabase/types";
 import { toast } from "sonner";
 import {
@@ -125,6 +126,8 @@ export function RosterTable({
   isSuperAdmin,
 }: {
   entries: RosterEntry[];
+  /** Used by the grouped roster rows (Task 5). */
+  businesses: RosterBusiness[];
   isSuperAdmin: boolean;
 }) {
   const [query, setQuery] = useState("");
