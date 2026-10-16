@@ -27,6 +27,7 @@ import {
 } from "@/lib/portal/portal-sections";
 import { supabasePeopleStore } from "@/lib/portal/people-store.server";
 import { loadPeople } from "@/lib/portal/people";
+import { loadSharedLook, type SharedLook } from "@/lib/portal/shared-look";
 
 /**
  * The portal's server side (plan phase 5): /portal/[section] once setup is
@@ -42,6 +43,8 @@ export type PortalShell = PortalMemberShell & {
   publishGate: PublishGateData;
   switcher: LocationSwitcherData | null;
   canSwitchBusiness: boolean;
+  /** The one-manager business's shared look; null for everyone else. */
+  sharedLook: SharedLook | null;
   /**
    * The "Finish your profile" card: the sections still empty, for the owner
    * and full editors; null for a Photos & events editor, who can't fill
@@ -62,18 +65,26 @@ export const getPortalShell = createServerFn({ method: "GET" }).handler(
       throw redirect({ href: "/portal" });
     }
     const supabase = await getSupabaseServerClientForRequest();
-    const [shell, publishGate, completeness] = await Promise.all([
+    const service = await getSupabaseServiceRoleClient();
+    const [shell, publishGate, completeness, sharedLook] = await Promise.all([
       loadMemberShell(supabase, member),
       loadPublishGateData(supabase, member.memberId),
       member.role === "media_events"
         ? Promise.resolve(null)
         : loadCompletenessData(supabase, member.memberId),
+      // In the portal a Guild admin is always editing as the member, so
+      // impersonating means Guild admin; otherwise the viewer is a member.
+      loadSharedLook(service, member.memberId, {
+        userId: member.userId,
+        isGuildAdmin: member.isImpersonating,
+      }),
     ]);
     return {
       ...shell,
       publishGate,
       switcher: member.switcher,
       canSwitchBusiness: member.canSwitchBusiness,
+      sharedLook,
       emptySections: completeness
         ? emptySections(completeness.draft.data, {
             memberType: shell.memberType,

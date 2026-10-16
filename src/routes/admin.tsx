@@ -26,6 +26,7 @@ export const Route = createFileRoute("/admin")({
       isImpersonating: session.isImpersonating,
       isSuperAdmin: session.isSuperAdmin,
       locationSwitcher: session.switcher,
+      sharedLook: session.sharedLook,
     };
   },
   loader: async ({ context }) => {
@@ -49,7 +50,7 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   const { draftStatus, publishGateData, memberName } = Route.useLoaderData();
-  const { memberId, isImpersonating } = Route.useRouteContext();
+  const { memberId, isImpersonating, sharedLook } = Route.useRouteContext();
   // What the editors under /admin need to know about who's being edited
   // (MemberEditingContext) -- all from this layout's own loader, so nothing
   // extra is fetched.
@@ -63,9 +64,10 @@ function AdminLayout() {
       isPublished: publishGateData.status === "published",
       slug: publishGateData.slug,
       surface: "admin",
+      sharedLook,
       paths: ADMIN_EDITING_PATHS,
     }),
-    [memberId, memberName, publishGateData, draftStatus.role, isImpersonating],
+    [memberId, memberName, publishGateData, draftStatus.role, isImpersonating, sharedLook],
   );
   // key={memberId}: switching to a different member (Edit as them) must never
   // carry the previous member's draft status or editor state over.

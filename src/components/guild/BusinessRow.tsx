@@ -11,20 +11,17 @@ const segmentClass = (active: boolean) =>
  * A multi-location business's header row on the roster (artboard BZ1): its
  * name and location count, Managed by, and -- one-manager with no manager
  * yet -- the business's single Invite. Its locations render under it.
- * Until the location switcher (part 3) ships, switching to One manager and
- * the Invite are the super admin's only (the server and database enforce it).
+ * Every Guild admin can switch to One manager and send the Invite.
  */
 export function BusinessRow(props: {
   business: RosterBusiness;
   locationCount: number;
   busy: boolean;
-  isSuperAdmin: boolean;
   onModeChange: (mode: BusinessManagementMode) => void;
   onInvite: () => void;
 }) {
   const { business } = props;
   const oneManager = business.mode === "one_manager";
-  const comingSoon = !props.isSuperAdmin && !oneManager;
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-[#E6E0D6] bg-[#FCFAF6] px-4 py-3.5 md:px-5">
       <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
@@ -54,8 +51,7 @@ export function BusinessRow(props: {
           <button
             type="button"
             aria-pressed={oneManager}
-            disabled={props.busy || !props.isSuperAdmin}
-            title={comingSoon ? "Coming soon" : undefined}
+            disabled={props.busy}
             onClick={() => !oneManager && props.onModeChange("one_manager")}
             className={segmentClass(oneManager)}
           >
@@ -71,8 +67,7 @@ export function BusinessRow(props: {
             Each location separately
           </button>
         </div>
-        {comingSoon && <span className="text-xs text-ink-muted">One manager: coming soon</span>}
-        {oneManager && !business.hasManager && props.isSuperAdmin && (
+        {oneManager && !business.hasManager && (
           <button
             type="button"
             onClick={props.onInvite}

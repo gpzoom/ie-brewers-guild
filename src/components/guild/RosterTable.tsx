@@ -579,7 +579,6 @@ export function RosterTable({
                   business={business}
                   locationCount={locationCounts.get(business.id) ?? group.entries.length}
                   busy={businessBusyId === business.id}
-                  isSuperAdmin={isSuperAdmin}
                   onModeChange={(mode) => handleModeChange(business, mode)}
                   onInvite={() => {
                     setManagerInviteTarget(business);

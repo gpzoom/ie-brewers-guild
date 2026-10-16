@@ -45,6 +45,33 @@ describe("findAssetUsages", () => {
       }),
     ).toEqual([]);
   });
+
+  it("in a one-manager business, finds another location's live or drafted look photo", () => {
+    expect(
+      findAssetUsages({
+        assetId: "a",
+        live: NONE,
+        liveSlideAssetIds: [],
+        draftData: null,
+        otherLocations: [
+          { live: { ...NONE, logo_asset_id: "a" }, draftData: null },
+          { live: NONE, draftData: { basics: { cover_asset_id: "a" } } },
+        ],
+      }),
+    ).toEqual(["live_logo", "draft_cover"]);
+  });
+
+  it("another location's slides never count (slides stay in their own gallery)", () => {
+    expect(
+      findAssetUsages({
+        assetId: "a",
+        live: NONE,
+        liveSlideAssetIds: [],
+        draftData: null,
+        otherLocations: [{ live: NONE, draftData: { media: { slides: [{ asset_id: "a" }] } } }],
+      }),
+    ).toEqual([]);
+  });
 });
 
 describe("assetInUseMessage", () => {

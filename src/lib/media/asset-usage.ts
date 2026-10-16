@@ -27,28 +27,44 @@ export function findAssetUsages(args: {
   liveSlideAssetIds: readonly string[];
   /** member_drafts.data as stored (any shape; missing keys are fine). */
   draftData: unknown;
+  /**
+   * The other locations of a one-manager business (multi-location part 4):
+   * their logo, cover and link-preview image -- live or drafted -- may be
+   * this location's photo (the shared look lives in one gallery). Slides
+   * always stay in their own location's gallery, so they aren't checked.
+   */
+  otherLocations?: ReadonlyArray<{ live: LiveMemberRefs | null; draftData: unknown }>;
 }): AssetUsage[] {
-  const { assetId, live } = args;
+  const { assetId } = args;
   const usages: AssetUsage[] = [];
-  if (live?.logo_asset_id === assetId) usages.push("live_logo");
-  if (live?.cover_asset_id === assetId) usages.push("live_cover");
-  if (live?.og_image_asset_id === assetId) usages.push("live_social_image");
-  if (args.liveSlideAssetIds.includes(assetId)) usages.push("live_slide");
+  const add = (usage: AssetUsage) => {
+    if (!usages.includes(usage)) usages.push(usage);
+  };
+  const lookUsages = (live: LiveMemberRefs | null, draftData: unknown) => {
+    if (live?.logo_asset_id === assetId) add("live_logo");
+    if (live?.cover_asset_id === assetId) add("live_cover");
+    if (live?.og_image_asset_id === assetId) add("live_social_image");
+    const basics = asRecord(asRecord(draftData).basics);
+    if (basics.logo_asset_id === assetId) add("draft_logo");
+    if (basics.cover_asset_id === assetId) add("draft_cover");
+    if (basics.og_image_asset_id === assetId) add("draft_social_image");
+  };
 
-  const data = (
-    args.draftData && typeof args.draftData === "object" ? args.draftData : {}
-  ) as Record<string, unknown>;
-  const basics = (data.basics && typeof data.basics === "object" ? data.basics : {}) as Record<
-    string,
-    unknown
-  >;
+  const { live } = args;
+  if (live?.logo_asset_id === assetId) add("live_logo");
+  if (live?.cover_asset_id === assetId) add("live_cover");
+  if (live?.og_image_asset_id === assetId) add("live_social_image");
+  if (args.liveSlideAssetIds.includes(assetId)) add("live_slide");
+
+  const data = asRecord(args.draftData);
+  const basics = asRecord(data.basics);
   const media = (data.media && typeof data.media === "object" ? data.media : {}) as Record<
     string,
     unknown
   >;
-  if (basics.logo_asset_id === assetId) usages.push("draft_logo");
-  if (basics.cover_asset_id === assetId) usages.push("draft_cover");
-  if (basics.og_image_asset_id === assetId) usages.push("draft_social_image");
+  if (basics.logo_asset_id === assetId) add("draft_logo");
+  if (basics.cover_asset_id === assetId) add("draft_cover");
+  if (basics.og_image_asset_id === assetId) add("draft_social_image");
   const slides = Array.isArray(media.slides) ? media.slides : [];
   if (
     slides.some(
@@ -60,7 +76,12 @@ export function findAssetUsages(args: {
   ) {
     usages.push("draft_slide");
   }
+  for (const other of args.otherLocations ?? []) lookUsages(other.live, other.draftData);
   return usages;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
 }
 
 const PLACE_LABEL: Record<"logo" | "cover" | "social_image" | "slide", string> = {

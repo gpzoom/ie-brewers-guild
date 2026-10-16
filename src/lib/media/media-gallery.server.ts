@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { recordUploadFailure } from "@/lib/media/upload-failures.server";
 import { fileTypeFromBuffer } from "file-type";
-import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
+import {
+  getSupabaseServerClientForRequest,
+  getSupabaseServiceRoleClient,
+} from "@/lib/supabase/server";
 import { validateUploadedImage } from "@/lib/media/validate-file";
 import { stripImageMetadata } from "@/lib/media/strip-exif";
 import { resolveImageDimensions } from "@/lib/media/image-dimensions";
@@ -222,10 +225,73 @@ export type DeleteMemberMediaResult = { ok: true; fileRemoved: boolean };
  * DELETE RESTRICT); logo/cover/social image are ON DELETE SET NULL, which
  * is exactly the silent change this check is here to prevent.
  */
+type LookRefs = {
+  logo_asset_id: string | null;
+  cover_asset_id: string | null;
+  og_image_asset_id: string | null;
+};
+
+/**
+ * Multi-location part 4: in a one-manager business the logo, cover and
+ * link-preview image are shared, so another location's live row or draft
+ * may point at this location's photo. Returns those locations' look
+ * references (empty outside a one-manager business). `reader` must be able
+ * to read the other locations' rows and drafts -- the service client,
+ * since the caller may be linked to this location only.
+ */
+async function loadOtherLocationLooks(
+  reader: SupabaseClient,
+  memberId: string,
+): Promise<Array<{ live: LookRefs | null; draftData: unknown }>> {
+  const { data: row, error } = await reader
+    .from("members")
+    .select("business_id, businesses(management_mode)")
+    .eq("id", memberId)
+    .maybeSingle();
+  if (error) throw new Error(`Couldn't check where this photo is used: ${error.message}`);
+  type Business = { management_mode: string };
+  const member = row as { business_id?: string | null; businesses?: Business | Business[] | null } | null;
+  const business = Array.isArray(member?.businesses) ? member?.businesses[0] : member?.businesses;
+  if (!member?.business_id || business?.management_mode !== "one_manager") return [];
+
+  const { data: siblings, error: siblingsError } = await reader
+    .from("members")
+    .select("id, logo_asset_id, cover_asset_id, og_image_asset_id")
+    .eq("business_id", member.business_id)
+    .neq("id", memberId);
+  if (siblingsError) {
+    throw new Error(`Couldn't check where this photo is used: ${siblingsError.message}`);
+  }
+  const others = (siblings ?? []) as Array<LookRefs & { id: string }>;
+  if (others.length === 0) return [];
+
+  const { data: drafts, error: draftsError } = await reader
+    .from("member_drafts")
+    .select("member_id, data")
+    .in(
+      "member_id",
+      others.map((other) => other.id),
+    );
+  if (draftsError) throw new Error(`Couldn't check where this photo is used: ${draftsError.message}`);
+  const draftByMember = new Map(
+    ((drafts ?? []) as Array<{ member_id: string; data: unknown }>).map((d) => [d.member_id, d.data]),
+  );
+  return others.map((other) => ({
+    live: {
+      logo_asset_id: other.logo_asset_id,
+      cover_asset_id: other.cover_asset_id,
+      og_image_asset_id: other.og_image_asset_id,
+    },
+    draftData: draftByMember.get(other.id) ?? null,
+  }));
+}
+
 export async function deleteMediaAssetCore(
   assetId: string,
   supabase: SupabaseClient,
   recordAudit: AuditRecorder,
+  /** Reads the other locations of a one-manager business (default: `supabase`). */
+  lookReader: SupabaseClient = supabase,
 ): Promise<DeleteMemberMediaResult> {
   const { data: asset, error: lookupError } = await supabase
     .from("media_assets")
@@ -238,7 +304,8 @@ export async function deleteMediaAssetCore(
   }
   const memberId = asset.member_id as string;
 
-  const [memberResult, slidesResult, draftResult] = await Promise.all([
+  // Only after the RLS-scoped lookup above: the caller can see this asset.
+  const [memberResult, slidesResult, draftResult, otherLocations] = await Promise.all([
     supabase
       .from("members")
       .select("logo_asset_id, cover_asset_id, og_image_asset_id")
@@ -246,6 +313,7 @@ export async function deleteMediaAssetCore(
       .maybeSingle(),
     supabase.from("carousel_slides").select("asset_id").eq("member_id", memberId),
     supabase.from("member_drafts").select("data").eq("member_id", memberId).maybeSingle(),
+    loadOtherLocationLooks(lookReader, memberId),
   ]);
   for (const result of [memberResult, slidesResult, draftResult]) {
     if (result.error) {
@@ -265,6 +333,7 @@ export async function deleteMediaAssetCore(
         (slide) => slide.asset_id,
       ),
       draftData: (draftResult.data as { data?: unknown } | null)?.data ?? null,
+      otherLocations,
     }),
   );
   if (usageMessage) throw new Error(usageMessage);
@@ -336,5 +405,10 @@ export const deleteMemberMedia = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data }) => {
     const supabase = await getSupabaseServerClientForRequest();
-    return deleteMediaAssetCore(data.id, supabase, recordAuditLogIfImpersonating);
+    return deleteMediaAssetCore(
+      data.id,
+      supabase,
+      recordAuditLogIfImpersonating,
+      await getSupabaseServiceRoleClient(),
+    );
   });

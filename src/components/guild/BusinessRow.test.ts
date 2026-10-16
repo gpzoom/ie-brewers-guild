@@ -12,9 +12,9 @@ const base: RosterBusiness = {
   managerEmail: null,
   managerSignedIn: false,
 };
-const render = (business: RosterBusiness, isSuperAdmin = true) =>
+const render = (business: RosterBusiness) =>
   renderToStaticMarkup(
-    createElement(BusinessRow, { business, locationCount: 4, busy: false, isSuperAdmin, onModeChange: vi.fn(), onInvite: vi.fn() }),
+    createElement(BusinessRow, { business, locationCount: 4, busy: false, onModeChange: vi.fn(), onInvite: vi.fn() }),
   );
 
 describe("BusinessRow (artboard BZ1)", () => {
@@ -45,15 +45,11 @@ describe("BusinessRow (artboard BZ1)", () => {
     expect(html).not.toContain("no manager yet");
   });
 
-  it("Guild admin (not super admin): One manager is disabled and says Coming soon; separately stays usable", () => {
-    const html = render({ ...base, mode: "separate" }, false);
-    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>One manager/);
-    expect(html).toContain("Coming soon");
+  it("every Guild admin can pick One manager: no Coming soon, nothing disabled", () => {
+    const html = render({ ...base, mode: "separate" });
+    expect(html).not.toMatch(/<button[^>]*disabled=""[^>]*>One manager/);
+    expect(html).not.toMatch(/coming soon/i);
     expect(html).not.toMatch(/<button[^>]*disabled=""[^>]*>Each location separately/);
-  });
-
-  it("Guild admin (not super admin): no business Invite", () => {
-    expect(render(base, false)).not.toContain(">Invite<");
   });
 
   it("separate: no business-level Invite", () => {

@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { redirect } from "@tanstack/react-router";
-import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
+import {
+  getSupabaseServerClientForRequest,
+  getSupabaseServiceRoleClient,
+} from "@/lib/supabase/server";
 import { requirePortalMember, type PortalMember } from "@/lib/portal/portal-session.server";
 import { loadDraftStatus, type DraftStatus } from "@/lib/drafts/drafts.server";
 import { loadPublishGateData } from "@/lib/hours/publish-gate.server";
@@ -20,6 +23,8 @@ import {
 import { isSetupStepName, type SetupStepName } from "@/lib/portal/wizard-steps";
 import type { LocationSwitcherData } from "@/lib/portal/location-groups";
 import type { MemberType } from "@/lib/supabase/types";
+import { loadSharedLook, type SharedLook } from "@/lib/portal/shared-look";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * The setup wizard's server side (plan phase 4). Every function here
@@ -41,7 +46,39 @@ async function requireWizardMember(): Promise<PortalMember> {
   return member;
 }
 
-export type PortalSetupShell = PortalMemberShell & { switcher: LocationSwitcherData | null };
+export type PortalSetupShell = PortalMemberShell & {
+  switcher: LocationSwitcherData | null;
+  /** The one-manager business's shared look; null for everyone else. */
+  sharedLook: SharedLook | null;
+  /**
+   * Another location of this one-manager business has finished setup, so
+   * this one starts from its basics and links (prefill_location_setup).
+   */
+  shortSetup: boolean;
+};
+
+/** True when another location of the member's business has finished setup. */
+async function anotherLocationIsSetUp(service: SupabaseClient, memberId: string): Promise<{
+  otherSetUp: boolean;
+  setupCompleted: boolean;
+}> {
+  const { data: row, error } = await service
+    .from("members")
+    .select("business_id, setup_completed_at")
+    .eq("id", memberId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const member = row as { business_id: string | null; setup_completed_at: string | null } | null;
+  if (!member?.business_id) return { otherSetUp: false, setupCompleted: member?.setup_completed_at != null };
+  const { count, error: countError } = await service
+    .from("members")
+    .select("id", { count: "exact", head: true })
+    .eq("business_id", member.business_id)
+    .neq("id", memberId)
+    .not("setup_completed_at", "is", null);
+  if (countError) throw new Error(countError.message);
+  return { otherSetUp: (count ?? 0) > 0, setupCompleted: member.setup_completed_at !== null };
+}
 
 /**
  * The /portal/setup layout's beforeLoad: who's signed in, which business,
@@ -54,7 +91,37 @@ export const getPortalSetupShell = createServerFn({ method: "GET" }).handler(
   async (): Promise<PortalSetupShell> => {
     const member = await requireWizardMember();
     const supabase = await getSupabaseServerClientForRequest();
-    return { ...(await loadMemberShell(supabase, member)), switcher: member.switcher };
+    const service = await getSupabaseServiceRoleClient();
+    // In the portal a Guild admin is always editing as the member, so
+    // impersonating means Guild admin; otherwise the viewer is a member.
+    const sharedLook = await loadSharedLook(service, member.memberId, {
+      userId: member.userId,
+      isGuildAdmin: member.isImpersonating,
+    });
+    let shortSetup = false;
+    if (sharedLook) {
+      const { otherSetUp, setupCompleted } = await anotherLocationIsSetUp(service, member.memberId);
+      shortSetup = otherSetUp;
+      if (shortSetup && !setupCompleted) {
+        // Before the draft status is read, so the first screen shows the
+        // copied basics and links. It copies once (a no-op after that).
+        // Best-effort: setup still works from an empty draft.
+        try {
+          const { error } = await supabase.rpc("prefill_location_setup", {
+            p_member_id: member.memberId,
+          });
+          if (error) console.error("getPortalSetupShell: prefill_location_setup failed", error);
+        } catch (err) {
+          console.error("getPortalSetupShell: prefill_location_setup failed", err);
+        }
+      }
+    }
+    return {
+      ...(await loadMemberShell(supabase, member)),
+      switcher: member.switcher,
+      sharedLook,
+      shortSetup,
+    };
   },
 );
 

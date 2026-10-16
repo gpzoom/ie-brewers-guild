@@ -49,6 +49,8 @@ function SetupLayout() {
       slug: shell.slug,
       surface: "portal",
       locationSwitcher: shell.switcher,
+      sharedLook: shell.sharedLook,
+      shortSetup: shell.shortSetup,
       paths: {
         // The Basics step closes once setup is complete; the portal's Basics
         // & hours section is the link target from then on.

@@ -7,6 +7,7 @@ import { listPortalMemberships } from "@/lib/portal/portal-access";
 import { adminMemberIdFor, locationSwitcherFor, type LocationSwitcherData } from "@/lib/portal/location-groups";
 import { PORTAL_MEMBER_COOKIE } from "@/lib/portal/portal-member-cookie";
 import { readImpersonationState, touchImpersonationActivity } from "@/lib/guild/impersonation.server";
+import { loadSharedLook, type SharedLook } from "@/lib/portal/shared-look";
 
 export type MemberSession = {
   memberId: string;
@@ -17,6 +18,8 @@ export type MemberSession = {
   isSuperAdmin: boolean;
   /** The location menu (artboard BZ2); null while a Guild admin is editing as a member. */
   switcher: LocationSwitcherData | null;
+  /** The one-manager business's shared look; null for everyone else. */
+  sharedLook: SharedLook | null;
 };
 
 /**
@@ -67,6 +70,10 @@ export const requireMemberSession = createServerFn({ method: "GET" }).handler(
         throw redirect({ href: "/signin" });
       }
       await touchImpersonationActivity(impersonation);
+      const sharedLook = await loadSharedLook(await getSupabaseServiceRoleClient(), impersonation.memberId, {
+        userId: user.id,
+        isGuildAdmin: true,
+      });
       return {
         memberId: impersonation.memberId,
         userId: user.id,
@@ -74,6 +81,7 @@ export const requireMemberSession = createServerFn({ method: "GET" }).handler(
         actorUserId: impersonation.actorUserId,
         isSuperAdmin: actorProfile.is_super_admin === true,
         switcher: null,
+        sharedLook,
       };
     }
 
@@ -100,6 +108,7 @@ export const requireMemberSession = createServerFn({ method: "GET" }).handler(
       actorUserId: user.id,
       isSuperAdmin: false,
       switcher: locationSwitcherFor(memberships, memberId),
+      sharedLook: await loadSharedLook(service, memberId, { userId: user.id, isGuildAdmin: false }),
     };
   },
 );

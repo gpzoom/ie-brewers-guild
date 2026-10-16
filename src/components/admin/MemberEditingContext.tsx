@@ -2,6 +2,7 @@ import { createContext, useContext, type ReactNode } from "react";
 import type { ViewerRole } from "@/lib/drafts/sections";
 import type { LocationSwitcherData } from "@/lib/portal/location-groups";
 import type { MemberType } from "@/lib/supabase/types";
+import type { SharedLook } from "@/lib/portal/shared-look";
 
 /**
  * Who and what is being edited, for the editor components -- so they work
@@ -31,6 +32,13 @@ export type MemberEditingValue = {
   surface: "admin" | "portal";
   /** The location menu for the setup top bar; absent elsewhere or while impersonating. */
   locationSwitcher?: LocationSwitcherData | null;
+  /**
+   * The one-manager business's shared look (logo, cover, link preview,
+   * theme); null or absent when the member isn't in one.
+   */
+  sharedLook?: SharedLook | null;
+  /** Setup wizard only: this location starts from another location's setup. */
+  shortSetup?: boolean;
   /**
    * Where cross-section links go on this surface; null hides the link
    * (e.g. the wizard has no Basics page to send someone back to once

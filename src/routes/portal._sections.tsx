@@ -51,6 +51,7 @@ function PortalLayout() {
       isPublished: shell.status === "published",
       slug: shell.slug,
       surface: "portal",
+      sharedLook: shell.sharedLook,
       paths: {
         basics: shell.role === "media_events" ? null : { to: "/portal/basics" },
         hours: shell.role === "media_events" ? null : { to: "/portal/basics", hash: "hours" },

@@ -193,4 +193,70 @@ describe("deleteMediaAssetCore", () => {
     const result = await deleteMediaAssetCore("asset-1", client, auditSpy().record);
     expect(result.fileRemoved).toBe(false);
   });
+
+  it("in a one-manager business, refuses a photo another location uses as its logo", async () => {
+    const { client, deletes } = fakeClient({ asset: ASSET, assetDeleteRows: DELETED_ROW });
+    const lookReader = siblingReader({
+      business: { business_id: "b1", businesses: { management_mode: "one_manager" } },
+      siblings: [{ id: "member-2", logo_asset_id: "asset-1", cover_asset_id: null, og_image_asset_id: null }],
+      drafts: [],
+    });
+    await expect(
+      deleteMediaAssetCore("asset-1", client, auditSpy().record, lookReader),
+    ).rejects.toThrow(/your logo \(on your live page\)/);
+    expect(deletes).toEqual([]);
+  });
+
+  it("in a one-manager business, refuses a photo in another location's drafted cover", async () => {
+    const { client, deletes } = fakeClient({ asset: ASSET, assetDeleteRows: DELETED_ROW });
+    const lookReader = siblingReader({
+      business: { business_id: "b1", businesses: { management_mode: "one_manager" } },
+      siblings: [{ id: "member-2", logo_asset_id: null, cover_asset_id: null, og_image_asset_id: null }],
+      drafts: [{ member_id: "member-2", data: { basics: { cover_asset_id: "asset-1" } } }],
+    });
+    await expect(
+      deleteMediaAssetCore("asset-1", client, auditSpy().record, lookReader),
+    ).rejects.toThrow(/your cover photo \(in your unpublished changes\)/);
+    expect(deletes).toEqual([]);
+  });
+
+  it("a separately managed business doesn't look at the other locations", async () => {
+    const { client } = fakeClient({ asset: ASSET, assetDeleteRows: DELETED_ROW });
+    const lookReader = siblingReader({
+      business: { business_id: "b1", businesses: { management_mode: "separate" } },
+      siblings: [{ id: "member-2", logo_asset_id: "asset-1", cover_asset_id: null, og_image_asset_id: null }],
+      drafts: [],
+    });
+    const result = await deleteMediaAssetCore("asset-1", client, auditSpy().record, lookReader);
+    expect(result.ok).toBe(true);
+  });
 });
+
+/** The reader for the other locations' look: members (own row, then siblings) and their drafts. */
+function siblingReader(opts: {
+  business: { business_id: string | null; businesses: { management_mode: string } | null };
+  siblings: Array<{
+    id: string;
+    logo_asset_id: string | null;
+    cover_asset_id: string | null;
+    og_image_asset_id: string | null;
+  }>;
+  drafts: Array<{ member_id: string; data: unknown }>;
+}) {
+  return {
+    from(table: string) {
+      const builder = {
+        select: () => builder,
+        eq: () => builder,
+        neq: () => builder,
+        in: () => builder,
+        maybeSingle: async () => ({ data: opts.business, error: null }),
+        then: (resolve: (r: Result) => unknown) =>
+          Promise.resolve(
+            resolve({ data: table === "members" ? opts.siblings : opts.drafts, error: null }),
+          ),
+      };
+      return builder;
+    },
+  } as unknown as SupabaseClient;
+}

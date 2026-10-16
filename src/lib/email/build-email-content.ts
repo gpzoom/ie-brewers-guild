@@ -275,7 +275,8 @@ export function buildEmailContent(payload: TransactionalEmailPayload, siteUrl: s
         `Welcome to the ${ORG_NAME}! The Guild has set up profiles on the member directory for ` +
         `${payload.businessName}'s ${payload.locationCount} locations, and you manage all of them.`;
       const howTo = "Sign in anytime with this email address to set them up:";
-      const after = "Questions? Just reply to this email.";
+      const after =
+        "You'll set up the logo, cover and theme once for every location, then each location's own details. Questions? Just reply to this email.";
       return {
         subject: `You're invited to manage ${payload.businessName}'s ${payload.locationCount} locations on the ${ORG_SHORT_NAME} member directory`,
         replyTo: MEMBER_INVITE_REPLY_TO,

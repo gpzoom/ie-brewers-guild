@@ -416,11 +416,12 @@ describe("buildEmailContent: business_invited (spec 2026-10-15)", () => {
     expect(content.replyTo).toBe(MEMBER_INVITE_REPLY_TO);
   });
 
-  it("does not promise the location switcher yet; still invites replies", () => {
+  it("says the look is set up once for every location, then invites replies", () => {
     const content = buildEmailContent(payload);
-    expect(content.text).not.toContain("logo, cover and theme once for every location");
-    expect(content.html).not.toContain("logo, cover and theme once for every location");
-    expect(content.text).toContain("Questions? Just reply to this email.");
+    const sentence =
+      "You'll set up the logo, cover and theme once for every location, then each location's own details. Questions? Just reply to this email.";
+    expect(content.text).toContain(sentence);
+    expect(content.html).toContain("logo, cover and theme once for every location");
   });
 
   it("escapes the business name in the HTML", () => {

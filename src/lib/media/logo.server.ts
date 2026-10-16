@@ -1,5 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
+import {
+  getSupabaseServerClientForRequest,
+  getSupabaseServiceRoleClient,
+} from "@/lib/supabase/server";
+import { loadSharedLook, sharedLookChangeRefusal } from "@/lib/portal/shared-look";
 import { readPngHeight, validateUploadedImage } from "@/lib/media/validate-file";
 import { stripImageMetadata } from "@/lib/media/strip-exif";
 import { resolveImageDimensions } from "@/lib/media/image-dimensions";
@@ -86,6 +90,27 @@ export const uploadMemberLogo = createServerFn({ method: "POST" })
       if (height !== null && height < MIN_LOGO_HEIGHT_PX) {
         throw new Error(`This logo is ${height}px tall — logos need to be at least ${MIN_LOGO_HEIGHT_PX}px tall.`);
       }
+    }
+
+    // Shared look (multi-location part 4): in a one-manager business only
+    // the manager or a Guild admin may change the logo. The database
+    // refuses the draft save on its own; checking here first keeps a
+    // refused upload from leaving an orphaned file in the gallery.
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData?.user;
+    if (!user) throw new Error("Not signed in.");
+    if (memberId) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_guild_admin")
+        .eq("id", user.id)
+        .maybeSingle();
+      const look = await loadSharedLook(await getSupabaseServiceRoleClient(), memberId, {
+        userId: user.id,
+        isGuildAdmin: profile?.is_guild_admin === true,
+      });
+      const refusal = sharedLookChangeRefusal(look);
+      if (refusal) throw new Error(refusal);
     }
 
     const stripped = stripImageMetadata(bytes, validation.detectedMimeType);
