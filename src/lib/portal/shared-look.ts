@@ -22,8 +22,25 @@ export type SharedLook = {
 
 type BusinessJoin = { name: string; management_mode: string; manager_user_id: string | null };
 
-/** null unless the member is in a one-manager business. */
+/**
+ * null unless the member is in a one-manager business. A failed read is
+ * logged and reads as null: the page still loads, and the database
+ * enforces the shared-look rule on its own.
+ */
 export async function loadSharedLook(
+  service: SupabaseClient,
+  memberId: string,
+  viewer: { userId: string; isGuildAdmin: boolean },
+): Promise<SharedLook | null> {
+  try {
+    return await readSharedLook(service, memberId, viewer);
+  } catch (err) {
+    console.error("loadSharedLook: couldn't read the shared look", err);
+    return null;
+  }
+}
+
+async function readSharedLook(
   service: SupabaseClient,
   memberId: string,
   viewer: { userId: string; isGuildAdmin: boolean },
@@ -77,4 +94,51 @@ export function sharedLookRefusal(look: SharedLook): string {
  */
 export function sharedLookChangeRefusal(look: SharedLook | null): string | null {
   return look && !look.canChange ? sharedLookRefusal(look) : null;
+}
+
+/**
+ * For the setup wizard's short setup: whether another location of the
+ * member's business has finished setup, and whether this one has. A failed
+ * read is logged and reads as "no" (the full setup), never an error.
+ */
+export async function anotherLocationIsSetUp(
+  service: SupabaseClient,
+  memberId: string,
+): Promise<{ otherSetUp: boolean; setupCompleted: boolean }> {
+  try {
+    const { data: row, error } = await service
+      .from("members")
+      .select("business_id, setup_completed_at")
+      .eq("id", memberId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    const member = row as { business_id: string | null; setup_completed_at: string | null } | null;
+    const setupCompleted = member?.setup_completed_at != null;
+    if (!member?.business_id) return { otherSetUp: false, setupCompleted };
+    const { count, error: countError } = await service
+      .from("members")
+      .select("id", { count: "exact", head: true })
+      .eq("business_id", member.business_id)
+      .neq("id", memberId)
+      .not("setup_completed_at", "is", null);
+    if (countError) throw new Error(countError.message);
+    return { otherSetUp: (count ?? 0) > 0, setupCompleted };
+  } catch (err) {
+    console.error("anotherLocationIsSetUp: couldn't read the business's locations", err);
+    return { otherSetUp: false, setupCompleted: false };
+  }
+}
+
+/**
+ * The logo upload's pre-check, in order: first whether the caller may edit
+ * this member's basics at all (through their own session -- the member id
+ * comes from the browser), and only then the shared look, so a caller with
+ * no access never learns a business's name or manager. null: go ahead.
+ */
+export async function logoUploadRefusal(deps: {
+  canEditBasics: () => Promise<boolean>;
+  loadLook: () => Promise<SharedLook | null>;
+}): Promise<string | null> {
+  if (!(await deps.canEditBasics())) return "You can't edit the basics section of this profile.";
+  return sharedLookChangeRefusal(await deps.loadLook());
 }

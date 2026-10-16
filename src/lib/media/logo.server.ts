@@ -3,7 +3,7 @@ import {
   getSupabaseServerClientForRequest,
   getSupabaseServiceRoleClient,
 } from "@/lib/supabase/server";
-import { loadSharedLook, sharedLookChangeRefusal } from "@/lib/portal/shared-look";
+import { loadSharedLook, logoUploadRefusal } from "@/lib/portal/shared-look";
 import { readPngHeight, validateUploadedImage } from "@/lib/media/validate-file";
 import { stripImageMetadata } from "@/lib/media/strip-exif";
 import { resolveImageDimensions } from "@/lib/media/image-dimensions";
@@ -95,23 +95,34 @@ export const uploadMemberLogo = createServerFn({ method: "POST" })
     // Shared look (multi-location part 4): in a one-manager business only
     // the manager or a Guild admin may change the logo. The database
     // refuses the draft save on its own; checking here first keeps a
-    // refused upload from leaving an orphaned file in the gallery.
+    // refused upload from leaving an orphaned file in the gallery. The
+    // member id comes from the browser, so access is checked through the
+    // caller's own session before any business details are read.
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
     if (!user) throw new Error("Not signed in.");
-    if (memberId) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_guild_admin")
-        .eq("id", user.id)
-        .maybeSingle();
-      const look = await loadSharedLook(await getSupabaseServiceRoleClient(), memberId, {
-        userId: user.id,
-        isGuildAdmin: profile?.is_guild_admin === true,
-      });
-      const refusal = sharedLookChangeRefusal(look);
-      if (refusal) throw new Error(refusal);
-    }
+    const refusal = await logoUploadRefusal({
+      async canEditBasics() {
+        if (!memberId) return false;
+        const { data: canEdit, error } = await supabase.rpc("can_edit_section", {
+          target_member_id: memberId,
+          section: "basics",
+        });
+        return !error && canEdit === true;
+      },
+      async loadLook() {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("is_guild_admin")
+          .eq("id", user.id)
+          .maybeSingle();
+        return loadSharedLook(await getSupabaseServiceRoleClient(), memberId, {
+          userId: user.id,
+          isGuildAdmin: profile?.is_guild_admin === true,
+        });
+      },
+    });
+    if (refusal) throw new Error(refusal);
 
     const stripped = stripImageMetadata(bytes, validation.detectedMimeType);
     // Reuses media-gallery.server.ts's sanitizeFilename rather than

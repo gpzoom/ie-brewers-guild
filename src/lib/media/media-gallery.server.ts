@@ -242,17 +242,21 @@ type LookRefs = {
 async function loadOtherLocationLooks(
   reader: SupabaseClient,
   memberId: string,
-): Promise<Array<{ live: LookRefs | null; draftData: unknown }>> {
+): Promise<{
+  businessName: string | null;
+  others: Array<{ live: LookRefs | null; draftData: unknown }>;
+}> {
   const { data: row, error } = await reader
     .from("members")
-    .select("business_id, businesses(management_mode)")
+    .select("business_id, businesses(name, management_mode)")
     .eq("id", memberId)
     .maybeSingle();
   if (error) throw new Error(`Couldn't check where this photo is used: ${error.message}`);
-  type Business = { management_mode: string };
+  type Business = { name: string | null; management_mode: string };
   const member = row as { business_id?: string | null; businesses?: Business | Business[] | null } | null;
   const business = Array.isArray(member?.businesses) ? member?.businesses[0] : member?.businesses;
-  if (!member?.business_id || business?.management_mode !== "one_manager") return [];
+  const none = { businessName: null, others: [] };
+  if (!member?.business_id || business?.management_mode !== "one_manager") return none;
 
   const { data: siblings, error: siblingsError } = await reader
     .from("members")
@@ -263,7 +267,7 @@ async function loadOtherLocationLooks(
     throw new Error(`Couldn't check where this photo is used: ${siblingsError.message}`);
   }
   const others = (siblings ?? []) as Array<LookRefs & { id: string }>;
-  if (others.length === 0) return [];
+  if (others.length === 0) return none;
 
   const { data: drafts, error: draftsError } = await reader
     .from("member_drafts")
@@ -276,14 +280,17 @@ async function loadOtherLocationLooks(
   const draftByMember = new Map(
     ((drafts ?? []) as Array<{ member_id: string; data: unknown }>).map((d) => [d.member_id, d.data]),
   );
-  return others.map((other) => ({
-    live: {
-      logo_asset_id: other.logo_asset_id,
-      cover_asset_id: other.cover_asset_id,
-      og_image_asset_id: other.og_image_asset_id,
-    },
-    draftData: draftByMember.get(other.id) ?? null,
-  }));
+  return {
+    businessName: business.name ?? null,
+    others: others.map((other) => ({
+      live: {
+        logo_asset_id: other.logo_asset_id,
+        cover_asset_id: other.cover_asset_id,
+        og_image_asset_id: other.og_image_asset_id,
+      },
+      draftData: draftByMember.get(other.id) ?? null,
+    })),
+  };
 }
 
 export async function deleteMediaAssetCore(
@@ -333,8 +340,9 @@ export async function deleteMediaAssetCore(
         (slide) => slide.asset_id,
       ),
       draftData: (draftResult.data as { data?: unknown } | null)?.data ?? null,
-      otherLocations,
+      otherLocations: otherLocations.others,
     }),
+    { businessName: otherLocations.businessName },
   );
   if (usageMessage) throw new Error(usageMessage);
 

@@ -58,7 +58,7 @@ describe("findAssetUsages", () => {
           { live: NONE, draftData: { basics: { cover_asset_id: "a" } } },
         ],
       }),
-    ).toEqual(["live_logo", "draft_cover"]);
+    ).toEqual(["other_logo", "other_cover"]);
   });
 
   it("another location's slides never count (slides stay in their own gallery)", () => {
@@ -94,6 +94,34 @@ describe("assetInUseMessage", () => {
   it("combines places and both versions", () => {
     expect(assetInUseMessage(["live_logo", "draft_logo", "draft_social_image", "live_slide"])).toBe(
       "This photo is used as your logo (on your live page and in your unpublished changes), your social sharing image (in your unpublished changes), and a carousel slide (on your live page). Choose a different photo there first, then delete it.",
+    );
+  });
+
+  it("another location's use names the business and that it can't be deleted", () => {
+    expect(assetInUseMessage(["other_logo"], { businessName: "Hangar 24 Brewing Co." })).toBe(
+      "This photo is used as the logo of another Hangar 24 Brewing Co. location, so it can't be deleted.",
+    );
+  });
+
+  it("another location's cover and link preview together", () => {
+    expect(
+      assetInUseMessage(["other_cover", "other_social_image"], { businessName: "Hangar 24 Brewing Co." }),
+    ).toBe(
+      "This photo is used as the cover photo and link preview image of another Hangar 24 Brewing Co. location, so it can't be deleted.",
+    );
+  });
+
+  it("own use first, then another location's", () => {
+    expect(
+      assetInUseMessage(["live_cover", "other_logo"], { businessName: "Hangar 24 Brewing Co." }),
+    ).toBe(
+      "This photo is used as your cover photo (on your live page). Choose a different photo there and publish, then delete it. It's also the logo of another Hangar 24 Brewing Co. location.",
+    );
+  });
+
+  it("without a business name, still says another location", () => {
+    expect(assetInUseMessage(["other_logo"])).toBe(
+      "This photo is used as the logo of another location, so it can't be deleted.",
     );
   });
 });

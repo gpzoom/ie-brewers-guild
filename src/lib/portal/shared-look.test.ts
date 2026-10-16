@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { vi } from "vitest";
 import {
+  anotherLocationIsSetUp,
   loadSharedLook,
+  logoUploadRefusal,
   sharedLookChangeRefusal,
   sharedLookNote,
   sharedLookRefusal,
@@ -137,5 +140,89 @@ describe("loadSharedLook", () => {
       canChange: false,
       managerLabel: "The Guild",
     });
+  });
+});
+
+/** A client whose every read comes back as an error. */
+function failingService() {
+  const failing = {
+    select: () => failing,
+    eq: () => failing,
+    neq: () => failing,
+    not: () => failing,
+    maybeSingle: async () => ({ data: null, error: { message: "boom" } }),
+    then: (resolve: (r: unknown) => unknown) =>
+      Promise.resolve(resolve({ data: null, count: null, error: { message: "boom" } })),
+  };
+  return { from: () => failing } as unknown as SupabaseClient;
+}
+
+describe("the shared-look lookups degrade instead of failing the page", () => {
+  it("loadSharedLook is null when the read fails", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(await loadSharedLook(failingService(), "m1", { userId: "u1", isGuildAdmin: false })).toBeNull();
+    expect(errors).toHaveBeenCalled();
+    errors.mockRestore();
+  });
+
+  it("anotherLocationIsSetUp is false (not set up) when the read fails", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(await anotherLocationIsSetUp(failingService(), "m1")).toEqual({
+      otherSetUp: false,
+      setupCompleted: false,
+    });
+    expect(errors).toHaveBeenCalled();
+    errors.mockRestore();
+  });
+});
+
+describe("anotherLocationIsSetUp", () => {
+  function service(own: { business_id: string | null; setup_completed_at: string | null }, count: number) {
+    const builder = {
+      select: () => builder,
+      eq: () => builder,
+      neq: () => builder,
+      not: () => builder,
+      maybeSingle: async () => ({ data: own, error: null }),
+      then: (resolve: (r: unknown) => unknown) => Promise.resolve(resolve({ data: null, count, error: null })),
+    };
+    return { from: () => builder } as unknown as SupabaseClient;
+  }
+
+  it("true when another location has finished setup", async () => {
+    expect(await anotherLocationIsSetUp(service({ business_id: "b1", setup_completed_at: null }, 1), "m1")).toEqual({
+      otherSetUp: true,
+      setupCompleted: false,
+    });
+  });
+
+  it("false when no other location has", async () => {
+    expect(
+      await anotherLocationIsSetUp(service({ business_id: "b1", setup_completed_at: "2026-10-01" }, 0), "m1"),
+    ).toEqual({ otherSetUp: false, setupCompleted: true });
+  });
+});
+
+describe("logoUploadRefusal (decision order)", () => {
+  it("a caller who can't edit the member gets the generic refusal and no business details are loaded", async () => {
+    const loadLook = vi.fn(async () => ({ ...managerLook, canChange: false }));
+    expect(await logoUploadRefusal({ canEditBasics: async () => false, loadLook })).toBe(
+      "You can't edit the basics section of this profile.",
+    );
+    expect(loadLook).not.toHaveBeenCalled();
+  });
+
+  it("an editor who isn't the manager gets the shared-look refusal", async () => {
+    expect(
+      await logoUploadRefusal({
+        canEditBasics: async () => true,
+        loadLook: async () => ({ ...managerLook, canChange: false }),
+      }),
+    ).toBe("The logo, cover and theme are shared by all Hangar 24 Brewing Co. locations. boss@x.com manages them.");
+  });
+
+  it("the manager, or a member outside a one-manager business, may upload", async () => {
+    expect(await logoUploadRefusal({ canEditBasics: async () => true, loadLook: async () => managerLook })).toBeNull();
+    expect(await logoUploadRefusal({ canEditBasics: async () => true, loadLook: async () => null })).toBeNull();
   });
 });

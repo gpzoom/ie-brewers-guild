@@ -23,8 +23,11 @@ import {
 import { isSetupStepName, type SetupStepName } from "@/lib/portal/wizard-steps";
 import type { LocationSwitcherData } from "@/lib/portal/location-groups";
 import type { MemberType } from "@/lib/supabase/types";
-import { loadSharedLook, type SharedLook } from "@/lib/portal/shared-look";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  anotherLocationIsSetUp,
+  loadSharedLook,
+  type SharedLook,
+} from "@/lib/portal/shared-look";
 
 /**
  * The setup wizard's server side (plan phase 4). Every function here
@@ -56,29 +59,6 @@ export type PortalSetupShell = PortalMemberShell & {
    */
   shortSetup: boolean;
 };
-
-/** True when another location of the member's business has finished setup. */
-async function anotherLocationIsSetUp(service: SupabaseClient, memberId: string): Promise<{
-  otherSetUp: boolean;
-  setupCompleted: boolean;
-}> {
-  const { data: row, error } = await service
-    .from("members")
-    .select("business_id, setup_completed_at")
-    .eq("id", memberId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  const member = row as { business_id: string | null; setup_completed_at: string | null } | null;
-  if (!member?.business_id) return { otherSetUp: false, setupCompleted: member?.setup_completed_at != null };
-  const { count, error: countError } = await service
-    .from("members")
-    .select("id", { count: "exact", head: true })
-    .eq("business_id", member.business_id)
-    .neq("id", memberId)
-    .not("setup_completed_at", "is", null);
-  if (countError) throw new Error(countError.message);
-  return { otherSetUp: (count ?? 0) > 0, setupCompleted: member.setup_completed_at !== null };
-}
 
 /**
  * The /portal/setup layout's beforeLoad: who's signed in, which business,
