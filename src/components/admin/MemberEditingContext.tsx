@@ -1,5 +1,6 @@
 import { createContext, useContext, type ReactNode } from "react";
 import type { ViewerRole } from "@/lib/drafts/sections";
+import type { LocationSwitcherData } from "@/lib/portal/location-groups";
 import type { MemberType } from "@/lib/supabase/types";
 
 /**
@@ -28,6 +29,8 @@ export type MemberEditingValue = {
   isPublished: boolean;
   slug: string;
   surface: "admin" | "portal";
+  /** The location menu for the setup top bar; absent elsewhere or while impersonating. */
+  locationSwitcher?: LocationSwitcherData | null;
   /**
    * Where cross-section links go on this surface; null hides the link
    * (e.g. the wizard has no Basics page to send someone back to once

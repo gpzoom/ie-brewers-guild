@@ -28,6 +28,13 @@ describe("LocationSwitcher (artboard BZ2)", () => {
     expect(html).toMatch(/aria-label="Switch location[^"]*"/);
   });
 
+  it("the dark tone shows the business and current label without the light box", () => {
+    const html = renderToStaticMarkup(createElement(LocationSwitcher, { data, tone: "dark" }));
+    expect(html).toContain("Hangar 24 Brewing Co.");
+    expect(html).toContain("Riverside · 100 Main St");
+    expect(html).not.toContain("bg-white");
+  });
+
   it("status labels match the artboard", () => {
     expect(STATUS_LABEL).toEqual({ live: "Live", setting_up: "Setting up", not_started: "Not started" });
   });

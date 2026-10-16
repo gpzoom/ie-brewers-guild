@@ -13,6 +13,7 @@ import {
 import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 import { StatusBand, bandButtonClass } from "@/components/shell/AppChrome";
 import { useWizardNavigation } from "@/components/portal/setup/useWizardNavigation";
+import { LocationSwitcher } from "@/components/shell/LocationSwitcher";
 import { MemberTypeTag } from "@/components/portal/setup/MemberTypeTag";
 import { cn } from "@/lib/utils";
 
@@ -162,8 +163,12 @@ export function WizardStep({
             <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-text-muted">
               Set up your profile
             </span>
-            {editing?.memberName && (
-              <span className="truncate text-[13px] text-canvas">{editing.memberName}</span>
+            {editing?.locationSwitcher ? (
+              <LocationSwitcher data={editing.locationSwitcher} tone="dark" afterSwitch="portal" />
+            ) : (
+              editing?.memberName && (
+                <span className="truncate text-[13px] text-canvas">{editing.memberName}</span>
+              )
             )}
           </div>
           <button

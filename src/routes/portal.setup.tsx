@@ -48,6 +48,7 @@ function SetupLayout() {
       isPublished: shell.status === "published",
       slug: shell.slug,
       surface: "portal",
+      locationSwitcher: shell.switcher,
       paths: {
         // The Basics step closes once setup is complete; the portal's Basics
         // & hours section is the link target from then on.

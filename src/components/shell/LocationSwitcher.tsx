@@ -30,7 +30,17 @@ const STATUS_CLASS: Record<LocationStatus, string> = {
  * (choosePortalMember, which refuses a location the user isn't linked to)
  * and reloads the same page for that location.
  */
-export function LocationSwitcher({ data }: { data: LocationSwitcherData }) {
+export function LocationSwitcher({
+  data,
+  tone = "light",
+  afterSwitch = "same-page",
+}: {
+  data: LocationSwitcherData;
+  /** "dark" is the trigger for the near-black setup bar. */
+  tone?: "light" | "dark";
+  /** "portal" lets /portal decide wizard vs sections for the chosen location. */
+  afterSwitch?: "same-page" | "portal";
+}) {
   const router = useRouter();
   const { pathname, search, hash } = useRouterState({
     select: (s) => ({ pathname: s.location.pathname, search: s.location.search, hash: s.location.hash }),
@@ -45,7 +55,8 @@ export function LocationSwitcher({ data }: { data: LocationSwitcherData }) {
     try {
       await choosePortalMember({ data: { memberId } });
       await router.invalidate();
-      await router.navigate({ to: pathname, search, hash });
+      if (afterSwitch === "portal") await router.navigate({ to: "/portal", search: {} });
+      else await router.navigate({ to: pathname, search, hash });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't switch location.");
     } finally {
@@ -56,17 +67,32 @@ export function LocationSwitcher({ data }: { data: LocationSwitcherData }) {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          disabled={busy}
-          aria-label={`Switch location. Now editing ${data.businessName} · ${current?.label ?? ""}`}
-          className="flex min-h-12 w-full items-center justify-between gap-2 rounded-[10px] border border-ink bg-white px-3 text-left font-sans text-[14px] font-semibold leading-tight text-ink hover:bg-canvas-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:opacity-60"
-        >
-          <span className="min-w-0 [overflow-wrap:anywhere]">
-            {data.businessName} · {current?.label}
-          </span>
-          <ChevronDown className="h-3 w-3 shrink-0" strokeWidth={2.4} aria-hidden="true" />
-        </button>
+        {tone === "dark" ? (
+          <button
+            type="button"
+            disabled={busy}
+            aria-label={`Switch location. Now editing ${data.businessName} · ${current?.label ?? ""}`}
+            className="flex min-h-11 min-w-0 max-w-full items-center gap-1.5 text-left font-sans text-[13px] leading-tight text-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-bright disabled:opacity-60"
+          >
+            <span className="min-w-0 truncate">
+              {data.businessName}
+              <span className="text-text-muted"> · {current?.label}</span>
+            </span>
+            <ChevronDown className="h-3 w-3 shrink-0 text-canvas" strokeWidth={2.4} aria-hidden="true" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={busy}
+            aria-label={`Switch location. Now editing ${data.businessName} · ${current?.label ?? ""}`}
+            className="flex min-h-12 w-full items-center justify-between gap-2 rounded-[10px] border border-ink bg-white px-3 text-left font-sans text-[14px] font-semibold leading-tight text-ink hover:bg-canvas-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:opacity-60"
+          >
+            <span className="min-w-0 [overflow-wrap:anywhere]">
+              {data.businessName} · {current?.label}
+            </span>
+            <ChevronDown className="h-3 w-3 shrink-0" strokeWidth={2.4} aria-hidden="true" />
+          </button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"

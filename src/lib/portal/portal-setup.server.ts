@@ -18,6 +18,7 @@ import {
   type PortalMemberShell,
 } from "@/lib/portal/section-data.server";
 import { isSetupStepName, type SetupStepName } from "@/lib/portal/wizard-steps";
+import type { LocationSwitcherData } from "@/lib/portal/location-groups";
 import type { MemberType } from "@/lib/supabase/types";
 
 /**
@@ -40,7 +41,7 @@ async function requireWizardMember(): Promise<PortalMember> {
   return member;
 }
 
-export type PortalSetupShell = PortalMemberShell;
+export type PortalSetupShell = PortalMemberShell & { switcher: LocationSwitcherData | null };
 
 /**
  * The /portal/setup layout's beforeLoad: who's signed in, which business,
@@ -53,7 +54,7 @@ export const getPortalSetupShell = createServerFn({ method: "GET" }).handler(
   async (): Promise<PortalSetupShell> => {
     const member = await requireWizardMember();
     const supabase = await getSupabaseServerClientForRequest();
-    return loadMemberShell(supabase, member);
+    return { ...(await loadMemberShell(supabase, member)), switcher: member.switcher };
   },
 );
 
