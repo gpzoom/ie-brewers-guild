@@ -1,7 +1,7 @@
 -- Business write functions (20261016100000_business_functions.sql): who may
 -- call them, mode switching in part 2, linking a manager, Part of, the
 -- delete trigger and the name rule. One manager and linking its manager are
--- super admin only until the location switcher (part 3) ships.
+-- open to every Guild admin since part 4 (20261017110000).
 -- Runs inside one transaction that is rolled back.
 begin;
 \ir _fixtures.psql
@@ -18,11 +18,6 @@ create temp table _biz on commit drop as
   select business_id as id from public.members where id = 'f1000000-0000-4000-8000-0000000000b1';
 grant select on _biz to public;
 
-insert into auth.users (id, email, aud, role) values
-  ('f0000000-0000-4000-8000-000000000007', 'pgtap-super@example.test', 'authenticated', 'authenticated');
-insert into public.profiles (id, is_guild_admin, is_super_admin)
-values ('f0000000-0000-4000-8000-000000000007', true, true);
-
 -- Non-admins are refused.
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000001","role":"authenticated"}';
@@ -37,40 +32,33 @@ insert into _tap (line) select throws_ok(
   'member: cannot link a manager');
 reset role;
 
--- Guild admin: One manager, linking its manager and direct writes are refused.
+-- Guild admin: direct writes are refused; One manager and linking its
+-- manager are open to every Guild admin since part 4.
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000004","role":"authenticated"}';
 insert into _tap (line) select throws_ok(
-  $$ select public.set_business_mode((select id from _biz), 'one_manager') $$, '42501',
-  'Only the super admin can switch a business to one manager for now.',
-  'guild admin: cannot switch a business to one manager until part 3');
-insert into _tap (line) select throws_ok(
-  $$ select public.link_business_manager((select id from _biz), 'f0000000-0000-4000-8000-000000000006') $$, '42501', null,
-  'guild admin: cannot link a business manager');
-insert into _tap (line) select throws_ok(
   $$ insert into public.businesses (name) values ('PgTap Direct') $$, '42501', null,
   'guild admin: cannot insert into businesses directly');
-reset role;
 
--- Super admin.
-set local role authenticated;
-set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000007","role":"authenticated"}';
-
-select public.set_business_mode((select id from _biz), 'one_manager');
+insert into _tap (line) select lives_ok(
+  $$ select public.set_business_mode((select id from _biz), 'one_manager') $$,
+  'guild admin: switches an uninvited business to one manager');
 insert into _tap (line) select is(
   (select management_mode from public.businesses where id = (select id from _biz)), 'one_manager',
-  'super admin: switches an uninvited business to one manager');
+  'the business is now one manager');
 -- audit_log is readable by the super admin only (RLS), so read it as the owner of the transaction.
 reset role;
 insert into _tap (line) select ok(
   exists (select 1 from public.audit_log where table_name = 'businesses' and row_id = (select id from _biz)
-          and actor_user_id = 'f0000000-0000-4000-8000-000000000007'),
-  'mode change is audit-logged against the super admin');
+          and actor_user_id = 'f0000000-0000-4000-8000-000000000004'),
+  'mode change is audit-logged against the Guild admin');
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000007","role":"authenticated"}';
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000004","role":"authenticated"}';
 
 -- Link the manager: owner of every location.
-select public.link_business_manager((select id from _biz), 'f0000000-0000-4000-8000-000000000006');
+insert into _tap (line) select lives_ok(
+  $$ select public.link_business_manager((select id from _biz), 'f0000000-0000-4000-8000-000000000006') $$,
+  'guild admin: links a business manager');
 insert into _tap (line) select is(
   (select manager_user_id from public.businesses where id = (select id from _biz)),
   'f0000000-0000-4000-8000-000000000006'::uuid, 'manager recorded on the business');
