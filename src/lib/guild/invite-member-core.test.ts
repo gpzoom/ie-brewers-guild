@@ -3,6 +3,7 @@ import { inviteMemberCore, type InviteDeps } from "./invite-member-core";
 
 function deps(over: Partial<InviteDeps> = {}): InviteDeps {
   return {
+    isOneManagerLocation: vi.fn(async () => false),
     hasOwner: vi.fn(async () => false),
     createUser: vi.fn(async () => ({ ok: true as const, userId: "new-user" })),
     findUserIdByEmail: vi.fn(async () => "existing-user"),
@@ -14,6 +15,16 @@ function deps(over: Partial<InviteDeps> = {}): InviteDeps {
 }
 
 describe("inviteMemberCore", () => {
+  it("a location of a one-manager business: refused before anything is created", async () => {
+    const d = deps({ isOneManagerLocation: vi.fn(async () => true) });
+    await expect(inviteMemberCore(d, { memberId: "m", email: "a@x.com" })).rejects.toThrow(
+      "This location belongs to a one-manager business. Invite its manager from the business row.",
+    );
+    expect(d.isOneManagerLocation).toHaveBeenCalledWith("m");
+    expect(d.createUser).not.toHaveBeenCalled();
+    expect(d.sendInviteEmail).not.toHaveBeenCalled();
+  });
+
   it("a new email: creates the account, links it as owner, sends the invite", async () => {
     const d = deps();
     await expect(inviteMemberCore(d, { memberId: "m", email: "new@x.com" })).resolves.toEqual({ ok: true, userId: "new-user", existing: false });

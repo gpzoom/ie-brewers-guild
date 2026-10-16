@@ -10,6 +10,8 @@
  * fails.
  */
 export type InviteDeps = {
+  /** The location belongs to a one-manager business (its manager is invited from the business row). */
+  isOneManagerLocation: (memberId: string) => Promise<boolean>;
   hasOwner: (memberId: string) => Promise<boolean>;
   createUser: (email: string) => Promise<{ ok: true; userId: string } | { ok: false; emailTaken: boolean; message: string }>;
   findUserIdByEmail: (email: string) => Promise<string | null>;
@@ -24,6 +26,11 @@ export async function inviteMemberCore(
   input: { memberId: string; email: string },
 ): Promise<{ ok: true; userId: string; existing: boolean }> {
   const email = input.email.trim().toLowerCase();
+
+  // A one-manager business's locations are signed in to by its manager.
+  if (await deps.isOneManagerLocation(input.memberId)) {
+    throw new Error("This location belongs to a one-manager business. Invite its manager from the business row.");
+  }
 
   // One owner per member. Checked first, so nothing is created -- and no
   // email sent -- for a member that already has one.

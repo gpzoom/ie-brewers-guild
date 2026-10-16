@@ -23,7 +23,7 @@ export function hasStaleHours(entry: RosterEntry, now: Date): boolean {
  */
 function signInDetail(entry: RosterEntry, business: RosterBusiness | undefined): string | null {
   if (business?.mode === "one_manager") {
-    if (!business.managerEmail) return "manager not invited yet";
+    if (!business.hasManager) return "manager not invited yet";
     if (!business.managerSignedIn) return "manager invited, not signed in";
     return null;
   }

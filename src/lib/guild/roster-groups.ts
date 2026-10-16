@@ -6,6 +6,8 @@ export type RosterBusiness = {
   id: string;
   name: string;
   mode: BusinessManagementMode;
+  /** A manager is linked (managerEmail can still be null if their account can't be read). */
+  hasManager: boolean;
   managerEmail: string | null;
   managerSignedIn: boolean;
 };
@@ -13,6 +15,24 @@ export type RosterBusiness = {
 export type RosterGroup =
   | { kind: "single"; entry: RosterEntry }
   | { kind: "business"; business: RosterBusiness; entries: RosterEntry[] };
+
+/**
+ * The roster search: a location's own name or city, or the name of the
+ * business it is part of. `query` is already trimmed and lowercased.
+ */
+export function matchesRosterSearch(
+  entry: RosterEntry,
+  query: string,
+  businessNames: Map<string, string>,
+): boolean {
+  if (!query) return true;
+  const businessName = entry.member.business_id ? businessNames.get(entry.member.business_id) : undefined;
+  return (
+    entry.member.business_name.toLowerCase().includes(query) ||
+    entry.member.city.toLowerCase().includes(query) ||
+    Boolean(businessName?.toLowerCase().includes(query))
+  );
+}
 
 /**
  * Roster rows: a business's matching locations grouped under it (by city),

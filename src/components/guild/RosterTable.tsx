@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { MoreHorizontal } from "lucide-react";
 import type { RosterEntry } from "@/lib/guild/roster.server";
-import { groupRoster, type RosterBusiness } from "@/lib/guild/roster-groups";
+import { groupRoster, matchesRosterSearch, type RosterBusiness } from "@/lib/guild/roster-groups";
 import type { BusinessManagementMode, MemberStatus, MemberType } from "@/lib/supabase/types";
 import { toast } from "sonner";
 import {
@@ -457,14 +457,11 @@ export function RosterTable({
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const businessNames = new Map(businesses.map((b) => [b.id, b.name]));
     const matches = (entry: RosterEntry) => {
       if (typeFilter !== "all" && entry.member.member_type !== typeFilter) return false;
       if (claimFilter !== "all" && entry.claimState !== claimFilter) return false;
-      if (!q) return true;
-      return (
-        entry.member.business_name.toLowerCase().includes(q) ||
-        entry.member.city.toLowerCase().includes(q)
-      );
+      return matchesRosterSearch(entry, q, businessNames);
     };
     return groupRoster(entries, businesses, matches);
   }, [entries, businesses, query, typeFilter, claimFilter]);
@@ -582,6 +579,7 @@ export function RosterTable({
                   business={business}
                   locationCount={locationCounts.get(business.id) ?? group.entries.length}
                   busy={businessBusyId === business.id}
+                  isSuperAdmin={isSuperAdmin}
                   onModeChange={(mode) => handleModeChange(business, mode)}
                   onInvite={() => {
                     setManagerInviteTarget(business);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupRoster, type RosterBusiness } from "./roster-groups";
+import { groupRoster, matchesRosterSearch, type RosterBusiness } from "./roster-groups";
 import type { RosterEntry } from "./roster.server";
 
 function entry(id: string, name: string, city: string, businessId: string | null): RosterEntry {
@@ -10,7 +10,7 @@ function entry(id: string, name: string, city: string, businessId: string | null
   };
 }
 
-const hangar: RosterBusiness = { id: "b1", name: "Hangar 24 Brewing Co.", mode: "one_manager", managerEmail: null, managerSignedIn: false };
+const hangar: RosterBusiness = { id: "b1", name: "Hangar 24 Brewing Co.", mode: "one_manager", hasManager: false, managerEmail: null, managerSignedIn: false };
 const all = () => true;
 
 describe("groupRoster", () => {
@@ -39,5 +39,23 @@ describe("groupRoster", () => {
 
   it("a location whose business isn't in the list shows as a single", () => {
     expect(groupRoster([entry("m1", "X", "Y", "gone")], [], all)[0].kind).toBe("single");
+  });
+});
+
+describe("matchesRosterSearch", () => {
+  const names = new Map([["b1", "Hangar 24 Brewing Co."]]);
+
+  it("matches the location's own name or city", () => {
+    expect(matchesRosterSearch(entry("m1", "Alpha Brewing", "Chino", null), "alpha", names)).toBe(true);
+    expect(matchesRosterSearch(entry("m1", "Alpha Brewing", "Chino", null), "chino", names)).toBe(true);
+    expect(matchesRosterSearch(entry("m1", "Alpha Brewing", "Chino", null), "hangar", names)).toBe(false);
+  });
+
+  it("matches the name of the business the location is part of", () => {
+    expect(matchesRosterSearch(entry("m1", "H24 Downtown", "Redlands", "b1"), "hangar", names)).toBe(true);
+  });
+
+  it("an empty search matches everything", () => {
+    expect(matchesRosterSearch(entry("m1", "Alpha Brewing", "Chino", null), "", names)).toBe(true);
   });
 });

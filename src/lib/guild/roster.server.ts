@@ -71,7 +71,14 @@ export const getRoster = createServerFn({ method: "GET" }).handler(async (): Pro
       managerEmail = userData?.user?.email ?? null;
       managerSignedIn = Boolean(userData?.user?.last_sign_in_at);
     }
-    businesses.push({ id: row.id, name: row.name, mode: row.management_mode, managerEmail, managerSignedIn });
+    businesses.push({
+      id: row.id,
+      name: row.name,
+      mode: row.management_mode,
+      hasManager: row.manager_user_id != null,
+      managerEmail,
+      managerSignedIn,
+    });
   }
 
   return { entries, businesses };

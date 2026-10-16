@@ -26,6 +26,7 @@ const oneManager: RosterBusiness = {
   id: "b1",
   name: "Hangar 24",
   mode: "one_manager",
+  hasManager: false,
   managerEmail: null,
   managerSignedIn: false,
 };
@@ -46,14 +47,21 @@ describe("resolveDetailLine", () => {
   });
 
   it("one-manager location, manager invited but not signed in", () => {
-    const business = { ...oneManager, managerEmail: "boss@x.com" };
+    const business = { ...oneManager, hasManager: true, managerEmail: "boss@x.com" };
+    expect(resolveDetailLine(entry("unclaimed"), now, { business })).toBe(
+      "Riverside · manager invited, not signed in",
+    );
+  });
+
+  it("one-manager location whose manager's email can't be read: still invited, not 'not invited yet'", () => {
+    const business = { ...oneManager, hasManager: true, managerEmail: null };
     expect(resolveDetailLine(entry("unclaimed"), now, { business })).toBe(
       "Riverside · manager invited, not signed in",
     );
   });
 
   it("one-manager location, manager signed in: the usual detail, ignoring the location's own claim", () => {
-    const business = { ...oneManager, managerEmail: "boss@x.com", managerSignedIn: true };
+    const business = { ...oneManager, hasManager: true, managerEmail: "boss@x.com", managerSignedIn: true };
     expect(resolveDetailLine(entry("unclaimed"), now, { business })).toBe(
       "Riverside · member since 2015",
     );

@@ -49,13 +49,34 @@ export const inviteMember = createServerFn({ method: "POST" })
       throw new Error("Only a Guild admin can send an invite.");
     }
 
-    const serviceClient = await getSupabaseServiceRoleClient();
+    // Opened only once the core gets past its checks (the one-manager
+    // refusal runs on the caller's own session, before any service key).
+    let serviceClientPromise: ReturnType<typeof getSupabaseServiceRoleClient> | null = null;
+    const service = () => (serviceClientPromise ??= getSupabaseServiceRoleClient());
 
     // The steps (and the "already has an account" case) live in
     // invite-member-core.ts, tested there; this wires Supabase and the email.
     const result = await inviteMemberCore(
       {
+        async isOneManagerLocation(memberId) {
+          const { data: member, error } = await supabase
+            .from("members")
+            .select("business_id")
+            .eq("id", memberId)
+            .maybeSingle();
+          if (error) throw new Error(error.message);
+          const businessId = (member as { business_id: string | null } | null)?.business_id;
+          if (!businessId) return false;
+          const { data: business, error: businessError } = await supabase
+            .from("businesses")
+            .select("management_mode")
+            .eq("id", businessId)
+            .maybeSingle();
+          if (businessError) throw new Error(businessError.message);
+          return (business as { management_mode: string } | null)?.management_mode === "one_manager";
+        },
         async hasOwner(memberId) {
+          const serviceClient = await service();
           const { data: owner, error } = await serviceClient
             .from("member_users")
             .select("user_id")
@@ -67,10 +88,10 @@ export const inviteMember = createServerFn({ method: "POST" })
           return Boolean(owner);
         },
         async createUser(email) {
-          return createAuthUser(serviceClient, email);
+          return createAuthUser(await service(), email);
         },
         async findUserIdByEmail(email) {
-          return findAuthUserIdByEmail(serviceClient, email);
+          return findAuthUserIdByEmail(await service(), email);
         },
         async linkOwner(memberId, userId) {
           const { error } = await supabase.from("member_users").insert({ member_id: memberId, user_id: userId, role: "owner" });
@@ -79,7 +100,7 @@ export const inviteMember = createServerFn({ method: "POST" })
           // double-click). The one-owner index can also raise 23505 (an
           // owner was added since the check), and that one is a failure.
           if (error.code === "23505") {
-            const { data: link } = await serviceClient
+            const { data: link } = await (await service())
               .from("member_users")
               .select("user_id")
               .eq("member_id", memberId)
@@ -90,7 +111,7 @@ export const inviteMember = createServerFn({ method: "POST" })
           return { ok: false as const, message: error.message };
         },
         async deleteUser(userId) {
-          await serviceClient.auth.admin.deleteUser(userId);
+          await (await service()).auth.admin.deleteUser(userId);
         },
         async sendInviteEmail(memberId, email) {
           await sendTransactionalEmail({ trigger: "member_invited", memberId, email });
