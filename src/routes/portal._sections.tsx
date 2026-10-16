@@ -92,7 +92,7 @@ function PortalLayoutInner() {
       navItems={navItems}
       topBarLabel="ISC Brewers Guild · Member Portal"
       sidebarExtra={
-        shell.membershipCount > 1 ? (
+        shell.canSwitchBusiness ? (
           <Link to="/portal" search={{ switch: true }} className={sidebarItemClass(false)}>
             <span className="md:hidden">Switch</span>
             <span className="hidden md:inline">Switch business</span>

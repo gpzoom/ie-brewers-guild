@@ -6,7 +6,7 @@ import {
   type PortalState,
 } from "@/lib/portal/portal-session.server";
 import { signOutEverything } from "@/lib/auth/sign-out.server";
-import type { PortalRole } from "@/lib/portal/portal-destination";
+import { ChooseList } from "@/components/portal/ChooseList";
 import { firstPortalSection } from "@/lib/portal/portal-sections";
 import {
   BrandBar,
@@ -59,12 +59,6 @@ export const Route = createFileRoute("/portal/")({
   component: PortalPage,
 });
 
-const ROLE_LABELS: Record<PortalRole, string> = {
-  owner: "Owner",
-  editor: "Full editor",
-  media_events: "Photos & events editor",
-};
-
 const eyebrowClass = "text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-subtle";
 
 function PortalPage() {
@@ -74,7 +68,7 @@ function PortalPage() {
       <div className="mx-auto w-full max-w-[480px]">
         <BrandBar linkHome />
         <div className="mx-2.5 sm:mx-0 sm:mt-6">
-          {state.kind === "choose" && <ChooseCard memberships={state.memberships} />}
+          {state.kind === "choose" && <ChooseCard entries={state.entries} />}
           {state.kind === "no-member" && <NoMemberCard email={state.email} />}
         </div>
       </div>
@@ -83,9 +77,9 @@ function PortalPage() {
 }
 
 function ChooseCard({
-  memberships,
+  entries,
 }: {
-  memberships: Extract<PortalState, { kind: "choose" }>["memberships"];
+  entries: Extract<PortalState, { kind: "choose" }>["entries"];
 }) {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
@@ -115,23 +109,7 @@ function ChooseCard({
         </p>
       </div>
 
-      <ul className="flex flex-col gap-2.5">
-        {memberships.map((m) => (
-          <li key={m.memberId}>
-            <button
-              type="button"
-              onClick={() => choose(m.memberId)}
-              disabled={pending !== null}
-              className="flex min-h-14 w-full flex-col items-start justify-center gap-0.5 rounded-[13px] border border-canvas-border bg-white px-[15px] py-3 text-left transition-colors hover:bg-canvas-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <span className="text-[15px] font-semibold text-ink">
-                {pending === m.memberId ? "Opening…" : m.businessName}
-              </span>
-              <span className="text-[13px] text-ink-muted">{ROLE_LABELS[m.role]}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      <ChooseList entries={entries} busyId={pending} onChoose={choose} />
 
       {error && (
         <p role="alert" className="text-[13px] text-danger">

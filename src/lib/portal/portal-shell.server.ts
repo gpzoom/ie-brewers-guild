@@ -1,3 +1,4 @@
+import type { LocationSwitcherData } from "@/lib/portal/location-groups";
 import { createServerFn } from "@tanstack/react-start";
 import { redirect } from "@tanstack/react-router";
 import {
@@ -39,7 +40,8 @@ import { loadPeople } from "@/lib/portal/people";
 
 export type PortalShell = PortalMemberShell & {
   publishGate: PublishGateData;
-  membershipCount: number;
+  switcher: LocationSwitcherData | null;
+  canSwitchBusiness: boolean;
   /**
    * The "Finish your profile" card: the sections still empty, for the owner
    * and full editors; null for a Photos & events editor, who can't fill
@@ -70,7 +72,8 @@ export const getPortalShell = createServerFn({ method: "GET" }).handler(
     return {
       ...shell,
       publishGate,
-      membershipCount: member.membershipCount,
+      switcher: member.switcher,
+      canSwitchBusiness: member.canSwitchBusiness,
       emptySections: completeness
         ? emptySections(completeness.draft.data, {
             memberType: shell.memberType,

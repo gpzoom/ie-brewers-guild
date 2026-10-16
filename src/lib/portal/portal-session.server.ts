@@ -15,28 +15,24 @@ import {
   pickMembership,
 } from "@/lib/portal/portal-access";
 import {
+  PORTAL_MEMBER_COOKIE,
+  PORTAL_MEMBER_COOKIE_MAX_AGE,
+} from "@/lib/portal/portal-member-cookie";
+import {
+  chooserEntries,
+  locationSwitcherFor,
+  type ChooserEntry,
+  type LocationSwitcherData,
+} from "@/lib/portal/location-groups";
+import {
   resolvePortalDestination,
   type PortalDestination,
   type PortalRole,
 } from "@/lib/portal/portal-destination";
 
-/**
- * Remembers which business someone linked to several members picked on
- * /portal's "Choose a business" screen (Decision 9). It holds nothing but a
- * member id and grants nothing: every request re-reads the user's own
- * member_users rows and honors the cookie only if it names one of them
- * (pickMembership). So it needs no signature -- forging it can only pick
- * a business the user can already open. httpOnly, and path "/" because
- * server-function calls are not made under /portal.
- */
-const PORTAL_MEMBER_COOKIE = "portal_member";
-const PORTAL_MEMBER_COOKIE_MAX_AGE = 60 * 60 * 24 * 180;
-
-export type PortalChoice = { memberId: string; businessName: string; role: PortalRole };
-
 export type PortalState =
   | { kind: "no-member"; email: string | null }
-  | { kind: "choose"; memberships: PortalChoice[] }
+  | { kind: "choose"; entries: ChooserEntry[] }
   | {
       kind: "ready";
       memberId: string;
@@ -44,9 +40,10 @@ export type PortalState =
       role: PortalRole;
       isImpersonating: boolean;
       destination: PortalDestination;
-      membershipCount: number;
-      /** When /admin (oldest member_users row) would open a different business than this one, its name. */
-      adminOpensOtherName: string | null;
+      /** The location list for the chosen business's switcher; null when it has no sibling locations or while impersonating. */
+      switcher: LocationSwitcherData | null;
+      /** True when the user can open more than one business (the "Switch business" link). */
+      canSwitchBusiness: boolean;
     };
 
 /**
@@ -131,8 +128,8 @@ const resolvePortalState = createServerOnlyFn(
             setupCompletedAt: member.setup_completed_at as string | null,
             role,
           }),
-          membershipCount: 1,
-          adminOpensOtherName: null,
+          switcher: null,
+          canSwitchBusiness: false,
         },
       };
     }
@@ -163,17 +160,12 @@ const resolvePortalState = createServerOnlyFn(
         userId: user.id,
         state: {
           kind: "choose",
-          memberships: pick.memberships.map((m) => ({
-            memberId: m.memberId,
-            businessName: m.businessName,
-            role: m.role,
-          })),
+          entries: chooserEntries(pick.memberships),
         },
       };
     }
 
     const chosen = pick.membership;
-    const oldest = memberships[0];
     return {
       userId: user.id,
       state: {
@@ -187,8 +179,8 @@ const resolvePortalState = createServerOnlyFn(
           setupCompletedAt: chosen.setupCompletedAt,
           role: chosen.role,
         }),
-        membershipCount: memberships.length,
-        adminOpensOtherName: oldest.memberId === chosen.memberId ? null : oldest.businessName,
+        switcher: locationSwitcherFor(memberships, chosen.memberId),
+        canSwitchBusiness: chooserEntries(memberships).length > 1,
       },
     };
   },
