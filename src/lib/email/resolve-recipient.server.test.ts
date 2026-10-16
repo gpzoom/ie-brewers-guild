@@ -210,5 +210,11 @@ describe("resolveRecipient: Help button", () => {
     await expect(
       resolveRecipient({ trigger: "business_location_added", memberId: "m", businessName: "B", city: "C", email: "a@x.com" }, supabase),
     ).resolves.toBe("a@x.com");
+    await expect(
+      resolveRecipient(
+        { trigger: "location_handoff_invited", memberId: "m", businessName: "B", city: "C", email: "a@x.com", managerLabel: "boss@x.com" },
+        supabase,
+      ),
+    ).resolves.toBe("a@x.com");
   });
 });

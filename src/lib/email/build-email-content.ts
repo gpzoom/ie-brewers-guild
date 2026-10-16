@@ -33,6 +33,15 @@ export type TransactionalEmailPayload =
       city: string;
       email: string;
     }
+  | {
+      /** People: the business manager handed off one location; to the invitee. */
+      trigger: "location_handoff_invited";
+      memberId: string;
+      businessName: string;
+      city: string;
+      email: string;
+      managerLabel: string;
+    }
   | { trigger: "contact_confirmation"; inquiryId: string; name: string; email: string; wantsMembershipInfo: boolean }
   | {
       trigger: "contact_form_submitted";
@@ -294,6 +303,19 @@ export function buildEmailContent(payload: TransactionalEmailPayload, siteUrl: s
         replyTo: MEMBER_INVITE_REPLY_TO,
         text: `${sentence}\n\n${howTo}\n\n${signInUrl}`,
         html: wrapHtml([escapeHtml(sentence), `${howTo} <a href="${signInUrl}">${signInUrl}</a>`]),
+      };
+    }
+
+    case "location_handoff_invited": {
+      const signInUrl = `${siteUrl}/signin?next=/portal`;
+      const place = `${payload.businessName} · ${payload.city}`;
+      const intro = `${payload.managerLabel} asked you to manage ${place} on the ${ORG_SHORT_NAME} member directory.`;
+      const howTo = `Sign in with this email address (${payload.email}) to get started. The invitation lasts 14 days.`;
+      return {
+        subject: `You're invited to manage ${place}`,
+        replyTo: MEMBER_INVITE_REPLY_TO,
+        text: `${intro}\n\n${howTo}\n\n${signInUrl}`,
+        html: wrapHtml([escapeHtml(intro), `${escapeHtml(howTo)} <a href="${signInUrl}">${signInUrl}</a>`]),
       };
     }
 

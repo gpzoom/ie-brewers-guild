@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { acceptPendingInvites, listPortalMemberships, pickMembership, type PortalMembership } from "./portal-access";
 
@@ -28,11 +28,14 @@ function fakeClient(opts: {
   memberUsers?: Array<{ member_id: string; user_id: string; role: string }>;
   insertErrorCode?: string;
   ilikeOverride?: (email: string) => boolean;
+  rpc?: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
 }) {
   const memberUsers = opts.memberUsers ?? [];
   const ilikeFilters: string[] = [];
 
   const client = {
+    rpc: (fn: string, args: Record<string, unknown>) =>
+      opts.rpc ? opts.rpc(fn, args) : Promise.resolve({ data: null, error: { message: `unexpected rpc ${fn}` } }),
     from(table: string) {
       if (table === "member_invites") {
         return {
@@ -182,6 +185,27 @@ describe("acceptPendingInvites", () => {
     expect(memberUsers.map((m) => m.member_id)).toEqual(["m1", "m2"]);
   });
 
+  it("accepts a hand-off through accept_location_handoff, never a direct insert", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: true, error: null });
+    const { client, memberUsers } = fakeClient({
+      invites: [invite({ id: "i1", role: "owner", email: "loc@x.com", expires_at: "2099-01-01T00:00:00Z" })],
+      rpc,
+    });
+    const result = await acceptPendingInvites(client, { id: "u1", email: "LOC@x.com" }, NOW);
+    expect(rpc).toHaveBeenCalledWith("accept_location_handoff", { p_invite_id: "i1", p_user_id: "u1" });
+    expect(memberUsers).toEqual([]);
+    expect(result.accepted).toEqual([{ memberId: "m1", role: "owner" }]);
+  });
+
+  it("a refused hand-off isn't reported as accepted", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: false, error: null });
+    const { client } = fakeClient({
+      invites: [invite({ id: "i1", role: "owner", email: "loc@x.com", expires_at: "2099-01-01T00:00:00Z" })],
+      rpc,
+    });
+    expect((await acceptPendingInvites(client, { id: "u1", email: "loc@x.com" }, NOW)).accepted).toEqual([]);
+  });
+
   it("does nothing for a user without an email", async () => {
     const { client } = fakeClient({ invites: [invite({ id: "i1", email: "pat@example.com" })] });
     expect(await acceptPendingInvites(client, { id: "u1", email: null }, NOW)).toEqual({ accepted: [] });
@@ -257,6 +281,7 @@ describe("listPortalMemberships", () => {
         businessId: null,
         businessDisplayName: null,
         businessMode: null,
+        businessManagerUserId: null,
       },
       {
         memberId: "m4",
@@ -270,6 +295,7 @@ describe("listPortalMemberships", () => {
         businessId: null,
         businessDisplayName: null,
         businessMode: null,
+        businessManagerUserId: null,
       },
     ]);
     expect(calls).toEqual(["u1"]);
@@ -289,6 +315,7 @@ describe("pickMembership", () => {
     businessId: null,
     businessDisplayName: null,
     businessMode: null,
+    businessManagerUserId: null,
   });
 
   it("none when there are no memberships", () => {

@@ -54,8 +54,10 @@ export type PortalSetupShell = PortalMemberShell & {
   /** The one-manager business's shared look; null for everyone else. */
   sharedLook: SharedLook | null;
   /**
-   * Another location of this one-manager business has finished setup, so
-   * this one starts from its basics and links (prefill_location_setup).
+   * Another location of this business has finished setup (so this one starts
+   * from its basics and links, prefill_location_setup), or the viewer is a
+   * location manager who can't change the shared look. Either way the setup
+   * skips the shared-look steps.
    */
   shortSetup: boolean;
 };
@@ -81,8 +83,10 @@ export const getPortalSetupShell = createServerFn({ method: "GET" }).handler(
     let shortSetup = false;
     if (sharedLook) {
       const { otherSetUp, setupCompleted } = await anotherLocationIsSetUp(service, member.memberId);
-      shortSetup = otherSetUp;
-      if (shortSetup && !setupCompleted) {
+      // A location manager can't change the shared look, so their setup
+      // skips it even before another location is set up (spec, Setup).
+      shortSetup = otherSetUp || !sharedLook.canChange;
+      if (otherSetUp && !setupCompleted) {
         // Before the draft status is read, so the first screen shows the
         // copied basics and links. It copies once (a no-op after that).
         // Best-effort: setup still works from an empty draft.

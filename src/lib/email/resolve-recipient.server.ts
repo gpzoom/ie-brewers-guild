@@ -44,6 +44,7 @@ export async function resolveRecipient(
     case "guild_admin_invited":
     case "business_invited":
     case "business_location_added":
+    case "location_handoff_invited":
       return payload.email;
     case "contact_confirmation":
       return payload.email;

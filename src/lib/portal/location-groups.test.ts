@@ -21,6 +21,7 @@ function m(over: Partial<PortalMembership> & { memberId: string }): PortalMember
     businessId: null,
     businessDisplayName: null,
     businessMode: null,
+    businessManagerUserId: null,
     ...over,
   };
 }

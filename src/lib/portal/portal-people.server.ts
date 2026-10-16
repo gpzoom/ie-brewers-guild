@@ -14,6 +14,7 @@ import {
   type OpenInviteRole,
 } from "@/lib/portal/people";
 import { sendTransactionalEmail } from "@/lib/email/send";
+import { ORG_NAME } from "@/lib/email/build-email-content";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 
 /**
@@ -30,10 +31,10 @@ import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
  * so nothing in SQL would record them otherwise.
  */
 
-async function requireOwner(): Promise<PortalMember> {
+async function requirePeopleAccess(): Promise<PortalMember> {
   const member = await requirePortalMember();
-  if (member.role !== "owner") {
-    throw new Error("Only the profile's owner can manage people.");
+  if (member.role !== "owner" && !member.isBusinessManager) {
+    throw new Error("Only the profile's owner or the business manager can manage people.");
   }
   return member;
 }
@@ -53,11 +54,9 @@ async function inviterEmail(member: PortalMember): Promise<string | null> {
 /** Sends the invite email. A failed send never undoes the invite; the owner can Resend. */
 async function emailInvite(
   member: PortalMember,
-  // TODO(Task 4): a resent hand-off invite (role owner) needs its own email.
   invite: { email: string; role: OpenInviteRole },
 ): Promise<boolean> {
-  // TODO(Task 4): a hand-off invite (role owner) needs its own email.
-  if (invite.role === "owner") return false;
+  if (invite.role === "owner") return emailHandOff(member, invite.email);
   try {
     await sendTransactionalEmail({
       trigger: "editor_invited",
@@ -74,13 +73,32 @@ async function emailInvite(
   }
 }
 
+async function emailHandOff(member: PortalMember, email: string): Promise<boolean> {
+  try {
+    const business = await (await peopleStore()).businessFor(member.memberId);
+    if (!business) return false;
+    await sendTransactionalEmail({
+      trigger: "location_handoff_invited",
+      memberId: member.memberId,
+      businessName: business.name,
+      city: business.city,
+      email,
+      managerLabel: (await inviterEmail(member)) ?? `The ${ORG_NAME}`,
+    });
+    return true;
+  } catch (err) {
+    console.error("People: couldn't send the hand-off email", err);
+    return false;
+  }
+}
+
 export const invitePortalPerson = createServerFn({ method: "POST" })
   .inputValidator((data: { email: string; role: InviteRole }) => ({
     email: data?.email,
     role: data?.role,
   }))
   .handler(async ({ data }) => {
-    const member = await requireOwner();
+    const member = await requirePeopleAccess();
     const invite = await invitePerson(await peopleStore(), {
       memberId: member.memberId,
       email: data.email,
@@ -100,7 +118,7 @@ export const invitePortalPerson = createServerFn({ method: "POST" })
 export const resendPortalInvite = createServerFn({ method: "POST" })
   .inputValidator((data: { inviteId: string }) => ({ inviteId: data?.inviteId }))
   .handler(async ({ data }) => {
-    const member = await requireOwner();
+    const member = await requirePeopleAccess();
     const invite = await resendInvite(await peopleStore(), {
       memberId: member.memberId,
       inviteId: data.inviteId,
@@ -118,7 +136,7 @@ export const resendPortalInvite = createServerFn({ method: "POST" })
 export const cancelPortalInvite = createServerFn({ method: "POST" })
   .inputValidator((data: { inviteId: string }) => ({ inviteId: data?.inviteId }))
   .handler(async ({ data }) => {
-    const member = await requireOwner();
+    const member = await requirePeopleAccess();
     await cancelInvite(await peopleStore(), { memberId: member.memberId, inviteId: data.inviteId });
     await recordAuditLogIfImpersonating({
       memberId: member.memberId,
@@ -132,7 +150,7 @@ export const cancelPortalInvite = createServerFn({ method: "POST" })
 export const removePortalPerson = createServerFn({ method: "POST" })
   .inputValidator((data: { userId: string }) => ({ userId: data?.userId }))
   .handler(async ({ data }) => {
-    const member = await requireOwner();
+    const member = await requirePeopleAccess();
     await removePerson(await peopleStore(), { memberId: member.memberId, userId: data.userId });
     await recordAuditLogIfImpersonating({
       memberId: member.memberId,
@@ -142,3 +160,30 @@ export const removePortalPerson = createServerFn({ method: "POST" })
     });
     return { ok: true as const };
   });
+
+// handOffLocation and takeBackLocation run on the caller's own session, so the
+// SQL checks the right person. Both are audited in SQL (_business_audit),
+// including for a Guild admin editing as them, so they don't call
+// recordAuditLogIfImpersonating.
+export const handOffLocation = createServerFn({ method: "POST" })
+  .inputValidator((data: { email: string }) => ({ email: data?.email }))
+  .handler(async ({ data }) => {
+    const member = await requirePeopleAccess();
+    const supabase = await getSupabaseServerClientForRequest();
+    const { data: result, error } = await supabase.rpc("hand_off_location", {
+      p_member_id: member.memberId,
+      p_email: typeof data.email === "string" ? data.email : "",
+    });
+    if (error) throw new Error(error.message);
+    const invite = result as { invite_id: string; email: string; refreshed: boolean };
+    const emailSent = await emailHandOff(member, invite.email);
+    return { email: invite.email, refreshed: invite.refreshed, emailSent };
+  });
+
+export const takeBackLocation = createServerFn({ method: "POST" }).handler(async () => {
+  const member = await requirePeopleAccess();
+  const supabase = await getSupabaseServerClientForRequest();
+  const { error } = await supabase.rpc("take_back_location", { p_member_id: member.memberId });
+  if (error) throw new Error(error.message);
+  return { ok: true as const };
+});

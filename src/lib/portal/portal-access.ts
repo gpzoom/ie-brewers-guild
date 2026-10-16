@@ -24,6 +24,8 @@ export type PortalMembership = {
   businessId: string | null;
   businessDisplayName: string | null;
   businessMode: BusinessManagementMode | null;
+  /** The business manager, when it has one; compared to the signed-in user for the hand-off flag. */
+  businessManagerUserId: string | null;
 };
 
 type InviteRow = {
@@ -49,6 +51,10 @@ function likeLiteral(value: string): string {
  * it) are accepted. The database filter narrows the rows; the exact address
  * comparison is repeated here so a LIKE quirk can never accept an invite
  * sent to someone else.
+ *
+ * A hand-off invite (role "owner") is not inserted here: the
+ * accept_location_handoff function swaps the owner and closes the invite in
+ * one transaction, and is reported as accepted only when it returns true.
  *
  * If the user is already linked to that member (unique violation 23505),
  * their existing row and role are kept and the invite is still marked
@@ -77,6 +83,15 @@ export async function acceptPendingInvites(
   for (const invite of data as InviteRow[]) {
     if (invite.email.trim().toLowerCase() !== email) continue;
     if (new Date(invite.expires_at).getTime() <= now.getTime()) continue;
+    if (invite.role === "owner") {
+      // A hand-off: the owner swap happens in one transaction in SQL.
+      const { data: ok, error: rpcError } = await client.rpc("accept_location_handoff", {
+        p_invite_id: invite.id,
+        p_user_id: user.id,
+      });
+      if (!rpcError && ok === true) accepted.push({ memberId: invite.member_id, role: "owner" });
+      continue;
+    }
     if (invite.role !== "editor" && invite.role !== "media_events") continue;
 
     const { error: insertError } = await client
@@ -105,7 +120,7 @@ type MembershipRow = {
     street_address: string | null;
     status: MemberStatus;
     business_id: string | null;
-    businesses: { name: string; management_mode: BusinessManagementMode } | null;
+    businesses: { name: string; management_mode: BusinessManagementMode; manager_user_id: string | null } | null;
     type_confirmed_at: string | null;
     setup_completed_at: string | null;
   } | null;
@@ -116,7 +131,7 @@ export async function listPortalMemberships(client: SupabaseClient, userId: stri
   const { data, error } = await client
     .from("member_users")
     .select(
-      "member_id, role, created_at, members(business_name, city, street_address, status, business_id, type_confirmed_at, setup_completed_at, businesses(name, management_mode))",
+      "member_id, role, created_at, members(business_name, city, street_address, status, business_id, type_confirmed_at, setup_completed_at, businesses(name, management_mode, manager_user_id))",
     )
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
@@ -137,6 +152,7 @@ export async function listPortalMemberships(client: SupabaseClient, userId: stri
       businessId: row.members.business_id,
       businessDisplayName: row.members.businesses?.name?.trim() || null,
       businessMode: row.members.businesses?.management_mode ?? null,
+      businessManagerUserId: row.members.businesses?.manager_user_id ?? null,
     });
   }
   return memberships;

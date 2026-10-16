@@ -136,7 +136,11 @@ export const getPortalSectionData = createServerFn({ method: "GET" })
       .eq("id", id)
       .single();
     if (error || !row) throw new Error("Member not found.");
-    if (!canOpenPortalSection(data.section, { role: member.role, memberType: row.member_type })) {
+    if (!canOpenPortalSection(data.section, {
+        role: member.role,
+        memberType: row.member_type,
+        isBusinessManager: member.isBusinessManager,
+      })) {
       throw new Error("You don't have access to that section.");
     }
 
@@ -158,10 +162,12 @@ export const getPortalSectionData = createServerFn({ method: "GET" })
       case "discount":
         return { section: "discount", ...(await loadDiscountSection(supabase, id)) };
       case "people": {
-        // canOpenPortalSection has already checked the caller is the owner
-        // (or a Guild admin editing as them); only then the service client.
+        // canOpenPortalSection has already checked the caller is the owner,
+        // the business manager, or a Guild admin editing as them.
         const store = supabasePeopleStore(await getSupabaseServiceRoleClient());
-        return { section: "people", ...(await loadPeople(store, id, member.userId)) };
+        return { section: "people", ...(await loadPeople(store, id, member.userId, new Date(), {
+            viewerIsGuildAdmin: member.isImpersonating,
+          })) };
       }
     }
   });

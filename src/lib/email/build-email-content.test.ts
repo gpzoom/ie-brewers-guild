@@ -448,3 +448,31 @@ describe("buildEmailContent: business_location_added (spec 2026-10-15)", () => {
     expect(content.replyTo).toBe(MEMBER_INVITE_REPLY_TO);
   });
 });
+
+describe("buildEmailContent: location_handoff_invited (spec 2026-10-15)", () => {
+  const payload = {
+    trigger: "location_handoff_invited" as const,
+    memberId: "m2",
+    businessName: "Hangar 24 Brewing Co.",
+    city: "Riverside",
+    email: "loc@hangar24.example",
+    managerLabel: "boss@hangar24.example",
+  };
+
+  it("names the manager, the business and the city; one sign-in link; 14 days", () => {
+    const content = buildEmailContent(payload);
+    expect(content.subject).toBe("You're invited to manage Hangar 24 Brewing Co. · Riverside");
+    expect(content.text).toContain(
+      `boss@hangar24.example asked you to manage Hangar 24 Brewing Co. · Riverside on the ${ORG_SHORT_NAME} member directory.`,
+    );
+    expect(content.text).toContain("The invitation lasts 14 days.");
+    expect(content.text).toContain(`${SITE_URL}/signin?next=/portal`);
+    expect(content.html.match(/<a /g)).toHaveLength(1);
+    expect(content.replyTo).toBe(MEMBER_INVITE_REPLY_TO);
+  });
+
+  it("escapes the names in the HTML", () => {
+    const content = buildEmailContent({ ...payload, businessName: "<b>Bad</b>" });
+    expect(content.html).toContain("&lt;b&gt;Bad&lt;/b&gt;");
+  });
+});

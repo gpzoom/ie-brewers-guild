@@ -38,6 +38,8 @@ export type PortalState =
       memberId: string;
       memberName: string;
       role: PortalRole;
+      /** True when the signed-in user is the business manager of a handed-off location (People opens for them). */
+      isBusinessManager: boolean;
       isImpersonating: boolean;
       destination: PortalDestination;
       /** The location list for the chosen business's switcher; null when it has no sibling locations or while impersonating. */
@@ -122,6 +124,7 @@ const resolvePortalState = createServerOnlyFn(
           memberId: impersonation.memberId,
           memberName: (member.business_name as string | null)?.trim() || "Unnamed business",
           role,
+          isBusinessManager: false,
           isImpersonating: true,
           destination: resolvePortalDestination({
             typeConfirmedAt: member.type_confirmed_at as string | null,
@@ -173,6 +176,7 @@ const resolvePortalState = createServerOnlyFn(
         memberId: chosen.memberId,
         memberName: chosen.businessName,
         role: chosen.role,
+        isBusinessManager: chosen.businessManagerUserId === user.id,
         isImpersonating: false,
         destination: resolvePortalDestination({
           typeConfirmedAt: chosen.typeConfirmedAt,

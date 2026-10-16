@@ -55,6 +55,11 @@ describe("portalSectionsFor", () => {
 });
 
 describe("canOpenPortalSection", () => {
+  it("People opens for the business manager on a handed-off location (editor role)", () => {
+    expect(canOpenPortalSection("people", { role: "editor", memberType: "producer", isBusinessManager: true })).toBe(true);
+    expect(canOpenPortalSection("people", { role: "editor", memberType: "producer" })).toBe(false);
+  });
+
   it("refuses People to everyone but the owner", () => {
     expect(canOpenPortalSection("people", { role: "owner", memberType: "mobile" })).toBe(true);
     expect(canOpenPortalSection("people", { role: "editor", memberType: "mobile" })).toBe(false);

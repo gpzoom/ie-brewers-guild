@@ -16,7 +16,7 @@ import type { CompletenessStep } from "@/lib/portal/section-completeness";
  *   links        yes    yes     --
  *   discount     yes    yes     --        (Affiliate Members only)
  *   theme        yes    yes     --
- *   people       yes    --      --
+ *   people       yes    --      --        (also the business manager on a handed-off location)
  *
  * A Guild admin editing as a member acts with owner rights, so the portal
  * shell hands them the role "owner". Hiding a section here is not the
@@ -56,12 +56,12 @@ const MEDIA_EVENTS_SECTIONS: readonly PortalSection[] = ["logo-cover", "events"]
 /** Whether this viewer may open the section at all. */
 export function canOpenPortalSection(
   section: PortalSection,
-  viewer: { role: PortalRole; memberType: MemberType },
+  viewer: { role: PortalRole; memberType: MemberType; isBusinessManager?: boolean },
 ): boolean {
   if (section === "discount" && viewer.memberType !== "allied") return false;
   if (section === "food" && viewer.memberType !== "producer") return false;
   if (viewer.role === "media_events") return MEDIA_EVENTS_SECTIONS.includes(section);
-  if (section === "people") return viewer.role === "owner";
+  if (section === "people") return viewer.role === "owner" || viewer.isBusinessManager === true;
   return true;
 }
 
@@ -69,6 +69,7 @@ export function canOpenPortalSection(
 export function portalSectionsFor(viewer: {
   role: PortalRole;
   memberType: MemberType;
+  isBusinessManager?: boolean;
 }): PortalSection[] {
   return PORTAL_SECTIONS.filter((section) => canOpenPortalSection(section, viewer));
 }
