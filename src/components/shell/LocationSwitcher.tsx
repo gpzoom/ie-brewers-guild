@@ -19,9 +19,9 @@ export const STATUS_LABEL: Record<LocationStatus, string> = {
 };
 
 const STATUS_CLASS: Record<LocationStatus, string> = {
-  live: "bg-[#E4F1E2] text-[#2F6B2C]",
-  setting_up: "bg-[#F6EADF] text-[#7A4413]",
-  not_started: "bg-canvas-2 text-ink-muted",
+  live: "bg-[#E4F0E1] text-[#2F5E2C]",
+  setting_up: "bg-[#F8EBD3] text-[#7A4E0E]",
+  not_started: "bg-[#EFEAE1] text-[#5C534A]",
 };
 
 /**
@@ -57,31 +57,53 @@ export function LocationSwitcher({ data }: { data: LocationSwitcherData }) {
           type="button"
           disabled={busy}
           aria-label={`Switch location. Now editing ${data.businessName} · ${current?.city ?? ""}`}
-          className="flex min-h-11 w-full items-center justify-between gap-2 rounded-[9px] border border-canvas-border bg-white px-3 text-left font-display text-[15px] font-bold leading-tight text-ink hover:bg-canvas-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:opacity-60"
+          className="flex min-h-12 w-full items-center justify-between gap-2 rounded-[10px] border border-ink bg-white px-3 text-left font-sans text-[14px] font-semibold leading-tight text-ink hover:bg-canvas-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:opacity-60"
         >
           <span className="min-w-0 [overflow-wrap:anywhere]">
-            {data.businessName} <span className="font-sans font-normal text-ink-muted">· {current?.city}</span>
+            {data.businessName} · {current?.city}
           </span>
-          <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <ChevronDown className="h-3 w-3 shrink-0" strokeWidth={2.4} aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-[240px] rounded-[10px] border-canvas-border bg-white p-1.5 font-sans shadow-lg">
-        <DropdownMenuLabel className="px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-          Locations
+      <DropdownMenuContent
+        align="start"
+        className="flex w-[300px] max-w-[calc(100vw-2rem)] flex-col gap-0.5 rounded-[12px] border-[#DED7CB] bg-white p-2 font-sans shadow-[0_14px_36px_rgba(36,31,26,0.18)]"
+      >
+        <DropdownMenuLabel className="px-2.5 pb-1.5 pt-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#6B6156]">
+          {data.businessName} · {data.locations.length}{" "}
+          {data.locations.length === 1 ? "location" : "locations"}
         </DropdownMenuLabel>
-        {data.locations.map((l) => (
-          <DropdownMenuItem
-            key={l.memberId}
-            onSelect={() => void choose(l.memberId)}
-            aria-current={l.memberId === data.currentMemberId ? "true" : undefined}
-            className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-3 text-[14px] text-ink"
-          >
-            <span className={l.memberId === data.currentMemberId ? "font-semibold" : undefined}>{l.city}</span>
-            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASS[l.status]}`}>
-              {STATUS_LABEL[l.status]}
-            </span>
-          </DropdownMenuItem>
-        ))}
+        {data.locations.map((l) => {
+          const isCurrent = l.memberId === data.currentMemberId;
+          return (
+            <DropdownMenuItem
+              key={l.memberId}
+              onSelect={() => void choose(l.memberId)}
+              aria-current={isCurrent ? "true" : undefined}
+              className={`flex min-h-[46px] cursor-pointer items-center justify-between gap-2.5 rounded-[8px] px-2.5 text-[14px] text-ink ${isCurrent ? "bg-[#EFEAE1] font-semibold" : ""}`}
+            >
+              <span className="flex items-center gap-2">
+                {isCurrent && (
+                  <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path
+                      d="M2.5 6.2 5 8.6l4.5-5"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+                {l.city}
+              </span>
+              <span
+                className={`shrink-0 rounded-full px-[9px] py-[3px] text-[11px] font-semibold ${STATUS_CLASS[l.status]}`}
+              >
+                {STATUS_LABEL[l.status]}
+              </span>
+            </DropdownMenuItem>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
