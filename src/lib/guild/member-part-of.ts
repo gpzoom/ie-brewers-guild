@@ -30,3 +30,29 @@ export function addMemberToast(
     message: `Added ${name}, but Part of wasn't saved: ${reason}. Set it from the row's Part of… menu.`,
   };
 }
+
+/**
+ * Add member's Part of select: what it shows and what it sends.
+ * `choice` is the admin's pick by hand (null = untouched). Untouched, it
+ * follows the typed name (trimmed, case-sensitive, like the database's
+ * name rule): a business with that name, else the first single location
+ * with it ("Group with …"), else None. Sends `undefined` -- leave it to the
+ * name rule -- only when untouched and nothing matched; otherwise the
+ * selection ("" is null, a real "no business").
+ */
+export function addMemberPartOf(input: {
+  typedName: string;
+  businesses: { id: string; name: string }[];
+  singles: { id: string; name: string }[];
+  choice: string | null;
+}): { selected: string; send: string | null | undefined } {
+  if (input.choice !== null) {
+    return { selected: input.choice, send: input.choice === "" ? null : input.choice };
+  }
+  const name = input.typedName.trim();
+  const matched =
+    input.businesses.find((b) => b.name === name)?.id ??
+    input.singles.find((s) => s.name === name)?.id ??
+    null;
+  return matched ? { selected: matched, send: matched } : { selected: "", send: undefined };
+}

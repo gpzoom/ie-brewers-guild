@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { addMemberToast, runPartOfStep } from "./member-part-of";
+import { addMemberPartOf, addMemberToast, runPartOfStep } from "./member-part-of";
 
 describe("runPartOfStep (Add member's Part of, after the insert)", () => {
   it("leaves it alone when Part of wasn't sent or already matches", async () => {
@@ -38,5 +38,55 @@ describe("addMemberToast", () => {
     });
     // A database message that already ends in a period doesn't double it.
     expect(addMemberToast("Hangar 24", "Nope.").message).toContain("saved: Nope. Set it");
+  });
+});
+
+describe("addMemberPartOf (Add member's Part of select)", () => {
+  const businesses = [{ id: "b1", name: "Hangar 24" }];
+  const singles = [
+    { id: "m1", name: "Brew Rebellion" },
+    { id: "m2", name: "Brew Rebellion" },
+  ];
+
+  it("name matches a business: preselects and sends it", () => {
+    expect(
+      addMemberPartOf({ typedName: " Hangar 24 ", businesses, singles, choice: null }),
+    ).toEqual({ selected: "b1", send: "b1" });
+  });
+
+  it("name matches a single location: preselects the first one and sends its id", () => {
+    expect(
+      addMemberPartOf({ typedName: "Brew Rebellion", businesses, singles, choice: null }),
+    ).toEqual({ selected: "m1", send: "m1" });
+  });
+
+  it("matching is case-sensitive, like the database's name rule", () => {
+    expect(
+      addMemberPartOf({ typedName: "hangar 24", businesses, singles, choice: null }).selected,
+    ).toBe("");
+  });
+
+  it("no match and untouched: None shown, but leaves it to the name rule (undefined)", () => {
+    expect(addMemberPartOf({ typedName: "New Place", businesses, singles, choice: null })).toEqual({
+      selected: "",
+      send: undefined,
+    });
+  });
+
+  it("touched None: a real 'no business' (null), even when the name matches", () => {
+    expect(
+      addMemberPartOf({ typedName: "Brew Rebellion", businesses, singles, choice: "" }),
+    ).toEqual({ selected: "", send: null });
+    expect(addMemberPartOf({ typedName: "New Place", businesses, singles, choice: "" })).toEqual({
+      selected: "",
+      send: null,
+    });
+  });
+
+  it("touched choice wins over the name", () => {
+    expect(addMemberPartOf({ typedName: "Hangar 24", businesses, singles, choice: "m2" })).toEqual({
+      selected: "m2",
+      send: "m2",
+    });
   });
 });

@@ -4,7 +4,8 @@ import { toast } from "sonner";
 import { createMemberRecord } from "@/lib/guild/create-member.server";
 import type { MemberType } from "@/lib/supabase/types";
 import type { RosterBusiness } from "@/lib/guild/roster-groups";
-import { addMemberToast } from "@/lib/guild/member-part-of";
+import type { RosterEntry } from "@/lib/guild/roster.server";
+import { addMemberPartOf, addMemberToast } from "@/lib/guild/member-part-of";
 import {
   Dialog,
   DialogContent,
@@ -25,18 +26,29 @@ const inputClass =
  * the member gets invited next from the roster and publishes their own
  * profile from there.
  */
-export function CreateMemberDialog({ businesses }: { businesses: RosterBusiness[] }) {
+export function CreateMemberDialog({
+  businesses,
+  singles,
+}: {
+  businesses: RosterBusiness[];
+  /** Single-location members, offered as "Group with …". */
+  singles: RosterEntry[];
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [businessName, setBusinessName] = useState("");
   const [city, setCity] = useState("");
   const [memberType, setMemberType] = useState<MemberType>("producer");
   const [contactEmail, setContactEmail] = useState("");
-  // Part of: follows the typed business name (the database's exact,
-  // trimmed name rule) until the admin picks something by hand.
+  // Part of: follows the typed business name until the admin picks
+  // something by hand (null = untouched). See addMemberPartOf.
   const [partOfChoice, setPartOfChoice] = useState<string | null>(null);
-  const matchedBusinessId = businesses.find((b) => b.name === businessName.trim())?.id ?? "";
-  const partOf = partOfChoice ?? matchedBusinessId;
+  const partOf = addMemberPartOf({
+    typedName: businessName,
+    businesses,
+    singles: singles.map((s) => ({ id: s.member.id, name: s.member.business_name })),
+    choice: partOfChoice,
+  });
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -51,7 +63,7 @@ export function CreateMemberDialog({ businesses }: { businesses: RosterBusiness[
           city,
           memberType,
           contactEmail: contactEmail || null,
-          partOf: partOf === "" ? null : partOf,
+          partOf: partOf.send,
         },
       });
       const created = businessName;
@@ -141,7 +153,7 @@ export function CreateMemberDialog({ businesses }: { businesses: RosterBusiness[
             </label>
             <select
               id="new-member-part-of"
-              value={partOf}
+              value={partOf.selected}
               onChange={(e) => setPartOfChoice(e.target.value)}
               disabled={submitting}
               className={`${inputClass} px-3`}
@@ -150,6 +162,11 @@ export function CreateMemberDialog({ businesses }: { businesses: RosterBusiness[
               {businesses.map((business) => (
                 <option key={business.id} value={business.id}>
                   {business.name}
+                </option>
+              ))}
+              {singles.map((single) => (
+                <option key={single.member.id} value={single.member.id}>
+                  Group with {single.member.business_name} ({single.member.city})
                 </option>
               ))}
             </select>

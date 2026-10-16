@@ -521,7 +521,7 @@ export function RosterTable({
           </h1>
           <p className="text-[13px] text-[#564E45]">{summary}</p>
         </div>
-        <CreateMemberDialog businesses={businesses} />
+        <CreateMemberDialog businesses={businesses} singles={singles} />
       </div>
 
       <div className="flex flex-col gap-2.5 sm:flex-row">
