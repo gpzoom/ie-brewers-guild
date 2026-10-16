@@ -2,8 +2,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { MoreHorizontal } from "lucide-react";
 import type { RosterEntry } from "@/lib/guild/roster.server";
-import type { RosterBusiness } from "@/lib/guild/roster-groups";
-import type { MemberStatus, MemberType } from "@/lib/supabase/types";
+import { groupRoster, type RosterBusiness } from "@/lib/guild/roster-groups";
+import type { BusinessManagementMode, MemberStatus, MemberType } from "@/lib/supabase/types";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -20,6 +20,9 @@ import {
 import { CreateMemberDialog } from "@/components/guild/CreateMemberDialog";
 import { DeleteMemberDialog } from "@/components/guild/DeleteMemberDialog";
 import { InviteEmailDialog } from "@/components/guild/InviteEmailDialog";
+import { BusinessRow } from "@/components/guild/BusinessRow";
+import { PartOfDialog } from "@/components/guild/PartOfDialog";
+import { setBusinessMode, inviteBusinessManager } from "@/lib/guild/businesses.server";
 import { inviteMember } from "@/lib/guild/invite-member.server";
 import { startImpersonation } from "@/lib/guild/impersonation.server";
 import { computeHoursConfirmationBadge } from "@/lib/hours/publish-gate";
@@ -110,6 +113,245 @@ const darkButtonClass =
 const menuItemClass = "min-h-10 cursor-pointer px-3 text-[13px] text-ink";
 
 /**
+ * One location's roster row (artboard P): logo box, name and detail line,
+ * type, status, and its actions. `indented` is a location shown under its
+ * business (artboard BZ1): no logo box, shifted right. `hideInvite` hides
+ * the location's own Invite -- a one-manager business has one Invite, on
+ * the business row.
+ */
+function MemberRow({
+  entry,
+  indented = false,
+  hideInvite = false,
+  now,
+  isSuperAdmin,
+  inviting,
+  impersonating,
+  onInvite,
+  onEditAsThem,
+  onDelete,
+  onPartOf,
+  runAction,
+}: {
+  entry: RosterEntry;
+  indented?: boolean;
+  hideInvite?: boolean;
+  now: Date;
+  isSuperAdmin: boolean;
+  inviting: boolean;
+  impersonating: boolean;
+  onInvite: () => void;
+  onEditAsThem: () => void;
+  onDelete: () => void;
+  onPartOf: () => void;
+  runAction: (action: () => Promise<unknown>, successMessage: string) => Promise<void>;
+}) {
+  const { member } = entry;
+  const status = resolveRowStatus(entry, now);
+  const typeLabel = MEMBER_TYPE_LABEL[member.member_type];
+  return (
+    <li
+      className={`flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-[#F0EBE3] px-4 py-3.5 last:border-b-0 md:flex-nowrap md:px-5 ${indented ? "md:pl-12" : ""}`}
+    >
+      {!indented && (
+        <div
+          aria-hidden="true"
+          title={member.logo_asset_id ? undefined : "No logo yet"}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[9px] bg-[#F2EEE7] text-[11px] font-semibold tracking-[0.06em] text-ink-subtle ${
+            member.logo_asset_id
+              ? "border border-[#E6E0D6]"
+              : "border border-dashed border-[#D3CBBD]"
+          }`}
+        >
+          {initialsOf(member.business_name)}
+        </div>
+      )}
+
+      <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
+        <div className="truncate text-[15px] font-semibold text-ink">{member.business_name}</div>
+        <div className="text-xs text-ink-muted">{resolveDetailLine(entry, now)}</div>
+        <div className="flex items-center gap-1.5 text-xs text-[#3A332C] md:hidden">
+          {typeLabel} ·
+          <span className="block h-2 w-2 rounded-full" style={{ background: status.dot }} />
+          {status.label}
+        </div>
+      </div>
+
+      <div className="hidden w-[130px] shrink-0 text-[13px] text-[#3A332C] md:block">
+        {typeLabel}
+      </div>
+
+      <div className="hidden w-[120px] shrink-0 items-center gap-[7px] md:flex">
+        <span className="block h-2 w-2 shrink-0 rounded-full" style={{ background: status.dot }} />
+        <span className="text-[13px] text-[#3A332C]">{status.label}</span>
+      </div>
+
+      <div className="flex w-full flex-wrap justify-end gap-2 md:w-[268px] md:shrink-0 md:flex-nowrap">
+        {entry.claimState === "unclaimed" && !hideInvite && (
+          <button type="button" onClick={onInvite} disabled={inviting} className={lightButtonClass}>
+            {inviting ? "Inviting…" : "Invite"}
+          </button>
+        )}
+        {member.status === "published" && (
+          <a
+            href={`/members/${member.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={lightButtonClass}
+          >
+            View
+          </a>
+        )}
+        <button
+          type="button"
+          onClick={onEditAsThem}
+          disabled={impersonating}
+          className={darkButtonClass}
+        >
+          {impersonating ? "Opening…" : "Edit as them"}
+        </button>
+
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label={`More actions for ${member.business_name}`}
+              className={`${lightButtonClass} w-11 px-0 md:w-10`}
+            >
+              <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="min-w-[220px] rounded-[10px] border-canvas-border bg-white p-1.5 font-sans shadow-lg"
+          >
+            {member.status !== "published" && (
+              <DropdownMenuItem
+                className={menuItemClass}
+                onSelect={() =>
+                  runAction(
+                    () => approveMember({ data: { memberId: member.id } }),
+                    `Approved ${member.business_name}`,
+                  )
+                }
+              >
+                Approve
+              </DropdownMenuItem>
+            )}
+            {member.status !== "declined" && (
+              <DropdownMenuItem
+                className={menuItemClass}
+                onSelect={() =>
+                  runAction(
+                    () => declineMember({ data: { memberId: member.id } }),
+                    `Declined ${member.business_name}`,
+                  )
+                }
+              >
+                Decline
+              </DropdownMenuItem>
+            )}
+            {member.status !== "suspended" && (
+              <DropdownMenuItem
+                className={menuItemClass}
+                onSelect={() =>
+                  runAction(
+                    () => suspendMember({ data: { memberId: member.id } }),
+                    `Suspended ${member.business_name}`,
+                  )
+                }
+              >
+                Suspend
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator className="bg-[#F0EBE3]" />
+            {isSuperAdmin && (
+              <DropdownMenuItem
+                className={menuItemClass}
+                onSelect={() =>
+                  runAction(
+                    () =>
+                      setTrailEligible({
+                        data: { memberId: member.id, eligible: !member.trail_eligible },
+                      }),
+                    member.trail_eligible
+                      ? `Removed ${member.business_name} from the Trail`
+                      : `Added ${member.business_name} to the Trail`,
+                  )
+                }
+              >
+                {member.trail_eligible ? "Remove from Trail" : "Add to Trail"}
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              className={menuItemClass}
+              onSelect={() =>
+                runAction(
+                  () =>
+                    setDuesReceived({
+                      data: {
+                        memberId: member.id,
+                        receivedAt: member.dues_received_at ? null : new Date().toISOString(),
+                      },
+                    }),
+                  member.dues_received_at ? "Dues cleared" : "Dues marked as received",
+                )
+              }
+            >
+              {member.dues_received_at ? "Clear dues received" : "Mark dues received"}
+            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className={menuItemClass}>
+                Change member type
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="min-w-[180px] rounded-[10px] border-canvas-border bg-white p-1.5 font-sans">
+                <DropdownMenuRadioGroup
+                  value={member.member_type}
+                  onValueChange={(value) => {
+                    if (value === member.member_type) return;
+                    void runAction(
+                      () =>
+                        correctMemberType({
+                          data: { memberId: member.id, memberType: value as MemberType },
+                        }),
+                      `${member.business_name} is now ${MEMBER_TYPE_LABEL[value as MemberType]}`,
+                    );
+                  }}
+                >
+                  {(Object.keys(MEMBER_TYPE_LABEL) as MemberType[]).map((type) => (
+                    <DropdownMenuRadioItem
+                      key={type}
+                      value={type}
+                      className="min-h-10 cursor-pointer text-[13px] text-ink"
+                    >
+                      {MEMBER_TYPE_LABEL[type]}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuItem className={menuItemClass} onSelect={onPartOf}>
+              Part of…
+            </DropdownMenuItem>
+            {isSuperAdmin && (
+              <>
+                <DropdownMenuSeparator className="bg-[#F0EBE3]" />
+                <DropdownMenuItem
+                  className={`${menuItemClass} font-medium text-danger focus:bg-danger/10 focus:text-danger`}
+                  onSelect={onDelete}
+                >
+                  Delete member…
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </li>
+  );
+}
+
+/**
  * Guild admin members roster (artboard P, GuildMembers). Search by name or
  * city, filter by member type and sign-in state -- all client-side over the
  * loaded roster. Each row keeps the artboard's two primary actions (View,
@@ -123,10 +365,11 @@ const menuItemClass = "min-h-10 cursor-pointer px-3 text-[13px] text-ink";
  */
 export function RosterTable({
   entries,
+  businesses,
   isSuperAdmin,
 }: {
   entries: RosterEntry[];
-  /** Used by the grouped roster rows (Task 5). */
+  /** Multi-location businesses; their locations group under them (artboard BZ1). */
   businesses: RosterBusiness[];
   isSuperAdmin: boolean;
 }) {
@@ -143,6 +386,13 @@ export function RosterTable({
   // Same "kept after closing" reasoning for the delete confirmation.
   const [deleteTarget, setDeleteTarget] = useState<RosterEntry | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  // A business's one Invite (one-manager, no manager yet) -- same "kept after closing" reasoning.
+  const [managerInviteTarget, setManagerInviteTarget] = useState<RosterBusiness | null>(null);
+  const [managerInviteOpen, setManagerInviteOpen] = useState(false);
+  const [partOfTarget, setPartOfTarget] = useState<RosterEntry | null>(null);
+  const [partOfOpen, setPartOfOpen] = useState(false);
+  // Business whose Managed by switch is saving.
+  const [businessBusyId, setBusinessBusyId] = useState<string | null>(null);
 
   // Fixed per mount: stale-hours is a 90-day threshold, so it can't drift meaningfully mid-session.
   const [now] = useState(() => new Date());
@@ -180,6 +430,27 @@ export function RosterTable({
     }
   }
 
+  async function handleModeChange(business: RosterBusiness, mode: BusinessManagementMode) {
+    setBusinessBusyId(business.id);
+    try {
+      // The database refuses a switch its rules don't allow; runAction shows that message.
+      await runAction(
+        () => setBusinessMode({ data: { businessId: business.id, mode } }),
+        mode === "one_manager"
+          ? `${business.name}: one manager`
+          : `${business.name}: each location separately`,
+      );
+    } finally {
+      setBusinessBusyId(null);
+    }
+  }
+
+  async function sendManagerInvite(business: RosterBusiness, email: string) {
+    await inviteBusinessManager({ data: { businessId: business.id, email } });
+    await router.invalidate();
+    toast.success(`Invite sent to ${email}`);
+  }
+
   async function handleEditAsThem(entry: RosterEntry) {
     setImpersonatingId(entry.member.id);
     try {
@@ -204,9 +475,9 @@ export function RosterTable({
     return parts.join(" · ");
   }, [entries, now]);
 
-  const filtered = useMemo(() => {
+  const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return entries.filter((entry) => {
+    const matches = (entry: RosterEntry) => {
       if (typeFilter !== "all" && entry.member.member_type !== typeFilter) return false;
       if (claimFilter !== "all" && entry.claimState !== claimFilter) return false;
       if (!q) return true;
@@ -214,8 +485,56 @@ export function RosterTable({
         entry.member.business_name.toLowerCase().includes(q) ||
         entry.member.city.toLowerCase().includes(q)
       );
-    });
-  }, [entries, query, typeFilter, claimFilter]);
+    };
+    return groupRoster(entries, businesses, matches);
+  }, [entries, businesses, query, typeFilter, claimFilter]);
+
+  // "· N locations" counts every location, not just the ones the filters show.
+  const locationCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const entry of entries) {
+      const id = entry.member.business_id;
+      if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+    return counts;
+  }, [entries]);
+
+  // Part of's "Group with …" choices: members not yet in a business.
+  const singles = useMemo(() => {
+    const businessIds = new Set(businesses.map((b) => b.id));
+    return entries.filter(
+      (entry) => !entry.member.business_id || !businessIds.has(entry.member.business_id),
+    );
+  }, [entries, businesses]);
+
+  function renderMemberRow(
+    entry: RosterEntry,
+    options: { indented?: boolean; hideInvite?: boolean } = {},
+  ) {
+    return (
+      <MemberRow
+        key={entry.member.id}
+        entry={entry}
+        indented={options.indented}
+        hideInvite={options.hideInvite}
+        now={now}
+        isSuperAdmin={isSuperAdmin}
+        inviting={invitingId === entry.member.id}
+        impersonating={impersonatingId === entry.member.id}
+        onInvite={() => handleInvite(entry)}
+        onEditAsThem={() => handleEditAsThem(entry)}
+        onDelete={() => {
+          setDeleteTarget(entry);
+          setDeleteDialogOpen(true);
+        }}
+        onPartOf={() => {
+          setPartOfTarget(entry);
+          setPartOfOpen(true);
+        }}
+        runAction={runAction}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -226,7 +545,7 @@ export function RosterTable({
           </h1>
           <p className="text-[13px] text-[#564E45]">{summary}</p>
         </div>
-        <CreateMemberDialog />
+        <CreateMemberDialog businesses={businesses} />
       </div>
 
       <div className="flex flex-col gap-2.5 sm:flex-row">
@@ -275,226 +594,34 @@ export function RosterTable({
         </div>
 
         <ul>
-          {filtered.map((entry) => {
-            const { member } = entry;
-            const status = resolveRowStatus(entry, now);
-            const typeLabel = MEMBER_TYPE_LABEL[member.member_type];
+          {groups.map((group) => {
+            if (group.kind === "single") return renderMemberRow(group.entry);
+            const { business } = group;
+            const oneManager = business.mode === "one_manager";
             return (
               <li
-                key={member.id}
-                className="flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-[#F0EBE3] px-4 py-3.5 last:border-b-0 md:flex-nowrap md:px-5"
+                key={`business-${business.id}`}
+                className="border-b border-[#F0EBE3] last:border-b-0"
               >
-                <div
-                  aria-hidden="true"
-                  title={member.logo_asset_id ? undefined : "No logo yet"}
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[9px] bg-[#F2EEE7] text-[11px] font-semibold tracking-[0.06em] text-ink-subtle ${
-                    member.logo_asset_id
-                      ? "border border-[#E6E0D6]"
-                      : "border border-dashed border-[#D3CBBD]"
-                  }`}
-                >
-                  {initialsOf(member.business_name)}
-                </div>
-
-                <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
-                  <div className="truncate text-[15px] font-semibold text-ink">
-                    {member.business_name}
-                  </div>
-                  <div className="text-xs text-ink-muted">{resolveDetailLine(entry, now)}</div>
-                  <div className="flex items-center gap-1.5 text-xs text-[#3A332C] md:hidden">
-                    {typeLabel} ·
-                    <span
-                      className="block h-2 w-2 rounded-full"
-                      style={{ background: status.dot }}
-                    />
-                    {status.label}
-                  </div>
-                </div>
-
-                <div className="hidden w-[130px] shrink-0 text-[13px] text-[#3A332C] md:block">
-                  {typeLabel}
-                </div>
-
-                <div className="hidden w-[120px] shrink-0 items-center gap-[7px] md:flex">
-                  <span
-                    className="block h-2 w-2 shrink-0 rounded-full"
-                    style={{ background: status.dot }}
-                  />
-                  <span className="text-[13px] text-[#3A332C]">{status.label}</span>
-                </div>
-
-                <div className="flex w-full flex-wrap justify-end gap-2 md:w-[268px] md:shrink-0 md:flex-nowrap">
-                  {entry.claimState === "unclaimed" && (
-                    <button
-                      type="button"
-                      onClick={() => handleInvite(entry)}
-                      disabled={invitingId === member.id}
-                      className={lightButtonClass}
-                    >
-                      {invitingId === member.id ? "Inviting…" : "Invite"}
-                    </button>
+                <BusinessRow
+                  business={business}
+                  locationCount={locationCounts.get(business.id) ?? group.entries.length}
+                  busy={businessBusyId === business.id}
+                  onModeChange={(mode) => handleModeChange(business, mode)}
+                  onInvite={() => {
+                    setManagerInviteTarget(business);
+                    setManagerInviteOpen(true);
+                  }}
+                />
+                <ul aria-label={`${business.name} locations`}>
+                  {group.entries.map((entry) =>
+                    renderMemberRow(entry, { indented: true, hideInvite: oneManager }),
                   )}
-                  {member.status === "published" && (
-                    <a
-                      href={`/members/${member.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={lightButtonClass}
-                    >
-                      View
-                    </a>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => handleEditAsThem(entry)}
-                    disabled={impersonatingId === member.id}
-                    className={darkButtonClass}
-                  >
-                    {impersonatingId === member.id ? "Opening…" : "Edit as them"}
-                  </button>
-
-                  <DropdownMenu modal={false}>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        aria-label={`More actions for ${member.business_name}`}
-                        className={`${lightButtonClass} w-11 px-0 md:w-10`}
-                      >
-                        <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="min-w-[220px] rounded-[10px] border-canvas-border bg-white p-1.5 font-sans shadow-lg"
-                    >
-                      {member.status !== "published" && (
-                        <DropdownMenuItem
-                          className={menuItemClass}
-                          onSelect={() =>
-                            runAction(
-                              () => approveMember({ data: { memberId: member.id } }),
-                              `Approved ${member.business_name}`,
-                            )
-                          }
-                        >
-                          Approve
-                        </DropdownMenuItem>
-                      )}
-                      {member.status !== "declined" && (
-                        <DropdownMenuItem
-                          className={menuItemClass}
-                          onSelect={() =>
-                            runAction(
-                              () => declineMember({ data: { memberId: member.id } }),
-                              `Declined ${member.business_name}`,
-                            )
-                          }
-                        >
-                          Decline
-                        </DropdownMenuItem>
-                      )}
-                      {member.status !== "suspended" && (
-                        <DropdownMenuItem
-                          className={menuItemClass}
-                          onSelect={() =>
-                            runAction(
-                              () => suspendMember({ data: { memberId: member.id } }),
-                              `Suspended ${member.business_name}`,
-                            )
-                          }
-                        >
-                          Suspend
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator className="bg-[#F0EBE3]" />
-                      {isSuperAdmin && (
-                        <DropdownMenuItem
-                          className={menuItemClass}
-                          onSelect={() =>
-                            runAction(
-                              () =>
-                                setTrailEligible({
-                                  data: { memberId: member.id, eligible: !member.trail_eligible },
-                                }),
-                              member.trail_eligible
-                                ? `Removed ${member.business_name} from the Trail`
-                                : `Added ${member.business_name} to the Trail`,
-                            )
-                          }
-                        >
-                          {member.trail_eligible ? "Remove from Trail" : "Add to Trail"}
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem
-                        className={menuItemClass}
-                        onSelect={() =>
-                          runAction(
-                            () =>
-                              setDuesReceived({
-                                data: {
-                                  memberId: member.id,
-                                  receivedAt: member.dues_received_at
-                                    ? null
-                                    : new Date().toISOString(),
-                                },
-                              }),
-                            member.dues_received_at ? "Dues cleared" : "Dues marked as received",
-                          )
-                        }
-                      >
-                        {member.dues_received_at ? "Clear dues received" : "Mark dues received"}
-                      </DropdownMenuItem>
-                      <DropdownMenuSub>
-                        <DropdownMenuSubTrigger className={menuItemClass}>
-                          Change member type
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent className="min-w-[180px] rounded-[10px] border-canvas-border bg-white p-1.5 font-sans">
-                          <DropdownMenuRadioGroup
-                            value={member.member_type}
-                            onValueChange={(value) => {
-                              if (value === member.member_type) return;
-                              void runAction(
-                                () =>
-                                  correctMemberType({
-                                    data: { memberId: member.id, memberType: value as MemberType },
-                                  }),
-                                `${member.business_name} is now ${MEMBER_TYPE_LABEL[value as MemberType]}`,
-                              );
-                            }}
-                          >
-                            {(Object.keys(MEMBER_TYPE_LABEL) as MemberType[]).map((type) => (
-                              <DropdownMenuRadioItem
-                                key={type}
-                                value={type}
-                                className="min-h-10 cursor-pointer text-[13px] text-ink"
-                              >
-                                {MEMBER_TYPE_LABEL[type]}
-                              </DropdownMenuRadioItem>
-                            ))}
-                          </DropdownMenuRadioGroup>
-                        </DropdownMenuSubContent>
-                      </DropdownMenuSub>
-                      {isSuperAdmin && (
-                        <>
-                          <DropdownMenuSeparator className="bg-[#F0EBE3]" />
-                          <DropdownMenuItem
-                            className={`${menuItemClass} font-medium text-danger focus:bg-danger/10 focus:text-danger`}
-                            onSelect={() => {
-                              setDeleteTarget(entry);
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            Delete member…
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                </ul>
               </li>
             );
           })}
-          {filtered.length === 0 && (
+          {groups.length === 0 && (
             <li className="px-5 py-8 text-center text-sm text-ink-muted">
               {entries.length === 0
                 ? "No members yet."
@@ -511,6 +638,25 @@ export function RosterTable({
         onSend={async (email) => {
           if (inviteTarget) await sendInvite(inviteTarget, email);
         }}
+      />
+
+      <InviteEmailDialog
+        businessName={managerInviteTarget?.name ?? ""}
+        title={`Invite ${managerInviteTarget?.name ?? ""}'s manager`}
+        description="They'll manage every location. Enter the address they should sign in with."
+        open={managerInviteOpen}
+        onOpenChange={setManagerInviteOpen}
+        onSend={async (email) => {
+          if (managerInviteTarget) await sendManagerInvite(managerInviteTarget, email);
+        }}
+      />
+
+      <PartOfDialog
+        entry={partOfTarget}
+        businesses={businesses}
+        singles={singles}
+        open={partOfOpen}
+        onOpenChange={setPartOfOpen}
       />
 
       {deleteTarget && (

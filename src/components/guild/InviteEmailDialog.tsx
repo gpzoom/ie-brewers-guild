@@ -19,11 +19,17 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  */
 export function InviteEmailDialog({
   businessName,
+  title,
+  description,
   open,
   onOpenChange,
   onSend,
 }: {
   businessName: string;
+  /** Overrides "Invite {businessName}" (the business manager invite uses its own). */
+  title?: string;
+  /** Overrides the no-email-on-file explanation. */
+  description?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSend: (email: string) => Promise<void>;
@@ -64,10 +70,11 @@ export function InviteEmailDialog({
       <DialogContent className="gap-5 rounded-[14px] border-canvas-border bg-white p-6 font-sans sm:max-w-[480px] sm:rounded-[14px]">
         <DialogHeader className="gap-1.5 text-left">
           <DialogTitle className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink">
-            Invite {businessName}
+            {title ?? `Invite ${businessName}`}
           </DialogTitle>
           <DialogDescription className="text-[13px] leading-[1.55] text-[#564E45]">
-            There's no email on file for this member. Enter the address they should sign in with.
+            {description ??
+              "There's no email on file for this member. Enter the address they should sign in with."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>

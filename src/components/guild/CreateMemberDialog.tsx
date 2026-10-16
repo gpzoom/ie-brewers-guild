@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { createMemberRecord } from "@/lib/guild/create-member.server";
 import type { MemberType } from "@/lib/supabase/types";
+import type { RosterBusiness } from "@/lib/guild/roster-groups";
 import {
   Dialog,
   DialogContent,
@@ -23,13 +24,18 @@ const inputClass =
  * the member gets invited next from the roster and publishes their own
  * profile from there.
  */
-export function CreateMemberDialog() {
+export function CreateMemberDialog({ businesses }: { businesses: RosterBusiness[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [businessName, setBusinessName] = useState("");
   const [city, setCity] = useState("");
   const [memberType, setMemberType] = useState<MemberType>("producer");
   const [contactEmail, setContactEmail] = useState("");
+  // Part of: follows the typed business name (the database's exact,
+  // trimmed name rule) until the admin picks something by hand.
+  const [partOfChoice, setPartOfChoice] = useState<string | null>(null);
+  const matchedBusinessId = businesses.find((b) => b.name === businessName.trim())?.id ?? "";
+  const partOf = partOfChoice ?? matchedBusinessId;
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -44,6 +50,7 @@ export function CreateMemberDialog() {
           city,
           memberType,
           contactEmail: contactEmail || null,
+          partOf: partOf === "" ? null : partOf,
         },
       });
       const created = businessName;
@@ -51,6 +58,7 @@ export function CreateMemberDialog() {
       setBusinessName("");
       setCity("");
       setContactEmail("");
+      setPartOfChoice(null);
       await router.invalidate();
       toast.success(`Added ${created}`);
     } catch (err) {
@@ -121,6 +129,25 @@ export function CreateMemberDialog() {
               <option value="producer">Producer</option>
               <option value="mobile">Mobile</option>
               <option value="allied">Affiliate Member</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="new-member-part-of" className={labelClass}>
+              Part of
+            </label>
+            <select
+              id="new-member-part-of"
+              value={partOf}
+              onChange={(e) => setPartOfChoice(e.target.value)}
+              disabled={submitting}
+              className={`${inputClass} px-3`}
+            >
+              <option value="">None — a single location</option>
+              {businesses.map((business) => (
+                <option key={business.id} value={business.id}>
+                  {business.name}
+                </option>
+              ))}
             </select>
           </div>
           <div className="flex flex-col gap-2">

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { generateUniqueMemberSlug } from "@/lib/guild/unique-member-slug.server";
+import { applyMemberBusiness } from "@/lib/guild/businesses.server";
 import type { MemberRow, MemberType } from "@/lib/supabase/types";
 
 export type CreateMemberInput = {
@@ -8,6 +9,13 @@ export type CreateMemberInput = {
   city: string;
   memberType: MemberType;
   contactEmail?: string | null;
+  /**
+   * Add member's "Part of" (spec 2026-10-15): undefined leaves it to the
+   * database's same-name rule, null is "None -- a single location", a
+   * string is a business id. Joining a one-manager business this way links
+   * the location and emails the manager.
+   */
+  partOf?: string | null;
 };
 
 /**
@@ -43,5 +51,20 @@ export const createMemberRecord = createServerFn({ method: "POST" })
       .single();
 
     if (error || !member) throw new Error(error?.message ?? "Could not create the member.");
-    return member as MemberRow;
+
+    if (data.partOf !== undefined) {
+      const current = (member as MemberRow).business_id ?? null;
+      if (data.partOf !== current)
+        await applyMemberBusiness(supabase, (member as MemberRow).id, data.partOf);
+    }
+
+    // Re-read so the returned row has its final business_id.
+    const { data: final, error: rereadError } = await supabase
+      .from("members")
+      .select("*")
+      .eq("id", (member as MemberRow).id)
+      .single();
+    if (rereadError || !final)
+      throw new Error(rereadError?.message ?? "Could not load the new member.");
+    return final as MemberRow;
   });
