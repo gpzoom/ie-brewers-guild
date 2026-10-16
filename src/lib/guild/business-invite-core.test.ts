@@ -52,4 +52,30 @@ describe("inviteBusinessManagerCore", () => {
     const d = deps({ sendInviteEmail: vi.fn(async () => { throw new Error("resend down"); }) });
     await expect(inviteBusinessManagerCore(d, { businessId: "b", email: "a@x.com" })).resolves.toMatchObject({ ok: true });
   });
+
+  const sep = () => vi.fn(async () => ({ name: "B", mode: "separate" as const, managerUserId: null, locationCount: 2 }));
+
+  it("switching: needs a separate business and links through the switch", async () => {
+    const d = deps({ loadBusiness: sep() });
+    await inviteBusinessManagerCore(d, { businessId: "b1", email: "Owner@X.com", switching: true });
+    expect(d.linkManager).toHaveBeenCalledWith("b1", expect.any(String));
+    expect(d.sendInviteEmail).toHaveBeenCalled();
+  });
+
+  it("switching: refuses a business that is already one manager", async () => {
+    const d = deps();
+    await expect(inviteBusinessManagerCore(d, { businessId: "b1", email: "a@x.com", switching: true })).rejects.toThrow("This business already has one manager.");
+    expect(d.createUser).not.toHaveBeenCalled();
+  });
+
+  it("switching: an existing owner's account is linked, never deleted when the switch fails", async () => {
+    const d = deps({
+      loadBusiness: sep(),
+      createUser: vi.fn(async () => ({ ok: false as const, emailTaken: true, message: "taken" })),
+      findUserIdByEmail: vi.fn(async () => "u-owner"),
+      linkManager: vi.fn(async () => ({ ok: false as const, message: "Cancel the pending hand-off first." })),
+    });
+    await expect(inviteBusinessManagerCore(d, { businessId: "b1", email: "owner@x.com", switching: true })).rejects.toThrow("Cancel the pending hand-off first.");
+    expect(d.deleteUser).not.toHaveBeenCalled();
+  });
 });

@@ -23,6 +23,10 @@ export function hasStaleHours(entry: RosterEntry, now: Date): boolean {
  */
 function signInDetail(entry: RosterEntry, business: RosterBusiness | undefined): string | null {
   if (business?.mode === "one_manager") {
+    // A location handed to its own manager is no longer run by the business manager.
+    if (entry.ownerUserId && business.managerUserId && entry.ownerUserId !== business.managerUserId) {
+      return `handed off to ${entry.ownerEmail ?? "a location manager"}`;
+    }
     if (!business.hasManager) return "manager not invited yet";
     if (!business.managerSignedIn) return "manager invited, not signed in";
     return null;

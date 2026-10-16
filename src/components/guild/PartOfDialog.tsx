@@ -16,9 +16,9 @@ import {
 /**
  * The roster's "Part of…" (spec 2026-10-15): put a location under a
  * business, group it with another single location (which makes a new
- * business of the two), or make it a single location again. The database
- * refuses what the rules don't allow (e.g. leaving a one-manager business)
- * and that message shows in the dialog.
+ * business of the two), or make it a single location again. Leaving a
+ * one-manager business releases the location from its manager. The database
+ * refuses what the rules don't allow and that message shows in the dialog.
  */
 export function PartOfDialog({
   entry,

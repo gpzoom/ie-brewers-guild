@@ -5,7 +5,7 @@ import { sendTransactionalEmail } from "@/lib/email/send";
 import { requireGuildAdminSession } from "@/lib/guild/member-business";
 import { applyMemberBusiness } from "@/lib/guild/member-business";
 import { createAuthUser, findAuthUserIdByEmail } from "@/lib/guild/auth-accounts.server";
-import { inviteBusinessManagerCore } from "@/lib/guild/business-invite-core";
+import { inviteBusinessManagerCore, type BusinessInviteDeps } from "@/lib/guild/business-invite-core";
 import type { BusinessManagementMode } from "@/lib/supabase/types";
 
 /**
@@ -21,8 +21,8 @@ export const setBusinessMode = createServerFn({ method: "POST" })
   .inputValidator((data: { businessId: string; mode: BusinessManagementMode }) => data)
   .handler(async ({ data }) => {
     const supabase = await requireGuildAdminSession();
-    // p_look_source null: the database picks which location's look the
-    // business keeps when it becomes one-manager.
+    // The roster uses this only for the switch to separate; switching to one
+    // manager goes through switchBusinessToOneManager (manager + look).
     const { error } = await supabase.rpc("set_business_mode", {
       p_business_id: data.businessId,
       p_mode: data.mode,
@@ -40,47 +40,77 @@ export const setMemberBusiness = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/** The I/O behind inviteBusinessManagerCore; not exported (this file may only export server functions). */
+function businessInviteDeps(
+  supabase: SupabaseClient,
+  service: SupabaseClient,
+  linkManager: BusinessInviteDeps["linkManager"],
+): BusinessInviteDeps {
+  return {
+    async loadBusiness(businessId) {
+      const { data: business, error } = await supabase
+        .from("businesses")
+        .select("name, management_mode, manager_user_id")
+        .eq("id", businessId)
+        .single();
+      if (error || !business) throw new Error("That business no longer exists.");
+      const { count, error: countError } = await supabase
+        .from("members")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", businessId);
+      // Never send an email that says "0 locations".
+      if (countError || !count) throw new Error("That business has no locations.");
+      return {
+        name: business.name as string,
+        mode: business.management_mode as BusinessManagementMode,
+        managerUserId: (business.manager_user_id as string | null) ?? null,
+        locationCount: count,
+      };
+    },
+    createUser: (email) => createAuthUser(service, email),
+    findUserIdByEmail: (email) => findAuthUserIdByEmail(service, email),
+    linkManager,
+    async deleteUser(userId) {
+      await service.auth.admin.deleteUser(userId);
+    },
+    async sendInviteEmail(payload) {
+      await sendTransactionalEmail({ trigger: "business_invited", ...payload });
+    },
+  };
+}
+
 export const inviteBusinessManager = createServerFn({ method: "POST" })
   .inputValidator((data: { businessId: string; email: string }) => data)
   .handler(async ({ data }) => {
     const supabase = await requireGuildAdminSession();
     const service = await getSupabaseServiceRoleClient();
     const result = await inviteBusinessManagerCore(
-      {
-        async loadBusiness(businessId) {
-          const { data: business, error } = await supabase
-            .from("businesses")
-            .select("name, management_mode, manager_user_id")
-            .eq("id", businessId)
-            .single();
-          if (error || !business) throw new Error("That business no longer exists.");
-          const { count, error: countError } = await supabase
-            .from("members")
-            .select("id", { count: "exact", head: true })
-            .eq("business_id", businessId);
-          // Never send an email that says "0 locations".
-          if (countError || !count) throw new Error("That business has no locations.");
-          return {
-            name: business.name as string,
-            mode: business.management_mode as BusinessManagementMode,
-            managerUserId: (business.manager_user_id as string | null) ?? null,
-            locationCount: count,
-          };
-        },
-        createUser: (email) => createAuthUser(service, email),
-        findUserIdByEmail: (email) => findAuthUserIdByEmail(service, email),
-        async linkManager(businessId, userId) {
-          const { error } = await supabase.rpc("link_business_manager", { p_business_id: businessId, p_user_id: userId });
-          return error ? { ok: false as const, message: error.message } : { ok: true as const };
-        },
-        async deleteUser(userId) {
-          await service.auth.admin.deleteUser(userId);
-        },
-        async sendInviteEmail(payload) {
-          await sendTransactionalEmail({ trigger: "business_invited", ...payload });
-        },
-      },
+      businessInviteDeps(supabase, service, async (businessId, userId) => {
+        const { error } = await supabase.rpc("link_business_manager", { p_business_id: businessId, p_user_id: userId });
+        return error ? { ok: false as const, message: error.message } : { ok: true as const };
+      }),
       { businessId: data.businessId, email: data.email },
     );
     return { ok: true as const, userId: result.userId };
+  });
+
+export const switchBusinessToOneManager = createServerFn({ method: "POST" })
+  .inputValidator((data: { businessId: string; email: string; lookSource: string | null }) => data)
+  .handler(async ({ data }) => {
+    const supabase = await requireGuildAdminSession();
+    const service = await getSupabaseServiceRoleClient();
+    await inviteBusinessManagerCore(
+      businessInviteDeps(supabase, service, async (businessId, userId) => {
+        // Mode, shared look and the manager's links in one transaction.
+        const { error } = await supabase.rpc("set_business_mode", {
+          p_business_id: businessId,
+          p_mode: "one_manager",
+          p_look_source: data.lookSource,
+          p_manager_user_id: userId,
+        });
+        return error ? { ok: false as const, message: error.message } : { ok: true as const };
+      }),
+      { businessId: data.businessId, email: data.email, switching: true },
+    );
+    return { ok: true as const };
   });

@@ -7,10 +7,11 @@ function entry(id: string, name: string, city: string, businessId: string | null
     member: { id, business_name: name, city, business_id: businessId } as RosterEntry["member"],
     claimState: "unclaimed",
     ownerEmail: null,
+    ownerUserId: null,
   };
 }
 
-const hangar: RosterBusiness = { id: "b1", name: "Hangar 24 Brewing Co.", mode: "one_manager", hasManager: false, managerEmail: null, managerSignedIn: false };
+const hangar: RosterBusiness = { id: "b1", name: "Hangar 24 Brewing Co.", mode: "one_manager", hasManager: false, managerEmail: null, managerSignedIn: false, managerUserId: null };
 const all = () => true;
 
 describe("groupRoster", () => {

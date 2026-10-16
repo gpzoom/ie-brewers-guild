@@ -10,6 +10,7 @@ export type RosterBusiness = {
   hasManager: boolean;
   managerEmail: string | null;
   managerSignedIn: boolean;
+  managerUserId: string | null;
 };
 
 export type RosterGroup =

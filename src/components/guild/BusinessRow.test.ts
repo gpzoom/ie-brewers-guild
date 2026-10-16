@@ -11,6 +11,7 @@ const base: RosterBusiness = {
   hasManager: false,
   managerEmail: null,
   managerSignedIn: false,
+  managerUserId: null,
 };
 const render = (business: RosterBusiness) =>
   renderToStaticMarkup(

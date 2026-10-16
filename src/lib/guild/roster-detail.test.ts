@@ -21,6 +21,7 @@ const entry = (
   } as MemberRow,
   claimState,
   ownerEmail: null,
+  ownerUserId: null,
 });
 const oneManager: RosterBusiness = {
   id: "b1",
@@ -29,6 +30,7 @@ const oneManager: RosterBusiness = {
   hasManager: false,
   managerEmail: null,
   managerSignedIn: false,
+  managerUserId: null,
 };
 
 describe("resolveDetailLine", () => {
@@ -75,6 +77,14 @@ describe("resolveDetailLine", () => {
     expect(resolveDetailLine(entry("unclaimed"), now, { business })).toBe(
       "Riverside · not invited yet",
     );
+  });
+
+  it("a handed-off location in a one-manager business names its location manager", () => {
+    const business = { ...oneManager, hasManager: true, managerEmail: "boss@x.com", managerSignedIn: true, managerUserId: "u-boss" };
+    const handedOff = { ...entry("claimed"), ownerUserId: "u-loc", ownerEmail: "loc@x.com" };
+    expect(resolveDetailLine(handedOff, now, { business, withoutCity: true })).toBe("handed off to loc@x.com");
+    const own = { ...handedOff, ownerUserId: "u-boss" };
+    expect(resolveDetailLine(own, now, { business, withoutCity: true })).toBe("member since 2015");
   });
 
   it("withoutCity drops the city (an indented row already shows it as its title)", () => {

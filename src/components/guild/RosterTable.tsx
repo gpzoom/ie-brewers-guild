@@ -22,7 +22,8 @@ import { DeleteMemberDialog } from "@/components/guild/DeleteMemberDialog";
 import { InviteEmailDialog } from "@/components/guild/InviteEmailDialog";
 import { BusinessRow } from "@/components/guild/BusinessRow";
 import { PartOfDialog } from "@/components/guild/PartOfDialog";
-import { setBusinessMode, inviteBusinessManager } from "@/lib/guild/businesses.server";
+import { BusinessModeDialog } from "@/components/guild/BusinessModeDialog";
+import { inviteBusinessManager } from "@/lib/guild/businesses.server";
 import { inviteMember } from "@/lib/guild/invite-member.server";
 import { startImpersonation } from "@/lib/guild/impersonation.server";
 import { hasStaleHours, resolveDetailLine } from "@/lib/guild/roster-detail";
@@ -371,8 +372,10 @@ export function RosterTable({
   const [managerInviteOpen, setManagerInviteOpen] = useState(false);
   const [partOfTarget, setPartOfTarget] = useState<RosterEntry | null>(null);
   const [partOfOpen, setPartOfOpen] = useState(false);
-  // Business whose Managed by switch is saving.
-  const [businessBusyId, setBusinessBusyId] = useState<string | null>(null);
+  // The Managed by boxes -- same "kept after closing" reasoning.
+  const [modeTarget, setModeTarget] = useState<RosterBusiness | null>(null);
+  const [modeTargetMode, setModeTargetMode] = useState<BusinessManagementMode>("one_manager");
+  const [modeOpen, setModeOpen] = useState(false);
 
   // Fixed per mount: stale-hours is a 90-day threshold, so it can't drift meaningfully mid-session.
   const [now] = useState(() => new Date());
@@ -410,19 +413,11 @@ export function RosterTable({
     }
   }
 
-  async function handleModeChange(business: RosterBusiness, mode: BusinessManagementMode) {
-    setBusinessBusyId(business.id);
-    try {
-      // The database refuses a switch its rules don't allow; runAction shows that message.
-      await runAction(
-        () => setBusinessMode({ data: { businessId: business.id, mode } }),
-        mode === "one_manager"
-          ? `${business.name}: one manager`
-          : `${business.name}: each location separately`,
-      );
-    } finally {
-      setBusinessBusyId(null);
-    }
+  // The Managed by choice opens the matching box (artboard BZ1); it does the switch.
+  function handleModeChange(business: RosterBusiness, mode: BusinessManagementMode) {
+    setModeTarget(business);
+    setModeTargetMode(mode);
+    setModeOpen(true);
   }
 
   async function sendManagerInvite(business: RosterBusiness, email: string) {
@@ -578,7 +573,7 @@ export function RosterTable({
                 <BusinessRow
                   business={business}
                   locationCount={locationCounts.get(business.id) ?? group.entries.length}
-                  busy={businessBusyId === business.id}
+                  busy={false}
                   onModeChange={(mode) => handleModeChange(business, mode)}
                   onInvite={() => {
                     setManagerInviteTarget(business);
@@ -619,6 +614,14 @@ export function RosterTable({
         onSend={async (email) => {
           if (managerInviteTarget) await sendManagerInvite(managerInviteTarget, email);
         }}
+      />
+
+      <BusinessModeDialog
+        business={modeTarget}
+        entries={modeTarget ? entries.filter((entry) => entry.member.business_id === modeTarget.id) : []}
+        target={modeTargetMode}
+        open={modeOpen}
+        onOpenChange={setModeOpen}
       />
 
       <PartOfDialog

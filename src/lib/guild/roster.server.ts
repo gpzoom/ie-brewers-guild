@@ -8,6 +8,8 @@ export type RosterEntry = {
   member: MemberRow;
   claimState: MemberClaimState;
   ownerEmail: string | null;
+  /** The owner-role link only (null if none); differing from the business manager means a hand-off. */
+  ownerUserId: string | null;
 };
 
 export type RosterData = { entries: RosterEntry[]; businesses: RosterBusiness[] };
@@ -56,6 +58,7 @@ export const getRoster = createServerFn({ method: "GET" }).handler(async (): Pro
       member,
       claimState: resolveMemberClaimState({ hasMemberUser: owners.length > 0, lastSignInAt }),
       ownerEmail,
+      ownerUserId: owners.find((row) => row.role === "owner")?.user_id ?? null,
     });
   }
 
@@ -78,6 +81,7 @@ export const getRoster = createServerFn({ method: "GET" }).handler(async (): Pro
       hasManager: row.manager_user_id != null,
       managerEmail,
       managerSignedIn,
+      managerUserId: row.manager_user_id,
     });
   }
 

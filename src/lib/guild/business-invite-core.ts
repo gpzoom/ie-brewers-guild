@@ -1,6 +1,7 @@
 /**
- * The roster's one Invite for a one-manager business (spec 2026-10-15),
- * minus the I/O so it's testable (businesses.server.ts wires Supabase and
+ * The roster's one Invite for a one-manager business (spec 2026-10-15), and
+ * the "Switch to one manager" box (with `switching` the business must still
+ * be separate, and `linkManager` does the whole switch), minus the I/O so it's testable (businesses.server.ts wires Supabase and
  * the email). Same account rules as the member invite
  * (invite-member-core.ts): an email that already has an account is linked,
  * never deleted; only an account this invite just created is removed again
@@ -22,13 +23,17 @@ export type BusinessInviteDeps = {
 
 export async function inviteBusinessManagerCore(
   deps: BusinessInviteDeps,
-  input: { businessId: string; email: string },
+  input: { businessId: string; email: string; switching?: boolean },
 ): Promise<{ ok: true; userId: string; existing: boolean }> {
   const email = input.email.trim().toLowerCase();
 
   const business = await deps.loadBusiness(input.businessId);
-  if (business.mode !== "one_manager") throw new Error("Set this business to One manager first.");
-  if (business.managerUserId) throw new Error("This business already has a manager.");
+  if (input.switching) {
+    if (business.mode !== "separate") throw new Error("This business already has one manager.");
+  } else {
+    if (business.mode !== "one_manager") throw new Error("Set this business to One manager first.");
+    if (business.managerUserId) throw new Error("This business already has a manager.");
+  }
 
   let userId: string;
   let existing = false;
