@@ -4,6 +4,7 @@ import {
   invitePerson,
   loadPeople,
   normalizeInviteEmail,
+  peopleBusinessCopy,
   removePerson,
   resendInvite,
   type InvitePatch,
@@ -140,7 +141,11 @@ describe("invitePerson", () => {
       invitedByUserId: "u-owner",
       now: NOW,
     });
-    expect(result).toMatchObject({ email: "new@person.com", role: "media_events", refreshed: false });
+    expect(result).toMatchObject({
+      email: "new@person.com",
+      role: "media_events",
+      refreshed: false,
+    });
     expect(invites[0].expiresAt).toBe("2026-10-10T12:00:00.000Z");
   });
 
@@ -203,9 +208,9 @@ describe("resendInvite and cancelInvite", () => {
   it("won't send the same invite again within a few minutes", async () => {
     const recent = { ...pending(), updatedAt: "2026-09-26T11:58:00Z" };
     const { store } = memoryStore({ invites: [recent] });
-    await expect(resendInvite(store, { memberId: MEMBER, inviteId: "p1", now: NOW })).rejects.toThrow(
-      "send it again in a few minutes",
-    );
+    await expect(
+      resendInvite(store, { memberId: MEMBER, inviteId: "p1", now: NOW }),
+    ).rejects.toThrow("send it again in a few minutes");
     await expect(
       invitePerson(store, {
         memberId: MEMBER,
@@ -277,8 +282,18 @@ describe("removePerson", () => {
 });
 
 describe("People in a one-manager business (spec 2026-10-15, BZ4)", () => {
-  const business = { name: "Hangar 24", city: "Riverside", locationCount: 4, managerUserId: "u-boss" };
-  const user = (userId: string, role: "owner" | "editor" | "media_events", createdAt: string, email: string) => ({
+  const business = {
+    name: "Hangar 24",
+    city: "Riverside",
+    locationCount: 4,
+    managerUserId: "u-boss",
+  };
+  const user = (
+    userId: string,
+    role: "owner" | "editor" | "media_events",
+    createdAt: string,
+    email: string,
+  ) => ({
     userId,
     role,
     createdAt,
@@ -301,7 +316,10 @@ describe("People in a one-manager business (spec 2026-10-15, BZ4)", () => {
 
   it("labels the business manager and can't remove them", async () => {
     const { store } = memoryStore({
-      users: [user("u-boss", "owner", "2026-01-01", "boss@x.com"), user("u-ed", "media_events", "2026-01-02", "ed@x.com")],
+      users: [
+        user("u-boss", "owner", "2026-01-01", "boss@x.com"),
+        user("u-ed", "media_events", "2026-01-02", "ed@x.com"),
+      ],
       business,
     });
     const view = await loadPeople(store, MEMBER, "u-boss");
@@ -309,7 +327,11 @@ describe("People in a one-manager business (spec 2026-10-15, BZ4)", () => {
       ["Business manager · all 4 locations", false],
       ["Photos & events editor · Riverside", true],
     ]);
-    expect(view.business).toMatchObject({ viewerIsManager: true, canHandOff: true, canTakeBack: false });
+    expect(view.business).toMatchObject({
+      viewerIsManager: true,
+      canHandOff: true,
+      canTakeBack: false,
+    });
   });
 
   it("after a hand-off: location manager listed after the manager, Take back offered", async () => {
@@ -329,12 +351,21 @@ describe("People in a one-manager business (spec 2026-10-15, BZ4)", () => {
   it("the location manager sees no hand-off or take-back", async () => {
     const { store } = memoryStore({ users: handedOff(), business });
     const view = await loadPeople(store, MEMBER, "u-loc");
-    expect(view.business).toMatchObject({ viewerIsManager: false, canHandOff: false, canTakeBack: false });
+    expect(view.business).toMatchObject({
+      viewerIsManager: false,
+      canHandOff: false,
+      canTakeBack: false,
+    });
   });
 
   it("a Guild admin editing as them acts as the manager", async () => {
-    const { store } = memoryStore({ users: [user("u-boss", "owner", "2026-01-01", "boss@x.com")], business });
-    const view = await loadPeople(store, MEMBER, "u-admin", new Date(), { viewerIsGuildAdmin: true });
+    const { store } = memoryStore({
+      users: [user("u-boss", "owner", "2026-01-01", "boss@x.com")],
+      business,
+    });
+    const view = await loadPeople(store, MEMBER, "u-admin", new Date(), {
+      viewerIsGuildAdmin: true,
+    });
     expect(view.business?.canHandOff).toBe(true);
   });
 
@@ -363,7 +394,45 @@ describe("People in a one-manager business (spec 2026-10-15, BZ4)", () => {
       business,
     });
     await expect(
-      invitePerson(store, { memberId: MEMBER, email: "NEW@x.com", role: "editor", invitedByUserId: "u-boss" }),
-    ).rejects.toThrow("That address has a hand-off waiting. Cancel it first to invite them as an editor.");
+      invitePerson(store, {
+        memberId: MEMBER,
+        email: "NEW@x.com",
+        role: "editor",
+        invitedByUserId: "u-boss",
+      }),
+    ).rejects.toThrow(
+      "That address has a hand-off waiting. Cancel it first to invite them as an editor.",
+    );
+  });
+});
+
+describe("peopleBusinessCopy (BZ4)", () => {
+  const business = {
+    name: "Hangar 24",
+    city: "Riverside",
+    locationCount: 4,
+    viewerIsManager: true,
+    locationManagerEmail: "loc@x.com",
+    handOffPending: false,
+    canHandOff: false,
+    canTakeBack: true,
+  };
+
+  it("words the hand-off help, handed-off card and take-back dialog", () => {
+    expect(peopleBusinessCopy(business)).toEqual({
+      handOffHelp:
+        "They'll manage Riverside only. You keep access, and the logo, cover and theme stay shared.",
+      handedOffTitle: "Riverside is handed off",
+      handedOffBody: "loc@x.com manages Riverside. You still have access.",
+      takeBackTitle: "Take back Riverside?",
+      takeBackBody:
+        "loc@x.com will no longer be able to edit Riverside, and you'll manage it again.",
+    });
+  });
+
+  it("falls back to 'They' before anyone manages the location", () => {
+    expect(peopleBusinessCopy({ ...business, locationManagerEmail: null }).handedOffBody).toBe(
+      "They manage Riverside. You still have access.",
+    );
   });
 });

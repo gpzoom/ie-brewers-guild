@@ -49,15 +49,22 @@ function SaveNoteFooter() {
 function PhotosEventsNotice({ memberName }: { memberName: string }) {
   return (
     <InfoBox>
-      You can edit Photos and Events for{" "}
-      <strong className="font-semibold">{memberName}</strong>. Photo changes go live when you
-      publish. Event changes show on the page right away.
+      You can edit Photos and Events for <strong className="font-semibold">{memberName}</strong>.
+      Photo changes go live when you publish. Event changes show on the page right away.
     </InfoBox>
   );
 }
 
-export function PortalSectionView({ data, shell }: { data: PortalSectionData; shell: PortalShell }) {
-  const notice = shell.role === "media_events" && <PhotosEventsNotice memberName={shell.memberName} />;
+export function PortalSectionView({
+  data,
+  shell,
+}: {
+  data: PortalSectionData;
+  shell: PortalShell;
+}) {
+  const notice = shell.role === "media_events" && (
+    <PhotosEventsNotice memberName={shell.memberName} />
+  );
 
   switch (data.section) {
     case "basics": {
@@ -219,6 +226,6 @@ export function PortalSectionView({ data, shell }: { data: PortalSectionData; sh
     }
 
     case "people":
-      return <PeopleSection people={data.people} invites={data.invites} />;
+      return <PeopleSection people={data.people} invites={data.invites} business={data.business} />;
   }
 }

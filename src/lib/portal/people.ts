@@ -81,6 +81,19 @@ export type PeopleBusinessView = {
   canTakeBack: boolean;
 };
 
+/** The wording of the hand-off card, handed-off card and take-back dialog (BZ4). */
+export function peopleBusinessCopy(business: PeopleBusinessView) {
+  const { city } = business;
+  const who = business.locationManagerEmail ?? "They";
+  return {
+    handOffHelp: `They'll manage ${city} only. You keep access, and the logo, cover and theme stay shared.`,
+    handedOffTitle: `${city} is handed off`,
+    handedOffBody: `${who} manage${business.locationManagerEmail ? "s" : ""} ${city}. You still have access.`,
+    takeBackTitle: `Take back ${city}?`,
+    takeBackBody: `${who} will no longer be able to edit ${city}, and you'll manage it again.`,
+  };
+}
+
 export type MemberUserRecord = { userId: string; role: PortalRole; createdAt: string };
 
 export type InviteRecord = {
@@ -168,7 +181,11 @@ const PLAIN_LABEL: Record<PortalRole, string> = {
   media_events: "Photos & events",
 };
 
-function personLabel(role: PortalRole, isManager: boolean, business: PeopleBusiness | null): string {
+function personLabel(
+  role: PortalRole,
+  isManager: boolean,
+  business: PeopleBusiness | null,
+): string {
   if (!business) return PLAIN_LABEL[role];
   if (isManager) return `Business manager · all ${business.locationCount} locations`;
   if (role === "owner") return `Location manager · ${business.city}`;
@@ -213,7 +230,9 @@ export async function loadPeople(
   let businessView: PeopleBusinessView | null = null;
   if (business) {
     const owner = users.find((user) => user.role === "owner");
-    const handedOff = Boolean(owner && business.managerUserId && owner.userId !== business.managerUserId);
+    const handedOff = Boolean(
+      owner && business.managerUserId && owner.userId !== business.managerUserId,
+    );
     const handOffPending = invites.some((invite) => invite.role === "owner");
     const viewerIsManager =
       Boolean(options.viewerIsGuildAdmin) ||
@@ -227,7 +246,8 @@ export async function loadPeople(
         ? (people.find((p) => p.userId === owner?.userId)?.email ?? null)
         : null,
       handOffPending,
-      canHandOff: viewerIsManager && business.managerUserId !== null && !handedOff && !handOffPending,
+      canHandOff:
+        viewerIsManager && business.managerUserId !== null && !handedOff && !handOffPending,
       canTakeBack: viewerIsManager && handedOff,
     };
   }
@@ -274,7 +294,9 @@ export async function invitePerson(
     (invite) => invite.email.trim().toLowerCase() === email,
   );
   if (open?.role === "owner") {
-    throw new Error("That address has a hand-off waiting. Cancel it first to invite them as an editor.");
+    throw new Error(
+      "That address has a hand-off waiting. Cancel it first to invite them as an editor.",
+    );
   }
   if (open) {
     assertCooledDown(open, now);

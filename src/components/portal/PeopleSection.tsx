@@ -2,11 +2,19 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "@tanstack/react-router";
 import {
   cancelPortalInvite,
+  handOffLocation,
   invitePortalPerson,
   removePortalPerson,
   resendPortalInvite,
+  takeBackLocation,
 } from "@/lib/portal/portal-people.server";
-import type { InviteRole, PeopleView, PersonView } from "@/lib/portal/people";
+import {
+  peopleBusinessCopy,
+  type InviteRole,
+  type OpenInviteRole,
+  type PeopleView,
+  type PersonView,
+} from "@/lib/portal/people";
 import type { PortalRole } from "@/lib/portal/portal-destination";
 import {
   AlertDialog,
@@ -18,6 +26,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+
+// An open invite with role owner is a hand-off, so its pill reads "Location manager".
+const INVITE_PILL: Record<OpenInviteRole, string> = {
+  owner: "Location manager",
+  editor: "Full editor",
+  media_events: "Photos & events",
+};
 
 const ROLE_LABEL: Record<PortalRole, string> = {
   owner: "Owner",
@@ -45,10 +60,10 @@ function formatDate(iso: string): string {
   });
 }
 
-function RolePill({ role }: { role: PortalRole }) {
+function RolePill({ label }: { label: string }) {
   return (
     <span className="shrink-0 rounded-full bg-canvas-2 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-muted">
-      {ROLE_LABEL[role]}
+      {label}
     </span>
   );
 }
@@ -61,8 +76,15 @@ function RolePill({ role }: { role: PortalRole }) {
  * Photos & events / Full editor). Every action is checked again on the
  * server (portal-people.server.ts); after each one the page reloads its
  * list.
+ *
+ * In a one-manager business (artboard BZ4, docs/design/artboards/BizPeople.dc.html)
+ * each person shows a two-line label instead of a role pill (the business
+ * manager reads "Business manager · all N locations" and can't be removed),
+ * the business manager sees a "Hand off this location" card, and after a
+ * hand-off a "{city} is handed off" card with a confirmed "Take back this
+ * location". A hand-off invite (role owner) reads "Location manager".
  */
-export function PeopleSection({ people, invites }: Pick<PeopleView, "people" | "invites">) {
+export function PeopleSection({ people, invites, business }: PeopleView) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<InviteRole>("media_events");
@@ -71,6 +93,10 @@ export function PeopleSection({ people, invites }: Pick<PeopleView, "people" | "
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [removing, setRemoving] = useState<PersonView | null>(null);
+  const [handOffEmail, setHandOffEmail] = useState("");
+  const [handingOff, setHandingOff] = useState(false);
+  const [takingBack, setTakingBack] = useState(false);
+  const copy = business ? peopleBusinessCopy(business) : null;
 
   async function run(id: string, action: () => Promise<string | null>) {
     setBusyId(id);
@@ -108,6 +134,27 @@ export function PeopleSection({ people, invites }: Pick<PeopleView, "people" | "
     }
   }
 
+  async function onHandOff(event: FormEvent) {
+    event.preventDefault();
+    setHandingOff(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await handOffLocation({ data: { email: handOffEmail } });
+      setHandOffEmail("");
+      await router.invalidate();
+      setNotice(
+        result.emailSent
+          ? `Hand-off invite sent to ${result.email}.`
+          : `Hand-off invite saved for ${result.email}, but the email didn't go out. Try Resend.`,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't send the hand-off — try again.");
+    } finally {
+      setHandingOff(false);
+    }
+  }
+
   return (
     <div className="flex max-w-[760px] flex-col gap-8">
       <header className="flex flex-col gap-1.5">
@@ -115,8 +162,9 @@ export function PeopleSection({ people, invites }: Pick<PeopleView, "people" | "
           People
         </h1>
         <p className="text-pretty text-[13px] text-ink-muted">
-          Who can edit this profile. Only you, the owner, see this page. To change someone's access,
-          remove them and invite them again.
+          {business
+            ? `Who can edit ${business.name} · ${business.city}.`
+            : "Who can edit this profile. Only you, the owner, see this page. To change someone's access, remove them and invite them again."}
         </p>
       </header>
 
@@ -130,12 +178,15 @@ export function PeopleSection({ people, invites }: Pick<PeopleView, "people" | "
               key={person.userId}
               className="flex min-h-14 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-canvas-2 px-4 py-2.5 last:border-b-0"
             >
-              <span className="min-w-0 break-all text-[14px] text-ink">
-                {person.email ?? "Unknown address"}
-                {person.isYou && <span className="text-ink-muted"> · you</span>}
+              <span className="flex min-w-0 flex-col">
+                <span className="break-all text-[14px] text-ink">
+                  {person.email ?? "Unknown address"}
+                  {person.isYou && <span className="text-ink-muted"> · you</span>}
+                </span>
+                {business && <span className="text-[12px] text-ink-muted">{person.label}</span>}
               </span>
               <span className="flex items-center gap-1.5">
-                <RolePill role={person.role} />
+                {!business && <RolePill label={ROLE_LABEL[person.role]} />}
                 {person.canRemove && (
                   <button
                     type="button"
@@ -165,7 +216,7 @@ export function PeopleSection({ people, invites }: Pick<PeopleView, "people" | "
                 </span>
               </span>
               <span className="flex flex-wrap items-center gap-1.5">
-                <RolePill role={invite.role} />
+                <RolePill label={INVITE_PILL[invite.role]} />
                 <button
                   type="button"
                   disabled={busyId !== null}
@@ -199,6 +250,69 @@ export function PeopleSection({ people, invites }: Pick<PeopleView, "people" | "
           ))}
         </ul>
       </section>
+
+      {business && copy && business.canHandOff && (
+        <form
+          onSubmit={onHandOff}
+          noValidate
+          aria-labelledby="handoff-heading"
+          className="flex flex-col gap-4 rounded-[14px] border border-canvas-border bg-white px-5 py-5 md:px-6"
+        >
+          <h2 id="handoff-heading" className="font-sans text-base font-semibold text-ink">
+            Hand off this location
+          </h2>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="handoff-email" className="text-[13px] font-medium text-ink">
+              Their email
+            </label>
+            <input
+              id="handoff-email"
+              type="email"
+              inputMode="email"
+              autoComplete="off"
+              value={handOffEmail}
+              disabled={handingOff}
+              onChange={(e) => setHandOffEmail(e.target.value)}
+              placeholder="name@example.com"
+              className="h-[46px] w-full rounded-[9px] border border-canvas-border bg-white px-3.5 font-sans text-[14px] text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            />
+          </div>
+          <p className="text-[12px] text-ink-muted">{copy.handOffHelp}</p>
+          <div>
+            <button
+              type="submit"
+              disabled={handingOff || handOffEmail.trim() === ""}
+              className={primaryClass}
+            >
+              {handingOff ? "Sending…" : "Send invite"}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {business && copy && business.locationManagerEmail && business.viewerIsManager && (
+        <section
+          aria-labelledby="handed-off-heading"
+          className="flex flex-col gap-3 rounded-[14px] border border-canvas-border bg-white px-5 py-5 md:px-6"
+        >
+          <h2 id="handed-off-heading" className="font-sans text-base font-semibold text-ink">
+            {copy.handedOffTitle}
+          </h2>
+          <p className="text-[13px] text-ink-muted">{copy.handedOffBody}</p>
+          {business.canTakeBack && (
+            <div>
+              <button
+                type="button"
+                disabled={busyId !== null}
+                onClick={() => setTakingBack(true)}
+                className={cn(rowButtonClass, "border border-[#D3CBBD] text-ink")}
+              >
+                Take back this location
+              </button>
+            </div>
+          )}
+        </section>
+      )}
 
       <form
         onSubmit={onInvite}
@@ -276,6 +390,39 @@ export function PeopleSection({ people, invites }: Pick<PeopleView, "people" | "
           </p>
         )}
       </div>
+
+      {business && copy && (
+        <AlertDialog open={takingBack} onOpenChange={setTakingBack}>
+          <AlertDialogContent className="rounded-[18px] border-0 bg-canvas p-[30px] sm:rounded-[18px]">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-display text-[25px] font-bold leading-[1.1] text-ink">
+                {copy.takeBackTitle}
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-[14px] leading-[1.5] text-ink-muted">
+                {copy.takeBackBody}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="h-[46px] rounded-[9px] border-[#D3CBBD] bg-transparent px-[19px] text-[14px] font-medium text-ink hover:bg-canvas-2">
+                Cancel
+              </AlertDialogCancel>
+              <button
+                type="button"
+                onClick={() => {
+                  setTakingBack(false);
+                  void run("take-back", async () => {
+                    await takeBackLocation();
+                    return `You manage ${business.city} again.`;
+                  });
+                }}
+                className={primaryClass}
+              >
+                Take back
+              </button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
       <AlertDialog open={removing !== null} onOpenChange={(next) => !next && setRemoving(null)}>
         <AlertDialogContent className="rounded-[18px] border-0 bg-canvas p-[30px] sm:rounded-[18px]">
