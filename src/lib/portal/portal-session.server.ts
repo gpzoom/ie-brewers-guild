@@ -160,7 +160,7 @@ const resolvePortalState = createServerOnlyFn(
         userId: user.id,
         state: {
           kind: "choose",
-          entries: chooserEntries(pick.memberships),
+          entries: chooserEntries(pick.memberships, getCookie(PORTAL_MEMBER_COOKIE)),
         },
       };
     }

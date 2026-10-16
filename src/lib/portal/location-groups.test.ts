@@ -9,6 +9,7 @@ function m(over: Partial<PortalMembership> & { memberId: string }): PortalMember
     typeConfirmedAt: null,
     setupCompletedAt: null,
     city: "Redlands",
+    streetAddress: null,
     status: "draft",
     businessId: null,
     businessDisplayName: null,
@@ -43,6 +44,17 @@ describe("chooserEntries", () => {
       m({ memberId: "b", city: "Irvine", businessId: "sep", businessMode: "separate" }),
     ]);
     expect(entries.map((e) => e.label)).toEqual(["Hangar 24 Brewing Co. · Irvine", "Hangar 24 Brewing Co. · Redlands"]);
+  });
+});
+
+describe("chooserEntries remembered location", () => {
+  it("a business entry reopens the remembered location when it belongs to that group", () => {
+    const list = [chain("r", "Riverside"), chain("i", "Irvine")];
+    expect(chooserEntries(list, "r")[0]).toMatchObject({ kind: "business", openMemberId: "r" });
+  });
+  it("a remembered location outside the group falls back to the first by city", () => {
+    const list = [chain("r", "Riverside"), chain("i", "Irvine"), m({ memberId: "o", businessName: "Other", city: "Ontario" })];
+    expect(chooserEntries(list, "o")[0]).toMatchObject({ kind: "business", openMemberId: "i" });
   });
 });
 
@@ -84,10 +96,42 @@ describe("locationSwitcherFor", () => {
       businessName: "Hangar 24 Brewing Co.",
       currentMemberId: "r",
       locations: [
-        { memberId: "i", city: "Irvine", status: "setting_up" },
-        { memberId: "r", city: "Riverside", status: "live" },
+        { memberId: "i", city: "Irvine", label: "Irvine", status: "setting_up" },
+        { memberId: "r", city: "Riverside", label: "Riverside", status: "live" },
       ],
     });
+  });
+
+  it("same-city locations are told apart by street address", () => {
+    const list = [
+      chain("a", "Riverside", { streetAddress: "100 Main St" }),
+      chain("b", "Riverside", { streetAddress: "200 Oak Ave" }),
+      chain("i", "Irvine"),
+    ];
+    expect(locationSwitcherFor(list, "a")!.locations.map((l) => l.label)).toEqual([
+      "Irvine",
+      "Riverside · 100 Main St",
+      "Riverside · 200 Oak Ave",
+    ]);
+  });
+
+  it("same-city locations are told apart by their own business name when it differs", () => {
+    const list = [
+      chain("a", "Riverside", { businessName: "Hangar 24 Craft Brewery" }),
+      chain("b", "Riverside", { streetAddress: "200 Oak Ave" }),
+    ];
+    expect(locationSwitcherFor(list, "a")!.locations.map((l) => l.label)).toEqual([
+      "Riverside · Hangar 24 Craft Brewery",
+      "Riverside · 200 Oak Ave",
+    ]);
+  });
+
+  it("same-city locations with nothing to tell them apart are numbered by created order", () => {
+    const list = [chain("a", "Riverside"), chain("b", "Riverside")];
+    expect(locationSwitcherFor(list, "a")!.locations.map((l) => [l.memberId, l.label])).toEqual([
+      ["a", "Riverside (1)"],
+      ["b", "Riverside (2)"],
+    ]);
   });
 
   it("none for a separate business, a single location, or one linked location", () => {

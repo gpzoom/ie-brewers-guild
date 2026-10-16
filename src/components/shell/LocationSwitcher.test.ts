@@ -4,7 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@tanstack/react-router", () => ({
   useRouter: () => ({ invalidate: vi.fn(), navigate: vi.fn() }),
-  useRouterState: () => "/portal/events",
+  useRouterState: ({ select }: { select: (s: unknown) => unknown }) =>
+    select({ location: { pathname: "/portal/events", search: {}, hash: "" } }),
 }));
 vi.mock("@/lib/portal/portal-session.server", () => ({ choosePortalMember: vi.fn() }));
 
@@ -14,8 +15,8 @@ const data = {
   businessName: "Hangar 24 Brewing Co.",
   currentMemberId: "r",
   locations: [
-    { memberId: "i", city: "Irvine", status: "not_started" as const },
-    { memberId: "r", city: "Riverside", status: "live" as const },
+    { memberId: "i", city: "Irvine", label: "Irvine", status: "not_started" as const },
+    { memberId: "r", city: "Riverside", label: "Riverside · 100 Main St", status: "live" as const },
   ],
 };
 
@@ -23,7 +24,7 @@ describe("LocationSwitcher (artboard BZ2)", () => {
   it("the trigger names the business and the current city", () => {
     const html = renderToStaticMarkup(createElement(LocationSwitcher, { data }));
     expect(html).toContain("Hangar 24 Brewing Co.");
-    expect(html).toContain("Riverside");
+    expect(html).toContain("Riverside · 100 Main St");
     expect(html).toMatch(/aria-label="Switch location[^"]*"/);
   });
 

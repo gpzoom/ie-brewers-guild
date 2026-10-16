@@ -32,7 +32,10 @@ const STATUS_CLASS: Record<LocationStatus, string> = {
  */
 export function LocationSwitcher({ data }: { data: LocationSwitcherData }) {
   const router = useRouter();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { pathname, search, hash } = useRouterState({
+    select: (s) => ({ pathname: s.location.pathname, search: s.location.search, hash: s.location.hash }),
+    structuralSharing: true,
+  });
   const [busy, setBusy] = useState(false);
   const current = data.locations.find((l) => l.memberId === data.currentMemberId);
 
@@ -42,7 +45,7 @@ export function LocationSwitcher({ data }: { data: LocationSwitcherData }) {
     try {
       await choosePortalMember({ data: { memberId } });
       await router.invalidate();
-      await router.navigate({ to: pathname });
+      await router.navigate({ to: pathname, search, hash });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't switch location.");
     } finally {
@@ -56,11 +59,11 @@ export function LocationSwitcher({ data }: { data: LocationSwitcherData }) {
         <button
           type="button"
           disabled={busy}
-          aria-label={`Switch location. Now editing ${data.businessName} · ${current?.city ?? ""}`}
+          aria-label={`Switch location. Now editing ${data.businessName} · ${current?.label ?? ""}`}
           className="flex min-h-12 w-full items-center justify-between gap-2 rounded-[10px] border border-ink bg-white px-3 text-left font-sans text-[14px] font-semibold leading-tight text-ink hover:bg-canvas-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:opacity-60"
         >
           <span className="min-w-0 [overflow-wrap:anywhere]">
-            {data.businessName} · {current?.city}
+            {data.businessName} · {current?.label}
           </span>
           <ChevronDown className="h-3 w-3 shrink-0" strokeWidth={2.4} aria-hidden="true" />
         </button>
@@ -94,7 +97,7 @@ export function LocationSwitcher({ data }: { data: LocationSwitcherData }) {
                     />
                   </svg>
                 )}
-                {l.city}
+                {l.label}
               </span>
               <span
                 className={`shrink-0 rounded-full px-[9px] py-[3px] text-[11px] font-semibold ${STATUS_CLASS[l.status]}`}

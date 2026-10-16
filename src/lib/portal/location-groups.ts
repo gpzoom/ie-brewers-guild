@@ -4,7 +4,7 @@ import type { PortalMembership } from "@/lib/portal/portal-access";
 /**
  * Multi-location businesses in the portal (spec 2026-10-15, "Location
  * switcher"; artboard BZ2). Pure: portal-session.server.ts and
- * location-switcher.server.ts pass in the user's memberships.
+ * require-member-session.server.ts pass in the user's memberships.
  */
 
 export type LocationStatus = "live" | "setting_up" | "not_started";
@@ -16,7 +16,7 @@ export type ChooserEntry =
 export type LocationSwitcherData = {
   businessName: string;
   currentMemberId: string;
-  locations: Array<{ memberId: string; city: string; status: LocationStatus }>;
+  locations: Array<{ memberId: string; city: string; label: string; status: LocationStatus }>;
 };
 
 export function locationStatus(
@@ -42,11 +42,11 @@ function oneManagerGroups(memberships: PortalMembership[]): Map<string, PortalMe
 
 /**
  * "Choose a business": a one-manager business the user is linked to more
- * than once is one entry (opening its first location by city); every other
+ * than once is one entry (reopening the remembered location, else its first by city); every other
  * link is its own entry, labeled "Name · City" when another entry would
  * otherwise read the same.
  */
-export function chooserEntries(memberships: PortalMembership[]): ChooserEntry[] {
+export function chooserEntries(memberships: PortalMembership[], rememberedMemberId?: string | null): ChooserEntry[] {
   const groups = oneManagerGroups(memberships);
   const entries: ChooserEntry[] = [];
   const seenBusinesses = new Set<string>();
@@ -63,7 +63,7 @@ export function chooserEntries(memberships: PortalMembership[]): ChooserEntry[] 
         businessId: m.businessId!,
         label: m.businessDisplayName ?? m.businessName,
         locationCount: group.length,
-        openMemberId: sorted[0].memberId,
+        openMemberId: sorted.find((g) => g.memberId === rememberedMemberId)?.memberId ?? sorted[0].memberId,
       });
     } else {
       singles.push(m);
@@ -79,6 +79,30 @@ export function chooserEntries(memberships: PortalMembership[]): ChooserEntry[] 
   return entries;
 }
 
+/**
+ * What each location is called in the menu: its city, or "City · tiebreak"
+ * when several share a city (its own business name if that differs from the
+ * business's, else its street address), else "City (n)" in created order.
+ * `group` is in created order (listPortalMemberships order).
+ */
+function locationLabels(group: PortalMembership[], displayName: string): Map<string, string> {
+  const labels = new Map<string, string>();
+  const byCityName = new Map<string, PortalMembership[]>();
+  for (const m of group) byCityName.set(m.city, [...(byCityName.get(m.city) ?? []), m]);
+  for (const [city, same] of byCityName) {
+    if (same.length === 1) {
+      labels.set(same[0].memberId, city);
+      continue;
+    }
+    same.forEach((m, i) => {
+      const own = m.businessName.trim();
+      const tiebreak = own && own !== displayName ? own : m.streetAddress?.trim() || "";
+      labels.set(m.memberId, tiebreak ? `${city} · ${tiebreak}` : `${city} (${i + 1})`);
+    });
+  }
+  return labels;
+}
+
 /** The sidebar menu: only for a one-manager business with two or more of the user's links. */
 export function locationSwitcherFor(
   memberships: PortalMembership[],
@@ -88,10 +112,17 @@ export function locationSwitcherFor(
   if (!current?.businessId || current.businessMode !== "one_manager") return null;
   const group = memberships.filter((m) => m.businessId === current.businessId);
   if (group.length < 2) return null;
+  const businessName = current.businessDisplayName ?? current.businessName;
+  const labels = locationLabels(group, businessName);
   return {
-    businessName: current.businessDisplayName ?? current.businessName,
+    businessName,
     currentMemberId,
-    locations: [...group].sort(byCity).map((m) => ({ memberId: m.memberId, city: m.city, status: locationStatus(m) })),
+    locations: [...group].sort(byCity).map((m) => ({
+      memberId: m.memberId,
+      city: m.city,
+      label: labels.get(m.memberId) ?? m.city,
+      status: locationStatus(m),
+    })),
   };
 }
 

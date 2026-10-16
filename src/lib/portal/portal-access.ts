@@ -19,6 +19,7 @@ export type PortalMembership = {
   typeConfirmedAt: string | null;
   setupCompletedAt: string | null;
   city: string;
+  streetAddress: string | null;
   status: MemberStatus;
   businessId: string | null;
   businessDisplayName: string | null;
@@ -101,6 +102,7 @@ type MembershipRow = {
   members: {
     business_name: string | null;
     city: string;
+    street_address: string | null;
     status: MemberStatus;
     business_id: string | null;
     businesses: { name: string; management_mode: BusinessManagementMode } | null;
@@ -114,7 +116,7 @@ export async function listPortalMemberships(client: SupabaseClient, userId: stri
   const { data, error } = await client
     .from("member_users")
     .select(
-      "member_id, role, created_at, members(business_name, city, status, business_id, type_confirmed_at, setup_completed_at, businesses(name, management_mode))",
+      "member_id, role, created_at, members(business_name, city, street_address, status, business_id, type_confirmed_at, setup_completed_at, businesses(name, management_mode))",
     )
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
@@ -130,6 +132,7 @@ export async function listPortalMemberships(client: SupabaseClient, userId: stri
       typeConfirmedAt: row.members.type_confirmed_at,
       setupCompletedAt: row.members.setup_completed_at,
       city: row.members.city,
+      streetAddress: row.members.street_address?.trim() || null,
       status: row.members.status,
       businessId: row.members.business_id,
       businessDisplayName: row.members.businesses?.name?.trim() || null,

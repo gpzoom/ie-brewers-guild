@@ -1,11 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { redirect } from "@tanstack/react-router";
-import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
+import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { resolveUserRoleAndTarget } from "@/lib/auth/role-routing";
 import { getCookie } from "@tanstack/react-start/server";
-import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { listPortalMemberships } from "@/lib/portal/portal-access";
-import { adminMemberIdFor } from "@/lib/portal/location-groups";
+import { adminMemberIdFor, locationSwitcherFor, type LocationSwitcherData } from "@/lib/portal/location-groups";
 import { PORTAL_MEMBER_COOKIE } from "@/lib/portal/portal-member-cookie";
 import { readImpersonationState, touchImpersonationActivity } from "@/lib/guild/impersonation.server";
 
@@ -16,6 +15,8 @@ export type MemberSession = {
   actorUserId: string;
   /** The real signed-in person is the super admin (only they can change a member's sign-in email). */
   isSuperAdmin: boolean;
+  /** The location menu (artboard BZ2); null while a Guild admin is editing as a member. */
+  switcher: LocationSwitcherData | null;
 };
 
 /**
@@ -72,6 +73,7 @@ export const requireMemberSession = createServerFn({ method: "GET" }).handler(
         isImpersonating: true,
         actorUserId: impersonation.actorUserId,
         isSuperAdmin: actorProfile.is_super_admin === true,
+        switcher: null,
       };
     }
 
@@ -97,6 +99,7 @@ export const requireMemberSession = createServerFn({ method: "GET" }).handler(
       isImpersonating: false,
       actorUserId: user.id,
       isSuperAdmin: false,
+      switcher: locationSwitcherFor(memberships, memberId),
     };
   },
 );
