@@ -2,6 +2,7 @@
 -- call them, mode switching in part 2, linking a manager, Part of, the
 -- delete trigger and the name rule. One manager and linking its manager are
 -- open to every Guild admin since part 4 (20261017110000).
+-- Part 5 (20261018110000) lifts the part 2 limits on switching back and leaving.
 -- Runs inside one transaction that is rolled back.
 begin;
 \ir _fixtures.psql
@@ -73,10 +74,11 @@ insert into _tap (line) select throws_ok(
 -- Guild admin from here on (switching to separate and Part of stay Guild-admin).
 set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000004","role":"authenticated"}';
 
--- Part 2 limits: back to separate refused once a manager exists.
-insert into _tap (line) select throws_ok(
-  $$ select public.set_business_mode((select id from _biz), 'separate') $$, 'P0001', null,
-  'switching back after a manager is invited is refused in part 2');
+-- Since part 5, switching back is allowed (mode_switching.test.sql covers it); the
+-- manager isn't changed by a no-op switch to the same mode.
+insert into _tap (line) select lives_ok(
+  $$ select public.set_business_mode((select id from _biz), 'one_manager') $$,
+  'switching to the mode it already has is a no-op');
 
 -- Adding the solo member to the one-manager business links the manager and asks to notify.
 insert into _tap (line) select is(
@@ -87,10 +89,10 @@ insert into _tap (line) select is(
      and user_id = 'f0000000-0000-4000-8000-000000000006'),
   'owner', 'the new location''s owner is the manager');
 
--- Leaving a one-manager business is refused in part 2.
-insert into _tap (line) select throws_ok(
-  $$ select public.set_member_business('f1000000-0000-4000-8000-0000000000b4', null) $$, 'P0001', null,
-  'leaving a one-manager business is refused in part 2');
+-- Since part 5 a location can leave a one-manager business; the manager keeps the one they own.
+insert into _tap (line) select lives_ok(
+  $$ select public.set_member_business('f1000000-0000-4000-8000-0000000000b4', null) $$,
+  'a location can leave a one-manager business');
 
 -- Separate businesses: grouping two singles by member id, then splitting cleans up.
 reset role;
