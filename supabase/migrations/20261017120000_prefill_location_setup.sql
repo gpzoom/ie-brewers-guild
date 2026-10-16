@@ -2,7 +2,8 @@
 -- When a location of a one-manager business has not been set up yet and
 -- another location has, copy the parts that are usually the same (tagline,
 -- phone, member-since year, links, and for mobile brewers the supplies)
--- into this location's draft -- once, and only onto empty fields.
+-- into this location's draft -- once, and only onto empty fields. A
+-- published source location gives its live values, else its draft's.
 -- Returns true when it copied, false when it did nothing.
 
 create or replace function public.prefill_location_setup(p_member_id uuid)
@@ -18,6 +19,7 @@ declare
   v_type text;
   v_draft public.member_drafts;
   v_src_draft public.member_drafts;
+  v_src_live boolean;
   v_src_basics jsonb;
   v_src_links jsonb;
   v_src_discount jsonb;
@@ -58,7 +60,12 @@ begin
     return false;
   end if;
 
-  select * into v_src_draft from public.member_drafts d where d.member_id = v_source;
+  -- A published source gives its live values (its draft may hold
+  -- unpublished half-edits); one not yet published, its draft.
+  select status = 'published' into v_src_live from public.members where id = v_source;
+  if not v_src_live then
+    select * into v_src_draft from public.member_drafts d where d.member_id = v_source;
+  end if;
   v_src_basics := coalesce(v_src_draft.data -> 'basics', public._draft_section_from_live(v_source, 'basics'));
   v_src_links := coalesce(v_src_draft.data -> 'links', public._draft_section_from_live(v_source, 'links'));
 

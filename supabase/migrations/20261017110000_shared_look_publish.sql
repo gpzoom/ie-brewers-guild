@@ -130,10 +130,10 @@ begin
   v_business := public._one_manager_business_id(p_member_id);
   v_can_look := public._can_change_shared_look(p_member_id);
   if v_business is not null and not v_can_look then
+    -- The business's look source (_shared_look_source) puts a published
+    -- location first; only a published one's live look counts here.
     select * into v_look_src from public.members
-    where business_id = v_business and id <> p_member_id and status = 'published'
-    order by published_at nulls last, created_at, id
-    limit 1;
+    where id = public._shared_look_source(v_business, p_member_id) and status = 'published';
     if found then
       if v_data ? 'basics' then
         v_data := jsonb_set(v_data, '{basics}', (v_data -> 'basics') || jsonb_build_object(
@@ -659,12 +659,7 @@ begin
   if v_target_business is not null then
     select * into v_target from public.businesses where id = v_target_business for update;
     if v_target.management_mode = 'one_manager' then
-      v_source := (
-        select id from public.members
-        where business_id = v_target_business and id <> p_member_id
-        order by (status = 'published') desc, setup_completed_at nulls last, created_at
-        limit 1
-      );
+      v_source := public._shared_look_source(v_target_business, p_member_id);
       if v_source is not null then
         perform public._copy_shared_look(v_source, p_member_id);
         perform set_config('app.member_fn', 'on', true);

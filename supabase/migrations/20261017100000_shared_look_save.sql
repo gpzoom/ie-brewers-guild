@@ -3,7 +3,9 @@
 -- are the business's: a save on any location reaches every location's
 -- draft in the same transaction, and only the business manager or a Guild
 -- admin may change them. Members outside a one-manager business behave
--- exactly as before.
+-- exactly as before. Also here: _shared_look_source, and
+-- discard_member_draft_sections, which resets the other locations' look
+-- keys on a manager's discard.
 
 create or replace function public._shared_look_keys(p_section text)
 returns text[]
@@ -65,6 +67,32 @@ as $$
   where b.id = public._one_manager_business_id(p_member_id);
 $$;
 
+-- The business's current look source: the location whose look the others
+-- follow when one has to be picked (a location joining the business, a
+-- location publishing without the right to change the look). The first
+-- published (by published_at), else the first set up, else the oldest;
+-- p_exclude (the location asking) never counts. set_business_mode keeps
+-- its own order: the Guild's chosen location comes first there.
+create or replace function public._shared_look_source(p_business_id uuid, p_exclude uuid)
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select m.id
+  from public.members m
+  where m.business_id = p_business_id
+    and m.id is distinct from p_exclude
+  order by (m.status = 'published') desc,
+           case when m.status = 'published' then m.published_at end nulls last,
+           m.setup_completed_at nulls last,
+           m.created_at,
+           m.id
+  limit 1;
+$$;
+
+revoke all on function public._shared_look_source(uuid, uuid) from public, anon, authenticated;
 revoke all on function public._shared_look_keys(text) from public, anon, authenticated;
 revoke all on function public._one_manager_business_id(uuid) from public, anon, authenticated;
 revoke all on function public._can_change_shared_look(uuid) from public, anon, authenticated;
@@ -194,3 +222,90 @@ $$;
 
 revoke execute on function public.save_member_draft_section(uuid, text, jsonb) from public, anon;
 grant execute on function public.save_member_draft_section(uuid, text, jsonb) to authenticated;
+
+-- Throws away the named sections' unpublished changes by resetting them
+-- from live (from 20260925200800_member_draft_functions.sql). Part 4: when
+-- the business manager or a Guild admin discards basics or theme in a
+-- one-manager business, the other locations' drafts get this location's
+-- live look keys too -- their drafts held the discarded look (shared
+-- saves), and a later first publish of one of them would otherwise bring
+-- it back. Their own unpublished edits stay; a section that now matches
+-- that location's live profile is no longer unpublished. Anyone else's
+-- discard touches only this location, as before.
+create or replace function public.discard_member_draft_sections(p_member_id uuid, p_sections text[])
+returns public.member_drafts
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_uid uuid := public._draft_require_uid();
+  v_sections text[];
+  v_section text;
+  v_row public.member_drafts;
+  v_business uuid;
+  v_sibling uuid;
+  v_look_sections text[];
+begin
+  v_sections := public._draft_normalize_sections(p_sections);
+  foreach v_section in array v_sections loop
+    if not public.can_edit_section(p_member_id, v_section) then
+      raise exception 'You can''t discard changes to the % section of this profile.', v_section using errcode = '42501';
+    end if;
+  end loop;
+
+  perform public._draft_ensure(p_member_id);
+  select * into v_row from public.member_drafts d where d.member_id = p_member_id for update;
+
+  update public.member_drafts d
+  set data = d.data || (
+        select jsonb_object_agg(s, public._draft_section_from_live(p_member_id, s))
+        from unnest(v_sections) s
+      ),
+      dirty_sections = array(
+        select s from unnest(d.dirty_sections) s where s <> all (v_sections)
+      ),
+      updated_by_user_id = v_uid
+  where d.member_id = p_member_id
+  returning * into v_row;
+
+  v_business := public._one_manager_business_id(p_member_id);
+  v_look_sections := array(select s from unnest(v_sections) s where s in ('basics', 'theme'));
+  if v_business is not null and cardinality(v_look_sections) > 0 and public._can_change_shared_look(p_member_id) then
+    for v_sibling in
+      select id from public.members where business_id = v_business and id <> p_member_id
+    loop
+      perform public._draft_ensure(v_sibling);
+      update public.member_drafts d
+      set data = d.data
+            || case when 'basics' = any (v_look_sections) then jsonb_build_object('basics',
+                 coalesce(d.data -> 'basics', '{}'::jsonb) || jsonb_build_object(
+                   'logo_asset_id', m.logo_asset_id,
+                   'logo_background', m.logo_background,
+                   'cover_asset_id', m.cover_asset_id,
+                   'cover_crop', m.cover_crop,
+                   'og_image_asset_id', m.og_image_asset_id))
+               else '{}'::jsonb end
+            || case when 'theme' = any (v_look_sections) then jsonb_build_object('theme',
+                 coalesce(d.data -> 'theme', '{}'::jsonb) || jsonb_build_object('theme', m.theme))
+               else '{}'::jsonb end,
+          updated_by_user_id = v_uid
+      from public.members m
+      where m.id = p_member_id and d.member_id = v_sibling;
+      update public.member_drafts d
+      set dirty_sections = array(
+        select s from unnest(d.dirty_sections) s
+        where not (s = any (v_look_sections) and (d.data -> s) = public._draft_section_from_live(v_sibling, s))
+      )
+      where d.member_id = v_sibling;
+      perform public._draft_audit_if_guild_admin(v_sibling, 'member_drafts');
+    end loop;
+  end if;
+
+  perform public._draft_audit_if_guild_admin(p_member_id, 'member_drafts');
+  return v_row;
+end;
+$$;
+
+revoke execute on function public.discard_member_draft_sections(uuid, text[]) from public, anon;
+grant execute on function public.discard_member_draft_sections(uuid, text[]) to authenticated;

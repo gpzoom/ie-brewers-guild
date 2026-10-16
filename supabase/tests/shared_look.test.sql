@@ -7,7 +7,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(62);
+insert into _tap (line) select plan(76);
 
 -- A three-location one-manager business. The name trigger groups them.
 insert into public.members (id, slug, member_type, business_name, city, status) values
@@ -385,6 +385,91 @@ insert into _tap (line) select throws_ok(
        'f1000000-0000-4000-8000-0000000000d1') $$,
   'P0001', 'Choose a location of this business for the logo, cover and theme.',
   'guild admin: a look source outside the business is refused');
+reset role;
+
+-- Final-review fixes (20261017100000/110000).
+
+-- A business manager's discard of basics/theme also resets the look keys
+-- in the other locations' drafts to the discarding location's live look,
+-- so a later first publish of a sibling can't bring a discarded look back.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000006","role":"authenticated"}';
+select public.save_member_draft_section('f1000000-0000-4000-8000-0000000000d1', 'theme', '{"theme":"olive"}');
+select public.save_member_draft_section('f1000000-0000-4000-8000-0000000000d1', 'basics', '{"logo_background":"theme"}');
+reset role;
+insert into _tap (line) select is(
+  (select data #>> '{theme,theme}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000d2'),
+  'olive', 'setup: the manager''s unpublished theme reached the second location''s draft');
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000006","role":"authenticated"}';
+insert into _tap (line) select lives_ok(
+  $$ select public.discard_member_draft_sections('f1000000-0000-4000-8000-0000000000d1', array['basics', 'theme']) $$,
+  'manager: discards basics and theme on the first location');
+reset role;
+insert into _tap (line) select is(
+  (select data #>> '{theme,theme}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000d2'),
+  (select theme from public.members where id = 'f1000000-0000-4000-8000-0000000000d1'),
+  'the second location''s draft theme is back to the live look');
+insert into _tap (line) select is(
+  (select data #>> '{theme,theme}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000d3'),
+  (select theme from public.members where id = 'f1000000-0000-4000-8000-0000000000d1'),
+  'and the third location''s');
+insert into _tap (line) select is(
+  (select data #>> '{basics,logo_background}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000d2'),
+  (select logo_background from public.members where id = 'f1000000-0000-4000-8000-0000000000d1'),
+  'the second location''s draft logo background is back to the live look');
+insert into _tap (line) select is(
+  (select data #>> '{basics,logo_asset_id}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000d3'),
+  (select logo_asset_id::text from public.members where id = 'f1000000-0000-4000-8000-0000000000d1'),
+  'and the third location''s logo');
+insert into _tap (line) select ok(
+  (select not ('theme' = any (dirty_sections)) from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000d2'),
+  'the second location''s theme matches its live profile again, so it is no longer unpublished');
+
+-- A location manager's discard leaves the other locations' drafts alone.
+update public.member_drafts set data = jsonb_set(data, '{theme,theme}', '"rust"')
+where member_id = 'f1000000-0000-4000-8000-0000000000d2';
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000005","role":"authenticated"}';
+insert into _tap (line) select lives_ok(
+  $$ select public.discard_member_draft_sections('f1000000-0000-4000-8000-0000000000d3', array['theme']) $$,
+  'location manager: discards theme on their location');
+reset role;
+insert into _tap (line) select is(
+  (select data #>> '{theme,theme}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000d2'),
+  'rust', 'the other location''s draft is untouched');
+
+-- _shared_look_source: first published (by published_at), then first set
+-- up, then oldest; the excluded location never counts.
+insert into public.members (id, slug, member_type, business_name, city, status, published_at, setup_completed_at, created_at) values
+  ('f1000000-0000-4000-8000-0000000000c5', 'pgtap-src-a', 'producer', 'PgTap Source', 'Redlands', 'draft', null, null, now() - interval '3 days'),
+  ('f1000000-0000-4000-8000-0000000000c6', 'pgtap-src-b', 'producer', 'PgTap Source', 'Riverside', 'draft', null, now() - interval '1 day', now() - interval '2 days'),
+  ('f1000000-0000-4000-8000-0000000000c7', 'pgtap-src-c', 'producer', 'PgTap Source', 'Irvine', 'draft', null, now() - interval '2 days', now() - interval '1 day');
+insert into _tap (line) select is(
+  public._shared_look_source((select business_id from public.members where id = 'f1000000-0000-4000-8000-0000000000c5'), null),
+  'f1000000-0000-4000-8000-0000000000c7'::uuid, 'look source: none published, so the first set up');
+update public.members set status = 'published', published_at = now() - interval '1 hour'
+where id = 'f1000000-0000-4000-8000-0000000000c6';
+update public.members set status = 'published', published_at = now()
+where id = 'f1000000-0000-4000-8000-0000000000c5';
+insert into _tap (line) select is(
+  public._shared_look_source((select business_id from public.members where id = 'f1000000-0000-4000-8000-0000000000c5'), null),
+  'f1000000-0000-4000-8000-0000000000c6'::uuid, 'look source: the first published');
+insert into _tap (line) select is(
+  public._shared_look_source((select business_id from public.members where id = 'f1000000-0000-4000-8000-0000000000c5'),
+    'f1000000-0000-4000-8000-0000000000c6'),
+  'f1000000-0000-4000-8000-0000000000c5'::uuid, 'look source: the excluded location never counts');
+insert into public.members (id, slug, member_type, business_name, city, status, created_at) values
+  ('f1000000-0000-4000-8000-0000000000c8', 'pgtap-src2-a', 'producer', 'PgTap Source Two', 'Redlands', 'draft', now() - interval '1 day'),
+  ('f1000000-0000-4000-8000-0000000000c9', 'pgtap-src2-b', 'producer', 'PgTap Source Two', 'Riverside', 'draft', now() - interval '2 days');
+insert into _tap (line) select is(
+  public._shared_look_source((select business_id from public.members where id = 'f1000000-0000-4000-8000-0000000000c8'), null),
+  'f1000000-0000-4000-8000-0000000000c9'::uuid, 'look source: nothing published or set up, so the oldest');
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000006","role":"authenticated"}';
+insert into _tap (line) select throws_ok(
+  $$ select public._shared_look_source(null, null) $$,
+  '42501', null, 'look source: not callable by signed-in users');
 reset role;
 
 insert into _tap (line) select * from finish();

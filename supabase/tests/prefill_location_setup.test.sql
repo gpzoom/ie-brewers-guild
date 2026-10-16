@@ -5,7 +5,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(17);
+insert into _tap (line) select plan(21);
 
 -- Producer pair: b1 is set up, b2 is fresh. Mobile pair: c1 set up, c2 fresh.
 insert into public.members (id, slug, member_type, business_name, city, status, setup_completed_at) values
@@ -124,6 +124,40 @@ insert into _tap (line) select throws_ok(
   $$ select public.prefill_location_setup('f1000000-0000-4000-8000-0000000000b2') $$,
   '42501', null, 'anonymous: refused');
 reset role;
+
+-- A published source location: its LIVE values are copied, not its draft
+-- (which may hold unpublished half-edits).
+insert into public.members (id, slug, member_type, business_name, city, status, setup_completed_at, tagline, phone, member_since_year) values
+  ('f1000000-0000-4000-8000-0000000000e5', 'pgtap-prelive-a', 'producer', 'PgTap Prefill Live', 'Redlands', 'published', now(), 'Live words', '909-555-0111', 2001);
+insert into public.members (id, slug, member_type, business_name, city, status) values
+  ('f1000000-0000-4000-8000-0000000000e6', 'pgtap-prelive-b', 'producer', 'PgTap Prefill Live', 'Riverside', 'draft');
+update public.businesses
+set management_mode = 'one_manager', manager_user_id = 'f0000000-0000-4000-8000-000000000006'
+where id = (select business_id from public.members where id = 'f1000000-0000-4000-8000-0000000000e5');
+insert into public.member_users (member_id, user_id, role) values
+  ('f1000000-0000-4000-8000-0000000000e5', 'f0000000-0000-4000-8000-000000000006', 'owner'),
+  ('f1000000-0000-4000-8000-0000000000e6', 'f0000000-0000-4000-8000-000000000006', 'owner');
+insert into public.member_links (member_id, kind, label, url, sort_order) values
+  ('f1000000-0000-4000-8000-0000000000e5', 'website', null, 'https://live.example.test', 0);
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000006","role":"authenticated"}';
+select public.save_member_draft_section('f1000000-0000-4000-8000-0000000000e5', 'basics',
+  '{"tagline":"Half-typed draft","phone":"000"}');
+select public.save_member_draft_section('f1000000-0000-4000-8000-0000000000e5', 'links',
+  '{"links":[{"kind":"website","label":null,"url":"https://draft.example.test","sort_order":0}]}');
+insert into _tap (line) select is(
+  public.prefill_location_setup('f1000000-0000-4000-8000-0000000000e6'),
+  true, 'published source: prefill copies');
+reset role;
+insert into _tap (line) select is(
+  (select data #>> '{basics,tagline}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000e6'),
+  'Live words', 'published source: the live tagline is copied, not the draft''s');
+insert into _tap (line) select is(
+  (select data #>> '{basics,phone}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000e6'),
+  '909-555-0111', 'published source: the live phone');
+insert into _tap (line) select is(
+  (select data #>> '{links,links,0,url}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000e6'),
+  'https://live.example.test', 'published source: the live links');
 
 insert into _tap (line) select * from finish();
 select line as tap from _tap order by n;
