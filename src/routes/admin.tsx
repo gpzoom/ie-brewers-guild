@@ -4,6 +4,7 @@ import { requireMemberSession } from "@/lib/auth/require-member-session.server";
 import { getPublishGateData } from "@/lib/hours/publish-gate.server";
 import { getDraftStatus } from "@/lib/drafts/drafts.server";
 import { getMemberDisplayName } from "@/lib/guild/impersonation.server";
+import { getAdminLocationSwitcher } from "@/lib/portal/location-switcher.server";
 import { AdminShell, adminNavItemsFor } from "@/components/admin/AdminShell";
 import { PublishGateDialog } from "@/components/admin/PublishGateDialog";
 import { DraftStatusProvider, useDraftStatus } from "@/components/admin/DraftStatusContext";
@@ -33,12 +34,15 @@ export const Route = createFileRoute("/admin")({
     // getDraftStatus drives the Unpublished changes label and the
     // Publish / Discard / Move back to draft controls; the editors report
     // their saves to it (DraftStatusContext), which re-runs just this loader.
-    const [publishGateData, memberName, draftStatus] = await Promise.all([
+    // The location menu (artboard BZ2) is for a manager's own business; a
+    // Guild admin editing as a member never gets it.
+    const [publishGateData, memberName, draftStatus, locationSwitcher] = await Promise.all([
       getPublishGateData({ data: { memberId: context.memberId } }),
       getMemberDisplayName({ data: { memberId: context.memberId } }),
       getDraftStatus({ data: { memberId: context.memberId } }),
+      context.isImpersonating ? Promise.resolve(null) : getAdminLocationSwitcher(),
     ]);
-    return { publishGateData, memberName, draftStatus };
+    return { publishGateData, memberName, draftStatus, locationSwitcher };
   },
   head: () => ({ meta: [{ title: "Member admin — Inland Southern California Brewers Guild" }] }),
   component: AdminLayout,
@@ -77,7 +81,7 @@ function AdminLayout() {
 
 function AdminLayoutInner() {
   const { memberId, isImpersonating } = Route.useRouteContext();
-  const { publishGateData, memberName } = Route.useLoaderData();
+  const { publishGateData, memberName, locationSwitcher } = Route.useLoaderData();
   const epoch = useDraftStatus()?.epoch ?? 0;
   const isPublished = publishGateData.status === "published";
   return (
@@ -90,6 +94,7 @@ function AdminLayoutInner() {
       liveHref={isPublished ? `/members/${publishGateData.slug}` : undefined}
       publishSlot={<PublishGateDialog memberId={memberId} initial={publishGateData} />}
       navItems={adminNavItemsFor(publishGateData.memberType)}
+      locationSwitcher={locationSwitcher}
     >
       {/* Remounted after a discard so every editor starts again from the reloaded draft. */}
       <Fragment key={`${memberId}:${epoch}`}>

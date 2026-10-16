@@ -13,6 +13,8 @@ import {
   topBarOutlineClass,
 } from "@/components/shell/AppChrome";
 import { MemberGuideSidebarLink } from "@/components/portal/MemberGuideLink";
+import { LocationSwitcher } from "@/components/shell/LocationSwitcher";
+import type { LocationSwitcherData } from "@/lib/portal/location-groups";
 
 // Order follows artboard AdminBasics's sidebar; Discount has no artboard
 // and keeps its place at the end. `short` is the phone tab-strip label
@@ -92,6 +94,7 @@ export function AdminShell({
   navItems = NAV_ITEMS,
   topBarLabel = "ISC Brewers Guild · Member admin",
   sidebarExtra,
+  locationSwitcher = null,
   children,
 }: {
   memberId: string;
@@ -108,6 +111,8 @@ export function AdminShell({
   topBarLabel?: string;
   /** Anything under the sections, above Sign out (the portal's Switch business). */
   sidebarExtra?: ReactNode;
+  /** A one-manager business's location menu (artboard BZ2); replaces the '[Name] Profile' heading. */
+  locationSwitcher?: LocationSwitcherData | null;
   children: ReactNode;
 }) {
   const router = useRouter();
@@ -174,12 +179,28 @@ export function AdminShell({
       </AppTopBar>
 
       <div className="flex flex-1 flex-col md:flex-row">
+        {/* On a phone the sidebar is a horizontally scrolling tab strip, so the
+            location menu gets its own full-width row above it instead (the
+            dropdown stands in for BZ2's bottom sheet). The menu holds no state
+            of its own beyond "busy", so a second, breakpoint-hidden instance is
+            harmless; display:none keeps the hidden one out of the tab order. */}
+        {locationSwitcher && (
+          <div className="w-full border-b border-canvas-2 bg-canvas px-3.5 pb-2 pt-3 md:hidden">
+            <LocationSwitcher data={locationSwitcher} />
+          </div>
+        )}
         <nav aria-label="Admin sections" className={sidebarNavClass}>
           {/* Whose profile this is, always in view -- especially while a Guild
               admin is editing as a member. Phones show the name in the top bar. */}
-          <div className="hidden px-3 pb-3 font-display text-[19px] font-bold leading-tight tracking-[-0.01em] text-ink normal-case [overflow-wrap:anywhere] md:block">
-            {memberName ? `${memberName} Profile` : "Your profile"}
-          </div>
+          {locationSwitcher ? (
+            <div className="hidden w-full shrink-0 pb-3 md:block">
+              <LocationSwitcher data={locationSwitcher} />
+            </div>
+          ) : (
+            <div className="hidden px-3 pb-3 font-display text-[19px] font-bold leading-tight tracking-[-0.01em] text-ink normal-case [overflow-wrap:anywhere] md:block">
+              {memberName ? `${memberName} Profile` : "Your profile"}
+            </div>
+          )}
           {navItems.map((item) => {
             const active = isActivePath(pathname, item.match);
             return (

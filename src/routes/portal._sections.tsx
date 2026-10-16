@@ -91,6 +91,7 @@ function PortalLayoutInner() {
       publishSlot={<PublishGateDialog memberId={shell.memberId} initial={shell.publishGate} />}
       navItems={navItems}
       topBarLabel="ISC Brewers Guild · Member Portal"
+      locationSwitcher={shell.switcher}
       sidebarExtra={
         shell.canSwitchBusiness ? (
           <Link to="/portal" search={{ switch: true }} className={sidebarItemClass(false)}>
