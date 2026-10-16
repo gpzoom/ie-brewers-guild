@@ -2,6 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { redirect } from "@tanstack/react-router";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { resolveUserRoleAndTarget } from "@/lib/auth/role-routing";
+import { getCookie } from "@tanstack/react-start/server";
+import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { listPortalMemberships } from "@/lib/portal/portal-access";
+import { adminMemberIdFor } from "@/lib/portal/location-groups";
+import { PORTAL_MEMBER_COOKIE } from "@/lib/portal/portal-member-cookie";
 import { readImpersonationState, touchImpersonationActivity } from "@/lib/guild/impersonation.server";
 
 export type MemberSession = {
@@ -28,6 +33,9 @@ export type MemberSession = {
  * this function's only job during impersonation is to report the
  * IMPERSONATED member's id as memberId, so every existing child route and
  * mutation file keeps working completely unmodified.
+ *
+ * Otherwise memberId is the location chosen in the portal (the portal_member
+ * cookie, honored only when it names one of the user's own links).
  */
 export const requireMemberSession = createServerFn({ method: "GET" }).handler(
   async (): Promise<MemberSession> => {
@@ -76,8 +84,15 @@ export const requireMemberSession = createServerFn({ method: "GET" }).handler(
       throw redirect({ href: "/signin?notice=no-account" });
     }
 
+    // /admin follows the location chosen in the portal (spec 2026-10-15,
+    // "Location switcher"): the portal_member cookie, honored only when it
+    // names one of this user's own links -- else the oldest link, as before.
+    const service = await getSupabaseServiceRoleClient();
+    const memberships = await listPortalMemberships(service, user.id);
+    const memberId = adminMemberIdFor(memberships, getCookie(PORTAL_MEMBER_COOKIE)) ?? routing.memberId;
+
     return {
-      memberId: routing.memberId,
+      memberId,
       userId: user.id,
       isImpersonating: false,
       actorUserId: user.id,

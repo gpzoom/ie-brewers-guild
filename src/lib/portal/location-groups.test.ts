@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chooserEntries, locationStatus, locationSwitcherFor } from "./location-groups";
+import { adminMemberIdFor, chooserEntries, locationStatus, locationSwitcherFor } from "./location-groups";
 import { pickMembership, type PortalMembership } from "./portal-access";
 
 function m(over: Partial<PortalMembership> & { memberId: string }): PortalMembership {
@@ -94,5 +94,19 @@ describe("locationSwitcherFor", () => {
     expect(locationSwitcherFor([m({ memberId: "a", businessId: "s", businessMode: "separate" }), m({ memberId: "b", businessId: "s", businessMode: "separate" })], "a")).toBeNull();
     expect(locationSwitcherFor([m({ memberId: "a" })], "a")).toBeNull();
     expect(locationSwitcherFor([chain("r", "Riverside")], "r")).toBeNull();
+  });
+});
+
+describe("adminMemberIdFor (/admin follows the portal's choice)", () => {
+  const list = [chain("r", "Riverside"), chain("i", "Irvine")];
+  it("the cookie's location when the user is linked to it", () => {
+    expect(adminMemberIdFor(list, "i")).toBe("i");
+  });
+  it("a stale or foreign cookie is ignored: the oldest link opens", () => {
+    expect(adminMemberIdFor(list, "stranger")).toBe("r");
+    expect(adminMemberIdFor(list, null)).toBe("r");
+  });
+  it("no links: null", () => {
+    expect(adminMemberIdFor([], "i")).toBeNull();
   });
 });

@@ -94,3 +94,12 @@ export function locationSwitcherFor(
     locations: [...group].sort(byCity).map((m) => ({ memberId: m.memberId, city: m.city, status: locationStatus(m) })),
   };
 }
+
+/** Which member /admin opens: the portal's remembered choice when it's one of the user's links, else the oldest link. */
+export function adminMemberIdFor(
+  memberships: PortalMembership[],
+  cookieMemberId: string | null | undefined,
+): string | null {
+  if (cookieMemberId && memberships.some((m) => m.memberId === cookieMemberId)) return cookieMemberId;
+  return memberships[0]?.memberId ?? null;
+}

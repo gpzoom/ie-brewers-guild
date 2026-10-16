@@ -248,6 +248,11 @@ export default defineConfig(async ({ command, mode }) => {
             // PartOfDialog.tsx handlers -- the same safe RPC boundary. The
             // plain helpers live in member-business.ts, not here.
             "src/lib/guild/businesses.server.ts",
+            // src/lib/portal/location-switcher.server.ts (location switcher):
+            // its one createServerFn export, getAdminLocationSwitcher, is
+            // called from the /admin layout's loader -- the same safe RPC
+            // boundary.
+            "src/lib/portal/location-switcher.server.ts",
             // src/lib/guild/member-admin-actions.server.ts (Task 17, Guild
             // Admin phase) -- same reasoning as the files above: its
             // createServerFn exports (approveMember, declineMember,
