@@ -466,6 +466,8 @@ Resend, called from a Worker. Supabase Auth sends the magic link; everything els
 | Contact form submitted | the sender | "Thank you for reaching out. We have received your submission." Plus, when the membership box is ticked, a line saying a Guild representative will be in touch to discuss membership. |
 | Contact form submitted | the Guild | The inquiry, flagged if it is a membership lead |
 | Member invited | the new member | Welcome and one link, to sign in; it says the sign-in page links to the Member Guide. Replies go to webmaster@iscbrewersguild.org (info@ once it's set up). One link only (owner, 15 October 2026): fewer links reads less like bulk mail |
+| Business invited | the business manager | "You're invited to manage [business]'s [N] locations on the ISC Brewers Guild member directory." One sign-in link; replies go to webmaster@iscbrewersguild.org |
+| Business location added | the business manager | "A new location, [business] · [city], was added to your business." One sign-in link; replies go to webmaster@ |
 | Hours stale past 90 days | the member | One-click confirmation — the link itself sets the timestamp, no login |
 | Creator uploads to a gallery | the member | Something is waiting for review |
 | Super admin invites a Guild admin | the invitee | Who invited them, what a Guild admin does, and a sign-in link; the invite lasts 14 days |
@@ -788,6 +790,8 @@ All tables carry `id uuid primary key default gen_random_uuid()`, `created_at ti
 ### Businesses (multi-location)
 
 A business ties a member's locations together (`businesses`, `members.business_id`, migration `20261015200000_businesses.sql`). The Members page card and the profile's Next location group by it. Every business starts "Each location separately"; one-manager mode, the switcher, the shared look and hand-off come in later parts (spec `docs/superpowers/specs/2026-10-15-multi-location-businesses-design.md`). Until the roster's Part of choice exists, a new member whose name matches an existing member joins its business automatically.
+
+Multi-location businesses show as one row with their locations under it, a **Managed by** choice (One manager / Each location separately) and, for a one-manager business with no manager yet, one **Invite**. Part 2 limits: switching to one manager only before anyone is invited; switching back only before a manager is invited; a location can't leave a one-manager business. **Part of** is on Add member and in each row's menu.
 
 ### members
 
