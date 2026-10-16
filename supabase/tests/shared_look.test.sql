@@ -7,7 +7,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(22);
+insert into _tap (line) select plan(24);
 
 -- A three-location one-manager business. The name trigger groups them.
 insert into public.members (id, slug, member_type, business_name, city, status) values
@@ -62,6 +62,16 @@ insert into _tap (line) select is(
   (select data #>> '{basics,logo_asset_id}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000d3'),
   'f2000000-0000-4000-8000-0000000000e1', 'logo reaches the third location');
 
+-- Carousel slides keep the own-gallery rule, even inside the business.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000006","role":"authenticated"}';
+insert into _tap (line) select throws_ok(
+  $$ select public.save_member_draft_section('f1000000-0000-4000-8000-0000000000d2', 'media',
+       '{"slides":[{"asset_id":"f2000000-0000-4000-8000-0000000000e1","crop":null,"outbound_url":null,"sort_order":0}]}') $$,
+  '22023', 'slides[0].asset_id isn''t in this member''s gallery.',
+  'manager: a slide photo owned by another location is refused');
+reset role;
+
 -- A location manager (owner of d3, not the business manager).
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000005","role":"authenticated"}';
@@ -114,6 +124,11 @@ reset role;
 insert into _tap (line) select is(
   (select data #>> '{theme,theme}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000d1'),
   'plum', 'the admin''s theme reaches the first location');
+insert into _tap (line) select ok(
+  exists (select 1 from public.audit_log where table_name = 'member_drafts'
+          and member_id = 'f1000000-0000-4000-8000-0000000000d1'
+          and actor_user_id = 'f0000000-0000-4000-8000-000000000004'),
+  'the admin''s write to the first location''s draft is audit-logged');
 
 -- A later non-look save on a sibling keeps the shared look.
 set local role authenticated;

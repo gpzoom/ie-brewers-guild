@@ -73,8 +73,10 @@ revoke all on function public._shared_look_refusal(uuid) from public, anon, auth
 -- An asset reference must point at this member's own gallery -- otherwise a
 -- draft could show another member's photo in its preview. Approval is
 -- checked again, strictly, at publish (an asset can be rejected after it
--- was put in a draft). In a one-manager business, an asset owned by any
--- location of the business counts (the shared logo lives in one gallery).
+-- was put in a draft). In a one-manager business, a look photo (logo,
+-- cover, link preview) owned by any location of the business counts (the
+-- shared logo lives in one gallery); carousel slides keep the own-gallery
+-- rule.
 create or replace function public._draft_assert_own_asset(p_member_id uuid, p_val jsonb, p_what text, p_required boolean default false)
 returns void
 language plpgsql
@@ -92,7 +94,8 @@ begin
       and (
         ma.member_id = p_member_id
         or (
-          public._one_manager_business_id(p_member_id) is not null
+          p_what in ('logo_asset_id', 'cover_asset_id', 'og_image_asset_id')
+          and public._one_manager_business_id(p_member_id) is not null
           and ma.member_id in (
             select m.id from public.members m
             where m.business_id = public._one_manager_business_id(p_member_id)
@@ -180,6 +183,7 @@ begin
           ),
           updated_by_user_id = v_uid
       where d.member_id = v_sibling;
+      perform public._draft_audit_if_guild_admin(v_sibling, 'member_drafts');
     end loop;
   end if;
 
