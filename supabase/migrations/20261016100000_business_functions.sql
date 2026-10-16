@@ -135,6 +135,7 @@ declare
   v_target_member public.members;
   v_target public.businesses;
   v_remaining int;
+  v_left uuid;
 begin
   perform public._require_guild_admin();
   select * into v_member from public.members where id = p_member_id for update;
@@ -146,6 +147,8 @@ begin
   if p_target is null then
     v_target_business := null;
   elsif exists (select 1 from public.businesses where id = p_target) then
+    -- Lock it so a concurrent link_business_manager can't miss this location.
+    select * into v_target from public.businesses where id = p_target for update;
     v_target_business := p_target;
   else
     select * into v_target_member from public.members where id = p_target for update;
@@ -183,7 +186,10 @@ begin
   if v_member.business_id is not null then
     select count(*) into v_remaining from public.members where business_id = v_member.business_id;
     if v_remaining <= 1 then
-      update public.members set business_id = null where business_id = v_member.business_id;
+      for v_left in select id from public.members where business_id = v_member.business_id loop
+        update public.members set business_id = null where id = v_left;
+        perform public._business_audit(v_left, 'members', v_left, 'update');
+      end loop;
       delete from public.businesses where id = v_member.business_id;
       perform public._business_audit(null, 'businesses', v_member.business_id, 'delete');
     end if;
@@ -191,7 +197,7 @@ begin
 
   -- Joining a one-manager business that has a manager: link them.
   if v_target_business is not null then
-    select * into v_target from public.businesses where id = v_target_business;
+    select * into v_target from public.businesses where id = v_target_business for update;
     if v_target.management_mode = 'one_manager' and v_target.manager_user_id is not null then
       perform public._link_manager_to_location(p_member_id, v_target.manager_user_id);
       return jsonb_build_object('business_id', v_target_business, 'notify_manager_user_id', v_target.manager_user_id);
@@ -216,6 +222,10 @@ declare
   v_business uuid;
 begin
   if new.business_id is not null then
+    return new;
+  end if;
+  -- A publish re-saves the same name; that must not undo a Part of choice.
+  if tg_op = 'UPDATE' and new.business_name is not distinct from old.business_name then
     return new;
   end if;
 

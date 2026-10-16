@@ -4,7 +4,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(18);
+insert into _tap (line) select plan(19);
 
 -- A three-location business nobody has been invited to, and a single member.
 insert into public.members (id, slug, member_type, business_name, city, status) values
@@ -113,6 +113,20 @@ insert into _tap (line) select is(
 insert into _tap (line) select is(
   (select business_id from public.members where id = 'f1000000-0000-4000-8000-000000000002'), null,
   'unrelated members untouched');
+
+-- A publish re-saves business_name unchanged; that must not undo a Part of choice.
+insert into public.members (id, slug, member_type, business_name, city, status) values
+  ('f1000000-0000-4000-8000-0000000000d1', 'pgtap-sep-1', 'producer', 'PgTap Sep', 'Colton', 'draft'),
+  ('f1000000-0000-4000-8000-0000000000d2', 'pgtap-sep-2', 'producer', 'PgTap Sep', 'Fontana', 'draft'),
+  ('f1000000-0000-4000-8000-0000000000d3', 'pgtap-sep-3', 'producer', 'PgTap Sep', 'Rialto', 'draft');
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000004","role":"authenticated"}';
+select public.set_member_business('f1000000-0000-4000-8000-0000000000d3', null);
+reset role;
+update public.members set business_name = business_name where id = 'f1000000-0000-4000-8000-0000000000d3';
+insert into _tap (line) select is(
+  (select business_id from public.members where id = 'f1000000-0000-4000-8000-0000000000d3'), null,
+  'a publish that re-saves the same name does not re-join a member the Guild took out');
 
 insert into _tap (line) select * from finish();
 select line as tap from _tap order by n;
