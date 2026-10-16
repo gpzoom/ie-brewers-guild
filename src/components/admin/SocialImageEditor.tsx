@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { hasPendingDraftSaves, useSaveDraftSection } from "@/components/admin/DraftStatusContext";
+import { EditorSharedLookNote, useSharedLookLock } from "@/components/admin/SharedLookNote";
 import { getOgPlaceholderPath } from "@/lib/media/og-placeholder";
 import type { MediaAssetRow, MemberType } from "@/lib/supabase/types";
 
@@ -17,12 +18,18 @@ export function SocialImageEditor({
   memberType,
   ogImageAssetId,
   galleryAssets,
+  readOnly,
 }: {
   memberId: string;
   memberType: MemberType;
   ogImageAssetId: string | null;
   galleryAssets: MediaAssetRow[];
+  /** Show the image without letting it change (short setup's shared look). */
+  readOnly?: boolean;
 }) {
+  // Part of a one-manager business's shared look: locked unless this
+  // viewer manages it, and always in short setup.
+  const { look, locked } = useSharedLookLock(readOnly);
   const saveDraft = useSaveDraftSection(memberId);
   const [assetId, setAssetId] = useState(ogImageAssetId);
   const [error, setError] = useState<string | undefined>(undefined);
@@ -91,46 +98,51 @@ export function SocialImageEditor({
           graphic instead.
         </p>
       </div>
+      <EditorSharedLookNote look={look} readOnly={readOnly} />
       <div className="flex w-full max-w-[560px] flex-col gap-3">
         <img
           src={previewUrl}
           alt=""
           className="aspect-[40/21] w-full rounded-[13px] border border-canvas-border bg-canvas-2 object-cover"
         />
-        <label htmlFor="social-image-choose" className="text-[12px] font-medium text-ink">
-          {asset ? "Use a different image" : "Choose a sharing image"}
-        </label>
-        <select
-          id="social-image-choose"
-          ref={selectRef}
-          className="h-[46px] w-full rounded-[9px] border border-canvas-border bg-white px-[13px] text-[13px] text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50"
-          defaultValue=""
-          disabled={busy}
-          onChange={(e) => {
-            const chosen = galleryAssets.find((a) => a.id === e.target.value);
-            if (chosen) void onChooseAsset(chosen);
-          }}
-        >
-          <option value="" disabled>
-            Choose from gallery…
-          </option>
-          {galleryAssets
-            .filter((a) => a.review_status === "approved")
-            .map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.original_filename ?? a.id}
+        {!locked && (
+          <>
+            <label htmlFor="social-image-choose" className="text-[12px] font-medium text-ink">
+              {asset ? "Use a different image" : "Choose a sharing image"}
+            </label>
+            <select
+              id="social-image-choose"
+              ref={selectRef}
+              className="h-[46px] w-full rounded-[9px] border border-canvas-border bg-white px-[13px] text-[13px] text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50"
+              defaultValue=""
+              disabled={busy}
+              onChange={(e) => {
+                const chosen = galleryAssets.find((a) => a.id === e.target.value);
+                if (chosen) void onChooseAsset(chosen);
+              }}
+            >
+              <option value="" disabled>
+                Choose from gallery…
               </option>
-            ))}
-        </select>
-        {asset && (
-          <button
-            type="button"
-            className="inline-flex h-11 items-center self-start text-[13px] font-medium text-ink-muted underline underline-offset-2 hover:text-ink disabled:opacity-50"
-            disabled={busy}
-            onClick={() => void onRemove()}
-          >
-            Remove — use the default Guild graphic instead
-          </button>
+              {galleryAssets
+                .filter((a) => a.review_status === "approved")
+                .map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.original_filename ?? a.id}
+                  </option>
+                ))}
+            </select>
+            {asset && (
+              <button
+                type="button"
+                className="inline-flex h-11 items-center self-start text-[13px] font-medium text-ink-muted underline underline-offset-2 hover:text-ink disabled:opacity-50"
+                disabled={busy}
+                onClick={() => void onRemove()}
+              >
+                Remove — use the default Guild graphic instead
+              </button>
+            )}
+          </>
         )}
         {error && (
           <p role="alert" className="text-[12px] text-danger">

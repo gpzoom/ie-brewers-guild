@@ -1,8 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { CropEditor } from "@/components/admin/CropEditor";
 import { hasPendingDraftSaves, useSaveDraftSection } from "@/components/admin/DraftStatusContext";
-import { COVER_ASPECT, DESKTOP_COVER_ASPECT, initialCropForAspect } from "@/lib/media/crop-interaction";
-import type { CropRect } from "@/lib/media/crop";
+import { EditorSharedLookNote, useSharedLookLock } from "@/components/admin/SharedLookNote";
+import {
+  COVER_ASPECT,
+  DESKTOP_COVER_ASPECT,
+  initialCropForAspect,
+} from "@/lib/media/crop-interaction";
+import { computeCropStyle, type CropRect } from "@/lib/media/crop";
 import type { MediaAssetRow } from "@/lib/supabase/types";
 
 // Placeholder crop when none is stored; CropEditor corrects it to the
@@ -35,6 +40,7 @@ export function CoverEditor({
   coverCrop,
   galleryAssets,
   onPreviewChange,
+  readOnly,
 }: {
   memberId: string;
   coverAssetId: string | null;
@@ -42,7 +48,12 @@ export function CoverEditor({
   galleryAssets: MediaAssetRow[];
   /** Reports the chosen cover as it changes (Logo, Photos & Cover's live preview). */
   onPreviewChange?: (coverAssetId: string | null) => void;
+  /** Show the cover without letting it change (short setup's shared look). */
+  readOnly?: boolean;
 }) {
+  // Part of a one-manager business's shared look: locked unless this
+  // viewer manages it, and always in short setup.
+  const { look, locked } = useSharedLookLock(readOnly);
   const saveDraft = useSaveDraftSection(memberId);
   const [assetId, setAssetId] = useState(coverAssetId);
   useEffect(() => {
@@ -267,8 +278,18 @@ export function CoverEditor({
           No cover photo? Your theme color fills the band instead.
         </p>
       </div>
+      <EditorSharedLookNote look={look} readOnly={readOnly} />
       <div className="flex w-full max-w-[560px] flex-col gap-3">
-        {asset ? (
+        {asset && locked ? (
+          // Locked: the cover as its crop frames it, with nothing to drag.
+          <div className="relative aspect-[5/2] w-full overflow-hidden rounded-[13px] border border-canvas-border bg-canvas-2">
+            <img
+              src={`/api/admin-media/${asset.id}`}
+              alt="Cover photo"
+              style={computeCropStyle(crop)}
+            />
+          </div>
+        ) : asset ? (
           // Served through /api/admin-media, NOT /api/member-media -- that
           // other route only serves an asset once it's already referenced
           // by a PUBLISHED member's own logo/cover/carousel slide, which
@@ -299,40 +320,44 @@ export function CoverEditor({
             No cover photo set — your theme color fills the band.
           </div>
         )}
-        <label htmlFor="cover-choose" className="text-[12px] font-medium text-ink">
-          {asset ? "Use a different photo" : "Choose a cover photo"}
-        </label>
-        <select
-          id="cover-choose"
-          ref={selectRef}
-          className="h-[46px] w-full rounded-[9px] border border-canvas-border bg-white px-[13px] text-[13px] text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50"
-          defaultValue=""
-          disabled={busy}
-          onChange={(e) => {
-            const chosen = galleryAssets.find((a) => a.id === e.target.value);
-            if (chosen) void onChooseAsset(chosen);
-          }}
-        >
-          <option value="" disabled>
-            Choose from gallery…
-          </option>
-          {galleryAssets
-            .filter((a) => a.review_status === "approved")
-            .map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.original_filename ?? a.id}
+        {!locked && (
+          <>
+            <label htmlFor="cover-choose" className="text-[12px] font-medium text-ink">
+              {asset ? "Use a different photo" : "Choose a cover photo"}
+            </label>
+            <select
+              id="cover-choose"
+              ref={selectRef}
+              className="h-[46px] w-full rounded-[9px] border border-canvas-border bg-white px-[13px] text-[13px] text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50"
+              defaultValue=""
+              disabled={busy}
+              onChange={(e) => {
+                const chosen = galleryAssets.find((a) => a.id === e.target.value);
+                if (chosen) void onChooseAsset(chosen);
+              }}
+            >
+              <option value="" disabled>
+                Choose from gallery…
               </option>
-            ))}
-        </select>
-        {assetId && (
-          <button
-            type="button"
-            className="inline-flex h-11 items-center self-start text-[13px] font-medium text-ink-muted underline underline-offset-2 hover:text-ink disabled:opacity-50"
-            disabled={busy}
-            onClick={() => void onRemove()}
-          >
-            Remove cover — use your theme color instead
-          </button>
+              {galleryAssets
+                .filter((a) => a.review_status === "approved")
+                .map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.original_filename ?? a.id}
+                  </option>
+                ))}
+            </select>
+            {assetId && (
+              <button
+                type="button"
+                className="inline-flex h-11 items-center self-start text-[13px] font-medium text-ink-muted underline underline-offset-2 hover:text-ink disabled:opacity-50"
+                disabled={busy}
+                onClick={() => void onRemove()}
+              >
+                Remove cover — use your theme color instead
+              </button>
+            )}
+          </>
         )}
         {error && (
           <p role="alert" className="text-[12px] text-danger">

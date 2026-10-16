@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { MEMBER_THEMES, getMemberThemeHex, type MemberThemeName } from "@/lib/theme/member-themes";
 import { useSaveDraftSection } from "@/components/admin/DraftStatusContext";
+import { EditorSharedLookNote, useSharedLookLock } from "@/components/admin/SharedLookNote";
 
 // The four swatches in the "No cover photo yet?" panel (artboard K) --
 // illustrative only, not the member's choice.
@@ -52,6 +53,7 @@ export function ThemePicker({
   state,
   tagline,
   showHeading = true,
+  readOnly,
 }: {
   memberId: string;
   currentTheme: MemberThemeName;
@@ -62,7 +64,12 @@ export function ThemePicker({
   tagline?: string | null;
   /** False where the page around it has its own heading (the setup wizard's step chrome). */
   showHeading?: boolean;
+  /** Show the theme without letting it change (short setup's shared look). */
+  readOnly?: boolean;
 }) {
+  // A one-manager business shares its theme: locked here unless this
+  // viewer manages it (artboard BZ5), and always in short setup (BZ3).
+  const { look, locked } = useSharedLookLock(readOnly);
   // Phase 2: the choice saves to the member's DRAFT (the `theme` section)
   // and reaches the public page when published.
   const saveDraft = useSaveDraftSection(memberId);
@@ -106,6 +113,7 @@ export function ThemePicker({
    * callers needs to guard against.
    */
   async function onSelect(theme: MemberThemeName) {
+    if (locked) return;
     const clickId = ++latestClickRef.current;
     setError(undefined);
     setSelected(theme);
@@ -150,7 +158,12 @@ export function ThemePicker({
           </div>
         )}
 
-        <fieldset className="m-0 grid min-w-0 grid-cols-2 gap-3 border-0 p-0 @[28rem]:grid-cols-4">
+        <EditorSharedLookNote look={look} readOnly={readOnly} />
+
+        <fieldset
+          disabled={locked}
+          className="m-0 grid min-w-0 grid-cols-2 gap-3 border-0 p-0 @[28rem]:grid-cols-4"
+        >
           <legend className="mb-3 p-0 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
             Eight themes
           </legend>
@@ -161,15 +174,27 @@ export function ThemePicker({
               <label
                 key={theme.name}
                 htmlFor={inputId}
-                className={`flex cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ink has-[:focus-visible]:ring-offset-2 ${
+                className={`flex ${locked ? "cursor-default" : "cursor-pointer"} flex-col overflow-hidden rounded-[12px] bg-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ink has-[:focus-visible]:ring-offset-2 ${
                   checked ? "border-2 border-ink" : "border border-canvas-border"
                 }`}
               >
+                {/* Locked: only the color bands of the other themes dim, so
+                    every name keeps full contrast (artboard BZ5 dims the
+                    whole card, which would drop the text below 4.5:1). */}
                 <span
-                  className="flex h-[54px] items-start justify-end p-[7px]"
+                  className={`flex h-[54px] items-start justify-end p-[7px] ${
+                    locked && !checked ? "opacity-40" : ""
+                  }`}
                   style={{ backgroundColor: theme.hex }}
                 >
-                  {checked && <CheckBadge color={theme.hex} />}
+                  {checked &&
+                    (locked ? (
+                      <span className="rounded-full bg-white px-[9px] py-[3px] text-[11px] font-semibold text-ink">
+                        Current
+                      </span>
+                    ) : (
+                      <CheckBadge color={theme.hex} />
+                    ))}
                 </span>
                 <span className="flex min-h-11 min-w-0 items-center gap-[9px] px-3 py-2.5">
                   <input
@@ -179,6 +204,7 @@ export function ThemePicker({
                     value={theme.name}
                     checked={checked}
                     onChange={() => void onSelect(theme.name)}
+                    disabled={locked}
                     className="size-4 shrink-0 accent-ink focus-visible:outline-none"
                   />
                   <span className={`text-[13px] text-ink ${checked ? "font-semibold" : ""}`}>
@@ -274,9 +300,11 @@ export function ThemePicker({
           </div>
         </div>
 
-        <p className="text-[11px] leading-normal text-ink-subtle">
-          Updates as you pick. Nothing changes on your live page until you publish.
-        </p>
+        {!locked && (
+          <p className="text-[11px] leading-normal text-ink-subtle">
+            Updates as you pick. Nothing changes on your live page until you publish.
+          </p>
+        )}
       </div>
     </div>
   );

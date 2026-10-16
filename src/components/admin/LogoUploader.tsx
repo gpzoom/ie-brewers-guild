@@ -10,6 +10,7 @@ import {
 } from "@/lib/members/logo-background";
 import { getMemberThemeHex, type MemberThemeName } from "@/lib/theme/member-themes";
 import { secondaryButtonClass } from "@/components/admin/basics/ui";
+import { EditorSharedLookNote, useSharedLookLock } from "@/components/admin/SharedLookNote";
 
 /**
  * The logo row card inside "Basics & hours" (artboard AdminBasics's
@@ -36,6 +37,7 @@ export function LogoUploader({
   onPreviewChange,
   belowUpload,
   showPreview = true,
+  readOnly,
 }: {
   memberId: string;
   initialLogoUrl: string | null;
@@ -48,7 +50,13 @@ export function LogoUploader({
   belowUpload?: ReactNode;
   /** The small header preview; off where a full live preview sits beside it. */
   showPreview?: boolean;
+  /** Show the logo and its tile without letting them change (short setup's shared look). */
+  readOnly?: boolean;
 }) {
+  // Part of a one-manager business's shared look: locked unless this
+  // viewer manages it, and always in short setup. Locked, there's no upload
+  // and the background choices show the current one, disabled.
+  const { look, locked } = useSharedLookLock(readOnly);
   const [logoUrl, setLogoUrl] = useState(initialLogoUrl);
   // Upload problems show right under the logo row; background-save problems under the choices.
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -86,7 +94,7 @@ export function LogoUploader({
   }
 
   async function onChooseBackground(next: LogoBackground) {
-    if (next === background) return;
+    if (locked || next === background) return;
     setBackground(next);
     setError(null);
     setSaveState("saving");
@@ -106,6 +114,7 @@ export function LogoUploader({
 
   return (
     <div className="flex flex-col gap-2">
+      <EditorSharedLookNote look={look} readOnly={readOnly} />
       <div className="flex flex-col gap-4 rounded-[11px] border border-canvas-border bg-white px-[14px] py-[13px] md:px-[17px] md:py-[15px]">
         <div className="flex items-center gap-[13px] md:gap-4">
           <div
@@ -120,29 +129,36 @@ export function LogoUploader({
           </div>
           <div className="flex min-w-0 flex-grow flex-col gap-[3px] md:gap-1">
             <div className="text-[13px] font-semibold text-ink md:text-[14px]">Your logo</div>
-            <div className="text-[11px] leading-[1.4] text-ink-muted md:text-[12px]">
-              PNG only, transparent background, at least 400px tall, up to 2 MB. JPGs and SVGs are rejected.
-            </div>
+            {!locked && (
+              <div className="text-[11px] leading-[1.4] text-ink-muted md:text-[12px]">
+                PNG only, transparent background, at least 400px tall, up to 2 MB. JPGs and SVGs are
+                rejected.
+              </div>
+            )}
           </div>
-          <label htmlFor="logo-upload" className="sr-only">
-            Upload a logo
-          </label>
-          <input
-            ref={fileInputRef}
-            id="logo-upload"
-            type="file"
-            accept="image/png"
-            className="hidden"
-            onChange={onFileSelected}
-          />
-          <button
-            type="button"
-            className={`${secondaryButtonClass} max-md:px-[13px] max-md:text-[12px]`}
-            disabled={uploading}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {uploading ? "Uploading…" : logoUrl ? "Replace" : "Upload"}
-          </button>
+          {!locked && (
+            <>
+              <label htmlFor="logo-upload" className="sr-only">
+                Upload a logo
+              </label>
+              <input
+                ref={fileInputRef}
+                id="logo-upload"
+                type="file"
+                accept="image/png"
+                className="hidden"
+                onChange={onFileSelected}
+              />
+              <button
+                type="button"
+                className={`${secondaryButtonClass} max-md:px-[13px] max-md:text-[12px]`}
+                disabled={uploading}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploading ? "Uploading…" : logoUrl ? "Replace" : "Upload"}
+              </button>
+            </>
+          )}
         </div>
         {uploadError && (
           <p role="alert" className="-mt-2 text-[13px] font-medium text-danger">
@@ -150,9 +166,12 @@ export function LogoUploader({
           </p>
         )}
 
-        {belowUpload}
+        {!locked && belowUpload}
 
-        <fieldset className="m-0 flex flex-col gap-2.5 border-0 border-t border-canvas-2 p-0 pt-4">
+        <fieldset
+          disabled={locked}
+          className="m-0 flex flex-col gap-2.5 border-0 border-t border-canvas-2 p-0 pt-4"
+        >
           <legend className="float-left mb-2.5 flex w-full items-baseline justify-between gap-3 p-0">
             <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
               Logo background
@@ -162,8 +181,8 @@ export function LogoUploader({
             </span>
           </legend>
           <p className="m-0 text-[12px] leading-[1.45] text-ink-muted">
-            The tile behind your logo on your profile. If your logo is mostly white, pick Dark or your theme color so it
-            stands out.
+            The tile behind your logo on your profile. If your logo is mostly white, pick Dark or
+            your theme color so it stands out.
           </p>
           <div className="grid grid-cols-3 gap-2 md:gap-3">
             {LOGO_BACKGROUNDS.map((option) => {
@@ -172,8 +191,10 @@ export function LogoUploader({
                 <label
                   key={option}
                   htmlFor={`logo-bg-${option}`}
-                  className={`flex min-h-11 cursor-pointer flex-col items-center gap-2 rounded-[11px] bg-white px-2 py-3 text-center ${
-                    checked ? "border-2 border-ink" : "border border-canvas-border hover:border-ink-subtle"
+                  className={`flex min-h-11 ${locked ? "cursor-default" : "cursor-pointer"} flex-col items-center gap-2 rounded-[11px] bg-white px-2 py-3 text-center ${
+                    checked
+                      ? "border-2 border-ink"
+                      : `border border-canvas-border ${locked ? "" : "hover:border-ink-subtle"}`
                   }`}
                 >
                   <span
@@ -181,7 +202,9 @@ export function LogoUploader({
                     className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-[10px] border border-canvas-2 p-1"
                     style={{ backgroundColor: logoBackgroundColor(option, theme) }}
                   >
-                    {logoUrl ? <img src={logoUrl} alt="" className="max-h-full max-w-full object-contain" /> : null}
+                    {logoUrl ? (
+                      <img src={logoUrl} alt="" className="max-h-full max-w-full object-contain" />
+                    ) : null}
                   </span>
                   <span className="flex items-center gap-1.5">
                     <input
@@ -191,6 +214,7 @@ export function LogoUploader({
                       value={option}
                       checked={checked}
                       onChange={() => void onChooseBackground(option)}
+                      disabled={locked}
                       className="h-4 w-4 accent-[#241F1A]"
                     />
                     <span className="text-[12px] font-medium text-ink md:text-[13px]">
@@ -207,32 +231,37 @@ export function LogoUploader({
             color (what shows with no cover photo) with the logo tile
             overlapping its edge, as the public page draws it. */}
         {showPreview && (
-        <div className="flex flex-col gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
-            Preview on your profile
-          </span>
-          <div className="overflow-hidden rounded-[14px] border border-canvas-border bg-canvas">
-            <div className="h-[72px] md:h-[88px]" style={{ backgroundColor: getMemberThemeHex(theme) }} />
-            <div className="flex items-end gap-3 px-4 pb-4">
+          <div className="flex flex-col gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">
+              Preview on your profile
+            </span>
+            <div className="overflow-hidden rounded-[14px] border border-canvas-border bg-canvas">
               <div
-                className="-mt-[30px] flex h-[68px] w-[68px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border-[3px] border-canvas p-1.5"
-                style={{ backgroundColor: tileColor }}
-              >
-                {logoUrl ? (
-                  <img src={logoUrl} alt="" className="max-h-full max-w-full object-contain" />
-                ) : (
-                  <span className="text-[8px] tracking-[0.1em] text-ink-subtle">LOGO</span>
-                )}
-              </div>
-              <div className="min-w-0 pt-2 text-[17px] font-bold leading-tight text-ink [font-family:var(--font-display)]">
-                {businessName}
+                className="h-[72px] md:h-[88px]"
+                style={{ backgroundColor: getMemberThemeHex(theme) }}
+              />
+              <div className="flex items-end gap-3 px-4 pb-4">
+                <div
+                  className="-mt-[30px] flex h-[68px] w-[68px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border-[3px] border-canvas p-1.5"
+                  style={{ backgroundColor: tileColor }}
+                >
+                  {logoUrl ? (
+                    <img src={logoUrl} alt="" className="max-h-full max-w-full object-contain" />
+                  ) : (
+                    <span className="text-[8px] tracking-[0.1em] text-ink-subtle">LOGO</span>
+                  )}
+                </div>
+                <div className="min-w-0 pt-2 text-[17px] font-bold leading-tight text-ink [font-family:var(--font-display)]">
+                  {businessName}
+                </div>
               </div>
             </div>
+            {!logoUrl && !locked && (
+              <p className="m-0 text-[12px] text-ink-muted">
+                Upload a logo to see it on each background.
+              </p>
+            )}
           </div>
-          {!logoUrl && (
-            <p className="m-0 text-[12px] text-ink-muted">Upload a logo to see it on each background.</p>
-          )}
-        </div>
         )}
       </div>
       {error && (
