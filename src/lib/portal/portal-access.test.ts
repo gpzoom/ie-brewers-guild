@@ -213,27 +213,59 @@ describe("listPortalMemberships", () => {
         {
           member_id: "m1",
           role: "owner",
-          members: { business_name: "Alpha Brewing", type_confirmed_at: "t", setup_completed_at: null },
+          members: {
+            business_name: "Alpha Brewing",
+            city: "Redlands",
+            status: "draft",
+            business_id: null,
+            businesses: null,
+            type_confirmed_at: "t",
+            setup_completed_at: null,
+          },
         },
         { member_id: "m2", role: "superuser", members: { business_name: "X" } },
         { member_id: "m3", role: "editor", members: null },
         {
           member_id: "m4",
           role: "media_events",
-          members: { business_name: "  ", type_confirmed_at: null, setup_completed_at: null },
+          members: {
+            business_name: "  ",
+            city: "Ontario",
+            status: "draft",
+            business_id: null,
+            businesses: null,
+            type_confirmed_at: null,
+            setup_completed_at: null,
+          },
         },
       ],
       calls,
     );
 
     expect(await listPortalMemberships(client, "u1")).toEqual([
-      { memberId: "m1", role: "owner", businessName: "Alpha Brewing", typeConfirmedAt: "t", setupCompletedAt: null },
+      {
+        memberId: "m1",
+        role: "owner",
+        businessName: "Alpha Brewing",
+        typeConfirmedAt: "t",
+        setupCompletedAt: null,
+        city: "Redlands",
+        status: "draft",
+        businessId: null,
+        businessDisplayName: null,
+        businessMode: null,
+      },
       {
         memberId: "m4",
         role: "media_events",
         businessName: "Unnamed business",
         typeConfirmedAt: null,
         setupCompletedAt: null,
+        city: "Ontario",
+        status: "draft",
+        businessId: null,
+        businessDisplayName: null,
+        businessMode: null,
       },
     ]);
     expect(calls).toEqual(["u1"]);
@@ -247,6 +279,11 @@ describe("pickMembership", () => {
     businessName: id,
     typeConfirmedAt: null,
     setupCompletedAt: null,
+    city: "X",
+    status: "draft",
+    businessId: null,
+    businessDisplayName: null,
+    businessMode: null,
   });
 
   it("none when there are no memberships", () => {

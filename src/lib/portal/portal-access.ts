@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isPortalRole, type PortalRole } from "@/lib/portal/portal-destination";
+import { chooserEntries } from "@/lib/portal/location-groups";
+import type { BusinessManagementMode, MemberStatus } from "@/lib/supabase/types";
 
 /**
  * The pure/injectable core of getting into /portal: accepting pending
@@ -16,6 +18,11 @@ export type PortalMembership = {
   businessName: string;
   typeConfirmedAt: string | null;
   setupCompletedAt: string | null;
+  city: string;
+  status: MemberStatus;
+  businessId: string | null;
+  businessDisplayName: string | null;
+  businessMode: BusinessManagementMode | null;
 };
 
 type InviteRow = {
@@ -93,6 +100,10 @@ type MembershipRow = {
   role: string;
   members: {
     business_name: string | null;
+    city: string;
+    status: MemberStatus;
+    business_id: string | null;
+    businesses: { name: string; management_mode: BusinessManagementMode } | null;
     type_confirmed_at: string | null;
     setup_completed_at: string | null;
   } | null;
@@ -102,7 +113,9 @@ type MembershipRow = {
 export async function listPortalMemberships(client: SupabaseClient, userId: string): Promise<PortalMembership[]> {
   const { data, error } = await client
     .from("member_users")
-    .select("member_id, role, created_at, members(business_name, type_confirmed_at, setup_completed_at)")
+    .select(
+      "member_id, role, created_at, members(business_name, city, status, business_id, type_confirmed_at, setup_completed_at, businesses(name, management_mode))",
+    )
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
   if (error || !data) return [];
@@ -116,6 +129,11 @@ export async function listPortalMemberships(client: SupabaseClient, userId: stri
       businessName: row.members.business_name?.trim() || "Unnamed business",
       typeConfirmedAt: row.members.type_confirmed_at,
       setupCompletedAt: row.members.setup_completed_at,
+      city: row.members.city,
+      status: row.members.status,
+      businessId: row.members.business_id,
+      businessDisplayName: row.members.businesses?.name?.trim() || null,
+      businessMode: row.members.businesses?.management_mode ?? null,
     });
   }
   return memberships;
@@ -133,7 +151,8 @@ export type MembershipPick =
  * of the memberships just read from member_users for this user, so it can
  * never grant access by itself (a removed link, or a hand-edited cookie,
  * simply brings the chooser back). `forceChoose` is the "Switch business"
- * link.
+ * link. One-manager businesses count as one entry (location-groups.ts);
+ * with no usable cookie, the oldest link opens.
  */
 export function pickMembership(
   memberships: PortalMembership[],
@@ -141,10 +160,11 @@ export function pickMembership(
   forceChoose = false,
 ): MembershipPick {
   if (memberships.length === 0) return { kind: "none" };
-  if (memberships.length === 1) return { kind: "one", membership: memberships[0] };
-  if (!forceChoose && chosenMemberId) {
+  const entryCount = chooserEntries(memberships).length;
+  if (!(forceChoose && entryCount > 1) && chosenMemberId) {
     const chosen = memberships.find((m) => m.memberId === chosenMemberId);
     if (chosen) return { kind: "one", membership: chosen };
   }
+  if (entryCount === 1) return { kind: "one", membership: memberships[0] };
   return { kind: "choose", memberships };
 }
