@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { generateUniqueMemberSlug } from "@/lib/guild/unique-member-slug.server";
-import { applyMemberBusiness } from "@/lib/guild/businesses.server";
+import { applyMemberBusiness } from "@/lib/guild/member-business";
 import { runPartOfStep } from "@/lib/guild/member-part-of";
 import type { MemberRow, MemberType } from "@/lib/supabase/types";
 

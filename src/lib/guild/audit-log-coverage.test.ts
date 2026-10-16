@@ -43,8 +43,10 @@ describe("audit-log coverage", () => {
     expect(source).toContain("recordAuditLogIfImpersonating");
   });
 
-  it("businesses.server.ts writes only through the (self-auditing) SQL business functions", () => {
-    const source = readFileSync(resolve(process.cwd(), "src/lib/guild/businesses.server.ts"), "utf-8");
+  it("businesses.server.ts and member-business.ts write only through the (self-auditing) SQL business functions", () => {
+    const source =
+      readFileSync(resolve(process.cwd(), "src/lib/guild/businesses.server.ts"), "utf-8") +
+      readFileSync(resolve(process.cwd(), "src/lib/guild/member-business.ts"), "utf-8");
     expect(source).not.toMatch(/\.(insert|update|upsert|delete)\(/);
     for (const fn of ["set_business_mode", "set_member_business", "link_business_manager"]) {
       expect(source).toContain(`rpc("${fn}"`);

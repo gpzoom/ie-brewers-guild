@@ -242,6 +242,12 @@ export default defineConfig(async ({ command, mode }) => {
             // people toward, already covered by the "**/*.server.*" glob
             // above and excluded here for the same reason as the rest.
             "src/lib/guild/invite-member.server.ts",
+            // src/lib/guild/businesses.server.ts (multi-location roster): its
+            // three createServerFn exports (setBusinessMode, setMemberBusiness,
+            // inviteBusinessManager) are called from RosterTable.tsx and
+            // PartOfDialog.tsx handlers -- the same safe RPC boundary. The
+            // plain helpers live in member-business.ts, not here.
+            "src/lib/guild/businesses.server.ts",
             // src/lib/guild/member-admin-actions.server.ts (Task 17, Guild
             // Admin phase) -- same reasoning as the files above: its
             // createServerFn exports (approveMember, declineMember,
