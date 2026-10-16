@@ -339,7 +339,10 @@ export function LiveStep({ shell }: { shell: PortalSetupShell }) {
   const switcher = useMemberEditing()?.locationSwitcher ?? null;
   const nextLocation = nextLocationToSetUp(switcher, shell.memberId);
   const thisLocation = switcher?.locations.find((l) => l.memberId === shell.memberId) ?? null;
-  const [leaving, setLeaving] = useState(false);
+  // Either way out of here (the next location, or the portal): while one
+  // is under way, both buttons wait.
+  const [leaving, setLeaving] = useState<null | "next" | "portal">(null);
+  const [nextError, setNextError] = useState<string | null>(null);
   const isLive = shell.status === "published";
   const path = `/members/${shell.slug}`;
   // The origin is only known in the browser (staging and production differ).
@@ -372,18 +375,29 @@ export function LiveStep({ shell }: { shell: PortalSetupShell }) {
   }
 
   async function setUpNext() {
-    if (!nextLocation) return;
-    await choosePortalMember({ data: { memberId: nextLocation.memberId } });
-    await router.invalidate();
-    await navigate({ to: "/portal" });
+    if (!nextLocation || leaving) return;
+    setLeaving("next");
+    setNextError(null);
+    try {
+      await choosePortalMember({ data: { memberId: nextLocation.memberId } });
+      await router.invalidate();
+      await navigate({ to: "/portal" });
+    } catch (err) {
+      setNextError(
+        err instanceof Error ? err.message : `Couldn't open ${nextLocation.label} — try again.`,
+      );
+    } finally {
+      setLeaving(null);
+    }
   }
 
   async function backToPortal() {
-    setLeaving(true);
+    if (leaving) return;
+    setLeaving("portal");
     try {
       await navigate({ to: "/portal" });
     } finally {
-      setLeaving(false);
+      setLeaving(null);
     }
   }
 
@@ -408,11 +422,13 @@ export function LiveStep({ shell }: { shell: PortalSetupShell }) {
       backTo={nextLocation ? null : "review"}
       continueLabel={nextLocation ? `Set up ${nextLocation.label} next` : "Go to your portal"}
       onContinue={nextLocation ? setUpNext : () => navigate({ to: "/portal" })}
+      continueDisabled={leaving !== null}
+      error={nextError}
       extraActions={
         nextLocation && (
           <button
             type="button"
-            disabled={leaving}
+            disabled={leaving !== null}
             onClick={() => void backToPortal()}
             className={cn(wizardSecondaryButtonClass, "w-full basis-auto")}
           >

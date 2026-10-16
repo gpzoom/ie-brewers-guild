@@ -145,6 +145,7 @@ export function LogoPhotosCoverSection({
           coverAssetId={basics.cover_asset_id}
           coverCrop={basics.cover_crop}
           galleryAssets={assets}
+          lookAssets={draft.lookAssets}
           onPreviewChange={onCover}
           readOnly={readOnly}
           hideSharedNote
@@ -166,6 +167,7 @@ export function LogoPhotosCoverSection({
             memberType={draft.member.member_type}
             ogImageAssetId={basics.og_image_asset_id}
             galleryAssets={assets}
+            lookAssets={draft.lookAssets}
             readOnly={readOnly}
             hideSharedNote
           />

@@ -60,9 +60,17 @@ export function LogoCoverStep({
       step="logo-cover"
       wide
       title="Logo, Photos & Cover"
-      lede="Your logo, the photos for your page, and the wide cover across the top. Start with the gallery: your slides and cover are picked from it."
+      lede={
+        shortSetup
+          ? "Your logo and cover are shared by all your locations, so they aren't changed here. Add this location's own photos to the gallery: your slides are picked from it."
+          : "Your logo, the photos for your page, and the wide cover across the top. Start with the gallery: your slides and cover are picked from it."
+      }
       backTo="basics"
-      skipNote="Not ready? Skip it. Without a cover, your theme color fills the band. You can add everything later."
+      skipNote={
+        shortSetup
+          ? "Not ready? Skip it. You can add this location's photos later."
+          : "Not ready? Skip it. Without a cover, your theme color fills the band. You can add everything later."
+      }
     >
       <LogoPhotosCoverSection
         draft={draft}

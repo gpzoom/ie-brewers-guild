@@ -8,6 +8,7 @@ import {
   touchImpersonationActivity,
 } from "@/lib/guild/impersonation.server";
 import { canViewAdminMedia, needsMembershipLookup } from "@/lib/media/admin-media-access";
+import { sharedLookMembersForAsset } from "@/lib/media/shared-look-assets";
 
 // Mirrors api.member-media.$assetId.ts's own raster/video allowlist (kept
 // as a separate copy rather than a shared import, since that route is
@@ -38,7 +39,9 @@ const ALLOWED_MEDIA_MIME_TYPES = new Set([
  * instead re-implements a completely different rule -- OWNERSHIP, not
  * public eligibility -- via the signed-in session + canViewAdminMedia
  * (the impersonated member only while editing as them, otherwise a
- * member_users link to the asset's member), checked against the
+ * member_users link to the asset's member; or, in a one-manager
+ * business, the shared logo/cover/link preview of another location the
+ * viewer may edit -- see shared-look-assets.ts), checked against the
  * service-role client (which bypasses RLS entirely, so this check is the
  * only thing standing between a signed-in member and every private file in
  * the bucket -- do not relax it).
@@ -97,13 +100,21 @@ async function findOwnedAsset(assetId: string, viewer: Awaited<ReturnType<typeof
     isLinkedToAssetMember = Boolean(link);
   }
 
-  const allowed = canViewAdminMedia({
+  const access = {
     userId: viewer.userId,
     impersonation: viewer.impersonation,
     assetMemberId: asset.member_id as string,
     isLinkedToAssetMember,
-  });
-  return allowed ? asset : null;
+  };
+  if (canViewAdminMedia(access)) return asset;
+  // Not the viewer's own: it may still be the shared logo, cover or link
+  // preview of another location of a one-manager business they edit.
+  const sharedLookMembers = await sharedLookMembersForAsset(
+    supabase,
+    { id: asset.id as string, member_id: asset.member_id as string },
+    viewer.userId,
+  );
+  return canViewAdminMedia({ ...access, sharedLookMembers }) ? asset : null;
 }
 
 export const Route = createFileRoute("/api/admin-media/$assetId")({

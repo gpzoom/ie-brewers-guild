@@ -65,8 +65,11 @@ export function isSetupStepName(value: unknown): value is SetupStepName {
 }
 
 /**
- * Steps 1-3: the only required ones. In short setup only The basics is
- * left of them (the type is the business's, already confirmed).
+ * Steps 1-3 of the full wizard: the only required ones. The list is the
+ * full wizard's whatever the options. Short setup drops Welcome, and drops
+ * Confirm type once the business's type is confirmed (setupStepAccess
+ * still opens it while the type isn't), so there The basics is usually
+ * the only required step left.
  */
 export const REQUIRED_SETUP_STEPS: readonly NumberedSetupStep[] = ["welcome", "type", "basics"];
 

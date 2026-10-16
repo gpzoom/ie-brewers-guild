@@ -23,7 +23,8 @@ import {
 } from "@/lib/drafts/sections";
 import { validateDraftPatch } from "@/lib/drafts/validate-patch";
 import { geocodeMemberAfterPublish, readAddressSnapshot } from "@/lib/geo/geocode.server";
-import type { MemberStatus, MemberType } from "@/lib/supabase/types";
+import { loadLookAssets, type LookIds } from "@/lib/media/shared-look-assets";
+import type { MediaAssetRow, MemberStatus, MemberType } from "@/lib/supabase/types";
 
 /**
  * The member draft's server layer (plan phase 2). Every call goes through
@@ -31,8 +32,10 @@ import type { MemberStatus, MemberType } from "@/lib/supabase/types";
  * auth.uid() is the real caller -- the member, or the Guild admin's own id
  * while they "Edit as them" (is_guild_admin() gives them owner rights, and
  * the SQL functions write the audit rows against them). No service-role
- * client touches a draft; the only service-role use here is looking up the
- * email for the "Photo changes from ..." line.
+ * client touches a draft; the service-role uses here are looking up the
+ * email for the "Photo changes from ..." line and, after the session check,
+ * a one-manager business's shared look photos owned by another location
+ * (loadLookAssets).
  *
  * The functions themselves (supabase/migrations/20260925200800_member_
  * draft_functions.sql, 20260925210000_unpublish_member.sql) do the role
@@ -100,6 +103,13 @@ export type MemberDraftBundle = {
   role: ViewerRole | null;
   /** Public member-logos URL of the DRAFT's logo, or null. */
   logoUrl: string | null;
+  /**
+   * One-manager business: the look photos (logo, cover, link preview) this
+   * draft or the live profile uses that ANOTHER location owns, so the
+   * editors and the preview can show them. Not part of this member's
+   * gallery. Empty otherwise.
+   */
+  lookAssets: MediaAssetRow[];
 };
 
 async function ensureDraft(supabase: SessionClient, memberId: string): Promise<DraftRow> {
@@ -119,6 +129,16 @@ async function loadLiveMeta(supabase: SessionClient, memberId: string): Promise<
 }
 
 /**
+ * The service-role read behind MemberDraftBundle.lookAssets, kept in a
+ * server-only fn so the service client never reaches the client bundle
+ * (this module is imported by routes for its server fns).
+ */
+const loadBundleLookAssets = createServerOnlyFn(
+  async (memberId: string, basics: LookIds): Promise<MediaAssetRow[]> =>
+    loadLookAssets(await getSupabaseServiceRoleClient(), memberId, basics),
+);
+
+/**
  * Plain helper (not a server fn) for other server code on this request --
  * the preview loader reads the draft the same way.
  */
@@ -134,18 +154,29 @@ export async function loadMemberDraftBundle(
   ]);
   const data = normalizeDraftData(draft.data);
 
+  // Shared look: the logo, cover and link preview may live in another
+  // location's gallery. Read with the service client, and only now that
+  // ensure_member_draft has confirmed (through the session) that this
+  // caller may edit the member.
+  const lookAssets = await loadBundleLookAssets(memberId, data.basics);
+
   // Logos live in the public member-logos bucket, so the draft's logo can
-  // be shown straight from its public URL (it's the member's own upload).
+  // be shown straight from its public URL (the member's own upload, or the
+  // business's shared logo from another location).
   let logoUrl: string | null = null;
-  if (data.basics.logo_asset_id) {
-    const { data: asset } = await supabase
-      .from("media_assets")
-      .select("storage_path")
-      .eq("id", data.basics.logo_asset_id)
-      .maybeSingle();
-    if (asset?.storage_path) {
-      logoUrl = supabase.storage.from("member-logos").getPublicUrl(asset.storage_path as string)
-        .data.publicUrl;
+  const logoId = data.basics.logo_asset_id;
+  if (logoId) {
+    let storagePath = lookAssets.find((a) => a.id === logoId)?.storage_path ?? null;
+    if (!storagePath) {
+      const { data: asset } = await supabase
+        .from("media_assets")
+        .select("storage_path")
+        .eq("id", logoId)
+        .maybeSingle();
+      storagePath = (asset?.storage_path as string | undefined) ?? null;
+    }
+    if (storagePath) {
+      logoUrl = supabase.storage.from("member-logos").getPublicUrl(storagePath).data.publicUrl;
     }
   }
 
@@ -155,6 +186,7 @@ export async function loadMemberDraftBundle(
     dirtySections: normalizeSections(draft.dirty_sections),
     role,
     logoUrl,
+    lookAssets,
   };
 }
 

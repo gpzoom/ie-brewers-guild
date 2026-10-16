@@ -96,6 +96,12 @@ async function assembleProfile(args: {
   filter?: MemberType;
   siteOrigin: string;
   now: Date;
+  /**
+   * The draft preview's shared look photos owned by another location of a
+   * one-manager business (MemberDraftBundle.lookAssets), which RLS may not
+   * show this viewer.
+   */
+  extraAssets?: MediaAssetRow[];
   flags: Pick<
     MemberProfileData,
     "isPreview" | "isImpersonatedPreview" | "isImpersonatingThisMember" | "viewerIsEditor"
@@ -170,6 +176,9 @@ async function assembleProfile(args: {
   ]);
 
   const assets = (assetsResult.data ?? []) as MediaAssetRow[];
+  for (const extra of args.extraAssets ?? []) {
+    if (assetIds.includes(extra.id) && !assets.some((a) => a.id === extra.id)) assets.push(extra);
+  }
   const logoAsset = member.logo_asset_id
     ? assets.find((a) => a.id === member.logo_asset_id)
     : undefined;
@@ -351,6 +360,7 @@ export const loadMemberPreviewData = createServerOnlyFn(
       rows,
       siteOrigin,
       now,
+      extraAssets: bundle.lookAssets,
       flags: {
         isPreview: true,
         isImpersonatedPreview: false,

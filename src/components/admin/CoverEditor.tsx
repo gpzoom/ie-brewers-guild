@@ -39,6 +39,7 @@ export function CoverEditor({
   coverAssetId,
   coverCrop,
   galleryAssets,
+  lookAssets = [],
   onPreviewChange,
   readOnly,
   hideSharedNote = false,
@@ -47,6 +48,11 @@ export function CoverEditor({
   coverAssetId: string | null;
   coverCrop: CropRect | null;
   galleryAssets: MediaAssetRow[];
+  /**
+   * The business's shared look photos owned by another location (one-manager
+   * business): shown when this location uses one, never offered as a pick.
+   */
+  lookAssets?: MediaAssetRow[];
   /** Reports the chosen cover as it changes (Logo, Photos & Cover's live preview). */
   onPreviewChange?: (coverAssetId: string | null) => void;
   /** Show the cover without letting it change (short setup's shared look). */
@@ -262,7 +268,8 @@ export function CoverEditor({
     }, CROP_SAVE_DEBOUNCE_MS);
   }
 
-  const asset = galleryAssets.find((a) => a.id === assetId);
+  const asset =
+    galleryAssets.find((a) => a.id === assetId) ?? lookAssets.find((a) => a.id === assetId);
 
   return (
     <section aria-labelledby="cover-heading" className="flex flex-col gap-3">

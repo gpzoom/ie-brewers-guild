@@ -18,6 +18,7 @@ export function SocialImageEditor({
   memberType,
   ogImageAssetId,
   galleryAssets,
+  lookAssets = [],
   readOnly,
   hideSharedNote = false,
 }: {
@@ -25,6 +26,11 @@ export function SocialImageEditor({
   memberType: MemberType;
   ogImageAssetId: string | null;
   galleryAssets: MediaAssetRow[];
+  /**
+   * The business's shared look photos owned by another location (one-manager
+   * business): shown when this location uses one, never offered as a pick.
+   */
+  lookAssets?: MediaAssetRow[];
   /** Show the image without letting it change (short setup's shared look). */
   readOnly?: boolean;
   /** Grouped on Logo, Photos & Cover, which shows one note for all of them. */
@@ -83,7 +89,8 @@ export function SocialImageEditor({
     }
   }
 
-  const asset = galleryAssets.find((a) => a.id === assetId);
+  const asset =
+    galleryAssets.find((a) => a.id === assetId) ?? lookAssets.find((a) => a.id === assetId);
   const previewUrl = asset ? `/api/admin-media/${asset.id}` : getOgPlaceholderPath(memberType);
 
   return (

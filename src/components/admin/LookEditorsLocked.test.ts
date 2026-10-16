@@ -266,3 +266,98 @@ describe("Logo, Photos & Cover shows one shared-look note for the group", () => 
     expect(html).not.toContain('id="cover-choose"');
   });
 });
+
+describe("a shared look photo owned by another location of the business", () => {
+  // The business's cover lives in another location's gallery: it isn't in
+  // this location's gallery, it comes in as a look asset.
+  const sibling = {
+    id: "s1",
+    review_status: "approved",
+    original_filename: "sibling-cover.jpg",
+    width: 2000,
+    height: 800,
+  } as unknown as MediaAssetRow;
+  const cover = (readOnly?: boolean) =>
+    createElement(CoverEditor, {
+      memberId: "m",
+      coverAssetId: "s1",
+      coverCrop: { x: 0, y: 0, w: 1, h: 1 },
+      galleryAssets: [asset],
+      lookAssets: [sibling],
+      readOnly,
+    });
+
+  it("CoverEditor, locked: the sibling's cover shows", () => {
+    const html = render(cover(), nonManager);
+    expect(html).toContain('src="/api/admin-media/s1"');
+    expect(html).not.toContain("No cover photo set");
+  });
+
+  it("CoverEditor, unlocked: the sibling's cover shows in the crop editor, but isn't offered as a gallery pick", () => {
+    const html = render(cover(), manager);
+    expect(html).toContain("/api/admin-media/s1");
+    expect(html).not.toContain("No cover photo set");
+    expect(html).toContain("Use a different photo");
+    expect(html).not.toContain("sibling-cover.jpg");
+    expect(html).toContain("cover.jpg");
+  });
+
+  it("CoverEditor, read-only in short setup: the sibling's cover shows", () => {
+    const html = render(cover(true), manager);
+    expect(html).toContain('src="/api/admin-media/s1"');
+  });
+
+  it("SocialImageEditor: the sibling's link preview shows, locked or not", () => {
+    for (const look of [manager, nonManager]) {
+      const html = render(
+        createElement(SocialImageEditor, {
+          memberId: "m",
+          memberType: "producer",
+          ogImageAssetId: "s1",
+          galleryAssets: [asset],
+          lookAssets: [sibling],
+        }),
+        look,
+      );
+      expect(html).toContain('src="/api/admin-media/s1"');
+      expect(html).not.toContain("sibling-cover.jpg");
+    }
+  });
+
+  it("Logo, Photos & Cover hands the draft's look assets to the cover and link preview", () => {
+    const draft = {
+      member: { id: "m", slug: "s", status: "draft", member_type: "producer", business_name: "Hangar 24" },
+      data: {
+        basics: {
+          business_name: "Hangar 24 Irvine",
+          city: "Irvine",
+          state: "CA",
+          logo_background: "light",
+          cover_asset_id: "s1",
+          cover_crop: { x: 0, y: 0, w: 1, h: 1 },
+          og_image_asset_id: "s1",
+        },
+        theme: { theme: "teal" },
+        media: { slides: [] },
+      },
+      dirtySections: [],
+      role: "owner",
+      logoUrl: null,
+      lookAssets: [sibling],
+    } as unknown as MemberDraftBundle;
+    const html = render(
+      createElement(LogoPhotosCoverSection, {
+        draft,
+        assets: [asset],
+        uploadTokens: [],
+        pending: [],
+        canEditLogoAndCover: true,
+        peopleHref: null,
+        showSocialImage: true,
+      }),
+      nonManager,
+    );
+    expect(html).not.toContain("No cover photo set");
+    expect(html.split('src="/api/admin-media/s1"').length - 1).toBeGreaterThanOrEqual(2);
+  });
+});
