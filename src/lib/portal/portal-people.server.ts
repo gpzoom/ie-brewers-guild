@@ -11,6 +11,7 @@ import {
   removePerson,
   resendInvite,
   type InviteRole,
+  type OpenInviteRole,
 } from "@/lib/portal/people";
 import { sendTransactionalEmail } from "@/lib/email/send";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
@@ -52,8 +53,11 @@ async function inviterEmail(member: PortalMember): Promise<string | null> {
 /** Sends the invite email. A failed send never undoes the invite; the owner can Resend. */
 async function emailInvite(
   member: PortalMember,
-  invite: { email: string; role: InviteRole },
+  // TODO(Task 4): a resent hand-off invite (role owner) needs its own email.
+  invite: { email: string; role: OpenInviteRole },
 ): Promise<boolean> {
+  // TODO(Task 4): a hand-off invite (role owner) needs its own email.
+  if (invite.role === "owner") return false;
   try {
     await sendTransactionalEmail({
       trigger: "editor_invited",

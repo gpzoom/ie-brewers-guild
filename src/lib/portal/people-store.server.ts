@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isPortalRole } from "@/lib/portal/portal-destination";
-import { isInviteRole, type InviteRecord, type PeopleStore } from "@/lib/portal/people";
+import { isOpenInviteRole, type InviteRecord, type PeopleStore } from "@/lib/portal/people";
 
 /**
  * The People section's store on Supabase. It takes the SERVICE-ROLE client
@@ -21,7 +21,7 @@ type InviteRow = {
 };
 
 function toInvite(row: InviteRow): InviteRecord | null {
-  if (!isInviteRole(row.role)) return null;
+  if (!isOpenInviteRole(row.role)) return null;
   return {
     id: row.id,
     email: row.email,
@@ -34,6 +34,34 @@ function toInvite(row: InviteRow): InviteRecord | null {
 
 export function supabasePeopleStore(service: SupabaseClient): PeopleStore {
   return {
+    async businessFor(memberId) {
+      const { data, error } = await service
+        .from("members")
+        .select("city, business_id, businesses(name, management_mode, manager_user_id)")
+        .eq("id", memberId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      type BusinessRow = { name: string; management_mode: string; manager_user_id: string | null };
+      const row = data as {
+        city: string;
+        business_id: string | null;
+        businesses: BusinessRow | BusinessRow[] | null;
+      } | null;
+      const business = Array.isArray(row?.businesses) ? row?.businesses[0] : row?.businesses;
+      if (!row?.business_id || !business || business.management_mode !== "one_manager") return null;
+      const { count, error: countError } = await service
+        .from("members")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", row.business_id);
+      if (countError) throw new Error(countError.message);
+      return {
+        name: business.name,
+        city: row.city,
+        locationCount: count ?? 0,
+        managerUserId: business.manager_user_id,
+      };
+    },
+
     async listMemberUsers(memberId) {
       const { data, error } = await service
         .from("member_users")

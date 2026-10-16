@@ -9,6 +9,7 @@ import {
   type InvitePatch,
   type InviteRecord,
   type MemberUserRecord,
+  type PeopleBusiness,
   type PeopleStore,
 } from "@/lib/portal/people";
 
@@ -20,11 +21,15 @@ type StoredInvite = InviteRecord & { memberId: string; cancelledAt: string | nul
 function memoryStore(seed: {
   users?: Array<MemberUserRecord & { email: string | null }>;
   invites?: StoredInvite[];
+  business?: PeopleBusiness | null;
 }) {
   const users = [...(seed.users ?? [])];
   const invites = [...(seed.invites ?? [])];
   let nextId = 1;
   const store: PeopleStore = {
+    async businessFor() {
+      return seed.business ?? null;
+    },
     async listMemberUsers() {
       return users.map(({ userId, role, createdAt }) => ({ userId, role, createdAt }));
     },
@@ -268,5 +273,97 @@ describe("removePerson", () => {
     await expect(removePerson(store, { memberId: MEMBER, userId: "u-editor" })).rejects.toThrow(
       "doesn't have access anymore",
     );
+  });
+});
+
+describe("People in a one-manager business (spec 2026-10-15, BZ4)", () => {
+  const business = { name: "Hangar 24", city: "Riverside", locationCount: 4, managerUserId: "u-boss" };
+  const user = (userId: string, role: "owner" | "editor" | "media_events", createdAt: string, email: string) => ({
+    userId,
+    role,
+    createdAt,
+    email,
+  });
+  const handOffInvite = (): StoredInvite => ({
+    id: "i1",
+    memberId: MEMBER,
+    email: "new@x.com",
+    role: "owner",
+    expiresAt: "2099-01-01",
+    createdAt: "2026-03-01",
+    updatedAt: "2026-03-01",
+    cancelledAt: null,
+  });
+  const handedOff = () => [
+    user("u-boss", "editor", "2026-01-01", "boss@x.com"),
+    user("u-loc", "owner", "2026-02-01", "loc@x.com"),
+  ];
+
+  it("labels the business manager and can't remove them", async () => {
+    const { store } = memoryStore({
+      users: [user("u-boss", "owner", "2026-01-01", "boss@x.com"), user("u-ed", "media_events", "2026-01-02", "ed@x.com")],
+      business,
+    });
+    const view = await loadPeople(store, MEMBER, "u-boss");
+    expect(view.people.map((p) => [p.label, p.canRemove])).toEqual([
+      ["Business manager · all 4 locations", false],
+      ["Photos & events editor · Riverside", true],
+    ]);
+    expect(view.business).toMatchObject({ viewerIsManager: true, canHandOff: true, canTakeBack: false });
+  });
+
+  it("after a hand-off: location manager listed after the manager, Take back offered", async () => {
+    const { store } = memoryStore({ users: handedOff(), business });
+    const view = await loadPeople(store, MEMBER, "u-boss");
+    expect(view.people.map((p) => p.label)).toEqual([
+      "Business manager · all 4 locations",
+      "Location manager · Riverside",
+    ]);
+    expect(view.business).toMatchObject({
+      locationManagerEmail: "loc@x.com",
+      canHandOff: false,
+      canTakeBack: true,
+    });
+  });
+
+  it("the location manager sees no hand-off or take-back", async () => {
+    const { store } = memoryStore({ users: handedOff(), business });
+    const view = await loadPeople(store, MEMBER, "u-loc");
+    expect(view.business).toMatchObject({ viewerIsManager: false, canHandOff: false, canTakeBack: false });
+  });
+
+  it("a Guild admin editing as them acts as the manager", async () => {
+    const { store } = memoryStore({ users: [user("u-boss", "owner", "2026-01-01", "boss@x.com")], business });
+    const view = await loadPeople(store, MEMBER, "u-admin", new Date(), { viewerIsGuildAdmin: true });
+    expect(view.business?.canHandOff).toBe(true);
+  });
+
+  it("a pending hand-off hides the hand-off form", async () => {
+    const { store } = memoryStore({
+      users: [user("u-boss", "owner", "2026-01-01", "boss@x.com")],
+      invites: [handOffInvite()],
+      business,
+    });
+    const view = await loadPeople(store, MEMBER, "u-boss");
+    expect(view.business).toMatchObject({ handOffPending: true, canHandOff: false });
+    expect(view.invites[0].role).toBe("owner");
+  });
+
+  it("removePerson refuses the business manager", async () => {
+    const { store } = memoryStore({ users: handedOff(), business });
+    await expect(removePerson(store, { memberId: MEMBER, userId: "u-boss" })).rejects.toThrow(
+      "The business manager can't be removed here. To change who manages Hangar 24, contact the Guild.",
+    );
+  });
+
+  it("invitePerson refuses an address that has a hand-off waiting", async () => {
+    const { store } = memoryStore({
+      users: [user("u-boss", "owner", "2026-01-01", "boss@x.com")],
+      invites: [handOffInvite()],
+      business,
+    });
+    await expect(
+      invitePerson(store, { memberId: MEMBER, email: "NEW@x.com", role: "editor", invitedByUserId: "u-boss" }),
+    ).rejects.toThrow("That address has a hand-off waiting. Cancel it first to invite them as an editor.");
   });
 });

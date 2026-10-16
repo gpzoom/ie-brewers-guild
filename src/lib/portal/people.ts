@@ -18,6 +18,13 @@ import type { PortalRole } from "@/lib/portal/portal-destination";
  *   can be sent again only after a few minutes (INVITE_RESEND_COOLDOWN_MINUTES).
  * - The owner can't be removed (so the owner can't remove themselves).
  *   Changing someone's role is remove-and-reinvite, for now.
+ * - In a one-manager business the business manager (businesses.manager_user_id)
+ *   is listed first, labeled for all locations, and can't be removed here.
+ *   After a hand-off the location manager is the location's owner and the
+ *   business manager is an editor.
+ * - A hand-off is an open invite with role "owner", written only by the SQL
+ *   function hand_off_location; invitePerson never creates one and refuses
+ *   an address that has one waiting.
  */
 
 export type InviteRole = "editor" | "media_events";
@@ -46,12 +53,40 @@ export function isInviteRole(value: unknown): value is InviteRole {
   return value === "editor" || value === "media_events";
 }
 
+/** Open invites may also be a hand-off (owner), made by the business manager in SQL. */
+export type OpenInviteRole = InviteRole | "owner";
+
+export function isOpenInviteRole(value: unknown): value is OpenInviteRole {
+  return value === "owner" || isInviteRole(value);
+}
+
+/** The one-manager business a location is part of, as People needs it. */
+export type PeopleBusiness = {
+  name: string;
+  city: string;
+  locationCount: number;
+  managerUserId: string | null;
+};
+
+export type PeopleBusinessView = {
+  name: string;
+  city: string;
+  locationCount: number;
+  /** The business manager, or a Guild admin editing as them. */
+  viewerIsManager: boolean;
+  /** Set once the location is handed off. */
+  locationManagerEmail: string | null;
+  handOffPending: boolean;
+  canHandOff: boolean;
+  canTakeBack: boolean;
+};
+
 export type MemberUserRecord = { userId: string; role: PortalRole; createdAt: string };
 
 export type InviteRecord = {
   id: string;
   email: string;
-  role: InviteRole;
+  role: OpenInviteRole;
   expiresAt: string;
   createdAt: string;
   /** When it was last sent (created, refreshed or resent). */
@@ -59,7 +94,7 @@ export type InviteRecord = {
 };
 
 export type InvitePatch = {
-  role?: InviteRole;
+  role?: OpenInviteRole;
   expiresAt?: string;
   cancelledAt?: string;
   invitedByUserId?: string;
@@ -67,6 +102,8 @@ export type InvitePatch = {
 
 /** Where People reads and writes. Every method is scoped to one member. */
 export interface PeopleStore {
+  /** The location's business when it is managed by one manager; null otherwise. */
+  businessFor(memberId: string): Promise<PeopleBusiness | null>;
   listMemberUsers(memberId: string): Promise<MemberUserRecord[]>;
   userEmail(userId: string): Promise<string | null>;
   /** Invites neither accepted nor canceled, expired ones included. */
@@ -105,46 +142,98 @@ export type PersonView = {
   role: PortalRole;
   isYou: boolean;
   canRemove: boolean;
+  label: string;
+  isBusinessManager: boolean;
 };
 
 export type InviteView = {
   id: string;
   email: string;
-  role: InviteRole;
+  role: OpenInviteRole;
   expiresAt: string;
   expired: boolean;
 };
 
-export type PeopleView = { people: PersonView[]; invites: InviteView[] };
+export type PeopleView = {
+  people: PersonView[];
+  invites: InviteView[];
+  business: PeopleBusinessView | null;
+};
 
 const ROLE_ORDER: Record<PortalRole, number> = { owner: 0, editor: 1, media_events: 2 };
+
+const PLAIN_LABEL: Record<PortalRole, string> = {
+  owner: "Owner",
+  editor: "Full editor",
+  media_events: "Photos & events",
+};
+
+function personLabel(role: PortalRole, isManager: boolean, business: PeopleBusiness | null): string {
+  if (!business) return PLAIN_LABEL[role];
+  if (isManager) return `Business manager · all ${business.locationCount} locations`;
+  if (role === "owner") return `Location manager · ${business.city}`;
+  return `${role === "editor" ? "Full editor" : "Photos & events editor"} · ${business.city}`;
+}
 
 export async function loadPeople(
   store: PeopleStore,
   memberId: string,
   viewerUserId: string,
   now: Date = new Date(),
+  options: { viewerIsGuildAdmin?: boolean } = {},
 ): Promise<PeopleView> {
-  const [users, invites] = await Promise.all([
+  const [users, invites, business] = await Promise.all([
     store.listMemberUsers(memberId),
     store.listOpenInvites(memberId),
+    store.businessFor(memberId),
   ]);
   const emails = await Promise.all(users.map((user) => store.userEmail(user.userId)));
-  const people = users
+  const isManagerUser = (userId: string) => business !== null && business.managerUserId === userId;
+  const people: PersonView[] = users
     .map((user, index) => ({ user, email: emails[index] }))
     .sort(
       (a, b) =>
+        Number(isManagerUser(b.user.userId)) - Number(isManagerUser(a.user.userId)) ||
         ROLE_ORDER[a.user.role] - ROLE_ORDER[b.user.role] ||
         a.user.createdAt.localeCompare(b.user.createdAt),
     )
-    .map(({ user, email }) => ({
-      userId: user.userId,
-      email,
-      role: user.role,
-      isYou: user.userId === viewerUserId,
-      canRemove: user.role !== "owner",
-    }));
+    .map(({ user, email }) => {
+      const isBusinessManager = isManagerUser(user.userId);
+      return {
+        userId: user.userId,
+        email,
+        role: user.role,
+        isYou: user.userId === viewerUserId,
+        canRemove: user.role !== "owner" && !isBusinessManager,
+        label: personLabel(user.role, isBusinessManager, business),
+        isBusinessManager,
+      };
+    });
+
+  let businessView: PeopleBusinessView | null = null;
+  if (business) {
+    const owner = users.find((user) => user.role === "owner");
+    const handedOff = Boolean(owner && business.managerUserId && owner.userId !== business.managerUserId);
+    const handOffPending = invites.some((invite) => invite.role === "owner");
+    const viewerIsManager =
+      Boolean(options.viewerIsGuildAdmin) ||
+      (business.managerUserId !== null && business.managerUserId === viewerUserId);
+    businessView = {
+      name: business.name,
+      city: business.city,
+      locationCount: business.locationCount,
+      viewerIsManager,
+      locationManagerEmail: handedOff
+        ? (people.find((p) => p.userId === owner?.userId)?.email ?? null)
+        : null,
+      handOffPending,
+      canHandOff: viewerIsManager && business.managerUserId !== null && !handedOff && !handOffPending,
+      canTakeBack: viewerIsManager && handedOff,
+    };
+  }
+
   return {
+    business: businessView,
     people,
     invites: [...invites]
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -184,6 +273,9 @@ export async function invitePerson(
   const open = (await store.listOpenInvites(input.memberId)).find(
     (invite) => invite.email.trim().toLowerCase() === email,
   );
+  if (open?.role === "owner") {
+    throw new Error("That address has a hand-off waiting. Cancel it first to invite them as an editor.");
+  }
   if (open) {
     assertCooledDown(open, now);
     await store.updateInvite(input.memberId, open.id, {
@@ -217,7 +309,7 @@ async function findOpenInvite(store: PeopleStore, memberId: string, inviteId: un
 export async function resendInvite(
   store: PeopleStore,
   input: { memberId: string; inviteId: unknown; now?: Date },
-): Promise<{ email: string; role: InviteRole }> {
+): Promise<{ email: string; role: OpenInviteRole }> {
   const invite = await findOpenInvite(store, input.memberId, input.inviteId);
   const now = input.now ?? new Date();
   assertCooledDown(invite, now);
@@ -243,6 +335,12 @@ export async function removePerson(
   const users = await store.listMemberUsers(input.memberId);
   const target = users.find((user) => user.userId === input.userId);
   if (!target) throw new Error("That person doesn't have access anymore.");
+  const business = await store.businessFor(input.memberId);
+  if (business && business.managerUserId === target.userId) {
+    throw new Error(
+      `The business manager can't be removed here. To change who manages ${business.name}, contact the Guild.`,
+    );
+  }
   if (target.role === "owner") {
     throw new Error("The owner can't be removed. To change the owner, contact the Guild.");
   }

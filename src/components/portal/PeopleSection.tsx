@@ -62,7 +62,7 @@ function RolePill({ role }: { role: PortalRole }) {
  * server (portal-people.server.ts); after each one the page reloads its
  * list.
  */
-export function PeopleSection({ people, invites }: PeopleView) {
+export function PeopleSection({ people, invites }: Pick<PeopleView, "people" | "invites">) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<InviteRole>("media_events");
