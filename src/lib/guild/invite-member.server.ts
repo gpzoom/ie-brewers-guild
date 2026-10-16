@@ -1,3 +1,4 @@
+import { createAuthUser, findAuthUserIdByEmail } from "@/lib/guild/auth-accounts.server";
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { sendTransactionalEmail } from "@/lib/email/send";
@@ -66,23 +67,10 @@ export const inviteMember = createServerFn({ method: "POST" })
           return Boolean(owner);
         },
         async createUser(email) {
-          const { data: created, error } = await serviceClient.auth.admin.createUser({ email, email_confirm: true });
-          if (!error && created.user) return { ok: true as const, userId: created.user.id };
-          const message = error?.message ?? "Could not send the invite.";
-          const emailTaken =
-            (error as { code?: string } | null)?.code === "email_exists" || /already (been )?registered/i.test(message);
-          return { ok: false as const, emailTaken, message };
+          return createAuthUser(serviceClient, email);
         },
         async findUserIdByEmail(email) {
-          // The Guild has a few hundred accounts at most; 10 pages of 1000 is plenty.
-          for (let page = 1; page <= 10; page++) {
-            const { data: list, error } = await serviceClient.auth.admin.listUsers({ page, perPage: 1000 });
-            if (error) throw new Error(error.message);
-            const found = list.users.find((u) => u.email?.toLowerCase() === email);
-            if (found) return found.id;
-            if (list.users.length < 1000) return null;
-          }
-          return null;
+          return findAuthUserIdByEmail(serviceClient, email);
         },
         async linkOwner(memberId, userId) {
           const { error } = await supabase.from("member_users").insert({ member_id: memberId, user_id: userId, role: "owner" });
