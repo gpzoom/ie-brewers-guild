@@ -393,3 +393,50 @@ describe("buildEmailContent: support_message", () => {
     expect(content.text).toContain("Who: Guild admin, editing as this member");
   });
 });
+
+describe("buildEmailContent: business_invited (spec 2026-10-15)", () => {
+  const payload = {
+    trigger: "business_invited" as const,
+    businessId: "b1",
+    businessName: "Hangar 24 Brewing Co.",
+    locationCount: 4,
+    email: "boss@hangar24.example",
+  };
+
+  it("names the business and its location count in the subject", () => {
+    expect(buildEmailContent(payload).subject).toBe(
+      `You're invited to manage Hangar 24 Brewing Co.'s 4 locations on the ${ORG_SHORT_NAME} member directory`,
+    );
+  });
+
+  it("has one link, to sign in to the Member Portal, and replies go to the webmaster", () => {
+    const content = buildEmailContent(payload);
+    expect(content.html.match(/<a /g)).toHaveLength(1);
+    expect(content.text).toContain(`${SITE_URL}/signin?next=/portal`);
+    expect(content.replyTo).toBe(MEMBER_INVITE_REPLY_TO);
+  });
+
+  it("escapes the business name in the HTML", () => {
+    const content = buildEmailContent({ ...payload, businessName: "<b>Bad</b> & Co." });
+    expect(content.html).toContain("&lt;b&gt;Bad&lt;/b&gt; &amp; Co.");
+  });
+});
+
+describe("buildEmailContent: business_location_added (spec 2026-10-15)", () => {
+  const payload = {
+    trigger: "business_location_added" as const,
+    memberId: "m9",
+    businessName: "Hangar 24 Brewing Co.",
+    city: "Temecula",
+    email: "boss@hangar24.example",
+  };
+
+  it("says which location was added and links to sign in", () => {
+    const content = buildEmailContent(payload);
+    expect(content.subject).toBe("A new location was added to Hangar 24 Brewing Co.");
+    expect(content.text).toContain("A new location, Hangar 24 Brewing Co. · Temecula, was added to your business.");
+    expect(content.text).toContain(`${SITE_URL}/signin?next=/portal`);
+    expect(content.html.match(/<a /g)).toHaveLength(1);
+    expect(content.replyTo).toBe(MEMBER_INVITE_REPLY_TO);
+  });
+});

@@ -201,4 +201,14 @@ describe("resolveRecipient: Help button", () => {
     );
     expect(to).toBe("support@example.com");
   });
+
+  it("business emails go to the address in the payload", async () => {
+    const supabase = fakeSupabase({ memberUser: null, userEmail: null });
+    await expect(
+      resolveRecipient({ trigger: "business_invited", businessId: "b", businessName: "B", locationCount: 2, email: "a@x.com" }, supabase),
+    ).resolves.toBe("a@x.com");
+    await expect(
+      resolveRecipient({ trigger: "business_location_added", memberId: "m", businessName: "B", city: "C", email: "a@x.com" }, supabase),
+    ).resolves.toBe("a@x.com");
+  });
 });

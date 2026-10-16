@@ -17,6 +17,22 @@ export type TransactionalEmailPayload =
   | { trigger: "creator_upload_pending"; memberId: string; assetId: string; creatorName: string | null }
   | { trigger: "hours_stale"; memberId: string; confirmUrl: string }
   | { trigger: "member_invited"; memberId: string; email: string }
+  | {
+      /** Roster: one invite for a one-manager business (spec 2026-10-15). */
+      trigger: "business_invited";
+      businessId: string;
+      businessName: string;
+      locationCount: number;
+      email: string;
+    }
+  | {
+      /** Roster: a Guild admin added a location to a one-manager business; to its manager. */
+      trigger: "business_location_added";
+      memberId: string;
+      businessName: string;
+      city: string;
+      email: string;
+    }
   | { trigger: "contact_confirmation"; inquiryId: string; name: string; email: string; wantsMembershipInfo: boolean }
   | {
       trigger: "contact_form_submitted";
@@ -250,6 +266,33 @@ export function buildEmailContent(payload: TransactionalEmailPayload, siteUrl: s
         replyTo: MEMBER_INVITE_REPLY_TO,
         text: `${welcome} ${howTo}\n\n${signInUrl}\n\n${guide}`,
         html: wrapHtml([welcome, `${howTo} <a href="${signInUrl}">${signInUrl}</a>`, guide]),
+      };
+    }
+
+    case "business_invited": {
+      const signInUrl = `${siteUrl}/signin?next=/portal`;
+      const intro =
+        `Welcome to the ${ORG_NAME}! The Guild has set up profiles on the member directory for ` +
+        `${payload.businessName}'s ${payload.locationCount} locations, and you manage all of them.`;
+      const howTo = "Sign in anytime with this email address to set them up:";
+      const after = "You'll set up the logo, cover and theme once for every location, then each location's own details. Questions? Just reply to this email.";
+      return {
+        subject: `You're invited to manage ${payload.businessName}'s ${payload.locationCount} locations on the ${ORG_SHORT_NAME} member directory`,
+        replyTo: MEMBER_INVITE_REPLY_TO,
+        text: `${intro}\n\n${howTo}\n\n${signInUrl}\n\n${after}`,
+        html: wrapHtml([escapeHtml(intro), `${howTo} <a href="${signInUrl}">${signInUrl}</a>`, escapeHtml(after)]),
+      };
+    }
+
+    case "business_location_added": {
+      const signInUrl = `${siteUrl}/signin?next=/portal`;
+      const sentence = `A new location, ${payload.businessName} · ${payload.city}, was added to your business.`;
+      const howTo = "Sign in to set it up:";
+      return {
+        subject: `A new location was added to ${payload.businessName}`,
+        replyTo: MEMBER_INVITE_REPLY_TO,
+        text: `${sentence}\n\n${howTo}\n\n${signInUrl}`,
+        html: wrapHtml([escapeHtml(sentence), `${howTo} <a href="${signInUrl}">${signInUrl}</a>`]),
       };
     }
 
