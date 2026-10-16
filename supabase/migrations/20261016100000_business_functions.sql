@@ -1,7 +1,9 @@
 -- Multi-location businesses, part 2 (spec 2026-10-15): the Guild's business
 -- writes. Every one checks is_guild_admin() and is audit-logged against the
 -- real actor. Part 2 limits mode switching and leaving a one-manager
--- business; part 5 (hand-off) widens both.
+-- business; part 5 (hand-off) widens both. Until the location switcher
+-- (part 3) ships, switching to One manager and linking its manager are
+-- super admin only.
 
 create or replace function public._business_audit(p_member_id uuid, p_table text, p_row_id uuid, p_action text)
 returns void
@@ -27,6 +29,13 @@ begin
 end;
 $$;
 revoke all on function public._require_guild_admin() from public, anon, authenticated;
+
+-- The Guild's business writes go through these functions only (spec: no
+-- direct client writes), so Part 1's write grants and policies go.
+revoke insert, update, delete on public.businesses from authenticated;
+drop policy if exists "businesses: guild admins can insert" on public.businesses;
+drop policy if exists "businesses: guild admins can update" on public.businesses;
+drop policy if exists "businesses: guild admins can delete" on public.businesses;
 
 -- Link the business manager to one location: owner when it has none, else editor.
 create or replace function public._link_manager_to_location(p_member_id uuid, p_user_id uuid)
@@ -64,6 +73,9 @@ begin
   if p_mode not in ('separate', 'one_manager') then
     raise exception 'Unknown management mode: %', p_mode;
   end if;
+  if p_mode = 'one_manager' and not public.is_super_admin() then
+    raise exception 'Only the super admin can switch a business to one manager for now.' using errcode = '42501';
+  end if;
 
   select * into v_business from public.businesses where id = p_business_id for update;
   if not found then
@@ -99,7 +111,9 @@ declare
   v_business public.businesses;
   v_member_id uuid;
 begin
-  perform public._require_guild_admin();
+  if not public.is_super_admin() then
+    raise exception 'Only the super admin can invite a business manager for now.' using errcode = '42501';
+  end if;
   select * into v_business from public.businesses where id = p_business_id for update;
   if not found then
     raise exception 'That business no longer exists';
@@ -235,7 +249,8 @@ begin
   where btrim(m.business_name) = btrim(new.business_name)
     and m.id <> new.id
     and (m.business_id is null or b.management_mode = 'separate')
-  order by m.created_at
+  -- An existing business wins over a member the Guild took out of one.
+  order by (m.business_id is null), m.created_at
   limit 1;
 
   if not found then
@@ -253,6 +268,45 @@ begin
   return new;
 end;
 $$;
+
+-- Deleting a location can leave its business with one location (or none):
+-- dissolve it, as Part of does. The roster's delete runs on the service
+-- role, where auth.uid() is null, so the audit rows (which need an actor)
+-- are written only when there is one.
+create or replace function public.members_dissolve_business_after_delete()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_left uuid;
+  v_actor uuid := auth.uid();
+begin
+  if old.business_id is null then
+    return null;
+  end if;
+  if (select count(*) from public.members where business_id = old.business_id) > 1 then
+    return null;
+  end if;
+  for v_left in select id from public.members where business_id = old.business_id loop
+    update public.members set business_id = null where id = v_left;
+    if v_actor is not null then
+      perform public._business_audit(v_left, 'members', v_left, 'update');
+    end if;
+  end loop;
+  delete from public.businesses where id = old.business_id;
+  if v_actor is not null and found then
+    perform public._business_audit(null, 'businesses', old.business_id, 'delete');
+  end if;
+  return null;
+end;
+$$;
+revoke all on function public.members_dissolve_business_after_delete() from public, anon, authenticated;
+
+create trigger members_dissolve_business_after_delete
+  after delete on public.members
+  for each row execute function public.members_dissolve_business_after_delete();
 
 revoke all on function public.set_business_mode(uuid, text) from public, anon;
 revoke all on function public.link_business_manager(uuid, uuid) from public, anon;
