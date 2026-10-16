@@ -6,6 +6,8 @@ import { ThemePicker } from "./ThemePicker";
 import { LogoUploader } from "./LogoUploader";
 import { CoverEditor } from "./CoverEditor";
 import { SocialImageEditor } from "./SocialImageEditor";
+import { LogoPhotosCoverSection } from "./LogoPhotosCoverSection";
+import type { MemberDraftBundle } from "@/lib/drafts/drafts.server";
 import type { SharedLook } from "@/lib/portal/shared-look";
 import type { MediaAssetRow } from "@/lib/supabase/types";
 
@@ -179,5 +181,88 @@ describe("SocialImageEditor and the shared look", () => {
     const html = render(social(true), manager);
     expect(html).toContain(BZ3);
     expect(html).not.toContain('id="social-image-choose"');
+  });
+});
+
+describe("Logo, Photos & Cover shows one shared-look note for the group", () => {
+  const draft = {
+    member: {
+      id: "m",
+      slug: "s",
+      status: "draft",
+      member_type: "producer",
+      business_name: "Hangar 24",
+    },
+    data: {
+      basics: {
+        business_name: "Hangar 24 Irvine",
+        city: "Irvine",
+        state: "CA",
+        logo_background: "light",
+        cover_asset_id: "a1",
+        cover_crop: { x: 0, y: 0, w: 1, h: 1 },
+        og_image_asset_id: "a1",
+      },
+      theme: { theme: "teal" },
+      media: { slides: [] },
+    },
+    dirtySections: [],
+    role: "owner",
+    logoUrl: "https://example.test/logo.png",
+  } as unknown as MemberDraftBundle;
+  const section = (readOnly?: boolean) =>
+    createElement(LogoPhotosCoverSection, {
+      draft,
+      assets: [asset],
+      uploadTokens: [],
+      pending: [],
+      canEditLogoAndCover: true,
+      peopleHref: null,
+      showSocialImage: true,
+      readOnly,
+    });
+  const count = (html: string, text: string) => html.split(text).length - 1;
+
+  it("the manager sees the pill once, and every editor still works", () => {
+    const html = render(section(), manager);
+    expect(count(html, "Shared by all 4 locations")).toBe(1);
+    expect(html).toContain('id="logo-upload"');
+    expect(html).toContain('id="cover-choose"');
+    expect(html).toContain('id="social-image-choose"');
+  });
+
+  it("anyone else sees BZ5 once, with the logo, cover and link preview locked", () => {
+    const html = render(section(), nonManager);
+    expect(count(html, BZ5)).toBe(1);
+    expect(html).not.toContain('id="logo-upload"');
+    expect(html).not.toContain('id="cover-choose"');
+    expect(html).not.toContain('id="social-image-choose"');
+  });
+
+  it("read-only in short setup: the BZ3 variant once, and locked", () => {
+    const html = render(section(true), manager);
+    expect(count(html, "Shared by all 4 locations")).toBe(1);
+    expect(count(html, BZ3)).toBe(1);
+    expect(html).not.toContain('id="logo-upload"');
+    expect(html).not.toContain('id="cover-choose"');
+  });
+
+  it("no shared look: no note at all", () => {
+    expect(render(section(), null)).not.toContain("Shared by");
+  });
+
+  it("an editor told to hide its note stays locked without one", () => {
+    const html = render(
+      createElement(CoverEditor, {
+        memberId: "m",
+        coverAssetId: "a1",
+        coverCrop: null,
+        galleryAssets: [asset],
+        hideSharedNote: true,
+      }),
+      nonManager,
+    );
+    expect(html).not.toContain(BZ5);
+    expect(html).not.toContain('id="cover-choose"');
   });
 });

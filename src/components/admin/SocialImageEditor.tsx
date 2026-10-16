@@ -19,6 +19,7 @@ export function SocialImageEditor({
   ogImageAssetId,
   galleryAssets,
   readOnly,
+  hideSharedNote = false,
 }: {
   memberId: string;
   memberType: MemberType;
@@ -26,6 +27,8 @@ export function SocialImageEditor({
   galleryAssets: MediaAssetRow[];
   /** Show the image without letting it change (short setup's shared look). */
   readOnly?: boolean;
+  /** Grouped on Logo, Photos & Cover, which shows one note for all of them. */
+  hideSharedNote?: boolean;
 }) {
   // Part of a one-manager business's shared look: locked unless this
   // viewer manages it, and always in short setup.
@@ -98,7 +101,7 @@ export function SocialImageEditor({
           graphic instead.
         </p>
       </div>
-      <EditorSharedLookNote look={look} readOnly={readOnly} />
+      {!hideSharedNote && <EditorSharedLookNote look={look} readOnly={readOnly} />}
       <div className="flex w-full max-w-[560px] flex-col gap-3">
         <img
           src={previewUrl}

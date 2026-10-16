@@ -38,6 +38,7 @@ export function LogoUploader({
   belowUpload,
   showPreview = true,
   readOnly,
+  hideSharedNote = false,
 }: {
   memberId: string;
   initialLogoUrl: string | null;
@@ -52,6 +53,8 @@ export function LogoUploader({
   showPreview?: boolean;
   /** Show the logo and its tile without letting them change (short setup's shared look). */
   readOnly?: boolean;
+  /** Grouped on Logo, Photos & Cover, which shows one note for all of them. */
+  hideSharedNote?: boolean;
 }) {
   // Part of a one-manager business's shared look: locked unless this
   // viewer manages it, and always in short setup. Locked, there's no upload
@@ -114,7 +117,7 @@ export function LogoUploader({
 
   return (
     <div className="flex flex-col gap-2">
-      <EditorSharedLookNote look={look} readOnly={readOnly} />
+      {!hideSharedNote && <EditorSharedLookNote look={look} readOnly={readOnly} />}
       <div className="flex flex-col gap-4 rounded-[11px] border border-canvas-border bg-white px-[14px] py-[13px] md:px-[17px] md:py-[15px]">
         <div className="flex items-center gap-[13px] md:gap-4">
           <div

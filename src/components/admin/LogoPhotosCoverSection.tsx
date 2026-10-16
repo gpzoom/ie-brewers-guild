@@ -13,6 +13,8 @@ import { SocialImageEditor } from "@/components/admin/SocialImageEditor";
 import { SaveNoteText } from "@/components/admin/SaveNote";
 import { PngHelpNote } from "@/components/admin/PngHelpNote";
 import { ProfileHeaderPreview } from "@/components/admin/ProfileHeaderPreview";
+import { useMemberEditing } from "@/components/admin/MemberEditingContext";
+import { SharedLookNote } from "@/components/admin/SharedLookNote";
 
 export type LogoPhotosCoverPart = "logo" | "gallery" | "carousel" | "cover";
 
@@ -61,6 +63,7 @@ export function LogoPhotosCoverSection({
   canEditLogoAndCover,
   peopleHref,
   showSocialImage,
+  readOnly,
 }: {
   draft: MemberDraftBundle;
   assets: MediaAssetRow[];
@@ -70,7 +73,15 @@ export function LogoPhotosCoverSection({
   /** Where People lives on this surface; null in the setup wizard. */
   peopleHref: string | null;
   showSocialImage: boolean;
+  /**
+   * Short setup: the shared look (logo, cover, link preview) shows but
+   * can't change here; the gallery and carousel still work.
+   */
+  readOnly?: boolean;
 }) {
+  // One note for the shared look (artboard BZ3), not one per editor: the
+  // editors below are told to hide theirs, and keep their locked state.
+  const sharedLook = useMemberEditing()?.sharedLook ?? null;
   const memberId = draft.member.id;
   const basics = draft.data.basics;
   const theme = draft.data.theme.theme;
@@ -102,6 +113,8 @@ export function LogoPhotosCoverSection({
           onPreviewChange={onLogo}
           belowUpload={<PngHelpNote />}
           showPreview={false}
+          readOnly={readOnly}
+          hideSharedNote
         />
       </Part>
     ),
@@ -133,6 +146,8 @@ export function LogoPhotosCoverSection({
           coverCrop={basics.cover_crop}
           galleryAssets={assets}
           onPreviewChange={onCover}
+          readOnly={readOnly}
+          hideSharedNote
         />
       </Part>
     ),
@@ -141,6 +156,9 @@ export function LogoPhotosCoverSection({
   return (
     <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
       <div className="flex min-w-0 flex-1 flex-col gap-[34px]">
+        {sharedLook && (canEditLogoAndCover || showSocialImage) && (
+          <SharedLookNote look={sharedLook} readOnlyInSetup={Boolean(readOnly)} />
+        )}
         {parts.map((part, i) => body[part](i + 1))}
         {showSocialImage && (
           <SocialImageEditor
@@ -148,6 +166,8 @@ export function LogoPhotosCoverSection({
             memberType={draft.member.member_type}
             ogImageAssetId={basics.og_image_asset_id}
             galleryAssets={assets}
+            readOnly={readOnly}
+            hideSharedNote
           />
         )}
         <p className="border-t border-canvas-2 pt-[18px] text-[13px] text-ink-muted">
