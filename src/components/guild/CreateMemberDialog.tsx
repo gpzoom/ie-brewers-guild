@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { createMemberRecord } from "@/lib/guild/create-member.server";
 import type { MemberType } from "@/lib/supabase/types";
 import type { RosterBusiness } from "@/lib/guild/roster-groups";
+import { addMemberToast } from "@/lib/guild/member-part-of";
 import {
   Dialog,
   DialogContent,
@@ -44,7 +45,7 @@ export function CreateMemberDialog({ businesses }: { businesses: RosterBusiness[
     setSubmitting(true);
     setErrorMessage(null);
     try {
-      await createMemberRecord({
+      const { partOfError } = await createMemberRecord({
         data: {
           businessName,
           city,
@@ -60,7 +61,10 @@ export function CreateMemberDialog({ businesses }: { businesses: RosterBusiness[
       setContactEmail("");
       setPartOfChoice(null);
       await router.invalidate();
-      toast.success(`Added ${created}`);
+      // A Part of refusal still means the member was added: close, and warn.
+      const outcome = addMemberToast(created, partOfError);
+      if (outcome.kind === "warning") toast.warning(outcome.message);
+      else toast.success(outcome.message);
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Could not create the member.");
     } finally {

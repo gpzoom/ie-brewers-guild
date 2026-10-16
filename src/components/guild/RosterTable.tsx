@@ -25,7 +25,7 @@ import { PartOfDialog } from "@/components/guild/PartOfDialog";
 import { setBusinessMode, inviteBusinessManager } from "@/lib/guild/businesses.server";
 import { inviteMember } from "@/lib/guild/invite-member.server";
 import { startImpersonation } from "@/lib/guild/impersonation.server";
-import { computeHoursConfirmationBadge } from "@/lib/hours/publish-gate";
+import { hasStaleHours, resolveDetailLine } from "@/lib/guild/roster-detail";
 import {
   approveMember,
   declineMember,
@@ -50,20 +50,6 @@ const STATUS_BY_MEMBER_STATUS: Record<Exclude<MemberStatus, "published">, RowSta
   suspended: { label: "Suspended", dot: "#C4552E" },
 };
 
-function formatShortDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-/** Weekly hours only go stale for members that keep them (Mobile members list appearances instead). */
-function hasStaleHours(entry: RosterEntry, now: Date): boolean {
-  if (entry.member.member_type === "mobile") return false;
-  return computeHoursConfirmationBadge(entry.member.hours_confirmed_at, now).kind === "stale";
-}
-
 /** The status dot + label (artboard P): the member's status, with a published profile's loose ends called out. */
 function resolveRowStatus(entry: RosterEntry, now: Date): RowStatus {
   const { member } = entry;
@@ -71,19 +57,6 @@ function resolveRowStatus(entry: RosterEntry, now: Date): RowStatus {
   if (hasStaleHours(entry, now)) return { label: "Stale hours", dot: "#C98A2E" };
   if (!member.dues_received_at) return { label: "Unpaid", dot: "#C4552E" };
   return { label: "Published", dot: "#4E9A4A" };
-}
-
-/** The muted line under the member's name: "City · <the one thing worth knowing>". */
-function resolveDetailLine(entry: RosterEntry, now: Date): string {
-  const { member } = entry;
-  let detail: string | null = null;
-  if (entry.claimState === "unclaimed") detail = "not invited yet";
-  else if (entry.claimState === "invited_not_signed_in") detail = "invited, not signed in";
-  else if (hasStaleHours(entry, now) && member.hours_confirmed_at)
-    detail = `hours confirmed ${formatShortDate(member.hours_confirmed_at)}`;
-  else if (member.status === "published" && !member.dues_received_at) detail = "dues not recorded";
-  else if (member.member_since_year) detail = `member since ${member.member_since_year}`;
-  return detail ? `${member.city} · ${detail}` : member.city;
 }
 
 function initialsOf(name: string): string {
@@ -114,15 +87,14 @@ const menuItemClass = "min-h-10 cursor-pointer px-3 text-[13px] text-ink";
 
 /**
  * One location's roster row (artboard P): logo box, name and detail line,
- * type, status, and its actions. `indented` is a location shown under its
- * business (artboard BZ1): no logo box, shifted right. `hideInvite` hides
- * the location's own Invite -- a one-manager business has one Invite, on
- * the business row.
+ * type, status, and its actions. With `business` it is a location shown
+ * under its business (artboard BZ1): indented, no logo box, titled by its
+ * city. In a one-manager business its own Invite is hidden (the business
+ * row has the one Invite) and its detail line reports the manager.
  */
 function MemberRow({
   entry,
-  indented = false,
-  hideInvite = false,
+  business,
   now,
   isSuperAdmin,
   inviting,
@@ -134,8 +106,7 @@ function MemberRow({
   runAction,
 }: {
   entry: RosterEntry;
-  indented?: boolean;
-  hideInvite?: boolean;
+  business?: RosterBusiness;
   now: Date;
   isSuperAdmin: boolean;
   inviting: boolean;
@@ -149,6 +120,9 @@ function MemberRow({
   const { member } = entry;
   const status = resolveRowStatus(entry, now);
   const typeLabel = MEMBER_TYPE_LABEL[member.member_type];
+  const indented = business !== undefined;
+  const hideInvite = business?.mode === "one_manager";
+  const detailLine = resolveDetailLine(entry, now, { business, withoutCity: indented });
   return (
     <li
       className={`flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-[#F0EBE3] px-4 py-3.5 last:border-b-0 md:flex-nowrap md:px-5 ${indented ? "md:pl-12" : ""}`}
@@ -168,8 +142,10 @@ function MemberRow({
       )}
 
       <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
-        <div className="truncate text-[15px] font-semibold text-ink">{member.business_name}</div>
-        <div className="text-xs text-ink-muted">{resolveDetailLine(entry, now)}</div>
+        <div className="truncate text-[15px] font-semibold text-ink">
+          {indented ? member.city : member.business_name}
+        </div>
+        {detailLine && <div className="text-xs text-ink-muted">{detailLine}</div>}
         <div className="flex items-center gap-1.5 text-xs text-[#3A332C] md:hidden">
           {typeLabel} ·
           <span className="block h-2 w-2 rounded-full" style={{ background: status.dot }} />
@@ -215,7 +191,11 @@ function MemberRow({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              aria-label={`More actions for ${member.business_name}`}
+              aria-label={
+                indented
+                  ? `More actions for ${member.business_name} · ${member.city}`
+                  : `More actions for ${member.business_name}`
+              }
               className={`${lightButtonClass} w-11 px-0 md:w-10`}
             >
               <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
@@ -507,16 +487,12 @@ export function RosterTable({
     );
   }, [entries, businesses]);
 
-  function renderMemberRow(
-    entry: RosterEntry,
-    options: { indented?: boolean; hideInvite?: boolean } = {},
-  ) {
+  function renderMemberRow(entry: RosterEntry, business?: RosterBusiness) {
     return (
       <MemberRow
         key={entry.member.id}
         entry={entry}
-        indented={options.indented}
-        hideInvite={options.hideInvite}
+        business={business}
         now={now}
         isSuperAdmin={isSuperAdmin}
         inviting={invitingId === entry.member.id}
@@ -597,7 +573,6 @@ export function RosterTable({
           {groups.map((group) => {
             if (group.kind === "single") return renderMemberRow(group.entry);
             const { business } = group;
-            const oneManager = business.mode === "one_manager";
             return (
               <li
                 key={`business-${business.id}`}
@@ -614,9 +589,7 @@ export function RosterTable({
                   }}
                 />
                 <ul aria-label={`${business.name} locations`}>
-                  {group.entries.map((entry) =>
-                    renderMemberRow(entry, { indented: true, hideInvite: oneManager }),
-                  )}
+                  {group.entries.map((entry) => renderMemberRow(entry, business))}
                 </ul>
               </li>
             );

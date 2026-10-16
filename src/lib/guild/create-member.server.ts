@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { generateUniqueMemberSlug } from "@/lib/guild/unique-member-slug.server";
 import { applyMemberBusiness } from "@/lib/guild/businesses.server";
+import { runPartOfStep } from "@/lib/guild/member-part-of";
 import type { MemberRow, MemberType } from "@/lib/supabase/types";
 
 export type CreateMemberInput = {
@@ -19,6 +20,12 @@ export type CreateMemberInput = {
 };
 
 /**
+ * `partOfError` is set when the member was created but its Part of was
+ * refused -- the add itself succeeded, so callers must not retry it.
+ */
+export type CreateMemberResult = { member: MemberRow; partOfError: string | null };
+
+/**
  * Shared by the roster's "create a new member" action and the inquiries
  * screen's "Set them up as a member" action (task brief, both call sites).
  * New rows start as status = 'draft' (this plan's Decision 8), not the
@@ -33,7 +40,7 @@ export type CreateMemberInput = {
  */
 export const createMemberRecord = createServerFn({ method: "POST" })
   .inputValidator((data: CreateMemberInput) => data)
-  .handler(async ({ data }): Promise<MemberRow> => {
+  .handler(async ({ data }): Promise<CreateMemberResult> => {
     const supabase = await getSupabaseServerClientForRequest();
     const slug = await generateUniqueMemberSlug(supabase, data.businessName);
 
@@ -52,19 +59,20 @@ export const createMemberRecord = createServerFn({ method: "POST" })
 
     if (error || !member) throw new Error(error?.message ?? "Could not create the member.");
 
-    if (data.partOf !== undefined) {
-      const current = (member as MemberRow).business_id ?? null;
-      if (data.partOf !== current)
-        await applyMemberBusiness(supabase, (member as MemberRow).id, data.partOf);
-    }
+    // From here on the member exists: nothing below may throw, or a retry
+    // would create it a second time.
+    const created = member as MemberRow;
+    const partOfError = await runPartOfStep(
+      (target) => applyMemberBusiness(supabase, created.id, target),
+      created.business_id ?? null,
+      data.partOf,
+    );
 
     // Re-read so the returned row has its final business_id.
-    const { data: final, error: rereadError } = await supabase
+    const { data: final } = await supabase
       .from("members")
       .select("*")
-      .eq("id", (member as MemberRow).id)
-      .single();
-    if (rereadError || !final)
-      throw new Error(rereadError?.message ?? "Could not load the new member.");
-    return final as MemberRow;
+      .eq("id", created.id)
+      .maybeSingle();
+    return { member: (final as MemberRow | null) ?? created, partOfError };
   });

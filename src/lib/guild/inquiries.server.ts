@@ -56,7 +56,7 @@ export const setUpInquiryAsMember = createServerFn({ method: "POST" })
     if (inquiryError || !inquiry) throw new Error(inquiryError?.message ?? "Inquiry not found.");
     const typedInquiry = inquiry as InquiryRow;
 
-    const member = await createMemberRecord({
+    const { member } = await createMemberRecord({
       data: {
         businessName: typedInquiry.name,
         city: data.city,
