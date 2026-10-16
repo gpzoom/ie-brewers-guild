@@ -11,6 +11,7 @@ import {
   WizardStep,
   wizardPrimaryButtonClass,
 } from "@/components/portal/setup/WizardStep";
+import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 import { useWizardNavigation } from "@/components/portal/setup/useWizardNavigation";
 import { MemberGuideNote } from "@/components/portal/MemberGuideLink";
 import { cn } from "@/lib/utils";
@@ -274,6 +275,7 @@ export function BasicsStep({
   categories: CategoryRow[];
 }) {
   const { goTo, settle } = useWizardNavigation();
+  const editing = useMemberEditing();
   const [error, setError] = useState<string | null>(null);
 
   async function onContinue() {
@@ -303,7 +305,8 @@ export function BasicsStep({
       step="basics"
       title="The basics"
       lede="Your business name and city are required. The rest helps visitors find and reach you."
-      backTo="type"
+      // Short setup starts here: there's nothing to go back to.
+      backTo={editing?.shortSetup ? null : "type"}
       onContinue={onContinue}
       error={error}
     >

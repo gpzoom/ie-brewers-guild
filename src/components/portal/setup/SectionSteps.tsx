@@ -3,6 +3,7 @@ import type { PortalSetupShell } from "@/lib/portal/portal-setup.server";
 import type { ScheduleData } from "@/lib/portal/section-data.server";
 import type { CategoryRow, MediaAssetRow, UploadTokenRow } from "@/lib/supabase/types";
 import { LogoPhotosCoverSection } from "@/components/admin/LogoPhotosCoverSection";
+import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 import { HoursEditor } from "@/components/admin/HoursEditor";
 import { EventsEditor } from "@/components/admin/EventsEditor";
 import { CalendarConnectionPanel } from "@/components/admin/CalendarConnectionPanel";
@@ -51,6 +52,9 @@ export function LogoCoverStep({
   uploadTokens: UploadTokenRow[];
   pending: MediaAssetRow[];
 }) {
+  // Short setup: the logo and cover are the business's shared look, shown
+  // locked (BZ3); the gallery and carousel are this location's own.
+  const shortSetup = useMemberEditing()?.shortSetup ?? false;
   return (
     <WizardStep
       step="logo-cover"
@@ -66,6 +70,7 @@ export function LogoCoverStep({
         uploadTokens={uploadTokens}
         pending={pending}
         canEditLogoAndCover
+        readOnly={shortSetup}
         peopleHref={null}
         showSocialImage={false}
       />

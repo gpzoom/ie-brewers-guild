@@ -26,7 +26,19 @@ import type { PortalRole } from "@/lib/portal/portal-destination";
  *
  * After the numbered steps come the finish screens, which have no number:
  * review -> preview -> publish (the publish check) -> live ("You're live").
+ *
+ * Short setup (Part 4, artboard BZ3): a one-manager business's other
+ * locations, once one location is set up, share its look and its confirmed
+ * type, so Welcome, Confirm type and Pick your theme drop out -- a producer
+ * walks basics, logo-cover, hours, events, links ("Step 1 of 5"). Every
+ * helper below takes an optional trailing `{ shortSetup }`; without it the
+ * results are the full wizard's.
  */
+
+export type SetupStepOptions = { shortSetup?: boolean };
+
+/** The steps short setup leaves out: the business already chose these. */
+const SHORT_SETUP_OMITTED: readonly SetupStepName[] = ["welcome", "type", "theme"];
 
 export const NUMBERED_SETUP_STEPS = [
   "welcome",
@@ -52,46 +64,69 @@ export function isSetupStepName(value: unknown): value is SetupStepName {
   return typeof value === "string" && (ALL_SETUP_STEPS as readonly string[]).includes(value);
 }
 
-/** Steps 1-3: the only required ones. */
+/**
+ * Steps 1-3: the only required ones. In short setup only The basics is
+ * left of them (the type is the business's, already confirmed).
+ */
 export const REQUIRED_SETUP_STEPS: readonly NumberedSetupStep[] = ["welcome", "type", "basics"];
 
 /** Whether this member type sees the step at all. */
-export function isStepForType(step: SetupStepName, memberType: MemberType): boolean {
+export function isStepForType(
+  step: SetupStepName,
+  memberType: MemberType,
+  options: SetupStepOptions = {},
+): boolean {
+  if (options.shortSetup && SHORT_SETUP_OMITTED.includes(step)) return false;
   if (step === "events") return memberType !== "mobile";
   if (step === "discount") return memberType === "allied";
   return true;
 }
 
 /** The numbered steps this member type sees, in order. */
-export function numberedStepsForType(memberType: MemberType): NumberedSetupStep[] {
-  return NUMBERED_SETUP_STEPS.filter((step) => isStepForType(step, memberType));
+export function numberedStepsForType(
+  memberType: MemberType,
+  options: SetupStepOptions = {},
+): NumberedSetupStep[] {
+  return NUMBERED_SETUP_STEPS.filter((step) => isStepForType(step, memberType, options));
 }
 
 /** Every step this member type walks through, numbered steps then the finish screens. */
-export function allStepsForType(memberType: MemberType): SetupStepName[] {
-  return [...numberedStepsForType(memberType), ...FINISH_SETUP_STEPS];
+export function allStepsForType(
+  memberType: MemberType,
+  options: SetupStepOptions = {},
+): SetupStepName[] {
+  return [...numberedStepsForType(memberType, options), ...FINISH_SETUP_STEPS];
 }
 
 /** "Step N of M" for a numbered step; null for the finish screens or a step the type doesn't see. */
 export function stepPosition(
   step: SetupStepName,
   memberType: MemberType,
+  options: SetupStepOptions = {},
 ): { number: number; total: number } | null {
-  const steps = numberedStepsForType(memberType);
+  const steps = numberedStepsForType(memberType, options);
   const index = (steps as SetupStepName[]).indexOf(step);
   if (index === -1) return null;
   return { number: index + 1, total: steps.length };
 }
 
-export function nextStep(step: SetupStepName, memberType: MemberType): SetupStepName | null {
-  const steps = allStepsForType(memberType);
+export function nextStep(
+  step: SetupStepName,
+  memberType: MemberType,
+  options: SetupStepOptions = {},
+): SetupStepName | null {
+  const steps = allStepsForType(memberType, options);
   const index = steps.indexOf(step);
-  if (index === -1) return firstStepAfter(step, memberType);
+  if (index === -1) return firstStepAfter(step, memberType, options);
   return steps[index + 1] ?? null;
 }
 
-export function previousStep(step: SetupStepName, memberType: MemberType): SetupStepName | null {
-  const steps = allStepsForType(memberType);
+export function previousStep(
+  step: SetupStepName,
+  memberType: MemberType,
+  options: SetupStepOptions = {},
+): SetupStepName | null {
+  const steps = allStepsForType(memberType, options);
   const index = steps.indexOf(step);
   if (index <= 0) return null;
   return steps[index - 1];
@@ -102,10 +137,14 @@ export function previousStep(step: SetupStepName, memberType: MemberType): Setup
  * on /discount): the first step after it in the canonical order that the
  * type does see.
  */
-function firstStepAfter(step: SetupStepName, memberType: MemberType): SetupStepName | null {
+function firstStepAfter(
+  step: SetupStepName,
+  memberType: MemberType,
+  options: SetupStepOptions = {},
+): SetupStepName | null {
   const index = ALL_SETUP_STEPS.indexOf(step);
   for (let i = index + 1; i < ALL_SETUP_STEPS.length; i++) {
-    if (isStepForType(ALL_SETUP_STEPS[i], memberType)) return ALL_SETUP_STEPS[i];
+    if (isStepForType(ALL_SETUP_STEPS[i], memberType, options)) return ALL_SETUP_STEPS[i];
   }
   return null;
 }
@@ -128,13 +167,22 @@ export const SETUP_STEP_LABELS: Record<SetupStepName, string> = {
 };
 
 /** Step 5's name depends on the type: mobile members list where they'll be, not hours. */
-export function stepLabel(step: SetupStepName, memberType: MemberType): string {
+export function stepLabel(
+  step: SetupStepName,
+  memberType: MemberType,
+  // Same in short setup; taken so every step helper has the one signature.
+  _options: SetupStepOptions = {},
+): string {
   if (step === "hours" && memberType === "mobile") return "Where we'll be";
   return SETUP_STEP_LABELS[step];
 }
 
-/** Whether "Skip for now" is offered: every step but Confirm type and The basics (and the finish screens). */
-export function canSkipStep(step: SetupStepName): boolean {
+/**
+ * Whether "Skip for now" is offered: every step but Confirm type and The
+ * basics (and the finish screens). The same in short setup: The basics,
+ * its first step, stays required.
+ */
+export function canSkipStep(step: SetupStepName, _options: SetupStepOptions = {}): boolean {
   return step !== "type" && step !== "basics" && step !== "welcome" && !isFinishStep(step);
 }
 
@@ -168,28 +216,45 @@ export type SetupAccess =
  *   (redesign, 2026-10-02). "The wizard is never shown again" holds
  *   because /portal never routes into it (portal-destination), not
  *   because these steps redirect.
+ * - Short setup: Welcome, Confirm type and Pick your theme go to The
+ *   basics, which is the first incomplete step. (Should the type somehow
+ *   be unconfirmed, Confirm type stays open so it can be confirmed --
+ *   The basics can't be finished without it.)
  */
-export function resolveSetupAccess(input: {
-  step: string;
-  memberType: MemberType;
-  role: PortalRole;
-  typeConfirmed: boolean;
-  setupCompleted: boolean;
-}): SetupAccess {
+export function resolveSetupAccess(
+  input: {
+    step: string;
+    memberType: MemberType;
+    role: PortalRole;
+    typeConfirmed: boolean;
+    setupCompleted: boolean;
+  },
+  options: SetupStepOptions = {},
+): SetupAccess {
   if (input.role === "media_events") return { kind: "portal" };
   // The old Photos step is part of step 4 now (redesign, 2026-10-02).
   if (input.step === "photos") return { kind: "step", step: "logo-cover" };
 
   const inSetup = !input.typeConfirmed || !input.setupCompleted;
-  const firstIncomplete: SetupStepName = input.typeConfirmed ? "basics" : "welcome";
+  const short = Boolean(options.shortSetup);
+  const firstIncomplete: SetupStepName = input.typeConfirmed
+    ? "basics"
+    : short
+      ? "type"
+      : "welcome";
 
   if (!isSetupStepName(input.step)) {
     return inSetup ? { kind: "step", step: firstIncomplete } : { kind: "portal" };
   }
   const step = input.step;
 
-  if (!isStepForType(step, input.memberType)) {
-    const next = firstStepAfter(step, input.memberType);
+  if (short && SHORT_SETUP_OMITTED.includes(step)) {
+    if (step === "type" && !input.typeConfirmed) return { kind: "ok" };
+    return { kind: "step", step: firstIncomplete };
+  }
+
+  if (!isStepForType(step, input.memberType, options)) {
+    const next = firstStepAfter(step, input.memberType, options);
     return next ? { kind: "step", step: next } : { kind: "portal" };
   }
 

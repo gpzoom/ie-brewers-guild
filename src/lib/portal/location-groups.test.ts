@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { adminMemberIdFor, chooserEntries, locationStatus, locationSwitcherFor } from "./location-groups";
+import {
+  adminMemberIdFor,
+  chooserEntries,
+  locationStatus,
+  locationSwitcherFor,
+  nextLocationToSetUp,
+  type LocationSwitcherData,
+} from "./location-groups";
 import { pickMembership, type PortalMembership } from "./portal-access";
 
 function m(over: Partial<PortalMembership> & { memberId: string }): PortalMembership {
@@ -152,5 +159,41 @@ describe("adminMemberIdFor (/admin follows the portal's choice)", () => {
   });
   it("no links: null", () => {
     expect(adminMemberIdFor([], "i")).toBeNull();
+  });
+});
+
+describe("nextLocationToSetUp", () => {
+  const switcher: LocationSwitcherData = {
+    businessName: "Hangar 24",
+    currentMemberId: "irvine",
+    locations: [
+      { memberId: "irvine", city: "Irvine", label: "Irvine", status: "live" },
+      { memberId: "redlands", city: "Redlands", label: "Redlands", status: "live" },
+      { memberId: "riverside", city: "Riverside", label: "Riverside · Downtown", status: "not_started" },
+      { memberId: "temecula", city: "Temecula", label: "Temecula", status: "setting_up" },
+    ],
+  };
+
+  it("is the first other location, in the switcher's order, that isn't live", () => {
+    expect(nextLocationToSetUp(switcher, "irvine")).toEqual({
+      memberId: "riverside",
+      city: "Riverside",
+      label: "Riverside · Downtown",
+      status: "not_started",
+    });
+  });
+
+  it("never picks the current location", () => {
+    expect(nextLocationToSetUp(switcher, "riverside")?.memberId).toBe("temecula");
+  });
+
+  it("is null when every other location is live, or there's no switcher", () => {
+    const allLive: LocationSwitcherData = {
+      ...switcher,
+      locations: switcher.locations.map((l) => ({ ...l, status: "live" as const })),
+    };
+    expect(nextLocationToSetUp(allLive, "irvine")).toBeNull();
+    expect(nextLocationToSetUp(null, "irvine")).toBeNull();
+    expect(nextLocationToSetUp(undefined, "irvine")).toBeNull();
   });
 });

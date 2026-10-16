@@ -1,6 +1,11 @@
 import type { MemberDraftData } from "@/lib/drafts/sections";
 import type { MemberType } from "@/lib/supabase/types";
-import { isStepForType, stepLabel, type NumberedSetupStep } from "@/lib/portal/wizard-steps";
+import {
+  isStepForType,
+  stepLabel,
+  type NumberedSetupStep,
+  type SetupStepOptions,
+} from "@/lib/portal/wizard-steps";
 
 /**
  * Which parts of a member's profile are filled in and which are still
@@ -90,16 +95,22 @@ function isStepDone(
   }
 }
 
-/** The checklist for this member's type, in step order. */
+/**
+ * The checklist for this member's type, in step order. In short setup it
+ * leaves out the steps short setup does (Confirm type, Pick your theme).
+ */
 export function sectionCompleteness(
   draft: MemberDraftData,
   member: CompletenessMember,
+  options: SetupStepOptions = {},
 ): SectionCompleteness[] {
-  return CHECKLIST_STEPS.filter((step) => isStepForType(step, member.memberType)).map((step) => ({
-    step,
-    label: stepLabel(step, member.memberType),
-    done: isStepDone(step, draft, member),
-  }));
+  return CHECKLIST_STEPS.filter((step) => isStepForType(step, member.memberType, options)).map(
+    (step) => ({
+      step,
+      label: stepLabel(step, member.memberType),
+      done: isStepDone(step, draft, member),
+    }),
+  );
 }
 
 /** Just the empty ones -- what a "Finish your profile" card lists. */

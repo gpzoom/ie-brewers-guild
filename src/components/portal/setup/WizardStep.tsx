@@ -72,6 +72,7 @@ export function WizardStep({
   backTo,
   error = null,
   wide = false,
+  extraActions,
 }: {
   step: SetupStepName;
   title: ReactNode;
@@ -94,6 +95,8 @@ export function WizardStep({
   error?: string | null;
   /** A wider column (1080px) for a step with a side panel (Logo, Photos & Cover's preview). */
   wide?: boolean;
+  /** Shown under Back / Continue (You're live's "Back to the portal"). */
+  extraActions?: ReactNode;
 }) {
   const editing = useMemberEditing();
   const router = useRouter();
@@ -102,10 +105,11 @@ export function WizardStep({
   const [navError, setNavError] = useState<string | null>(null);
 
   const memberType = editing?.memberType ?? "producer";
-  const position = stepPosition(step, memberType);
-  const back = backTo === undefined ? previousStep(step, memberType) : backTo;
-  const next = nextStep(step, memberType);
-  const skippable = canSkipStep(step) && next !== null;
+  const options = { shortSetup: editing?.shortSetup ?? false };
+  const position = stepPosition(step, memberType, options);
+  const back = backTo === undefined ? previousStep(step, memberType, options) : backTo;
+  const next = nextStep(step, memberType, options);
+  const skippable = canSkipStep(step, options) && next !== null;
   const progress = position ? position.number / position.total : 1;
 
   async function run(kind: "continue" | "back" | "skip" | "exit", action: () => Promise<unknown>) {
@@ -251,6 +255,7 @@ export function WizardStep({
               </button>
             )}
           </div>
+          {extraActions}
           {skippable && (
             <button
               type="button"

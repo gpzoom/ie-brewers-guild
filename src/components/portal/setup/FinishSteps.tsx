@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import type { MemberDraftBundle, DraftStatus } from "@/lib/drafts/drafts.server";
 import { getDraftStatus, publishDraft } from "@/lib/drafts/drafts.server";
 import type { PublishGateData } from "@/lib/hours/publish-gate.server";
@@ -8,6 +8,9 @@ import type { PortalSetupShell } from "@/lib/portal/portal-setup.server";
 import { publishNeedsHoursCheck } from "@/lib/drafts/sections";
 import { isEveryAppearanceInThePast } from "@/lib/hours/publish-gate";
 import { sectionCompleteness } from "@/lib/portal/section-completeness";
+import { nextLocationToSetUp } from "@/lib/portal/location-groups";
+import { choosePortalMember } from "@/lib/portal/portal-session.server";
+import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PublishHoursTable } from "@/components/admin/PublishGateDialog";
 import { useDraftStatus } from "@/components/admin/DraftStatusContext";
@@ -54,12 +57,16 @@ export function ReviewStep({
 }) {
   const { goTo } = useWizardNavigation();
   const [opening, setOpening] = useState<string | null>(null);
-  const checklist = sectionCompleteness(draft.data, {
-    memberType: shell.memberType,
-    typeConfirmed: shell.typeConfirmed,
-    eventCount,
-    hasCalendarConnection,
-  });
+  const checklist = sectionCompleteness(
+    draft.data,
+    {
+      memberType: shell.memberType,
+      typeConfirmed: shell.typeConfirmed,
+      eventCount,
+      hasCalendarConnection,
+    },
+    { shortSetup: shell.shortSetup },
+  );
   const emptyCount = checklist.filter((item) => !item.done).length;
 
   return (
@@ -319,9 +326,20 @@ export function PublishStep({
   );
 }
 
-/** "You're live": the page link, Copy link, Share, then on to the portal. */
+/**
+ * "You're live": the page link, Copy link, Share, then on to the portal.
+ * For a business with more locations (artboard BZ3), the first one that
+ * isn't live yet gets the primary button -- "Set up Riverside next"
+ * switches to it and opens the portal, which starts its setup -- and the
+ * portal becomes the secondary "Back to the portal".
+ */
 export function LiveStep({ shell }: { shell: PortalSetupShell }) {
   const navigate = useNavigate();
+  const router = useRouter();
+  const switcher = useMemberEditing()?.locationSwitcher ?? null;
+  const nextLocation = nextLocationToSetUp(switcher, shell.memberId);
+  const thisLocation = switcher?.locations.find((l) => l.memberId === shell.memberId) ?? null;
+  const [leaving, setLeaving] = useState(false);
   const isLive = shell.status === "published";
   const path = `/members/${shell.slug}`;
   // The origin is only known in the browser (staging and production differ).
@@ -353,6 +371,22 @@ export function LiveStep({ shell }: { shell: PortalSetupShell }) {
     await copy();
   }
 
+  async function setUpNext() {
+    if (!nextLocation) return;
+    await choosePortalMember({ data: { memberId: nextLocation.memberId } });
+    await router.invalidate();
+    await navigate({ to: "/portal" });
+  }
+
+  async function backToPortal() {
+    setLeaving(true);
+    try {
+      await navigate({ to: "/portal" });
+    } finally {
+      setLeaving(false);
+    }
+  }
+
   if (!isLive) {
     return (
       <WizardStep
@@ -369,11 +403,23 @@ export function LiveStep({ shell }: { shell: PortalSetupShell }) {
   return (
     <WizardStep
       step="live"
-      title="You're live"
+      title={thisLocation ? `${thisLocation.label} is live` : "You're live"}
       lede="Your profile is on the Guild's member directory. Share it anywhere you'd send people."
-      backTo="review"
-      continueLabel="Go to your portal"
-      onContinue={() => navigate({ to: "/portal" })}
+      backTo={nextLocation ? null : "review"}
+      continueLabel={nextLocation ? `Set up ${nextLocation.label} next` : "Go to your portal"}
+      onContinue={nextLocation ? setUpNext : () => navigate({ to: "/portal" })}
+      extraActions={
+        nextLocation && (
+          <button
+            type="button"
+            disabled={leaving}
+            onClick={() => void backToPortal()}
+            className={cn(wizardSecondaryButtonClass, "w-full basis-auto")}
+          >
+            Back to the portal
+          </button>
+        )
+      }
     >
       <div className="flex flex-col gap-3 rounded-[12px] border border-canvas-border bg-white px-[14px] py-3">
         <span className="font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted">

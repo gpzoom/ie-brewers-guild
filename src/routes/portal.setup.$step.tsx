@@ -15,7 +15,9 @@ import { SetupStepView } from "@/components/portal/setup/SetupStepView";
  *   steps 4-10 and the finish screens stay open -- the wizard carries on
  *   right after The basics in the same visit ("the wizard is never shown
  *   again" means /portal never routes into it again, not that the
- *   remaining steps lock mid-flow).
+ *   remaining steps lock mid-flow);
+ * - in short setup (a business's other locations), welcome / type / theme
+ *   go to basics.
  *
  * The step's data comes from getPortalStepData, which resolves the member
  * from the session again; only the step name is sent. gcTime 0: coming
@@ -25,13 +27,16 @@ import { SetupStepView } from "@/components/portal/setup/SetupStepView";
 export const Route = createFileRoute("/portal/setup/$step")({
   beforeLoad: ({ context, params }) => {
     const { shell } = context;
-    const access = resolveSetupAccess({
-      step: params.step,
-      memberType: shell.memberType,
-      role: shell.role,
-      typeConfirmed: shell.typeConfirmed,
-      setupCompleted: shell.setupCompleted,
-    });
+    const access = resolveSetupAccess(
+      {
+        step: params.step,
+        memberType: shell.memberType,
+        role: shell.role,
+        typeConfirmed: shell.typeConfirmed,
+        setupCompleted: shell.setupCompleted,
+      },
+      { shortSetup: shell.shortSetup },
+    );
     if (access.kind === "portal") throw redirect({ to: "/portal" });
     if (access.kind === "step") {
       throw redirect({ to: "/portal/setup/$step", params: { step: access.step } });

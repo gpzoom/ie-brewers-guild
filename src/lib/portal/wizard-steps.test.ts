@@ -3,6 +3,7 @@ import {
   allStepsForType,
   canSkipStep,
   isSetupStepName,
+  isStepForType,
   nextStep,
   numberedStepsForType,
   previousStep,
@@ -234,5 +235,103 @@ describe("redesign (2026-10-02)", () => {
     expect(
       resolveSetupAccess({ step: "basics", memberType: "producer", role: "media_events", typeConfirmed: true, setupCompleted: true }),
     ).toEqual({ kind: "portal" });
+  });
+});
+
+describe("short setup (a business's other locations, Part 4)", () => {
+  const short = { shortSetup: true };
+
+  it("a producer's numbered steps are basics, logo-cover, hours, events, links", () => {
+    expect(numberedStepsForType("producer", short)).toEqual([
+      "basics",
+      "logo-cover",
+      "hours",
+      "events",
+      "links",
+    ]);
+    expect(stepPosition("basics", "producer", short)).toEqual({ number: 1, total: 5 });
+  });
+
+  it("an Affiliate Member's include discount; a mobile member's skip events", () => {
+    expect(numberedStepsForType("allied", short)).toEqual([
+      "basics",
+      "logo-cover",
+      "hours",
+      "events",
+      "links",
+      "discount",
+    ]);
+    expect(numberedStepsForType("mobile", short)).toEqual(["basics", "logo-cover", "hours", "links"]);
+  });
+
+  it("welcome, type and theme are not part of the flow", () => {
+    for (const step of ["welcome", "type", "theme"] as const) {
+      expect(isStepForType(step, "producer", short)).toBe(false);
+      expect(stepPosition(step, "producer", short)).toBeNull();
+    }
+    expect(allStepsForType("producer", short)).toEqual([
+      "basics",
+      "logo-cover",
+      "hours",
+      "events",
+      "links",
+      "review",
+      "preview",
+      "publish",
+      "live",
+    ]);
+  });
+
+  it("links leads to review, and nothing comes before basics", () => {
+    expect(nextStep("links", "producer", short)).toBe("review");
+    expect(nextStep("discount", "allied", short)).toBe("review");
+    expect(previousStep("basics", "producer", short)).toBeNull();
+    expect(previousStep("review", "producer", short)).toBe("links");
+  });
+
+  it("basics stays required; the optional steps stay skippable", () => {
+    expect(canSkipStep("basics", short)).toBe(false);
+    expect(canSkipStep("links", short)).toBe(true);
+  });
+
+  it("without options, today's results are unchanged", () => {
+    expect(numberedStepsForType("producer", {})).toEqual(numberedStepsForType("producer"));
+    expect(numberedStepsForType("producer")).toHaveLength(8);
+    expect(nextStep("links", "producer")).toBe("theme");
+    expect(previousStep("basics", "producer")).toBe("type");
+    expect(stepPosition("basics", "producer")).toEqual({ number: 3, total: 8 });
+    expect(isStepForType("theme", "producer")).toBe(true);
+  });
+
+  describe("resolveSetupAccess", () => {
+    const base = { memberType: "producer" as const, role: "owner" as const };
+    const typed = { ...base, typeConfirmed: true, setupCompleted: false };
+    const done = { ...base, typeConfirmed: true, setupCompleted: true };
+
+    it("sends welcome, type and theme to basics, in setup or after", () => {
+      for (const state of [typed, done]) {
+        for (const step of ["welcome", "type", "theme"]) {
+          expect(resolveSetupAccess({ ...state, step }, short)).toEqual({ kind: "step", step: "basics" });
+        }
+      }
+    });
+
+    it("opens basics, and sends later steps back to it until setup is complete", () => {
+      expect(resolveSetupAccess({ ...typed, step: "basics" }, short)).toEqual({ kind: "ok" });
+      expect(resolveSetupAccess({ ...typed, step: "links" }, short)).toEqual({ kind: "step", step: "basics" });
+      expect(resolveSetupAccess({ ...typed, step: "nope" }, short)).toEqual({ kind: "step", step: "basics" });
+      expect(resolveSetupAccess({ ...done, step: "links" }, short)).toEqual({ kind: "ok" });
+    });
+
+    it("an unconfirmed type can still be confirmed (no redirect loop)", () => {
+      const fresh = { ...base, typeConfirmed: false, setupCompleted: false };
+      expect(resolveSetupAccess({ ...fresh, step: "type" }, short)).toEqual({ kind: "ok" });
+      expect(resolveSetupAccess({ ...fresh, step: "basics" }, short)).toEqual({ kind: "step", step: "type" });
+      expect(resolveSetupAccess({ ...fresh, step: "welcome" }, short)).toEqual({ kind: "step", step: "type" });
+    });
+
+    it("without options, welcome stays open", () => {
+      expect(resolveSetupAccess({ ...typed, step: "welcome" })).toEqual({ kind: "ok" });
+    });
   });
 });

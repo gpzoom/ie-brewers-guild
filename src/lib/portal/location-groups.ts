@@ -126,6 +126,21 @@ export function locationSwitcherFor(
   };
 }
 
+/**
+ * "Set up [city] next" on the You're live screen (artboard BZ3): the first
+ * location in the switcher's order, other than this one, that isn't live
+ * yet; null when there's no switcher or every other location is live.
+ */
+export function nextLocationToSetUp(
+  switcher: LocationSwitcherData | null | undefined,
+  currentMemberId: string,
+): LocationSwitcherData["locations"][number] | null {
+  if (!switcher) return null;
+  return (
+    switcher.locations.find((l) => l.memberId !== currentMemberId && l.status !== "live") ?? null
+  );
+}
+
 /** Which member /admin opens: the portal's remembered choice when it's one of the user's links, else the oldest link. */
 export function adminMemberIdFor(
   memberships: PortalMembership[],

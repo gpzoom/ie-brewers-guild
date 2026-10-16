@@ -170,3 +170,11 @@ describe("emptySections", () => {
     ]);
   });
 });
+
+describe("sectionCompleteness in short setup", () => {
+  it("leaves out Confirm type and Pick your theme", () => {
+    expect(
+      sectionCompleteness(draft(), producer, { shortSetup: true }).map((s) => s.step),
+    ).toEqual(["basics", "logo-cover", "hours", "events", "links"]);
+  });
+});
