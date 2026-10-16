@@ -175,7 +175,10 @@ export const handOffLocation = createServerFn({ method: "POST" })
       p_email: typeof data.email === "string" ? data.email : "",
     });
     if (error) throw new Error(error.message);
-    const invite = result as { invite_id: string; email: string; refreshed: boolean };
+    const invite = result as { invite_id: string; email: string; refreshed: boolean } | null;
+    if (!invite || typeof invite !== "object" || typeof invite.email !== "string") {
+      throw new Error("Couldn't save the hand-off. Try again.");
+    }
     const emailSent = await emailHandOff(member, invite.email);
     return { email: invite.email, refreshed: invite.refreshed, emailSent };
   });

@@ -1,3 +1,4 @@
+import type { PortalShell } from "@/lib/portal/portal-shell.server";
 import { describe, expect, it } from "vitest";
 import {
   canOpenPortalSection,
@@ -51,6 +52,18 @@ describe("portalSectionsFor", () => {
     expect(isPortalSection("photos")).toBe(false);
     expect(portalSectionsFor({ role: "media_events", memberType: "producer" })).toEqual(["logo-cover", "events"]);
     expect(firstPortalSection("media_events")).toBe("logo-cover");
+  });
+});
+
+describe("PortalShell viewer", () => {
+  it("a shell-shaped viewer (editor + isBusinessManager) sees and opens People", () => {
+    const shell: Pick<PortalShell, "role" | "memberType" | "isBusinessManager"> = {
+      role: "editor",
+      memberType: "producer",
+      isBusinessManager: true,
+    };
+    expect(portalSectionsFor(shell)).toContain("people");
+    expect(canOpenPortalSection("people", shell)).toBe(true);
   });
 });
 

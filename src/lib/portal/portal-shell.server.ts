@@ -40,6 +40,8 @@ import { loadSharedLook, type SharedLook } from "@/lib/portal/shared-look";
  */
 
 export type PortalShell = PortalMemberShell & {
+  /** The viewer is the business manager of a handed-off location; the sidebar and route use it to open People. */
+  isBusinessManager: boolean;
   publishGate: PublishGateData;
   switcher: LocationSwitcherData | null;
   canSwitchBusiness: boolean;
@@ -81,6 +83,7 @@ export const getPortalShell = createServerFn({ method: "GET" }).handler(
     ]);
     return {
       ...shell,
+      isBusinessManager: member.isBusinessManager,
       publishGate,
       switcher: member.switcher,
       canSwitchBusiness: member.canSwitchBusiness,
