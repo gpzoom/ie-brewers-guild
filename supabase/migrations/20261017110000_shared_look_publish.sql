@@ -2,9 +2,11 @@
 -- member type, the mode switch and Part of carry the shared look.
 --
 -- * publish_member_draft accepts a look photo (logo, cover, link preview)
---   owned by any location of a one-manager business, and publishing basics
---   or theme copies the look columns onto the business's other live
---   locations (their own unpublished edits stay in their drafts).
+--   owned by any location of a one-manager business. When the business
+--   manager or a Guild admin publishes basics or theme, the look columns
+--   are copied onto the business's other live locations and into their
+--   drafts (their own unpublished edits stay). Anyone else publishes a
+--   location with the business's current look, not the draft's.
 -- * confirm_member_type confirms the type on the business's locations that
 --   haven't confirmed one yet.
 -- * set_business_mode gains p_look_source and copies one location's look to
@@ -71,6 +73,8 @@ declare
   v_bad text;
   v_business uuid;
   v_sibling uuid;
+  v_can_look boolean;
+  v_look_src public.members;
 begin
   perform public._draft_require_uid();
   v_sections := public._draft_normalize_sections(p_sections);
@@ -117,11 +121,38 @@ begin
     perform public._validate_draft_section(p_member_id, v_section, v_data -> v_section);
   end loop;
 
+  -- Shared look, one-manager business: someone who can't change the look
+  -- (not the business manager or a Guild admin) publishes this location
+  -- with the business's current look -- a published sibling's live look --
+  -- instead of the draft's, which may be old (a discard resets it to this
+  -- location's own live look; a location never published has a stale one).
+  -- With no published sibling yet, the draft's look stands.
+  v_business := public._one_manager_business_id(p_member_id);
+  v_can_look := public._can_change_shared_look(p_member_id);
+  if v_business is not null and not v_can_look then
+    select * into v_look_src from public.members
+    where business_id = v_business and id <> p_member_id and status = 'published'
+    order by published_at nulls last, created_at, id
+    limit 1;
+    if found then
+      if v_data ? 'basics' then
+        v_data := jsonb_set(v_data, '{basics}', (v_data -> 'basics') || jsonb_build_object(
+          'logo_asset_id', v_look_src.logo_asset_id,
+          'logo_background', v_look_src.logo_background,
+          'cover_asset_id', v_look_src.cover_asset_id,
+          'cover_crop', v_look_src.cover_crop,
+          'og_image_asset_id', v_look_src.og_image_asset_id));
+      end if;
+      if v_data ? 'theme' then
+        v_data := jsonb_set(v_data, '{theme}', (v_data -> 'theme') || jsonb_build_object('theme', v_look_src.theme));
+      end if;
+    end if;
+  end if;
+
   -- Every referenced photo: this member's, and approved. In a one-manager
   -- business a look photo (logo, cover, link preview) owned by any
   -- location of the business counts (the shared logo lives in one
   -- gallery); carousel slides stay this member's own.
-  v_business := public._one_manager_business_id(p_member_id);
   select string_agg(distinct a.asset_id::text, ', ') into v_bad
   from (
     select (v_data #>> array['basics', k])::uuid as asset_id, true as is_look
@@ -286,10 +317,12 @@ begin
     where m.id = p_member_id;
   end if;
 
-  -- Shared look: the business's other live locations show the same look.
-  -- Only the look columns are copied; each location's own unpublished
-  -- edits stay in its draft.
-  if v_business is not null and (v_sections && array['basics', 'theme']) then
+  -- Shared look: when the business manager or a Guild admin publishes it,
+  -- the business's other live locations show the same look. Only the look
+  -- columns are copied; each location's own unpublished edits stay in its
+  -- draft, whose look keys are set to the published look so a later
+  -- publish of that location can't bring an old look back.
+  if v_business is not null and v_can_look and (v_sections && array['basics', 'theme']) then
     for v_sibling in
       select id from public.members
       where business_id = v_business
@@ -307,6 +340,24 @@ begin
       if 'theme' = any (v_sections) then
         update public.members s set theme = m.theme from public.members m
         where m.id = p_member_id and s.id = v_sibling;
+      end if;
+      perform public._draft_ensure(v_sibling);
+      if 'basics' = any (v_sections) then
+        update public.member_drafts d
+        set data = d.data || jsonb_build_object('basics', coalesce(d.data -> 'basics', '{}'::jsonb) || jsonb_build_object(
+              'logo_asset_id', m.logo_asset_id,
+              'logo_background', m.logo_background,
+              'cover_asset_id', m.cover_asset_id,
+              'cover_crop', m.cover_crop,
+              'og_image_asset_id', m.og_image_asset_id))
+        from public.members m
+        where m.id = p_member_id and d.member_id = v_sibling;
+      end if;
+      if 'theme' = any (v_sections) then
+        update public.member_drafts d
+        set data = d.data || jsonb_build_object('theme', coalesce(d.data -> 'theme', '{}'::jsonb) || jsonb_build_object('theme', m.theme))
+        from public.members m
+        where m.id = p_member_id and d.member_id = v_sibling;
       end if;
       -- Their drafts already hold this look (shared saves); a section that
       -- now matches live is no longer unpublished.
@@ -479,6 +530,10 @@ begin
   -- One manager: every location takes one location's look -- the one the
   -- Guild chose, else the first set up, else the oldest.
   if p_mode = 'one_manager' then
+    if p_look_source is not null
+       and not exists (select 1 from public.members where id = p_look_source and business_id = p_business_id) then
+      raise exception 'Choose a location of this business for the logo, cover and theme.';
+    end if;
     v_source := coalesce(
       (select id from public.members where id = p_look_source and business_id = p_business_id),
       (select id from public.members where business_id = p_business_id and setup_completed_at is not null order by setup_completed_at limit 1),

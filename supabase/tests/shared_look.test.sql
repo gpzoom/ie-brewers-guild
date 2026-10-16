@@ -7,7 +7,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(48);
+insert into _tap (line) select plan(62);
 
 -- A three-location one-manager business. The name trigger groups them.
 insert into public.members (id, slug, member_type, business_name, city, status) values
@@ -298,6 +298,94 @@ insert into _tap (line) select ok(
   (select type_confirmed_at is not null and member_type = 'producer' from public.members
     where id = 'f1000000-0000-4000-8000-0000000000a5'),
   'and its type is confirmed as the business''s');
+
+-- Fix round 1: only the business manager's (or a Guild admin's) publish
+-- spreads the look; anyone else's publish goes live with the shared look.
+
+-- d2 went live with an old look (e.g. before the business shared one), and
+-- its location manager discards basics, so d2's draft holds that old look.
+insert into public.member_users (member_id, user_id, role) values
+  ('f1000000-0000-4000-8000-0000000000d2', 'f0000000-0000-4000-8000-000000000005', 'editor');
+update public.members set logo_background = 'theme' where id = 'f1000000-0000-4000-8000-0000000000d2';
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000005","role":"authenticated"}';
+select public.discard_member_draft_sections('f1000000-0000-4000-8000-0000000000d2', array['basics']);
+select public.save_member_draft_section('f1000000-0000-4000-8000-0000000000d2', 'basics', '{"tagline":"Location words"}');
+insert into _tap (line) select lives_ok(
+  $$ select public.publish_member_draft('f1000000-0000-4000-8000-0000000000d2', array['basics'], true) $$,
+  'location manager: publishes basics with an old look in the draft');
+reset role;
+insert into _tap (line) select is(
+  (select logo_background from public.members where id = 'f1000000-0000-4000-8000-0000000000d1'),
+  'light', 'the old look does not spread to the other live location');
+insert into _tap (line) select is(
+  (select logo_background from public.members where id = 'f1000000-0000-4000-8000-0000000000d2'),
+  (select logo_background from public.members where id = 'f1000000-0000-4000-8000-0000000000d1'),
+  'the location goes live with the shared logo background');
+insert into _tap (line) select is(
+  (select logo_asset_id from public.members where id = 'f1000000-0000-4000-8000-0000000000d2'),
+  'f2000000-0000-4000-8000-0000000000e1'::uuid, 'and the shared logo');
+insert into _tap (line) select is(
+  (select tagline from public.members where id = 'f1000000-0000-4000-8000-0000000000d2'),
+  'Location words', 'and its own tagline');
+
+-- The manager's publish also writes the look into the live siblings' drafts.
+update public.member_drafts
+set data = jsonb_set(jsonb_set(data, '{basics,logo_background}', '"theme"'), '{theme,theme}', '"rust"')
+where member_id = 'f1000000-0000-4000-8000-0000000000d2';
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000006","role":"authenticated"}';
+insert into _tap (line) select lives_ok(
+  $$ select public.publish_member_draft('f1000000-0000-4000-8000-0000000000d1', array['basics', 'theme'], true) $$,
+  'manager: publishes the look again');
+reset role;
+insert into _tap (line) select is(
+  (select data #>> '{basics,logo_background}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000d2'),
+  (select logo_background from public.members where id = 'f1000000-0000-4000-8000-0000000000d1'),
+  'the sibling''s draft logo background is the published one');
+insert into _tap (line) select is(
+  (select data #>> '{theme,theme}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000d2'),
+  (select theme from public.members where id = 'f1000000-0000-4000-8000-0000000000d1'),
+  'the sibling''s draft theme is the published one');
+
+-- A never-published location, first published by its location manager,
+-- goes live with the shared look of a published sibling.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000005","role":"authenticated"}';
+select public.discard_member_draft_sections('f1000000-0000-4000-8000-0000000000d3', array['basics', 'theme']);
+insert into _tap (line) select lives_ok(
+  $$ select public.publish_member_draft('f1000000-0000-4000-8000-0000000000d3',
+       array['basics', 'media', 'links', 'discount', 'theme'], true) $$,
+  'location manager: first publish of a location');
+reset role;
+insert into _tap (line) select is(
+  (select logo_asset_id from public.members where id = 'f1000000-0000-4000-8000-0000000000d3'),
+  'f2000000-0000-4000-8000-0000000000e1'::uuid, 'it goes live with the shared logo');
+insert into _tap (line) select is(
+  (select theme from public.members where id = 'f1000000-0000-4000-8000-0000000000d3'),
+  (select theme from public.members where id = 'f1000000-0000-4000-8000-0000000000d1'),
+  'and the shared theme');
+insert into _tap (line) select is(
+  (select data #>> '{theme,theme}' from public.member_drafts where member_id = 'f1000000-0000-4000-8000-0000000000d3'),
+  (select theme from public.members where id = 'f1000000-0000-4000-8000-0000000000d1'),
+  'and its draft matches');
+insert into _tap (line) select is(
+  (select status from public.members where id = 'f1000000-0000-4000-8000-0000000000d3'),
+  'published', 'and it is live');
+
+-- A look source outside the business is refused.
+insert into public.members (id, slug, member_type, business_name, city, status) values
+  ('f1000000-0000-4000-8000-0000000000a6', 'pgtap-mode3-a', 'producer', 'PgTap Mode Three', 'Corona', 'draft'),
+  ('f1000000-0000-4000-8000-0000000000a7', 'pgtap-mode3-b', 'producer', 'PgTap Mode Three', 'Norco', 'draft');
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000004","role":"authenticated"}';
+insert into _tap (line) select throws_ok(
+  $$ select public.set_business_mode(
+       (select business_id from public.members where id = 'f1000000-0000-4000-8000-0000000000a6'), 'one_manager',
+       'f1000000-0000-4000-8000-0000000000d1') $$,
+  'P0001', 'Choose a location of this business for the logo, cover and theme.',
+  'guild admin: a look source outside the business is refused');
+reset role;
 
 insert into _tap (line) select * from finish();
 select line as tap from _tap order by n;
