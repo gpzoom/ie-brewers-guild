@@ -526,54 +526,54 @@ The member's own profile admin, meaning the owner or an editor in `member_users`
 - **Sign-in that works in any browser (5 October 2026).** The sign-in email's link goes to a "Finish signing in" page (`/auth/confirm`) with one button. It works in any browser or on any device, and opening the page alone doesn't use the link up, so email scanners can't spoil it. The email also carries the sign-in code (6 digits on this project), which can be typed on the sign-in page instead. The email text is in `docs/auth-email-templates.md`; Supabase's templates are shared by staging and the live site, so they go in after the code is live. Old links already in someone's inbox keep working through `/auth/callback`.
 - **Photo uploads (5 October 2026).** Before uploading, the browser redraws any photo as a clean JPEG (PNG stays PNG). WebP files saved as ".jpg", most iPhone HEIC photos, phone motion photos and JPEGs with extra data all upload now, and the photo's location data is removed along the way. Refused uploads are recorded in `upload_failures` (Guild admins only, no photo bytes kept), so support can see what was tried.
 - **Inviting someone who already has an account (5 October 2026).** If the person signed in on their own first (Member Portal creates an account for any email), the invite links that account to the member as owner and sends the usual invite email, instead of failing with "already registered". An existing account is never deleted.
-- **Member Guide (2 October 2026).** The guide PDF is served at `/member-guide.pdf`, a copy of `docs/member-guide/ISC-Brewers-Guild-Member-Profile-Guide.pdf` (a test fails until the two match). Three links point to it: a line on the sign-in page under the form ("New to the site? Read the Member Guide (PDF), with a picture of each screen.", added 15 October 2026 in place of the invite email's link), a line in step 1's opening paragraph, right after its first sentence and at the same size, and **Member Guide (PDF)** in the sidebar of both the portal and `/admin` (so Edit as them shows it too; **Guide** on a phone). They open in a new tab. The PDF is public on purpose: it shows only sample members, and the Guild can send it to someone who hasn't joined yet.
+- **Member Guide, one per member type (17 October 2026; first added 2 October 2026).** There are three PDFs, served at `/member-guide-producer.pdf`, `/member-guide-mobile.pdf` and `/member-guide-affiliate.pdf` (`memberGuidePath(type)` in `src/lib/member-guide.ts`), copies of `docs/member-guide/ISC-Brewers-Guild-Member-Guide-{Producer,Mobile,Affiliate}.pdf` (a test fails until each pair matches). The old combined `/member-guide.pdf` is retired. Three links point to them: a line on the sign-in page under the form ("New to the site? Read the Member Guide for Producers, Mobile members or Affiliate Members (PDF), with a picture of each screen.", each name its own link), a line in Welcome's opening paragraph, right after its first sentence and at the same size, and **Member Guide (PDF)** in the sidebar of both the portal and `/admin` (so Edit as them shows it too; **Guide** on a phone). The Welcome and sidebar links open the guide for the member's own type. They open in a new tab. The PDFs are public on purpose: they show only sample members, and the Guild can send one to someone who hasn't joined yet.
 
 ### Wizard or portal: one rule
 
 A member is in **setup** until both of these are true:
 
-1. `type_confirmed_at` is set (step 2), and
-2. `setup_completed_at` is set. That happens when someone clicks **Continue** on step 3, The basics, with its required fields valid.
+1. `type_confirmed_at` is set (Welcome's **Get started** does it), and
+2. `setup_completed_at` is set. That happens when someone clicks **Continue** on step 2, The basics, with its required fields valid.
 
-Until then, `/portal` opens the wizard at the first of steps 1–3 that isn't done. After that, `/portal` always opens the portal. **The wizard is never shown again**, not to the owner and not to any editor added later. Setup belongs to the member, not to each person.
+Until then, `/portal` opens the wizard at the first of steps 1–2 that isn't done. After that, `/portal` always opens the portal. **The wizard is never shown again**, not to the owner and not to any editor added later. Setup belongs to the member, not to each person.
 
-Once setup is complete, every wizard step still opens when reached directly, so **Back** always works (redesign, 2 October 2026). What keeps the wizard from showing again is `/portal` never routing into it, not redirects on the steps. Confirm type, once confirmed, shows the locked type with Continue.
+Once setup is complete, every wizard step still opens when reached directly, so **Back** always works (redesign, 2 October 2026). What keeps the wizard from showing again is `/portal` never routing into it, not redirects on the steps. There is no Confirm type step any more (17 October 2026); an old `/portal/setup/type` link goes to Welcome, or to The basics once the type is confirmed.
 
-Imported members already have a business name and city, but their setup is still incomplete. `setup_completed_at` records someone actually clicking Continue on step 3, not the fields happening to be filled in. So every imported member's first sign-in goes through steps 1–3.
+Imported members already have a business name and city, but their setup is still incomplete. `setup_completed_at` records someone actually clicking Continue on step 2, not the fields happening to be filled in. So every imported member's first sign-in goes through steps 1–2.
 
 ### Wizard steps
 
 Redesigned with the owner on 2 October 2026 (spec `docs/superpowers/specs/2026-10-02-wizard-redesign-design.md`; artboards on the onboarding canvas, mirrored in `docs/design/onboarding/wizard/`).
 
-One step per screen. Every step after Welcome has **Back**, every optional step **Skip for now**, and every step **Continue**, plus **Save & exit** in the top bar. A progress line reads "Step N of M", where M depends on the member type: **8 for a producer, 7 for a Mobile member, 9 for an Affiliate Member**. Beside it, a large colored tag names the type (PRODUCER orange, MOBILE MEMBER teal, AFFILIATE MEMBER blue), so anyone, and any screenshot, shows which type a screen is for.
+One step per screen. Every step after Welcome has **Back**, every optional step **Skip for now**, and every step **Continue**, plus **Save & exit** in the top bar. A progress line reads "Step N of M", where M depends on the member type: **7 for a producer, 6 for a Mobile member, 8 for an Affiliate Member** (5 in the short setup). Beside it, a large colored tag names the type (PRODUCER orange, MOBILE MEMBER teal, AFFILIATE MEMBER blue), so anyone, and any screenshot, shows which type a screen is for.
 
 | # | Step | Producer | Mobile | Affiliate | Required | Reuses |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Welcome: what to have handy, about 10 minutes, what can be skipped | ✓ | ✓ | ✓ | — | new |
-| 2 | Confirm your member type | ✓ | ✓ | ✓ | yes | new |
-| 3 | The basics: name, city, tagline, phone, member since, plus the type's location fields (address with suggestions and ZIP; an Affiliate Member's is their business address); Mobile members also pick "What you offer" categories here, and their Booking phone notes that more booking links go on Links & contact | ✓ | ✓ | ✓ | name and city | F |
-| 4 | **Logo, Photos & Cover**: the logo (with "You don't have a PNG format?" and a link to Canva's Background Removal tool, above Logo background), the gallery (camera-roll hint, creator upload link), the four carousel slides, and the cover picked from the gallery; a live preview of the top of the profile sits beside them on a computer, below them on a phone | ✓ | ✓ | ✓ | — | G, J |
-| 5 | When you're open: 7-day hours / business hours / Where we'll be (calendar or hand entry) | hours | calendar | hours | — | F, M |
-| 6 | Events (producers also: Food, with the "We have our own kitchen" switch) | ✓ | — (step 5 covered it) | ✓ | — | M, M2 |
-| 7 | Links: link buttons (third button: Tap list / Press kit / Catalog; Mobile members can add Instagram DM and WhatsApp booking links) | ✓ | ✓ | ✓ | — | R |
-| 8 | Member discount and supplies | — | — | ✓ | — | /admin/discount |
-| 9 | Pick your theme | ✓ | ✓ | ✓ | — | K |
+| 1 | Welcome: "You're set up as a [type]" with the type tag, what to have handy, about 10 minutes, what can be skipped. **Get started** confirms the type | ✓ | ✓ | ✓ | yes | new |
+| 2 | The basics: name, city, tagline, phone, member since, plus the type's location fields (address with suggestions and ZIP; an Affiliate Member's is their business address); Mobile members also pick "What you offer" categories here, and their Booking phone notes that more booking links go on Links & contact | ✓ | ✓ | ✓ | name and city | F |
+| 3 | **Logo, Photos & Cover**: the logo (with "You don't have a PNG format?" and a link to Canva's Background Removal tool, above Logo background), the gallery (camera-roll hint, creator upload link), the four carousel slides, and the cover picked from the gallery; a live preview of the top of the profile sits beside them on a computer, below them on a phone | ✓ | ✓ | ✓ | — | G, J |
+| 4 | When you're open: 7-day hours / business hours / Where we'll be (calendar or hand entry) | hours | calendar | hours | — | F, M |
+| 5 | Events (producers also: Food, with the "We have our own kitchen" switch) | ✓ | — (step 4 covered it) | ✓ | — | M, M2 |
+| 6 | Links: link buttons (third button: Tap list / Press kit / Catalog; Mobile members can add Instagram DM and WhatsApp booking links) | ✓ | ✓ | ✓ | — | R |
+| 7 | Member discount and supplies | — | — | ✓ | — | /admin/discount |
+| 8 | Pick your theme | ✓ | ✓ | ✓ | — | K |
 
-The old separate Photos step is part of step 4; `/portal/setup/photos` goes there. Step 4 counts as done with a logo, a cover or a slide.
+The old separate Photos step is part of step 3; `/portal/setup/photos` goes there. Step 3 counts as done with a logo, a cover or a slide.
 
-Steps after 3 are optional. A skipped step isn't stored anywhere. Whether a step is done is worked out from whether its data is empty, so the Review checklist and the portal's Finish card can't drift from the real profile.
+Steps after 2 are optional. A skipped step isn't stored anywhere. Whether a step is done is worked out from whether its data is empty, so the Review checklist and the portal's Finish card can't drift from the real profile.
 
 **Each wizard step is the portal section with the same content, wrapped in step chrome.** Same component, same fields, same save. Nothing is built twice. If a portal section changes, the wizard step changes with it.
 
 After the last step for that type comes **Review**: a checklist of every step, either done or empty, with a link back to each empty one. Then Preview, the publish check and "You're live".
 
-**Save & exit** before step 3 is finished: the next visit resumes the wizard. After step 3: the next visit goes to the portal, which shows a **Finish your profile** card listing the empty sections, each linking to its portal section. The card disappears once nothing is empty.
+**Save & exit** before step 2 is finished: the next visit resumes the wizard. After step 2: the next visit goes to the portal, which shows a **Finish your profile** card listing the empty sections, each linking to its portal section. The card disappears once nothing is empty.
 
-### Member type: confirm once, then locked
+### Member type: the Guild chooses it, Get started confirms it, then locked
 
-- Step 2 shows the type the Guild set at import or invite, with **Yes, that's us**.
-- **That's not right** reveals the other two types. If the member picks one, the Guild admin gets an email saying the member changed their type from X to Y during setup, and the change goes in the audit log against the real actor.
-- Either way, confirming sets `type_confirmed_at` and `type_confirmed_by_user_id`, and **the type is locked for the member from then on**.
+- **The Guild must choose the type** when it adds a member (roster **Add member**, and an inquiry's **Set up member**): the select starts at "Choose a type", the button stays disabled until one is chosen, and the server refuses a missing type ("Choose a member type."). There is no Producer default.
+- There is **no Confirm your member type step** (owner, 17 October 2026). Welcome says "You're set up as a [type]. Not right? After setup, use Request a type change on your Basics page." The member can't pick a different type during setup.
+- **Get started** on Welcome calls `confirm_member_type` with the current type, which is what `complete_member_setup` and the lock rely on, so no migration was needed. The `member_type_changed_in_setup` email is gone, since the type can no longer change there. In the short setup (no Welcome), an unconfirmed type is confirmed on entry.
+- Confirming sets `type_confirmed_at` and `type_confirmed_by_user_id`, and **the type is locked for the member from then on**.
 - In the portal, type shows read-only in Basics with a **Request a type change** link. That creates a `support_requests` row (kind `type_change`, with the requested type and an optional note) and emails the Guild admin. The Guild admin makes the change from the roster. Only a Guild admin can change a confirmed type, and impersonation doesn't count, because the lock is on the member's side.
 - Changing type still never deletes data from modules the new type doesn't render. That rule from Member types is unchanged.
 
@@ -667,7 +667,7 @@ On `members`:
 
 | Column | Type | Notes |
 | --- | --- | --- |
-| type\_confirmed\_at | timestamptz | set by wizard step 2 |
+| type\_confirmed\_at | timestamptz | set by Welcome's Get started |
 | type\_confirmed\_by\_user\_id | uuid | fk auth.users |
 | setup\_completed\_at | timestamptz | set by Continue on wizard step 3; non-null means the wizard is never shown again |
 
@@ -683,7 +683,6 @@ On `members`:
 
 | Trigger | To | Content |
 | --- | --- | --- |
-| Member picks a different type in wizard step 2 | the Guild | "[Member] changed their type from X to Y during setup," with a link to the roster row |
 | Member requests a type change in the portal | the Guild | The request, requested type and note, with a link to the roster row |
 | Owner invites someone | the invitee | Who invited them, to which member, what they'll be able to edit, and a Member Portal sign-in link |
 
@@ -814,7 +813,7 @@ One manager is available to every Guild admin, and so is its Invite.
 - **Pending-hand-off refusal.** Either switch is refused with "Cancel the pending hand-off for <business> · <city> first." (the first such location by city) while any of the business's locations has a waiting hand-off invite.
 - **Leaving a business** (Part of → another business or None, or the second-to-last location leaving, which dissolves the business) works like switching that location to separate: it keeps its look and owner, the manager's link is removed only where the location was handed off, and its waiting hand-off is canceled. This replaces the Part 2 rule that a location can't leave a one-manager business, and deleting a location releases it the same way.
 - **Email `location_handoff_invited`** goes to the invitee: subject "You're invited to manage <business> · <city>", saying the manager asked them to manage that location, to sign in with the invited address, that the invitation lasts 14 days, and one sign-in link (`/signin?next=/portal`). Reply-to is `MEMBER_INVITE_REPLY_TO`.
-- **A location manager always gets the short setup,** even when no other location has finished setup yet (no Welcome, Type or Theme; logo and cover read-only). Pre-fill still runs only when another location is set up. Confirm type still opens while the location's type isn't confirmed.
+- **A location manager always gets the short setup,** even when no other location has finished setup yet (no Welcome or Theme; logo and cover read-only). Pre-fill still runs only when another location is set up. If the location's type isn't confirmed, entering the short setup confirms it.
 
 Member Guide (Part 6, done 2026-10-16): Part 4 of docs/member-guide/member-profile-guide.html, "Managing several locations", covers the location switcher, the shared-look label, the short setup, Hand off and Take back on People, the location manager's view and the three emails (screens 13-21).
 

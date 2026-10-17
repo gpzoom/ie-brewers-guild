@@ -89,6 +89,7 @@ function AdminLayoutInner() {
     <AdminShell
       memberId={memberId}
       memberName={memberName}
+      memberType={publishGateData.memberType}
       isImpersonating={isImpersonating}
       impersonatedMemberName={isImpersonating ? memberName : null}
       previewHref="/admin/preview"

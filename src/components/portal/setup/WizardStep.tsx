@@ -56,7 +56,7 @@ export function WizardInfoBox({ children }: { children: ReactNode }) {
  *
  * Continue and Skip both move on to the next step once pending saves
  * settle; the difference is only in what the member means -- a skipped
- * step stores nothing new. A step with its own Continue (Confirm type,
+ * step stores nothing new. A step with its own Continue (Welcome,
  * The basics, the finish screens) passes `onContinue`.
  */
 export function WizardStep({
@@ -84,11 +84,11 @@ export function WizardStep({
   onContinue?: () => Promise<boolean | void>;
   continueLabel?: string;
   continueDisabled?: boolean;
-  /** For steps whose own content holds the primary action (Confirm type). */
+  /** For steps whose own content holds the primary action. */
   hideContinue?: boolean;
   /**
    * Where Back goes: the previous step by default; null hides it (e.g. the
-   * first step after The basics once setup is complete -- steps 1-3 are
+   * first step after The basics once setup is complete -- steps 1-2 are
    * closed by then).
    */
   backTo?: SetupStepName | null;

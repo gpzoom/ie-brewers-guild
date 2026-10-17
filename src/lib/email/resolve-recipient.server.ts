@@ -51,7 +51,6 @@ export async function resolveRecipient(
     case "support_message":
       return payload.to;
     case "contact_form_submitted":
-    case "member_type_changed_in_setup":
     case "type_change_requested":
       return guildInboxFor(siteUrl);
     case "creator_upload_pending":

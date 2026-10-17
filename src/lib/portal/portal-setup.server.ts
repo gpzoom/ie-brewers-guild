@@ -8,7 +8,6 @@ import { requirePortalMember, type PortalMember } from "@/lib/portal/portal-sess
 import { loadDraftStatus, type DraftStatus } from "@/lib/drafts/drafts.server";
 import { loadPublishGateData } from "@/lib/hours/publish-gate.server";
 import { loadMemberPreviewData } from "@/lib/members/member-profile.server";
-import { sendTransactionalEmail } from "@/lib/email/send";
 import {
   loadCompletenessData,
   loadDiscountSection,
@@ -100,8 +99,20 @@ export const getPortalSetupShell = createServerFn({ method: "GET" }).handler(
         }
       }
     }
+    let memberShell = await loadMemberShell(supabase, member);
+    if (shortSetup && !memberShell.typeConfirmed) {
+      // Short setup has no Welcome step to press Get started on, so confirm
+      // the current type here -- the member is never stuck (rare: siblings
+      // normally inherit a confirmed type). Best-effort, like the prefill.
+      try {
+        await confirmMemberType(supabase, member.memberId, memberShell.memberType);
+        memberShell = await loadMemberShell(supabase, member);
+      } catch (err) {
+        console.error("getPortalSetupShell: couldn't confirm the member type", err);
+      }
+    }
     return {
-      ...(await loadMemberShell(supabase, member)),
+      ...memberShell,
       switcher: member.switcher,
       sharedLook,
       shortSetup,
@@ -111,7 +122,7 @@ export const getPortalSetupShell = createServerFn({ method: "GET" }).handler(
 
 /** What one wizard step's editors start from. */
 export type SetupStepData =
-  | { step: "welcome" | "type" | "live" }
+  | { step: "welcome" | "live" }
   | ({ step: "basics" } & Awaited<ReturnType<typeof loadWizardBasicsSection>>)
   | ({ step: "links" | "theme" } & Awaited<ReturnType<typeof loadDraftSection>>)
   | ({ step: "logo-cover" } & Awaited<ReturnType<typeof loadLogoPhotosCoverSection>>)
@@ -141,7 +152,6 @@ export const getPortalStepData = createServerFn({ method: "GET" })
     const id = member.memberId;
     switch (data.step) {
       case "welcome":
-      case "type":
       case "live":
         return { step: data.step };
       case "basics":
@@ -174,12 +184,27 @@ export const getPortalStepData = createServerFn({ method: "GET" })
 const MEMBER_TYPES: readonly MemberType[] = ["producer", "mobile", "allied"];
 
 /**
- * Wizard step 2, "Yes, that's us" or a different type picked under
- * "That's not right". confirm_member_type sets the type, stamps who
- * confirmed it and when, locks it for the member, and writes the audit row
- * against the real actor (even a Guild admin editing as them). If the type
- * changed, the Guild gets an email -- a failed send is logged, never
- * undoes the confirmation.
+ * confirm_member_type sets the type, stamps who confirmed it and when,
+ * locks it for the member, and writes the audit row against the real actor
+ * (even a Guild admin editing as them).
+ */
+async function confirmMemberType(
+  supabase: Awaited<ReturnType<typeof getSupabaseServerClientForRequest>>,
+  memberId: string,
+  memberType: MemberType,
+) {
+  const { data: result, error } = await supabase.rpc("confirm_member_type", {
+    p_member_id: memberId,
+    p_new_type: memberType,
+  });
+  if (error || !result) throw new Error(error?.message || "Couldn't confirm your type — try again.");
+  return result as { old_type: MemberType; new_type: MemberType; changed: boolean };
+}
+
+/**
+ * Welcome's "Get started": confirms the type the Guild chose (the member
+ * can't pick another -- there's no confirm step; a wrong type goes through
+ * Request a type change after setup).
  */
 export const confirmPortalMemberType = createServerFn({ method: "POST" })
   .inputValidator((data: { memberType: MemberType }) => {
@@ -189,27 +214,7 @@ export const confirmPortalMemberType = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const member = await requireWizardMember();
     const supabase = await getSupabaseServerClientForRequest();
-    const { data: result, error } = await supabase.rpc("confirm_member_type", {
-      p_member_id: member.memberId,
-      p_new_type: data.memberType,
-    });
-    if (error || !result)
-      throw new Error(error?.message || "Couldn't confirm your type — try again.");
-    const parsed = result as { old_type: MemberType; new_type: MemberType; changed: boolean };
-
-    if (parsed.changed) {
-      try {
-        await sendTransactionalEmail({
-          trigger: "member_type_changed_in_setup",
-          memberId: member.memberId,
-          memberName: member.memberName,
-          oldType: parsed.old_type,
-          newType: parsed.new_type,
-        });
-      } catch (err) {
-        console.error("confirmPortalMemberType: couldn't email the Guild about a type change", err);
-      }
-    }
+    const parsed = await confirmMemberType(supabase, member.memberId, data.memberType);
     return { memberType: parsed.new_type, changed: parsed.changed };
   });
 

@@ -31,8 +31,12 @@ export type CompletenessMember = {
   hasCalendarConnection: boolean;
 };
 
-/** The steps the checklist lists: every numbered step except Welcome, which holds no data. */
-export type CompletenessStep = Exclude<NumberedSetupStep, "welcome">;
+/**
+ * The steps the checklist lists: every numbered step except Welcome, which
+ * holds no data, plus "type" -- no wizard step of its own since 2026-10-17,
+ * but the checklist still shows it (done once Get started confirms it).
+ */
+export type CompletenessStep = Exclude<NumberedSetupStep, "welcome"> | "type";
 
 export type SectionCompleteness = {
   step: CompletenessStep;
@@ -97,20 +101,20 @@ function isStepDone(
 
 /**
  * The checklist for this member's type, in step order. In short setup it
- * leaves out the steps short setup does (Confirm type, Pick your theme).
+ * leaves out the steps short setup does (Member type, Pick your theme).
  */
 export function sectionCompleteness(
   draft: MemberDraftData,
   member: CompletenessMember,
   options: SetupStepOptions = {},
 ): SectionCompleteness[] {
-  return CHECKLIST_STEPS.filter((step) => isStepForType(step, member.memberType, options)).map(
-    (step) => ({
-      step,
-      label: stepLabel(step, member.memberType),
-      done: isStepDone(step, draft, member),
-    }),
-  );
+  return CHECKLIST_STEPS.filter(
+    (step) => step === "type" ? !options.shortSetup : isStepForType(step, member.memberType, options),
+  ).map((step) => ({
+    step,
+    label: step === "type" ? "Member type" : stepLabel(step, member.memberType),
+    done: isStepDone(step, draft, member),
+  }));
 }
 
 /** Just the empty ones -- what a "Finish your profile" card lists. */

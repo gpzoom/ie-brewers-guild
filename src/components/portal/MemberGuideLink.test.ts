@@ -7,16 +7,27 @@ import { MemberGuideNote, MemberGuideSidebarLink } from "./MemberGuideLink";
 
 describe("Member Guide links", () => {
   it("the portal sidebar link opens the PDF in a new tab", () => {
-    const html = renderToStaticMarkup(createElement(MemberGuideSidebarLink));
-    expect(html).toContain('href="/member-guide.pdf"');
+    const html = renderToStaticMarkup(createElement(MemberGuideSidebarLink, { memberType: "producer" }));
+    expect(html).toContain('href="/member-guide-producer.pdf"');
     expect(html).toContain('target="_blank"');
     expect(html).toContain("noopener");
     expect(html).toContain("Member Guide");
   });
 
+  it("each link opens the guide for the member's own type", () => {
+    for (const [memberType, path] of [
+      ["producer", "/member-guide-producer.pdf"],
+      ["mobile", "/member-guide-mobile.pdf"],
+      ["allied", "/member-guide-affiliate.pdf"],
+    ] as const) {
+      expect(renderToStaticMarkup(createElement(MemberGuideSidebarLink, { memberType }))).toContain(`href="${path}"`);
+      expect(renderToStaticMarkup(createElement(MemberGuideNote, { memberType }))).toContain(`href="${path}"`);
+    }
+  });
+
   it("the Welcome step's note links to the PDF", () => {
-    const html = renderToStaticMarkup(createElement(MemberGuideNote));
-    expect(html).toContain('href="/member-guide.pdf"');
+    const html = renderToStaticMarkup(createElement(MemberGuideNote, { memberType: "producer" }));
+    expect(html).toContain('href="/member-guide-producer.pdf"');
     expect(html).toContain('target="_blank"');
     expect(html).toContain("Member Guide");
   });
@@ -27,7 +38,7 @@ describe("Member Guide in the menu", () => {
   // both surfaces share, so neither can lose it.
   it("is in AdminShell's sidebar, which /portal and /admin both use", () => {
     const shell = readFileSync(resolve(process.cwd(), "src/components/admin/AdminShell.tsx"), "utf-8");
-    expect(shell).toContain("<MemberGuideSidebarLink />");
+    expect(shell).toContain("<MemberGuideSidebarLink memberType=");
     const portal = readFileSync(resolve(process.cwd(), "src/routes/portal._sections.tsx"), "utf-8");
     expect(portal).not.toContain("<MemberGuideSidebarLink />");
   });
@@ -35,14 +46,14 @@ describe("Member Guide in the menu", () => {
 
 describe("Member Guide on the Welcome step (owner, 2026-10-02)", () => {
   it("the note takes the lede's font size instead of setting its own", () => {
-    const html = renderToStaticMarkup(createElement(MemberGuideNote));
+    const html = renderToStaticMarkup(createElement(MemberGuideNote, { memberType: "producer" }));
     expect(html).not.toMatch(/text-\[\d+px\]/);
   });
 
   it("sits in the lede, right after its first sentence, above What to have handy", () => {
     const src = readFileSync(resolve(process.cwd(), "src/components/portal/setup/IntroSteps.tsx"), "utf-8");
     const welcome = src.slice(src.indexOf("export function WelcomeStep"));
-    const note = welcome.indexOf("<MemberGuideNote />");
+    const note = welcome.indexOf("<MemberGuideNote ");
     expect(note).toBeGreaterThan(welcome.indexOf("finished later."));
     expect(note).toBeLessThan(welcome.indexOf("continueLabel="));
   });

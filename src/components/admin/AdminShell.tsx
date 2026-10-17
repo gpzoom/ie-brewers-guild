@@ -86,6 +86,7 @@ function isActivePath(pathname: string, prefixes: readonly string[]) {
 export function AdminShell({
   memberId,
   memberName = null,
+  memberType = null,
   isImpersonating = false,
   impersonatedMemberName = null,
   previewHref,
@@ -99,6 +100,8 @@ export function AdminShell({
 }: {
   memberId: string;
   memberName?: string | null;
+  /** Picks which Member Guide the sidebar links to (producer's if unknown). */
+  memberType?: MemberType | null;
   isImpersonating?: boolean;
   impersonatedMemberName?: string | null;
   /** The draft preview (/admin/preview). */
@@ -216,7 +219,7 @@ export function AdminShell({
             );
           })}
           {sidebarExtra}
-          <MemberGuideSidebarLink />
+          <MemberGuideSidebarLink memberType={memberType ?? "producer"} />
           <SidebarSignOut onClick={handleSignOut} />
         </nav>
 

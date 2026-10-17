@@ -366,14 +366,14 @@ function SetUpMemberDialog({
   onDone: () => Promise<void>;
 }) {
   const [city, setCity] = useState("");
-  const [memberType, setMemberType] = useState<MemberType>("producer");
+  const [memberType, setMemberType] = useState<MemberType | "">("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
       setCity("");
-      setMemberType("producer");
+      setMemberType("");
       setErrorMessage(null);
       setSubmitting(false);
     }
@@ -381,7 +381,7 @@ function SetUpMemberDialog({
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!inquiry) return;
+    if (!inquiry || !memberType) return;
     const trimmedCity = city.trim();
     if (!trimmedCity) {
       setErrorMessage("Enter the member's city.");
@@ -438,10 +438,11 @@ function SetUpMemberDialog({
             <select
               id="setup-member-type"
               value={memberType}
-              onChange={(e) => setMemberType(e.target.value as MemberType)}
+              onChange={(e) => setMemberType(e.target.value as MemberType | "")}
               disabled={submitting}
               className={`${fieldInputClass} px-3`}
             >
+              <option value="">Choose a type</option>
               <option value="producer">Producer</option>
               <option value="mobile">Mobile</option>
               <option value="allied">Affiliate Member</option>
@@ -461,7 +462,7 @@ function SetUpMemberDialog({
             >
               Cancel
             </button>
-            <button type="submit" disabled={submitting} className={accentButtonClass}>
+            <button type="submit" disabled={submitting || !memberType} className={accentButtonClass}>
               {submitting ? "Setting up…" : "Set up member"}
             </button>
           </DialogFooter>

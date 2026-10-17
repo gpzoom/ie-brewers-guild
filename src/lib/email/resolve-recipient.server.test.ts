@@ -74,10 +74,10 @@ describe("resolveRecipient", () => {
     expect(to).toBe(GUILD_NOTIFICATION_EMAIL);
   });
 
-  it("member_type_changed_in_setup always goes to the Guild's notification address", async () => {
+  it("type_change_requested always goes to the Guild's notification address", async () => {
     const supabase = fakeSupabase({ memberUser: { user_id: "u1" }, userEmail: "owner@example.com" });
     const to = await resolveRecipient(
-      { trigger: "member_type_changed_in_setup", memberId: "m1", memberName: "Hop House", oldType: "producer", newType: "allied" },
+      { trigger: "type_change_requested", memberId: "m1", memberName: "Hop House", currentType: "producer", requestedType: "allied", note: null, requestedByEmail: null },
       supabase,
     );
     expect(to).toBe(GUILD_NOTIFICATION_EMAIL);
@@ -86,7 +86,7 @@ describe("resolveRecipient", () => {
   it("Guild-bound emails sent from the staging site go to the staging test inbox", async () => {
     const supabase = fakeSupabase({ memberUser: { user_id: "u1" }, userEmail: "owner@example.com" });
     const to = await resolveRecipient(
-      { trigger: "member_type_changed_in_setup", memberId: "m1", memberName: "Hop House", oldType: "producer", newType: "allied" },
+      { trigger: "type_change_requested", memberId: "m1", memberName: "Hop House", currentType: "producer", requestedType: "allied", note: null, requestedByEmail: null },
       supabase,
       "https://ie-brewers-guild-staging.boblelle77.workers.dev",
     );

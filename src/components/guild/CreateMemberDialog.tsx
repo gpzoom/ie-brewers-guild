@@ -38,7 +38,7 @@ export function CreateMemberDialog({
   const [open, setOpen] = useState(false);
   const [businessName, setBusinessName] = useState("");
   const [city, setCity] = useState("");
-  const [memberType, setMemberType] = useState<MemberType>("producer");
+  const [memberType, setMemberType] = useState<MemberType | "">("");
   const [contactEmail, setContactEmail] = useState("");
   // Part of: follows the typed business name until the admin picks
   // something by hand (null = untouched). See addMemberPartOf.
@@ -54,6 +54,7 @@ export function CreateMemberDialog({
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
+    if (!memberType) return;
     setSubmitting(true);
     setErrorMessage(null);
     try {
@@ -70,6 +71,7 @@ export function CreateMemberDialog({
       setOpen(false);
       setBusinessName("");
       setCity("");
+      setMemberType("");
       setContactEmail("");
       setPartOfChoice(null);
       await router.invalidate();
@@ -138,10 +140,11 @@ export function CreateMemberDialog({
             <select
               id="new-member-type"
               value={memberType}
-              onChange={(e) => setMemberType(e.target.value as MemberType)}
+              onChange={(e) => setMemberType(e.target.value as MemberType | "")}
               disabled={submitting}
               className={`${inputClass} px-3`}
             >
+              <option value="">Choose a type</option>
               <option value="producer">Producer</option>
               <option value="mobile">Mobile</option>
               <option value="allied">Affiliate Member</option>
@@ -200,7 +203,7 @@ export function CreateMemberDialog({
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !memberType}
               className="inline-flex h-11 items-center justify-center rounded-[9px] bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
             >
               {submitting ? "Adding…" : "Add member"}

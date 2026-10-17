@@ -53,14 +53,6 @@ export type TransactionalEmailPayload =
       wantsMembershipInfo: boolean;
     }
   | {
-      /** Setup wizard step 2: the member picked a different type than the Guild set. */
-      trigger: "member_type_changed_in_setup";
-      memberId: string;
-      memberName: string;
-      oldType: MemberType;
-      newType: MemberType;
-    }
-  | {
       /** Portal Basics' "Request a type change": to the Guild. */
       trigger: "type_change_requested";
       memberId: string;
@@ -345,24 +337,6 @@ export function buildEmailContent(payload: TransactionalEmailPayload, siteUrl: s
         subject: `${isMembershipLead ? "[Membership Lead] " : ""}New contact form submission`,
         text: lines.join("\n"),
         html: wrapHtml(lines.map(escapeHtml)),
-      };
-    }
-
-    case "member_type_changed_in_setup": {
-      const oldLabel = MEMBER_TYPE_EMAIL_LABEL[payload.oldType] ?? payload.oldType;
-      const newLabel = MEMBER_TYPE_EMAIL_LABEL[payload.newType] ?? payload.newType;
-      const rosterUrl = `${siteUrl}/guild/roster`;
-      const sentence = `${payload.memberName} changed their type from ${oldLabel} to ${newLabel} during setup.`;
-      const note =
-        "Their type is now locked for them. If this looks wrong, you can change it from the roster.";
-      return {
-        subject: `${payload.memberName} changed their member type during setup`,
-        text: `${sentence}\n\n${note}\n\nOpen the roster: ${rosterUrl}`,
-        html: wrapHtml([
-          escapeHtml(sentence),
-          escapeHtml(note),
-          `<a href="${rosterUrl}">Open the roster</a>`,
-        ]),
       };
     }
 

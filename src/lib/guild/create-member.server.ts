@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { generateUniqueMemberSlug } from "@/lib/guild/unique-member-slug.server";
 import { applyMemberBusiness } from "@/lib/guild/member-business";
+import { validateMemberTypeChoice } from "@/lib/guild/member-type-choice";
 import { runPartOfStep } from "@/lib/guild/member-part-of";
 import type { MemberRow, MemberType } from "@/lib/supabase/types";
 
@@ -39,7 +40,10 @@ export type CreateMemberResult = { member: MemberRow; partOfError: string | null
  * auth guard.
  */
 export const createMemberRecord = createServerFn({ method: "POST" })
-  .inputValidator((data: CreateMemberInput) => data)
+  .inputValidator((data: CreateMemberInput) => ({
+    ...data,
+    memberType: validateMemberTypeChoice(data?.memberType),
+  }))
   .handler(async ({ data }): Promise<CreateMemberResult> => {
     const supabase = await getSupabaseServerClientForRequest();
     const slug = await generateUniqueMemberSlug(supabase, data.businessName);

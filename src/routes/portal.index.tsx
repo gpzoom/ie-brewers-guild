@@ -30,7 +30,7 @@ function validatePortalSearch(search: Record<string, unknown>): PortalSearch {
  * in" and "Wizard or portal: one rule"). getPortalState does all the
  * deciding server-side -- sign-in check, invite acceptance, which business,
  * wizard or portal. While setup is incomplete it sends the member into the
- * setup wizard at the first of steps 1-3 that isn't done; once it's
+ * setup wizard at the first of steps 1-2 that isn't done; once it's
  * complete, into the portal at their first section (Basics & hours, or
  * Photos for a Photos & events editor). What's left to show here
  * is "Choose a business" and "No business is linked to this sign-in".

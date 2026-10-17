@@ -34,7 +34,7 @@ export function useWizardNavigation() {
   /**
    * Save & exit: finish saving, then leave for the site's home page. The
    * next visit to /portal picks up where the rule says: back in the wizard
-   * if steps 1-3 aren't done, otherwise the portal.
+   * if steps 1-2 aren't done, otherwise the portal.
    */
   const exit = useCallback(async () => {
     await settle();

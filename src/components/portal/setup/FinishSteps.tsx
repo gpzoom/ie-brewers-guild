@@ -106,8 +106,10 @@ export function ReviewStep({
                 type="button"
                 disabled={opening !== null}
                 onClick={() => {
-                  setOpening(item.step);
-                  void goTo(item.step).finally(() => setOpening(null));
+                  const target = item.step;
+                  if (target === "type") return; // no step of its own; never offered here
+                  setOpening(target);
+                  void goTo(target).finally(() => setOpening(null));
                 }}
                 className="inline-flex min-h-11 shrink-0 items-center rounded-[9px] px-3 text-[14px] font-medium text-brand hover:bg-canvas-2 hover:text-brand-hover disabled:opacity-60"
               >

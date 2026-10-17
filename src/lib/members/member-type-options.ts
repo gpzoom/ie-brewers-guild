@@ -3,7 +3,7 @@ import type { MemberType } from "@/lib/supabase/types";
 /**
  * The three member types as members see them: artboard AdminBasics's
  * MEMBER TYPE cards. Shared by BasicsForm and the wizard's Confirm your
- * member type step, so both describe the types in the same words.
+ * member type step (since retired), so both described the types in the same words.
  *
  * "allied" is the stored value for Affiliate Members (renamed on screen
  * 2026-10-07; the database, URLs and file names keep "allied").

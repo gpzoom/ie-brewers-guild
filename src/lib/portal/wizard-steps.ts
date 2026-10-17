@@ -11,25 +11,27 @@ import type { PortalRole } from "@/lib/portal/portal-destination";
  * sees:
  *
  *   #   step         producer  mobile  allied
- *   1   welcome      yes       yes     yes
- *   2   type         yes       yes     yes
- *   3   basics       yes       yes     yes
- *   4   logo-cover   yes       yes     yes     (Logo, Photos & Cover)
- *   5   hours        hours     "Where we'll be" (calendar + hand entry)
- *   6   events       yes       --      yes     (mobile: step 5 covered it)
- *   7   links        yes       yes     yes
- *   8   discount     --        --      yes
- *   9   theme        yes       yes     yes     (Pick your theme)
+ *   1   welcome      yes       yes     yes     (Get started confirms the type)
+ *   2   basics       yes       yes     yes
+ *   3   logo-cover   yes       yes     yes     (Logo, Photos & Cover)
+ *   4   hours        hours     "Where we'll be" (calendar + hand entry)
+ *   5   events       yes       --      yes     (mobile: step 4 covered it)
+ *   6   links        yes       yes     yes
+ *   7   discount     --        --      yes
+ *   8   theme        yes       yes     yes     (Pick your theme)
  *
- * Producers see 8, mobile members 7, Affiliate Members 9. The old Photos step
- * is part of step 4 since the redesign (2026-10-02).
+ * Producers see 7, mobile members 6, Affiliate Members 8. The old Photos step
+ * is part of step 3 since the redesign (2026-10-02). There is no "Confirm
+ * your member type" step any more (owner, 2026-10-17): the Guild always
+ * chooses the type, and Welcome's Get started confirms it. An old
+ * /portal/setup/type link redirects (resolveSetupAccess).
  *
  * After the numbered steps come the finish screens, which have no number:
  * review -> preview -> publish (the publish check) -> live ("You're live").
  *
  * Short setup (Part 4, artboard BZ3): a one-manager business's other
  * locations, once one location is set up, share its look and its confirmed
- * type, so Welcome, Confirm type and Pick your theme drop out -- a producer
+ * type, so Welcome and Pick your theme drop out -- a producer
  * walks basics, logo-cover, hours, events, links ("Step 1 of 5"). Every
  * helper below takes an optional trailing `{ shortSetup }`; without it the
  * results are the full wizard's.
@@ -38,11 +40,10 @@ import type { PortalRole } from "@/lib/portal/portal-destination";
 export type SetupStepOptions = { shortSetup?: boolean };
 
 /** The steps short setup leaves out: the business already chose these. */
-const SHORT_SETUP_OMITTED: readonly SetupStepName[] = ["welcome", "type", "theme"];
+const SHORT_SETUP_OMITTED: readonly SetupStepName[] = ["welcome", "theme"];
 
 export const NUMBERED_SETUP_STEPS = [
   "welcome",
-  "type",
   "basics",
   "logo-cover",
   "hours",
@@ -65,13 +66,11 @@ export function isSetupStepName(value: unknown): value is SetupStepName {
 }
 
 /**
- * Steps 1-3 of the full wizard: the only required ones. The list is the
- * full wizard's whatever the options. Short setup drops Welcome, and drops
- * Confirm type once the business's type is confirmed (setupStepAccess
- * still opens it while the type isn't), so there The basics is usually
- * the only required step left.
+ * Steps 1-2 of the full wizard: the only required ones. The list is the
+ * full wizard's whatever the options. Short setup drops Welcome, so there
+ * The basics is the only required step left.
  */
-export const REQUIRED_SETUP_STEPS: readonly NumberedSetupStep[] = ["welcome", "type", "basics"];
+export const REQUIRED_SETUP_STEPS: readonly NumberedSetupStep[] = ["welcome", "basics"];
 
 /** Whether this member type sees the step at all. */
 export function isStepForType(
@@ -155,7 +154,6 @@ function firstStepAfter(
 /** Short names, for the Review checklist and the progress line. */
 export const SETUP_STEP_LABELS: Record<SetupStepName, string> = {
   welcome: "Welcome",
-  type: "Member type",
   basics: "The basics",
   "logo-cover": "Logo, Photos & Cover",
   hours: "When you're open",
@@ -169,7 +167,7 @@ export const SETUP_STEP_LABELS: Record<SetupStepName, string> = {
   live: "You're live",
 };
 
-/** Step 5's name depends on the type: mobile members list where they'll be, not hours. */
+/** Step 4's name depends on the type: mobile members list where they'll be, not hours. */
 export function stepLabel(
   step: SetupStepName,
   memberType: MemberType,
@@ -181,12 +179,12 @@ export function stepLabel(
 }
 
 /**
- * Whether "Skip for now" is offered: every step but Confirm type and The
+ * Whether "Skip for now" is offered: every step but Welcome and The
  * basics (and the finish screens). The same in short setup: The basics,
  * its first step, stays required.
  */
 export function canSkipStep(step: SetupStepName, _options: SetupStepOptions = {}): boolean {
-  return step !== "type" && step !== "basics" && step !== "welcome" && !isFinishStep(step);
+  return step !== "basics" && step !== "welcome" && !isFinishStep(step);
 }
 
 export function isFinishStep(step: SetupStepName): step is FinishSetupStep {
@@ -209,20 +207,20 @@ export type SetupAccess =
  * - Unknown step name -> wherever /portal would start them.
  * - A step the member's type doesn't see -> the next step it does see.
  * - The retired Photos step -> Logo, Photos & Cover.
+ * - The retired Confirm type step ("type", an old link): Welcome while the
+ *   type is unconfirmed, else The basics.
  * - While setup is incomplete (type not confirmed, or Continue on The
- *   basics never clicked): Welcome and Confirm type are always open
- *   (once confirmed, Confirm type shows the locked type); The basics
- *   needs the type confirmed first; anything later goes back to the first
- *   of steps 1-3 that isn't done (Welcome while the type is unconfirmed --
- *   same as /portal -- else The basics).
+ *   basics never clicked): Welcome is always open; The basics needs the
+ *   type confirmed first (Welcome's Get started confirms it); anything
+ *   later goes back to the first of steps 1-2 that isn't done (Welcome
+ *   while the type is unconfirmed -- same as /portal -- else The basics).
  * - Once setup is complete: every step stays open, so Back always works
  *   (redesign, 2026-10-02). "The wizard is never shown again" holds
  *   because /portal never routes into it (portal-destination), not
  *   because these steps redirect.
- * - Short setup: Welcome, Confirm type and Pick your theme go to The
- *   basics, which is the first incomplete step. (Should the type somehow
- *   be unconfirmed, Confirm type stays open so it can be confirmed --
- *   The basics can't be finished without it.)
+ * - Short setup: Welcome and Pick your theme go to The basics, which is
+ *   the first incomplete step. (An unconfirmed type is confirmed when
+ *   setup is entered -- getPortalSetupShell.)
  */
 export function resolveSetupAccess(
   input: {
@@ -240,11 +238,10 @@ export function resolveSetupAccess(
 
   const inSetup = !input.typeConfirmed || !input.setupCompleted;
   const short = Boolean(options.shortSetup);
-  const firstIncomplete: SetupStepName = input.typeConfirmed
-    ? "basics"
-    : short
-      ? "type"
-      : "welcome";
+  const firstIncomplete: SetupStepName = input.typeConfirmed || short ? "basics" : "welcome";
+
+  // The retired Confirm type step: an old link or bookmark.
+  if (input.step === "type") return { kind: "step", step: firstIncomplete };
 
   if (!isSetupStepName(input.step)) {
     return inSetup ? { kind: "step", step: firstIncomplete } : { kind: "portal" };
@@ -252,7 +249,6 @@ export function resolveSetupAccess(
   const step = input.step;
 
   if (short && SHORT_SETUP_OMITTED.includes(step)) {
-    if (step === "type" && !input.typeConfirmed) return { kind: "ok" };
     return { kind: "step", step: firstIncomplete };
   }
 
@@ -266,11 +262,9 @@ export function resolveSetupAccess(
   switch (step) {
     case "welcome":
       return { kind: "ok" };
-    case "type":
-      // Open either way: confirmed, it shows the locked type with Continue.
-      return { kind: "ok" };
     case "basics":
-      return input.typeConfirmed ? { kind: "ok" } : { kind: "step", step: "type" };
+      // Short setup confirms the type on entry, so it never waits on Welcome.
+      return input.typeConfirmed || short ? { kind: "ok" } : { kind: "step", step: "welcome" };
     default:
       return { kind: "step", step: firstIncomplete };
   }

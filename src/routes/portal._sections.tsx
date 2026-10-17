@@ -85,6 +85,7 @@ function PortalLayoutInner() {
     <AdminShell
       memberId={shell.memberId}
       memberName={shell.memberName}
+      memberType={shell.memberType}
       isImpersonating={shell.isImpersonating}
       impersonatedMemberName={shell.isImpersonating ? shell.memberName : null}
       previewHref="/portal/preview"

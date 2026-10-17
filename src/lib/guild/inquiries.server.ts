@@ -1,3 +1,4 @@
+import { validateMemberTypeChoice } from "@/lib/guild/member-type-choice";
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { createMemberRecord } from "@/lib/guild/create-member.server";
@@ -45,7 +46,10 @@ export const markInquiryHandled = createServerFn({ method: "POST" })
  * for them explicitly rather than guessing.
  */
 export const setUpInquiryAsMember = createServerFn({ method: "POST" })
-  .inputValidator((data: { inquiryId: string; city: string; memberType: MemberType }) => data)
+  .inputValidator((data: { inquiryId: string; city: string; memberType: MemberType }) => ({
+    ...data,
+    memberType: validateMemberTypeChoice(data?.memberType),
+  }))
   .handler(async ({ data }) => {
     const supabase = await getSupabaseServerClientForRequest();
     const { data: inquiry, error: inquiryError } = await supabase

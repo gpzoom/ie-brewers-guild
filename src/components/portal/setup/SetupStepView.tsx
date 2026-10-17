@@ -1,5 +1,5 @@
 import type { PortalSetupShell, SetupStepData } from "@/lib/portal/portal-setup.server";
-import { BasicsStep, ConfirmTypeStep, WelcomeStep } from "@/components/portal/setup/IntroSteps";
+import { BasicsStep, WelcomeStep } from "@/components/portal/setup/IntroSteps";
 import {
   DiscountStep,
   EventsStep,
@@ -20,8 +20,6 @@ export function SetupStepView({ data, shell }: { data: SetupStepData; shell: Por
   switch (data.step) {
     case "welcome":
       return <WelcomeStep shell={shell} />;
-    case "type":
-      return <ConfirmTypeStep shell={shell} />;
     case "basics":
       return <BasicsStep draft={data.draft} categories={data.categories} />;
     case "logo-cover":
