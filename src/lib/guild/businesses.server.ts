@@ -18,11 +18,14 @@ import type { BusinessManagementMode } from "@/lib/supabase/types";
  */
 
 export const setBusinessMode = createServerFn({ method: "POST" })
-  .inputValidator((data: { businessId: string; mode: BusinessManagementMode }) => data)
+  .inputValidator((data: { businessId: string; mode: "separate" }) => {
+    // Switching to one manager needs a manager and a look: it goes through
+    // switchBusinessToOneManager only.
+    if (data.mode !== "separate") throw new Error("Use the Switch box to choose a manager.");
+    return data;
+  })
   .handler(async ({ data }) => {
     const supabase = await requireGuildAdminSession();
-    // The roster uses this only for the switch to separate; switching to one
-    // manager goes through switchBusinessToOneManager (manager + look).
     const { error } = await supabase.rpc("set_business_mode", {
       p_business_id: data.businessId,
       p_mode: data.mode,

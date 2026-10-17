@@ -83,7 +83,15 @@ export function BusinessModeDialog({
 }) {
   const router = useRouter();
   const owners = useMemo(
-    () => [...new Set(entries.map((entry) => entry.ownerEmail).filter((email): email is string => Boolean(email)))].sort(),
+    () =>
+      [
+        ...new Set(
+          entries
+            .filter((entry) => entry.ownerUserId)
+            .map((entry) => entry.ownerEmail)
+            .filter((email): email is string => Boolean(email)),
+        ),
+      ].sort(),
     [entries],
   );
   const lookDefault = useMemo(() => defaultLookSource(entries), [entries]);

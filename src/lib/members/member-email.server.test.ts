@@ -4,7 +4,11 @@ import { changeMemberEmail, fetchMemberEmail } from "./member-email.server";
 import type { ImpersonationState } from "@/lib/guild/impersonation-token";
 
 /** The signed-in person is the super admin unless `isSuperAdmin` is false (an ordinary Guild admin). */
-function fakeSessionClient(memberUser: { user_id: string } | null, isSuperAdmin = true): SupabaseClient {
+function fakeSessionClient(
+  memberUser: { user_id: string } | null,
+  isSuperAdmin = true,
+  rows?: Array<{ user_id: string; role: string }>,
+): SupabaseClient {
   return {
     auth: { getUser: async () => ({ data: { user: { id: "actor-1" } }, error: null }) },
     from(table: string) {
@@ -24,8 +28,9 @@ function fakeSessionClient(memberUser: { user_id: string } | null, isSuperAdmin 
       return {
         select: () => ({
           eq: () => ({
-            order: () => ({
-              limit: () => ({ maybeSingle: async () => ({ data: memberUser, error: null }) }),
+            order: async () => ({
+              data: rows ?? (memberUser ? [{ ...memberUser, role: "owner" }] : []),
+              error: null,
             }),
           }),
         }),
@@ -36,13 +41,19 @@ function fakeSessionClient(memberUser: { user_id: string } | null, isSuperAdmin 
 
 function fakeServiceClient(opts: {
   userEmail?: string | null;
+  emailsByUser?: Record<string, string>;
   updateError?: { message: string } | null;
   updateUserByIdCalls?: Array<{ userId: string; attrs: Record<string, unknown> }>;
 }): SupabaseClient {
   return {
     auth: {
       admin: {
-        getUserById: async () => ({ data: { user: opts.userEmail ? { email: opts.userEmail } : null }, error: null }),
+        getUserById: async (id: string) => ({
+          data: {
+            user: opts.emailsByUser ? { email: opts.emailsByUser[id] } : opts.userEmail ? { email: opts.userEmail } : null,
+          },
+          error: null,
+        }),
         updateUserById: async (userId: string, attrs: Record<string, unknown>) => {
           opts.updateUserByIdCalls?.push({ userId, attrs });
           return { error: opts.updateError ?? null };
@@ -64,6 +75,30 @@ describe("fetchMemberEmail", () => {
       fakeServiceClient({ userEmail: "owner@example.com" }),
     );
     expect(result).toEqual({ email: "owner@example.com" });
+  });
+
+  it("returns the owner's email even when an older editor row exists", async () => {
+    const result = await fetchMemberEmail(
+      "member-1",
+      fakeSessionClient(null, true, [
+        { user_id: "manager", role: "editor" },
+        { user_id: "owner", role: "owner" },
+      ]),
+      fakeServiceClient({ emailsByUser: { manager: "manager@example.com", owner: "owner@example.com" } }),
+    );
+    expect(result).toEqual({ email: "owner@example.com" });
+  });
+
+  it("with no owner row, returns the earliest row's email", async () => {
+    const result = await fetchMemberEmail(
+      "member-1",
+      fakeSessionClient(null, true, [
+        { user_id: "first", role: "editor" },
+        { user_id: "second", role: "editor" },
+      ]),
+      fakeServiceClient({ emailsByUser: { first: "first@example.com", second: "second@example.com" } }),
+    );
+    expect(result).toEqual({ email: "first@example.com" });
   });
 
   it("returns null for an unclaimed member (no member_users row)", async () => {

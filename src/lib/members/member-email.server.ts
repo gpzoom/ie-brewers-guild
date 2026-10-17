@@ -6,6 +6,7 @@ import { shouldRecordAudit } from "@/lib/guild/impersonation-token";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { ImpersonationState } from "@/lib/guild/impersonation-token";
 import { requireSuperAdmin } from "@/lib/auth/super-admin";
+import { pickAccountUserId } from "@/lib/members/account-user";
 
 // Deliberately simple -- matches contact-form-validation.ts's own choice
 // not to implement full RFC 5322: a basic shape check is a reasonable bar,
@@ -15,22 +16,20 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export type MemberEmail = { email: string | null };
 
 async function findMemberUserId(memberId: string, sessionClient: SupabaseClient): Promise<string | null> {
-  const { data: memberUser } = await sessionClient
+  const { data: rows } = await sessionClient
     .from("member_users")
-    .select("user_id")
+    .select("user_id, role")
     .eq("member_id", memberId)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  return (memberUser?.user_id as string | undefined) ?? null;
+    .order("created_at", { ascending: true });
+  return pickAccountUserId(rows as Array<{ user_id: string; role: string | null }> | null);
 }
 
 /**
  * A member's sign-in email lives on auth.users, tied to their profile only
- * through member_users -- never on the members table itself. First row by
- * created_at ascending, matching the same tie-break rule
- * resolveUserRoleAndTarget/resolveRecipient already use for "a member with
- * multiple member_users rows." Returns { email: null } for an unclaimed
+ * through member_users -- never on the members table itself. The owner's row
+ * wins (a handed-off location also has the business manager linked as an
+ * editor); with no owner row, the first row by created_at ascending, the
+ * same rule resolveRecipient uses (see pickAccountUserId). Returns { email: null } for an unclaimed
  * member (no member_users row yet) -- there is genuinely no account yet.
  *
  * Both clients are injected (same pattern as resolveRecipient.server.ts)

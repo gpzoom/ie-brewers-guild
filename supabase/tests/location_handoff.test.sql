@@ -5,7 +5,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(25);
+insert into _tap (line) select plan(29);
 
 insert into public.members (id, slug, member_type, business_name, city, status) values
   ('f1000000-0000-4000-8000-000000000101', 'pgtap-ho-a', 'producer', 'PgTap Hand', 'Redlands', 'draft'),
@@ -33,6 +33,12 @@ insert into _tap (line) select throws_ok(
 insert into _tap (line) select throws_ok(
   $$ select public.hand_off_location('f1000000-0000-4000-8000-000000000102', 'PGTAP-NOBODY@example.test') $$,
   'P0001', 'You already manage this location.', 'the manager can''t hand off to themselves');
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000004","role":"authenticated"}';
+insert into _tap (line) select throws_ok(
+  $$ select public.hand_off_location('f1000000-0000-4000-8000-000000000102', 'PGTAP-NOBODY@example.test') $$,
+  'P0001', 'That''s the business manager''s address. They already manage this location.',
+  'a Guild admin entering the manager''s address is told it is the manager''s');
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000006","role":"authenticated"}';
 insert into _tap (line) select is(
   public.hand_off_location('f1000000-0000-4000-8000-000000000102', '  PgTap-Other@Example.test ') ->> 'refreshed',
   'false', 'the manager hands off Riverside');
@@ -87,6 +93,11 @@ insert into _tap (line) select ok(
     where member_id = 'f1000000-0000-4000-8000-000000000102' and role = 'owner'),
   'the invite is marked accepted');
 
+-- A stray open owner invite, so the take-back below has something to cancel (and log).
+insert into public.member_invites (member_id, email, role, invited_by_user_id)
+values ('f1000000-0000-4000-8000-000000000102', 'pgtap-stray@example.test', 'owner',
+        'f0000000-0000-4000-8000-000000000006');
+
 -- A handed-off location can't be handed off again.
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000006","role":"authenticated"}';
@@ -111,6 +122,12 @@ reset role;
 insert into _tap (line) select is(
   (select role from public.member_users where member_id = 'f1000000-0000-4000-8000-000000000102'
      and user_id = 'f0000000-0000-4000-8000-000000000006'), 'owner', 'the manager owns Riverside again');
+insert into _tap (line) select ok(
+  exists (select 1 from public.audit_log a join public.member_invites i on i.id = a.row_id
+          where a.table_name = 'member_invites' and a.action = 'update'
+          and a.actor_user_id = 'f0000000-0000-4000-8000-000000000006'
+          and i.member_id = 'f1000000-0000-4000-8000-000000000102' and i.cancelled_at is not null),
+  'the take-back''s invite cancel is audit-logged against the invite');
 insert into _tap (line) select is(
   (select count(*)::int from public.member_users where member_id = 'f1000000-0000-4000-8000-000000000102'
      and user_id = 'f0000000-0000-4000-8000-000000000005'), 0, 'the location manager''s link is gone');
@@ -142,7 +159,23 @@ insert into _tap (line) select is(
   false, 'a hand-off whose location is already someone else''s is not accepted');
 insert into _tap (line) select is(
   (select count(*)::int from public.member_invites where member_id = 'f1000000-0000-4000-8000-000000000102'
-     and role = 'owner' and cancelled_at is not null), 1, 'and it is canceled');
+     and email = 'pgtap-editor@example.test' and role = 'owner' and cancelled_at is not null), 1, 'and it is canceled');
+
+-- Take back when the location manager's account is gone: the business
+-- manager (linked as editor, no owner) is raised to owner.
+delete from public.member_users
+  where member_id = 'f1000000-0000-4000-8000-000000000102' and role = 'owner';
+update public.member_users set role = 'editor'
+  where member_id = 'f1000000-0000-4000-8000-000000000102' and user_id = 'f0000000-0000-4000-8000-000000000006';
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000006","role":"authenticated"}';
+insert into _tap (line) select lives_ok(
+  $$ select public.take_back_location('f1000000-0000-4000-8000-000000000102') $$,
+  'take-back works when the location manager''s account is gone');
+reset role;
+insert into _tap (line) select is(
+  (select role from public.member_users where member_id = 'f1000000-0000-4000-8000-000000000102'
+     and user_id = 'f0000000-0000-4000-8000-000000000006'), 'owner', 'and the manager is raised to owner');
 
 insert into _tap (line) select * from finish();
 select line as tap from _tap order by n;

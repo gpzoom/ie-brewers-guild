@@ -44,6 +44,8 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_invite_id uuid;
 begin
   if exists (
     select 1 from public.member_users
@@ -54,11 +56,13 @@ begin
       perform public._business_audit_as(auth.uid(), p_member_id, 'member_users', p_member_id, 'delete');
     end if;
   end if;
-  update public.member_invites set cancelled_at = now()
-  where member_id = p_member_id and role = 'owner' and accepted_at is null and cancelled_at is null;
-  if found then
-    perform public._business_audit_as(auth.uid(), p_member_id, 'member_invites', p_member_id, 'update');
-  end if;
+  for v_invite_id in
+    update public.member_invites set cancelled_at = now()
+    where member_id = p_member_id and role = 'owner' and accepted_at is null and cancelled_at is null
+    returning id
+  loop
+    perform public._business_audit_as(auth.uid(), p_member_id, 'member_invites', v_invite_id, 'update');
+  end loop;
 end;
 $$;
 revoke all on function public._release_location_from_manager(uuid, uuid) from public, anon, authenticated;
@@ -100,7 +104,10 @@ begin
   end if;
   select lower(btrim(email)) into v_manager_email from auth.users where id = v_business.manager_user_id;
   if v_email = v_manager_email then
-    raise exception 'You already manage this location.';
+    if auth.uid() is not distinct from v_business.manager_user_id then
+      raise exception 'You already manage this location.';
+    end if;
+    raise exception 'That''s the business manager''s address. They already manage this location.';
   end if;
 
   select * into v_open from public.member_invites
@@ -171,6 +178,7 @@ begin
        where member_id = v_member.id and role = 'owner' and user_id <> v_business.manager_user_id
      ) then
     update public.member_invites set cancelled_at = now() where id = p_invite_id;
+    perform public._business_audit_as(p_user_id, v_member.id, 'member_invites', p_invite_id, 'update');
     return false;
   end if;
 
@@ -201,6 +209,7 @@ declare
   v_member public.members;
   v_business public.businesses;
   v_owner uuid;
+  v_invite_id uuid;
 begin
   select * into v_member from public.members where id = p_member_id;
   if not found then
@@ -215,12 +224,21 @@ begin
   end if;
 
   select user_id into v_owner from public.member_users where member_id = p_member_id and role = 'owner';
-  if v_owner is null or v_owner = v_business.manager_user_id then
+  -- With no owner left (the location manager's account is gone), a business
+  -- manager still linked as editor/media_events is raised to owner; anything
+  -- else is not a hand-off.
+  if v_owner = v_business.manager_user_id
+     or (v_owner is null and not exists (
+       select 1 from public.member_users
+       where member_id = p_member_id and user_id = v_business.manager_user_id
+     )) then
     raise exception '% · % isn''t handed off.', v_business.name, v_member.city;
   end if;
 
-  delete from public.member_users where member_id = p_member_id and user_id = v_owner;
-  perform public._business_audit(p_member_id, 'member_users', p_member_id, 'delete');
+  if v_owner is not null then
+    delete from public.member_users where member_id = p_member_id and user_id = v_owner;
+    perform public._business_audit(p_member_id, 'member_users', p_member_id, 'delete');
+  end if;
   update public.member_users set role = 'owner'
   where member_id = p_member_id and user_id = v_business.manager_user_id;
   if not found then
@@ -229,8 +247,13 @@ begin
   end if;
   perform public._business_audit(p_member_id, 'member_users', p_member_id, 'update');
 
-  update public.member_invites set cancelled_at = now()
-  where member_id = p_member_id and role = 'owner' and accepted_at is null and cancelled_at is null;
+  for v_invite_id in
+    update public.member_invites set cancelled_at = now()
+    where member_id = p_member_id and role = 'owner' and accepted_at is null and cancelled_at is null
+    returning id
+  loop
+    perform public._business_audit(p_member_id, 'member_invites', v_invite_id, 'update');
+  end loop;
 end;
 $$;
 

@@ -6,6 +6,9 @@ import { GUILD_NOTIFICATION_EMAIL, STAGING_GUILD_NOTIFICATION_EMAIL } from "./bu
 function fakeSupabase(opts: {
   memberUser: { user_id: string } | null;
   userEmail: string | null;
+  /** Ordered by created_at ascending; overrides memberUser. */
+  rows?: Array<{ user_id: string; role: string }>;
+  emailsByUser?: Record<string, string>;
 }): SupabaseClient {
   return {
     from(table: string) {
@@ -13,10 +16,9 @@ function fakeSupabase(opts: {
         return {
           select: () => ({
             eq: () => ({
-              order: () => ({
-                limit: () => ({
-                  maybeSingle: async () => ({ data: opts.memberUser, error: null }),
-                }),
+              order: async () => ({
+                data: opts.rows ?? (opts.memberUser ? [{ ...opts.memberUser, role: "owner" }] : []),
+                error: null,
               }),
             }),
           }),
@@ -26,8 +28,12 @@ function fakeSupabase(opts: {
     },
     auth: {
       admin: {
-        getUserById: async () => ({
-          data: opts.userEmail ? { user: { email: opts.userEmail } } : { user: null },
+        getUserById: async (id: string) => ({
+          data: opts.emailsByUser
+            ? { user: { email: opts.emailsByUser[id] } }
+            : opts.userEmail
+              ? { user: { email: opts.userEmail } }
+              : { user: null },
           error: null,
         }),
       },
@@ -123,6 +129,34 @@ describe("resolveRecipient", () => {
       supabase,
     );
     expect(to).toBe("owner@example.com");
+  });
+
+  it("emails the owner, not an older editor link (a handed-off location's business manager)", async () => {
+    const supabase = fakeSupabase({
+      memberUser: null,
+      userEmail: null,
+      rows: [
+        { user_id: "manager", role: "editor" },
+        { user_id: "owner", role: "owner" },
+      ],
+      emailsByUser: { manager: "manager@example.com", owner: "owner@example.com" },
+    });
+    const to = await resolveRecipient({ trigger: "hours_stale", memberId: "m1", confirmUrl: "https://x/y" }, supabase);
+    expect(to).toBe("owner@example.com");
+  });
+
+  it("with no owner row, falls back to the earliest member_users row", async () => {
+    const supabase = fakeSupabase({
+      memberUser: null,
+      userEmail: null,
+      rows: [
+        { user_id: "first", role: "editor" },
+        { user_id: "second", role: "editor" },
+      ],
+      emailsByUser: { first: "first@example.com", second: "second@example.com" },
+    });
+    const to = await resolveRecipient({ trigger: "hours_stale", memberId: "m1", confirmUrl: "https://x/y" }, supabase);
+    expect(to).toBe("first@example.com");
   });
 
   it("returns null when the member has no member_users row yet (unclaimed, imported member)", async () => {

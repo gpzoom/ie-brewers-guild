@@ -60,6 +60,7 @@ declare
   v_business public.businesses;
   v_source uuid;
   v_member uuid;
+  v_pending_city text;
 begin
   perform public._require_guild_admin();
   if p_mode not in ('separate', 'one_manager') then
@@ -76,13 +77,15 @@ begin
   if v_business.management_mode = p_mode then
     return;
   end if;
-  if exists (
-    select 1 from public.member_invites i
-    join public.members m on m.id = i.member_id
-    where m.business_id = p_business_id and i.role = 'owner'
-      and i.accepted_at is null and i.cancelled_at is null and i.expires_at > now()
-  ) then
-    raise exception 'Cancel the pending hand-off first.';
+  select m.city into v_pending_city
+  from public.member_invites i
+  join public.members m on m.id = i.member_id
+  where m.business_id = p_business_id and i.role = 'owner'
+    and i.accepted_at is null and i.cancelled_at is null and i.expires_at > now()
+  order by m.city
+  limit 1;
+  if found then
+    raise exception 'Cancel the pending hand-off for % · % first.', v_business.name, v_pending_city;
   end if;
 
   if p_mode = 'separate' then

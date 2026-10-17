@@ -63,7 +63,7 @@ select public.hand_off_location('f1000000-0000-4000-8000-000000000203', 'pgtap-e
 set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000004","role":"authenticated"}';
 insert into _tap (line) select throws_ok(
   $$ select public.set_business_mode((select id from _biz), 'separate') $$,
-  'P0001', 'Cancel the pending hand-off first.', 'a pending hand-off blocks the switch');
+  'P0001', 'Cancel the pending hand-off for PgTap Switch · Irvine first.', 'a pending hand-off blocks the switch');
 reset role;
 update public.member_invites set cancelled_at = now()
   where member_id = 'f1000000-0000-4000-8000-000000000203' and role = 'owner';
