@@ -816,7 +816,7 @@ One manager is available to every Guild admin, and so is its Invite.
 - **Email `location_handoff_invited`** goes to the invitee: subject "You're invited to manage <business> · <city>", saying the manager asked them to manage that location, to sign in with the invited address, that the invitation lasts 14 days, and one sign-in link (`/signin?next=/portal`). Reply-to is `MEMBER_INVITE_REPLY_TO`.
 - **A location manager always gets the short setup,** even when no other location has finished setup yet (no Welcome, Type or Theme; logo and cover read-only). Pre-fill still runs only when another location is set up. Confirm type still opens while the location's type isn't confirmed.
 
-Member Guide to-do (Part 6): show the location switcher, the shared-look note and the short setup; the People page as the business manager sees it (Hand off this location, Take back), and as a location manager sees it; the hand-off email.
+Member Guide (Part 6, done 2026-10-16): Part 4 of docs/member-guide/member-profile-guide.html, "Managing several locations", covers the location switcher, the shared-look label, the short setup, Hand off and Take back on People, the location manager's view and the three emails (screens 13-21).
 
 ### members
 
