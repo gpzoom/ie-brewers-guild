@@ -245,7 +245,7 @@ async function loadSchedule(supabase: SessionClient, memberId: string): Promise<
   return { events, memberTimezone: live.timezone, calendarConnection, food };
 }
 
-/** Wizard step 3, The basics: the draft, plus the category list for a Mobile member's picker. */
+/** Wizard step 2, The basics: the draft, plus the category list for a Mobile member's picker. */
 export async function loadWizardBasicsSection(supabase: SessionClient, memberId: string) {
   const [draft, categories] = await Promise.all([
     loadMemberDraftBundle(supabase, memberId),

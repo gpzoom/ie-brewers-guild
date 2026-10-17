@@ -223,7 +223,7 @@ export const confirmPortalMemberType = createServerFn({ method: "POST" }).handle
 });
 
 /**
- * Wizard step 3's Continue: complete_member_setup checks the type is
+ * Wizard step 2's Continue: complete_member_setup checks the type is
  * confirmed and the DRAFT has a business name and city, then sets
  * setup_completed_at once. Its error messages are written for people
  * ("Add your city to continue.") and are passed straight through.
