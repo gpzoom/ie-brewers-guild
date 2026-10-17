@@ -58,3 +58,25 @@ describe("Member Guide on the Welcome step (owner, 2026-10-02)", () => {
     expect(note).toBeLessThan(welcome.indexOf("continueLabel="));
   });
 });
+
+describe("Welcome's type line and Get started", () => {
+  const intro = readFileSync(resolve(process.cwd(), "src/components/portal/setup/IntroSteps.tsx"), "utf-8");
+  const server = readFileSync(resolve(process.cwd(), "src/lib/portal/portal-setup.server.ts"), "utf-8");
+
+  it("reads \"You're set up as a/an <type label>\"", () => {
+    expect(intro).toContain("You're set up as {article}");
+    expect(intro).toContain("MEMBER_TYPE_SHORT_LABEL[shell.memberType]");
+  });
+
+  it("Get started always calls the server with no type, so a stale tab just continues", () => {
+    expect(intro).toContain("await confirmPortalMemberType();");
+    expect(intro).not.toContain("if (!shell.typeConfirmed)");
+  });
+
+  it("the server confirms the member's own stored type and skips when already confirmed", () => {
+    const fn = server.slice(server.indexOf("export const confirmPortalMemberType"), server.indexOf("export const completePortalSetup"));
+    expect(fn).not.toContain("inputValidator");
+    expect(fn).toContain("type_confirmed_at !== null");
+    expect(fn).toContain("confirmMemberType(supabase, member.memberId, current.member_type)");
+  });
+});

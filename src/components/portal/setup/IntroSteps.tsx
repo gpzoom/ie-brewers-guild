@@ -6,6 +6,7 @@ import type { CategoryRow, MemberType } from "@/lib/supabase/types";
 import { BasicsForm } from "@/components/admin/BasicsForm";
 import { SupplyCategoriesPicker } from "@/components/admin/SupplyCategoriesPicker";
 import { WizardInfoBox, WizardStep } from "@/components/portal/setup/WizardStep";
+import { MEMBER_TYPE_SHORT_LABEL } from "@/lib/members/member-type-options";
 import { MemberTypeTag } from "@/components/portal/setup/MemberTypeTag";
 import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 import { useWizardNavigation } from "@/components/portal/setup/useWizardNavigation";
@@ -61,9 +62,9 @@ export function WelcomeStep({ shell }: { shell: PortalSetupShell }) {
   async function onGetStarted() {
     setError(null);
     try {
-      if (!shell.typeConfirmed) {
-        await confirmPortalMemberType({ data: { memberType: shell.memberType } });
-      }
+      // Always called: the server confirms only if still unconfirmed, so a
+      // stale tab (confirmed elsewhere) just carries on.
+      await confirmPortalMemberType();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't get you started — try again.");
       return;
@@ -92,7 +93,10 @@ export function WelcomeStep({ shell }: { shell: PortalSetupShell }) {
         className="flex flex-col gap-2 rounded-[12px] border border-canvas-border bg-white px-[14px] py-3"
       >
         <p className="m-0 flex flex-wrap items-center gap-2 text-[15px] text-ink">
-          <span>You're set up {article}</span>
+          <span>
+            You're set up as {article}{" "}
+            <strong className="font-semibold">{MEMBER_TYPE_SHORT_LABEL[shell.memberType]}</strong>
+          </span>
           <MemberTypeTag memberType={shell.memberType} />
         </p>
         <p className="m-0 text-[13px] leading-[1.45] text-ink-muted">

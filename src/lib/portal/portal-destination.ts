@@ -9,7 +9,7 @@
  * someone has seen Welcome:
  *  - type not confirmed → "welcome" (its Get started button confirms the
  *    type, so resuming there costs one click);
- *  - type confirmed, setup not completed → "basics" (step 3).
+ *  - type confirmed, setup not completed → "basics" (step 2).
  * setup_completed_at can only be set after the type is confirmed
  * (complete_member_setup requires it), so "type not confirmed but setup
  * completed" can't happen through the app; if it ever did, the member is

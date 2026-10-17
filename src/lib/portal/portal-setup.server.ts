@@ -181,8 +181,6 @@ export const getPortalStepData = createServerFn({ method: "GET" })
     }
   });
 
-const MEMBER_TYPES: readonly MemberType[] = ["producer", "mobile", "allied"];
-
 /**
  * confirm_member_type sets the type, stamps who confirmed it and when,
  * locks it for the member, and writes the audit row against the real actor
@@ -202,21 +200,27 @@ async function confirmMemberType(
 }
 
 /**
- * Welcome's "Get started": confirms the type the Guild chose (the member
- * can't pick another -- there's no confirm step; a wrong type goes through
+ * Welcome's "Get started": confirms the type the Guild chose, read
+ * server-side (the member can't pick another -- there's no confirm step; a wrong type goes through
  * Request a type change after setup).
  */
-export const confirmPortalMemberType = createServerFn({ method: "POST" })
-  .inputValidator((data: { memberType: MemberType }) => {
-    if (!MEMBER_TYPES.includes(data?.memberType)) throw new Error("Choose a member type.");
-    return { memberType: data.memberType };
-  })
-  .handler(async ({ data }) => {
-    const member = await requireWizardMember();
-    const supabase = await getSupabaseServerClientForRequest();
-    const parsed = await confirmMemberType(supabase, member.memberId, data.memberType);
-    return { memberType: parsed.new_type, changed: parsed.changed };
-  });
+export const confirmPortalMemberType = createServerFn({ method: "POST" }).handler(async () => {
+  const member = await requireWizardMember();
+  const supabase = await getSupabaseServerClientForRequest();
+  // The type comes from the database, never the browser: while unconfirmed,
+  // confirm_member_type would accept any type. Already confirmed (a stale
+  // tab, or confirmed elsewhere) is a success with nothing to do.
+  const { data: row, error } = await supabase
+    .from("members")
+    .select("member_type, type_confirmed_at")
+    .eq("id", member.memberId)
+    .single();
+  if (error || !row) throw new Error(error?.message || "Couldn't confirm your type — try again.");
+  const current = row as { member_type: MemberType; type_confirmed_at: string | null };
+  if (current.type_confirmed_at !== null) return { memberType: current.member_type, changed: false };
+  const parsed = await confirmMemberType(supabase, member.memberId, current.member_type);
+  return { memberType: parsed.new_type, changed: parsed.changed };
+});
 
 /**
  * Wizard step 3's Continue: complete_member_setup checks the type is

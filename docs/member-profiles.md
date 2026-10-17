@@ -669,7 +669,7 @@ On `members`:
 | --- | --- | --- |
 | type\_confirmed\_at | timestamptz | set by Welcome's Get started |
 | type\_confirmed\_by\_user\_id | uuid | fk auth.users |
-| setup\_completed\_at | timestamptz | set by Continue on wizard step 3; non-null means the wizard is never shown again |
+| setup\_completed\_at | timestamptz | set by Continue on wizard step 2; non-null means the wizard is never shown again |
 
 `member_drafts`: `member_id uuid primary key` (fk members), `data jsonb not null` (keyed by section), `dirty_sections text[] not null default '{}'`, `media_updated_by_user_id` (who last changed photos, for the owner's notice), `updated_at`, `updated_by_user_id` (the real actor when impersonating). RLS: select only where `member_users` links the caller, plus Guild admins while impersonating. No direct client writes: writes go through `save_member_draft_section` and `publish_member_draft`. Never public.
 

@@ -4,19 +4,20 @@ import { resolveSetupAccess } from "@/lib/portal/wizard-steps";
 import { SetupStepView } from "@/components/portal/setup/SetupStepView";
 
 /**
- * /portal/setup/$step: one wizard step, by name (welcome, type, basics,
+ * /portal/setup/$step: one wizard step, by name (welcome, basics,
  * logo-cover, hours, events, photos, links, discount, theme, review, then
  * preview, publish and live). See src/lib/portal/wizard-steps.ts for the
  * order per member type and resolveSetupAccess for who may open what:
  *
  * - before type + basics are done, anything past them goes back to the
- *   first incomplete of welcome / type / basics;
- * - once setup is complete, welcome / type / basics go to /portal, while
- *   steps 4-10 and the finish screens stay open -- the wizard carries on
+ *   first incomplete of welcome / basics (an old "type" link goes the same
+ *   way);
+ * - once setup is complete, welcome / basics go to /portal, while
+ *   steps 3-9 and the finish screens stay open -- the wizard carries on
  *   right after The basics in the same visit ("the wizard is never shown
  *   again" means /portal never routes into it again, not that the
  *   remaining steps lock mid-flow);
- * - in short setup (a business's other locations), welcome / type / theme
+ * - in short setup (a business's other locations), welcome / theme
  *   go to basics.
  *
  * The step's data comes from getPortalStepData, which resolves the member

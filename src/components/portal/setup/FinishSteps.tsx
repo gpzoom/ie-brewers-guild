@@ -81,7 +81,10 @@ export function ReviewStep({
       continueLabel="Preview your page"
     >
       <ul className="flex flex-col overflow-hidden rounded-[12px] border border-canvas-border bg-white">
-        {checklist.map((item) => (
+        {checklist.map((item) => {
+          // "Member type" has no step of its own, and The basics is already open.
+          const target = item.step === "type" || item.step === "basics" ? null : item.step;
+          return (
           <li
             key={item.step}
             className="flex min-h-14 items-center justify-between gap-3 border-b border-canvas-2 px-[14px] py-2 last:border-b-0"
@@ -101,13 +104,11 @@ export function ReviewStep({
                 <span className="text-[12px] text-ink-muted">{item.done ? "Done" : "Empty"}</span>
               </span>
             </span>
-            {!item.done && item.step !== "type" && item.step !== "basics" && (
+            {!item.done && target && (
               <button
                 type="button"
                 disabled={opening !== null}
                 onClick={() => {
-                  const target = item.step;
-                  if (target === "type") return; // no step of its own; never offered here
                   setOpening(target);
                   void goTo(target).finally(() => setOpening(null));
                 }}
@@ -117,7 +118,8 @@ export function ReviewStep({
               </button>
             )}
           </li>
-        ))}
+          );
+        })}
       </ul>
     </WizardStep>
   );
