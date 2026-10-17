@@ -1,0 +1,278 @@
+[
+  {
+    "id": "w0",
+    "text": "Step",
+    "start": 0.0,
+    "end": 0.36
+  },
+  {
+    "id": "w1",
+    "text": "one.",
+    "start": 0.453,
+    "end": 0.894
+  },
+  {
+    "id": "w2",
+    "text": "Open",
+    "start": 1.219,
+    "end": 1.602
+  },
+  {
+    "id": "w3",
+    "text": "Gmail",
+    "start": 1.718,
+    "end": 2.264
+  },
+  {
+    "id": "w4",
+    "text": "and",
+    "start": 2.357,
+    "end": 2.508
+  },
+  {
+    "id": "w5",
+    "text": "check",
+    "start": 2.566,
+    "end": 2.798
+  },
+  {
+    "id": "w6",
+    "text": "the",
+    "start": 2.868,
+    "end": 2.949
+  },
+  {
+    "id": "w7",
+    "text": "picture",
+    "start": 3.019,
+    "end": 3.46
+  },
+  {
+    "id": "w8",
+    "text": "at",
+    "start": 3.541,
+    "end": 3.715
+  },
+  {
+    "id": "w9",
+    "text": "the",
+    "start": 3.762,
+    "end": 3.831
+  },
+  {
+    "id": "w10",
+    "text": "top",
+    "start": 3.901,
+    "end": 4.214
+  },
+  {
+    "id": "w11",
+    "text": "right.",
+    "start": 4.307,
+    "end": 4.783
+  },
+  {
+    "id": "w12",
+    "text": "It",
+    "start": 5.166,
+    "end": 5.317
+  },
+  {
+    "id": "w13",
+    "text": "must",
+    "start": 5.375,
+    "end": 5.561
+  },
+  {
+    "id": "w14",
+    "text": "be",
+    "start": 5.608,
+    "end": 5.7
+  },
+  {
+    "id": "w15",
+    "text": "the",
+    "start": 5.747,
+    "end": 5.817
+  },
+  {
+    "id": "w16",
+    "text": "guild",
+    "start": 5.898,
+    "end": 6.2
+  },
+  {
+    "id": "w17",
+    "text": "account,",
+    "start": 6.235,
+    "end": 6.838
+  },
+  {
+    "id": "w18",
+    "text": "not",
+    "start": 7.047,
+    "end": 7.221
+  },
+  {
+    "id": "w19",
+    "text": "your",
+    "start": 7.279,
+    "end": 7.396
+  },
+  {
+    "id": "w20",
+    "text": "personal",
+    "start": 7.465,
+    "end": 7.883
+  },
+  {
+    "id": "w21",
+    "text": "one.",
+    "start": 7.964,
+    "end": 8.313
+  },
+  {
+    "id": "w22",
+    "text": "Click",
+    "start": 8.824,
+    "end": 9.091
+  },
+  {
+    "id": "w23",
+    "text": "the",
+    "start": 9.16,
+    "end": 9.242
+  },
+  {
+    "id": "w24",
+    "text": "gear",
+    "start": 9.323,
+    "end": 9.613
+  },
+  {
+    "id": "w25",
+    "text": "icon,",
+    "start": 9.694,
+    "end": 10.403
+  },
+  {
+    "id": "w26",
+    "text": "then",
+    "start": 10.577,
+    "end": 10.786
+  },
+  {
+    "id": "w27",
+    "text": "See",
+    "start": 10.902,
+    "end": 11.111
+  },
+  {
+    "id": "w28",
+    "text": "all",
+    "start": 11.169,
+    "end": 11.389
+  },
+  {
+    "id": "w29",
+    "text": "settings.",
+    "start": 11.471,
+    "end": 12.121
+  },
+  {
+    "id": "w30",
+    "text": "Open",
+    "start": 12.504,
+    "end": 12.783
+  },
+  {
+    "id": "w31",
+    "text": "the",
+    "start": 12.841,
+    "end": 12.91
+  },
+  {
+    "id": "w32",
+    "text": "Accounts",
+    "start": 12.968,
+    "end": 13.456
+  },
+  {
+    "id": "w33",
+    "text": "and",
+    "start": 13.502,
+    "end": 13.618
+  },
+  {
+    "id": "w34",
+    "text": "Import",
+    "start": 13.7,
+    "end": 14.187
+  },
+  {
+    "id": "w35",
+    "text": "tab.",
+    "start": 14.245,
+    "end": 14.71
+  },
+  {
+    "id": "w36",
+    "text": "Find",
+    "start": 15.035,
+    "end": 15.36
+  },
+  {
+    "id": "w37",
+    "text": "Send",
+    "start": 15.476,
+    "end": 15.766
+  },
+  {
+    "id": "w38",
+    "text": "mail",
+    "start": 15.859,
+    "end": 16.149
+  },
+  {
+    "id": "w39",
+    "text": "as,",
+    "start": 16.266,
+    "end": 16.858
+  },
+  {
+    "id": "w40",
+    "text": "and",
+    "start": 17.032,
+    "end": 17.194
+  },
+  {
+    "id": "w41",
+    "text": "click",
+    "start": 17.276,
+    "end": 17.554
+  },
+  {
+    "id": "w42",
+    "text": "Add",
+    "start": 17.67,
+    "end": 17.961
+  },
+  {
+    "id": "w43",
+    "text": "another",
+    "start": 18.03,
+    "end": 18.448
+  },
+  {
+    "id": "w44",
+    "text": "email",
+    "start": 18.541,
+    "end": 18.982
+  },
+  {
+    "id": "w45",
+    "text": "address.",
+    "start": 19.04,
+    "end": 19.876
+  }
+]

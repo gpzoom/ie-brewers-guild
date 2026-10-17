@@ -1,0 +1,1 @@
+Let's test it. Click Compose, click the From line, and pick your guild address. Send a test to your personal email. There it is, from the guild address. You're all set, and you never need to do this again.

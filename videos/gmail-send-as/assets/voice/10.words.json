@@ -1,0 +1,206 @@
+[
+  {
+    "id": "w0",
+    "text": "That's",
+    "start": 0.0,
+    "end": 0.325
+  },
+  {
+    "id": "w1",
+    "text": "it.",
+    "start": 0.395,
+    "end": 0.662
+  },
+  {
+    "id": "w2",
+    "text": "The",
+    "start": 0.813,
+    "end": 0.929
+  },
+  {
+    "id": "w3",
+    "text": "written",
+    "start": 0.975,
+    "end": 1.207
+  },
+  {
+    "id": "w4",
+    "text": "guide",
+    "start": 1.254,
+    "end": 1.498
+  },
+  {
+    "id": "w5",
+    "text": "has",
+    "start": 1.533,
+    "end": 1.695
+  },
+  {
+    "id": "w6",
+    "text": "every",
+    "start": 1.776,
+    "end": 2.009
+  },
+  {
+    "id": "w7",
+    "text": "setting",
+    "start": 2.078,
+    "end": 2.438
+  },
+  {
+    "id": "w8",
+    "text": "and",
+    "start": 2.508,
+    "end": 2.624
+  },
+  {
+    "id": "w9",
+    "text": "a",
+    "start": 2.67,
+    "end": 2.705
+  },
+  {
+    "id": "w10",
+    "text": "troubleshooting",
+    "start": 2.752,
+    "end": 3.402
+  },
+  {
+    "id": "w11",
+    "text": "list.",
+    "start": 3.471,
+    "end": 3.878
+  },
+  {
+    "id": "w12",
+    "text": "If",
+    "start": 4.203,
+    "end": 4.331
+  },
+  {
+    "id": "w13",
+    "text": "you",
+    "start": 4.377,
+    "end": 4.447
+  },
+  {
+    "id": "w14",
+    "text": "get",
+    "start": 4.516,
+    "end": 4.644
+  },
+  {
+    "id": "w15",
+    "text": "stuck,",
+    "start": 4.714,
+    "end": 5.143
+  },
+  {
+    "id": "w16",
+    "text": "send",
+    "start": 5.317,
+    "end": 5.561
+  },
+  {
+    "id": "w17",
+    "text": "an",
+    "start": 5.619,
+    "end": 5.689
+  },
+  {
+    "id": "w18",
+    "text": "email",
+    "start": 5.77,
+    "end": 6.165
+  },
+  {
+    "id": "w19",
+    "text": "to",
+    "start": 6.235,
+    "end": 6.316
+  },
+  {
+    "id": "w20",
+    "text": "webmaster,",
+    "start": 6.397,
+    "end": 7.094
+  },
+  {
+    "id": "w21",
+    "text": "at",
+    "start": 7.129,
+    "end": 7.303
+  },
+  {
+    "id": "w22",
+    "text": "I",
+    "start": 7.419,
+    "end": 7.663
+  },
+  {
+    "id": "w23",
+    "text": "S",
+    "start": 7.872,
+    "end": 8.15
+  },
+  {
+    "id": "w24",
+    "text": "C",
+    "start": 8.266,
+    "end": 8.475
+  },
+  {
+    "id": "w25",
+    "text": "Brewers",
+    "start": 8.719,
+    "end": 9.195
+  },
+  {
+    "id": "w26",
+    "text": "Guild",
+    "start": 9.276,
+    "end": 9.66
+  },
+  {
+    "id": "w27",
+    "text": "dot",
+    "start": 9.903,
+    "end": 10.194
+  },
+  {
+    "id": "w28",
+    "text": "org.",
+    "start": 10.286,
+    "end": 10.809
+  },
+  {
+    "id": "w29",
+    "text": "Thanks",
+    "start": 11.25,
+    "end": 11.54
+  },
+  {
+    "id": "w30",
+    "text": "for",
+    "start": 11.575,
+    "end": 11.668
+  },
+  {
+    "id": "w31",
+    "text": "serving",
+    "start": 11.714,
+    "end": 11.993
+  },
+  {
+    "id": "w32",
+    "text": "the",
+    "start": 12.04,
+    "end": 12.109
+  },
+  {
+    "id": "w33",
+    "text": "guild.",
+    "start": 12.144,
+    "end": 12.771
+  }
+]

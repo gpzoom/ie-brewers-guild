@@ -1,0 +1,254 @@
+[
+  {
+    "id": "w0",
+    "text": "You'll",
+    "start": 0.0,
+    "end": 0.255
+  },
+  {
+    "id": "w1",
+    "text": "need",
+    "start": 0.302,
+    "end": 0.476
+  },
+  {
+    "id": "w2",
+    "text": "three",
+    "start": 0.546,
+    "end": 0.813
+  },
+  {
+    "id": "w3",
+    "text": "things.",
+    "start": 0.859,
+    "end": 1.44
+  },
+  {
+    "id": "w4",
+    "text": "A",
+    "start": 1.614,
+    "end": 1.707
+  },
+  {
+    "id": "w5",
+    "text": "computer,",
+    "start": 1.788,
+    "end": 2.426
+  },
+  {
+    "id": "w6",
+    "text": "because",
+    "start": 2.461,
+    "end": 2.914
+  },
+  {
+    "id": "w7",
+    "text": "the",
+    "start": 2.961,
+    "end": 3.03
+  },
+  {
+    "id": "w8",
+    "text": "Gmail",
+    "start": 3.1,
+    "end": 3.541
+  },
+  {
+    "id": "w9",
+    "text": "phone",
+    "start": 3.611,
+    "end": 3.936
+  },
+  {
+    "id": "w10",
+    "text": "app",
+    "start": 3.994,
+    "end": 4.272
+  },
+  {
+    "id": "w11",
+    "text": "can't",
+    "start": 4.354,
+    "end": 4.667
+  },
+  {
+    "id": "w12",
+    "text": "do",
+    "start": 4.748,
+    "end": 4.923
+  },
+  {
+    "id": "w13",
+    "text": "this",
+    "start": 5.004,
+    "end": 5.155
+  },
+  {
+    "id": "w14",
+    "text": "step.",
+    "start": 5.213,
+    "end": 5.677
+  },
+  {
+    "id": "w15",
+    "text": "The",
+    "start": 6.06,
+    "end": 6.2
+  },
+  {
+    "id": "w16",
+    "text": "guild",
+    "start": 6.293,
+    "end": 6.641
+  },
+  {
+    "id": "w17",
+    "text": "Gmail",
+    "start": 6.757,
+    "end": 7.198
+  },
+  {
+    "id": "w18",
+    "text": "account,",
+    "start": 7.256,
+    "end": 7.686
+  },
+  {
+    "id": "w19",
+    "text": "signed",
+    "start": 7.732,
+    "end": 8.081
+  },
+  {
+    "id": "w20",
+    "text": "in.",
+    "start": 8.139,
+    "end": 8.44
+  },
+  {
+    "id": "w21",
+    "text": "And",
+    "start": 8.719,
+    "end": 8.893
+  },
+  {
+    "id": "w22",
+    "text": "the",
+    "start": 8.94,
+    "end": 9.009
+  },
+  {
+    "id": "w23",
+    "text": "sending",
+    "start": 9.067,
+    "end": 9.416
+  },
+  {
+    "id": "w24",
+    "text": "password",
+    "start": 9.497,
+    "end": 9.996
+  },
+  {
+    "id": "w25",
+    "text": "the",
+    "start": 10.031,
+    "end": 10.101
+  },
+  {
+    "id": "w26",
+    "text": "webmaster",
+    "start": 10.147,
+    "end": 10.716
+  },
+  {
+    "id": "w27",
+    "text": "gave",
+    "start": 10.786,
+    "end": 11.029
+  },
+  {
+    "id": "w28",
+    "text": "you,",
+    "start": 11.064,
+    "end": 11.204
+  },
+  {
+    "id": "w29",
+    "text": "by",
+    "start": 11.238,
+    "end": 11.401
+  },
+  {
+    "id": "w30",
+    "text": "phone",
+    "start": 11.482,
+    "end": 11.854
+  },
+  {
+    "id": "w31",
+    "text": "or",
+    "start": 11.912,
+    "end": 12.063
+  },
+  {
+    "id": "w32",
+    "text": "in",
+    "start": 12.132,
+    "end": 12.19
+  },
+  {
+    "id": "w33",
+    "text": "person.",
+    "start": 12.26,
+    "end": 12.748
+  },
+  {
+    "id": "w34",
+    "text": "Keep",
+    "start": 13.259,
+    "end": 13.479
+  },
+  {
+    "id": "w35",
+    "text": "that",
+    "start": 13.526,
+    "end": 13.665
+  },
+  {
+    "id": "w36",
+    "text": "password",
+    "start": 13.735,
+    "end": 14.211
+  },
+  {
+    "id": "w37",
+    "text": "private,",
+    "start": 14.269,
+    "end": 14.745
+  },
+  {
+    "id": "w38",
+    "text": "and",
+    "start": 14.779,
+    "end": 14.942
+  },
+  {
+    "id": "w39",
+    "text": "never",
+    "start": 15.023,
+    "end": 15.255
+  },
+  {
+    "id": "w40",
+    "text": "email",
+    "start": 15.325,
+    "end": 15.65
+  },
+  {
+    "id": "w41",
+    "text": "it.",
+    "start": 15.72,
+    "end": 16.161
+  }
+]

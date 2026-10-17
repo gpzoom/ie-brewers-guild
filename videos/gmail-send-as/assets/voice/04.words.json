@@ -1,0 +1,296 @@
+[
+  {
+    "id": "w0",
+    "text": "Step",
+    "start": 0.0,
+    "end": 0.325
+  },
+  {
+    "id": "w1",
+    "text": "two.",
+    "start": 0.383,
+    "end": 0.836
+  },
+  {
+    "id": "w2",
+    "text": "A",
+    "start": 1.161,
+    "end": 1.242
+  },
+  {
+    "id": "w3",
+    "text": "small",
+    "start": 1.324,
+    "end": 1.614
+  },
+  {
+    "id": "w4",
+    "text": "window",
+    "start": 1.683,
+    "end": 1.974
+  },
+  {
+    "id": "w5",
+    "text": "opens.",
+    "start": 2.055,
+    "end": 2.589
+  },
+  {
+    "id": "w6",
+    "text": "If",
+    "start": 2.914,
+    "end": 3.065
+  },
+  {
+    "id": "w7",
+    "text": "it",
+    "start": 3.123,
+    "end": 3.193
+  },
+  {
+    "id": "w8",
+    "text": "doesn't,",
+    "start": 3.251,
+    "end": 3.727
+  },
+  {
+    "id": "w9",
+    "text": "your",
+    "start": 3.796,
+    "end": 3.947
+  },
+  {
+    "id": "w10",
+    "text": "browser",
+    "start": 3.994,
+    "end": 4.389
+  },
+  {
+    "id": "w11",
+    "text": "blocked",
+    "start": 4.447,
+    "end": 4.737
+  },
+  {
+    "id": "w12",
+    "text": "the",
+    "start": 4.76,
+    "end": 4.83
+  },
+  {
+    "id": "w13",
+    "text": "pop-up,",
+    "start": 4.865,
+    "end": 5.457
+  },
+  {
+    "id": "w14",
+    "text": "so",
+    "start": 5.608,
+    "end": 5.747
+  },
+  {
+    "id": "w15",
+    "text": "allow",
+    "start": 5.817,
+    "end": 6.084
+  },
+  {
+    "id": "w16",
+    "text": "pop-ups",
+    "start": 6.177,
+    "end": 6.676
+  },
+  {
+    "id": "w17",
+    "text": "for",
+    "start": 6.722,
+    "end": 6.85
+  },
+  {
+    "id": "w18",
+    "text": "Gmail",
+    "start": 6.92,
+    "end": 7.419
+  },
+  {
+    "id": "w19",
+    "text": "and",
+    "start": 7.57,
+    "end": 7.744
+  },
+  {
+    "id": "w20",
+    "text": "click",
+    "start": 7.814,
+    "end": 8.046
+  },
+  {
+    "id": "w21",
+    "text": "again.",
+    "start": 8.092,
+    "end": 8.533
+  },
+  {
+    "id": "w22",
+    "text": "Type",
+    "start": 8.975,
+    "end": 9.323
+  },
+  {
+    "id": "w23",
+    "text": "the",
+    "start": 9.369,
+    "end": 9.439
+  },
+  {
+    "id": "w24",
+    "text": "name",
+    "start": 9.52,
+    "end": 9.764
+  },
+  {
+    "id": "w25",
+    "text": "people",
+    "start": 9.822,
+    "end": 10.124
+  },
+  {
+    "id": "w26",
+    "text": "will",
+    "start": 10.147,
+    "end": 10.31
+  },
+  {
+    "id": "w27",
+    "text": "see,",
+    "start": 10.368,
+    "end": 10.751
+  },
+  {
+    "id": "w28",
+    "text": "like",
+    "start": 10.995,
+    "end": 11.204
+  },
+  {
+    "id": "w29",
+    "text": "I",
+    "start": 11.285,
+    "end": 11.529
+  },
+  {
+    "id": "w30",
+    "text": "S",
+    "start": 11.738,
+    "end": 11.912
+  },
+  {
+    "id": "w31",
+    "text": "C",
+    "start": 12.028,
+    "end": 12.179
+  },
+  {
+    "id": "w32",
+    "text": "Brewers",
+    "start": 12.388,
+    "end": 12.806
+  },
+  {
+    "id": "w33",
+    "text": "Guild",
+    "start": 12.875,
+    "end": 13.166
+  },
+  {
+    "id": "w34",
+    "text": "President,",
+    "start": 13.224,
+    "end": 13.781
+  },
+  {
+    "id": "w35",
+    "text": "and",
+    "start": 13.99,
+    "end": 14.211
+  },
+  {
+    "id": "w36",
+    "text": "your",
+    "start": 14.269,
+    "end": 14.373
+  },
+  {
+    "id": "w37",
+    "text": "guild",
+    "start": 14.42,
+    "end": 14.652
+  },
+  {
+    "id": "w38",
+    "text": "address.",
+    "start": 14.687,
+    "end": 15.221
+  },
+  {
+    "id": "w39",
+    "text": "Leave",
+    "start": 15.824,
+    "end": 16.091
+  },
+  {
+    "id": "w40",
+    "text": "Treat",
+    "start": 16.138,
+    "end": 16.475
+  },
+  {
+    "id": "w41",
+    "text": "as",
+    "start": 16.556,
+    "end": 16.672
+  },
+  {
+    "id": "w42",
+    "text": "an",
+    "start": 16.73,
+    "end": 16.788
+  },
+  {
+    "id": "w43",
+    "text": "alias",
+    "start": 16.869,
+    "end": 17.264
+  },
+  {
+    "id": "w44",
+    "text": "checked,",
+    "start": 17.345,
+    "end": 17.74
+  },
+  {
+    "id": "w45",
+    "text": "and",
+    "start": 17.763,
+    "end": 17.926
+  },
+  {
+    "id": "w46",
+    "text": "click",
+    "start": 18.007,
+    "end": 18.297
+  },
+  {
+    "id": "w47",
+    "text": "Next",
+    "start": 18.506,
+    "end": 18.762
+  },
+  {
+    "id": "w48",
+    "text": "Step.",
+    "start": 18.797,
+    "end": 19.458
+  }
+]

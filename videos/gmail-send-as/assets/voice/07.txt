@@ -1,0 +1,1 @@
+One last setting. Back on Accounts and Import, find When replying to a message, and choose Reply from the same address the message was sent to. Now when someone writes to your guild address, your reply goes out from it too.

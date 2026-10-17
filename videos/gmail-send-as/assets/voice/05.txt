@@ -1,0 +1,1 @@
+Step three, the server settings. Type them exactly. The SMTP server is smtp dot resend dot com. Pick port 465. The username is just the word resend. For the password, paste the sending password from the webmaster. Choose Secured connection using SSL, then click Add Account.

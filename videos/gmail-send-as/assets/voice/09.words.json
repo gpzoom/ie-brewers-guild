@@ -1,0 +1,314 @@
+[
+  {
+    "id": "w0",
+    "text": "A",
+    "start": 0.0,
+    "end": 0.093
+  },
+  {
+    "id": "w1",
+    "text": "few",
+    "start": 0.186,
+    "end": 0.348
+  },
+  {
+    "id": "w2",
+    "text": "ground",
+    "start": 0.406,
+    "end": 0.685
+  },
+  {
+    "id": "w3",
+    "text": "rules.",
+    "start": 0.731,
+    "end": 1.254
+  },
+  {
+    "id": "w4",
+    "text": "Check",
+    "start": 1.405,
+    "end": 1.649
+  },
+  {
+    "id": "w5",
+    "text": "the",
+    "start": 1.73,
+    "end": 1.8
+  },
+  {
+    "id": "w6",
+    "text": "From",
+    "start": 1.858,
+    "end": 2.055
+  },
+  {
+    "id": "w7",
+    "text": "line",
+    "start": 2.148,
+    "end": 2.426
+  },
+  {
+    "id": "w8",
+    "text": "before",
+    "start": 2.473,
+    "end": 2.81
+  },
+  {
+    "id": "w9",
+    "text": "every",
+    "start": 2.879,
+    "end": 3.158
+  },
+  {
+    "id": "w10",
+    "text": "send.",
+    "start": 3.228,
+    "end": 3.785
+  },
+  {
+    "id": "w11",
+    "text": "No",
+    "start": 4.296,
+    "end": 4.493
+  },
+  {
+    "id": "w12",
+    "text": "mass",
+    "start": 4.586,
+    "end": 4.83
+  },
+  {
+    "id": "w13",
+    "text": "mailings.",
+    "start": 4.899,
+    "end": 5.573
+  },
+  {
+    "id": "w14",
+    "text": "The",
+    "start": 5.898,
+    "end": 6.026
+  },
+  {
+    "id": "w15",
+    "text": "guild",
+    "start": 6.095,
+    "end": 6.374
+  },
+  {
+    "id": "w16",
+    "text": "can",
+    "start": 6.432,
+    "end": 6.571
+  },
+  {
+    "id": "w17",
+    "text": "send",
+    "start": 6.641,
+    "end": 6.85
+  },
+  {
+    "id": "w18",
+    "text": "one",
+    "start": 6.943,
+    "end": 7.152
+  },
+  {
+    "id": "w19",
+    "text": "hundred",
+    "start": 7.198,
+    "end": 7.465
+  },
+  {
+    "id": "w20",
+    "text": "emails",
+    "start": 7.523,
+    "end": 7.953
+  },
+  {
+    "id": "w21",
+    "text": "a",
+    "start": 8.022,
+    "end": 8.057
+  },
+  {
+    "id": "w22",
+    "text": "day",
+    "start": 8.127,
+    "end": 8.336
+  },
+  {
+    "id": "w23",
+    "text": "in",
+    "start": 8.382,
+    "end": 8.452
+  },
+  {
+    "id": "w24",
+    "text": "total,",
+    "start": 8.522,
+    "end": 8.986
+  },
+  {
+    "id": "w25",
+    "text": "shared",
+    "start": 9.137,
+    "end": 9.462
+  },
+  {
+    "id": "w26",
+    "text": "with",
+    "start": 9.485,
+    "end": 9.59
+  },
+  {
+    "id": "w27",
+    "text": "the",
+    "start": 9.625,
+    "end": 9.694
+  },
+  {
+    "id": "w28",
+    "text": "website.",
+    "start": 9.729,
+    "end": 10.391
+  },
+  {
+    "id": "w29",
+    "text": "Use",
+    "start": 10.832,
+    "end": 11.088
+  },
+  {
+    "id": "w30",
+    "text": "it",
+    "start": 11.122,
+    "end": 11.192
+  },
+  {
+    "id": "w31",
+    "text": "for",
+    "start": 11.238,
+    "end": 11.355
+  },
+  {
+    "id": "w32",
+    "text": "guild",
+    "start": 11.424,
+    "end": 11.668
+  },
+  {
+    "id": "w33",
+    "text": "business",
+    "start": 11.703,
+    "end": 12.074
+  },
+  {
+    "id": "w34",
+    "text": "only,",
+    "start": 12.167,
+    "end": 12.713
+  },
+  {
+    "id": "w35",
+    "text": "since",
+    "start": 12.887,
+    "end": 13.154
+  },
+  {
+    "id": "w36",
+    "text": "the",
+    "start": 13.189,
+    "end": 13.27
+  },
+  {
+    "id": "w37",
+    "text": "inbox",
+    "start": 13.363,
+    "end": 13.816
+  },
+  {
+    "id": "w38",
+    "text": "passes",
+    "start": 13.886,
+    "end": 14.327
+  },
+  {
+    "id": "w39",
+    "text": "to",
+    "start": 14.385,
+    "end": 14.443
+  },
+  {
+    "id": "w40",
+    "text": "the",
+    "start": 14.512,
+    "end": 14.582
+  },
+  {
+    "id": "w41",
+    "text": "next",
+    "start": 14.64,
+    "end": 14.896
+  },
+  {
+    "id": "w42",
+    "text": "officer.",
+    "start": 14.954,
+    "end": 15.557
+  },
+  {
+    "id": "w43",
+    "text": "And",
+    "start": 15.999,
+    "end": 16.173
+  },
+  {
+    "id": "w44",
+    "text": "never",
+    "start": 16.254,
+    "end": 16.475
+  },
+  {
+    "id": "w45",
+    "text": "share",
+    "start": 16.533,
+    "end": 16.811
+  },
+  {
+    "id": "w46",
+    "text": "either",
+    "start": 16.893,
+    "end": 17.148
+  },
+  {
+    "id": "w47",
+    "text": "password",
+    "start": 17.218,
+    "end": 17.705
+  },
+  {
+    "id": "w48",
+    "text": "by",
+    "start": 17.752,
+    "end": 17.891
+  },
+  {
+    "id": "w49",
+    "text": "email",
+    "start": 18.007,
+    "end": 18.413
+  },
+  {
+    "id": "w50",
+    "text": "or",
+    "start": 18.53,
+    "end": 18.738
+  },
+  {
+    "id": "w51",
+    "text": "text.",
+    "start": 18.82,
+    "end": 19.644
+  }
+]

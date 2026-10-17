@@ -1,0 +1,344 @@
+[
+  {
+    "id": "w0",
+    "text": "Welcome.",
+    "start": 0.0,
+    "end": 0.615
+  },
+  {
+    "id": "w1",
+    "text": "This",
+    "start": 0.998,
+    "end": 1.196
+  },
+  {
+    "id": "w2",
+    "text": "video",
+    "start": 1.265,
+    "end": 1.707
+  },
+  {
+    "id": "w3",
+    "text": "shows",
+    "start": 1.8,
+    "end": 2.067
+  },
+  {
+    "id": "w4",
+    "text": "you",
+    "start": 2.113,
+    "end": 2.183
+  },
+  {
+    "id": "w5",
+    "text": "how",
+    "start": 2.241,
+    "end": 2.368
+  },
+  {
+    "id": "w6",
+    "text": "to",
+    "start": 2.415,
+    "end": 2.461
+  },
+  {
+    "id": "w7",
+    "text": "send",
+    "start": 2.531,
+    "end": 2.763
+  },
+  {
+    "id": "w8",
+    "text": "email",
+    "start": 2.879,
+    "end": 3.286
+  },
+  {
+    "id": "w9",
+    "text": "from",
+    "start": 3.355,
+    "end": 3.495
+  },
+  {
+    "id": "w10",
+    "text": "your",
+    "start": 3.541,
+    "end": 3.669
+  },
+  {
+    "id": "w11",
+    "text": "guild",
+    "start": 3.738,
+    "end": 4.017
+  },
+  {
+    "id": "w12",
+    "text": "address,",
+    "start": 4.063,
+    "end": 4.714
+  },
+  {
+    "id": "w13",
+    "text": "like",
+    "start": 5.039,
+    "end": 5.248
+  },
+  {
+    "id": "w14",
+    "text": "president",
+    "start": 5.294,
+    "end": 5.747
+  },
+  {
+    "id": "w15",
+    "text": "at",
+    "start": 5.805,
+    "end": 5.909
+  },
+  {
+    "id": "w16",
+    "text": "I",
+    "start": 6.002,
+    "end": 6.177
+  },
+  {
+    "id": "w17",
+    "text": "S",
+    "start": 6.351,
+    "end": 6.525
+  },
+  {
+    "id": "w18",
+    "text": "C",
+    "start": 6.571,
+    "end": 6.687
+  },
+  {
+    "id": "w19",
+    "text": "brewers",
+    "start": 6.931,
+    "end": 7.326
+  },
+  {
+    "id": "w20",
+    "text": "guild",
+    "start": 7.407,
+    "end": 7.744
+  },
+  {
+    "id": "w21",
+    "text": "dot",
+    "start": 7.825,
+    "end": 8.081
+  },
+  {
+    "id": "w22",
+    "text": "org,",
+    "start": 8.162,
+    "end": 8.696
+  },
+  {
+    "id": "w23",
+    "text": "right",
+    "start": 9.021,
+    "end": 9.276
+  },
+  {
+    "id": "w24",
+    "text": "from",
+    "start": 9.334,
+    "end": 9.474
+  },
+  {
+    "id": "w25",
+    "text": "the",
+    "start": 9.509,
+    "end": 9.578
+  },
+  {
+    "id": "w26",
+    "text": "guild",
+    "start": 9.636,
+    "end": 9.95
+  },
+  {
+    "id": "w27",
+    "text": "Gmail",
+    "start": 10.066,
+    "end": 10.542
+  },
+  {
+    "id": "w28",
+    "text": "account.",
+    "start": 10.588,
+    "end": 11.099
+  },
+  {
+    "id": "w29",
+    "text": "Mail",
+    "start": 11.703,
+    "end": 11.993
+  },
+  {
+    "id": "w30",
+    "text": "sent",
+    "start": 12.063,
+    "end": 12.283
+  },
+  {
+    "id": "w31",
+    "text": "to",
+    "start": 12.33,
+    "end": 12.388
+  },
+  {
+    "id": "w32",
+    "text": "your",
+    "start": 12.458,
+    "end": 12.574
+  },
+  {
+    "id": "w33",
+    "text": "guild",
+    "start": 12.643,
+    "end": 12.899
+  },
+  {
+    "id": "w34",
+    "text": "address",
+    "start": 12.934,
+    "end": 13.398
+  },
+  {
+    "id": "w35",
+    "text": "already",
+    "start": 13.642,
+    "end": 14.106
+  },
+  {
+    "id": "w36",
+    "text": "arrives",
+    "start": 14.153,
+    "end": 14.605
+  },
+  {
+    "id": "w37",
+    "text": "in",
+    "start": 14.652,
+    "end": 14.71
+  },
+  {
+    "id": "w38",
+    "text": "that",
+    "start": 14.756,
+    "end": 14.907
+  },
+  {
+    "id": "w39",
+    "text": "inbox.",
+    "start": 14.965,
+    "end": 15.673
+  },
+  {
+    "id": "w40",
+    "text": "Today",
+    "start": 16.115,
+    "end": 16.567
+  },
+  {
+    "id": "w41",
+    "text": "we",
+    "start": 16.684,
+    "end": 16.834
+  },
+  {
+    "id": "w42",
+    "text": "add",
+    "start": 16.904,
+    "end": 17.09
+  },
+  {
+    "id": "w43",
+    "text": "the",
+    "start": 17.113,
+    "end": 17.183
+  },
+  {
+    "id": "w44",
+    "text": "sending",
+    "start": 17.241,
+    "end": 17.577
+  },
+  {
+    "id": "w45",
+    "text": "side.",
+    "start": 17.647,
+    "end": 18.158
+  },
+  {
+    "id": "w46",
+    "text": "It",
+    "start": 18.541,
+    "end": 18.68
+  },
+  {
+    "id": "w47",
+    "text": "takes",
+    "start": 18.715,
+    "end": 18.936
+  },
+  {
+    "id": "w48",
+    "text": "about",
+    "start": 18.971,
+    "end": 19.203
+  },
+  {
+    "id": "w49",
+    "text": "five",
+    "start": 19.284,
+    "end": 19.609
+  },
+  {
+    "id": "w50",
+    "text": "minutes,",
+    "start": 19.655,
+    "end": 19.992
+  },
+  {
+    "id": "w51",
+    "text": "and",
+    "start": 20.015,
+    "end": 20.143
+  },
+  {
+    "id": "w52",
+    "text": "you",
+    "start": 20.19,
+    "end": 20.282
+  },
+  {
+    "id": "w53",
+    "text": "only",
+    "start": 20.364,
+    "end": 20.561
+  },
+  {
+    "id": "w54",
+    "text": "do",
+    "start": 20.642,
+    "end": 20.758
+  },
+  {
+    "id": "w55",
+    "text": "it",
+    "start": 20.828,
+    "end": 20.898
+  },
+  {
+    "id": "w56",
+    "text": "once.",
+    "start": 20.979,
+    "end": 21.687
+  }
+]

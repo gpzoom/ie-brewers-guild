@@ -1,0 +1,1 @@
+Step one. Open Gmail and check the picture at the top right. It must be the guild account, not your personal one. Click the gear icon, then See all settings. Open the Accounts and Import tab. Find Send mail as, and click Add another email address.

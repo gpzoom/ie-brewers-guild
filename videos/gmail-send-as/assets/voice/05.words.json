@@ -1,0 +1,278 @@
+[
+  {
+    "id": "w0",
+    "text": "Step",
+    "start": 0.0,
+    "end": 0.302
+  },
+  {
+    "id": "w1",
+    "text": "three,",
+    "start": 0.348,
+    "end": 0.755
+  },
+  {
+    "id": "w2",
+    "text": "the",
+    "start": 0.859,
+    "end": 0.952
+  },
+  {
+    "id": "w3",
+    "text": "server",
+    "start": 0.998,
+    "end": 1.254
+  },
+  {
+    "id": "w4",
+    "text": "settings.",
+    "start": 1.312,
+    "end": 1.834
+  },
+  {
+    "id": "w5",
+    "text": "Type",
+    "start": 1.974,
+    "end": 2.264
+  },
+  {
+    "id": "w6",
+    "text": "them",
+    "start": 2.299,
+    "end": 2.403
+  },
+  {
+    "id": "w7",
+    "text": "exactly.",
+    "start": 2.473,
+    "end": 3.1
+  },
+  {
+    "id": "w8",
+    "text": "The",
+    "start": 3.878,
+    "end": 3.994
+  },
+  {
+    "id": "w9",
+    "text": "SMTP",
+    "start": 4.11,
+    "end": 4.841
+  },
+  {
+    "id": "w10",
+    "text": "server",
+    "start": 5.004,
+    "end": 5.317
+  },
+  {
+    "id": "w11",
+    "text": "is",
+    "start": 5.387,
+    "end": 5.538
+  },
+  {
+    "id": "w12",
+    "text": "smtp",
+    "start": 5.77,
+    "end": 6.525
+  },
+  {
+    "id": "w13",
+    "text": "dot",
+    "start": 6.687,
+    "end": 6.966
+  },
+  {
+    "id": "w14",
+    "text": "resend",
+    "start": 7.129,
+    "end": 7.732
+  },
+  {
+    "id": "w15",
+    "text": "dot",
+    "start": 7.837,
+    "end": 8.081
+  },
+  {
+    "id": "w16",
+    "text": "com.",
+    "start": 8.15,
+    "end": 8.626
+  },
+  {
+    "id": "w17",
+    "text": "Pick",
+    "start": 9.288,
+    "end": 9.52
+  },
+  {
+    "id": "w18",
+    "text": "port",
+    "start": 9.625,
+    "end": 10.008
+  },
+  {
+    "id": "w19",
+    "text": "465.",
+    "start": 10.17,
+    "end": 11.366
+  },
+  {
+    "id": "w20",
+    "text": "The",
+    "start": 11.784,
+    "end": 11.912
+  },
+  {
+    "id": "w21",
+    "text": "username",
+    "start": 12.028,
+    "end": 12.539
+  },
+  {
+    "id": "w22",
+    "text": "is",
+    "start": 12.585,
+    "end": 12.701
+  },
+  {
+    "id": "w23",
+    "text": "just",
+    "start": 12.806,
+    "end": 13.05
+  },
+  {
+    "id": "w24",
+    "text": "the",
+    "start": 13.108,
+    "end": 13.177
+  },
+  {
+    "id": "w25",
+    "text": "word",
+    "start": 13.224,
+    "end": 13.514
+  },
+  {
+    "id": "w26",
+    "text": "resend.",
+    "start": 13.653,
+    "end": 14.385
+  },
+  {
+    "id": "w27",
+    "text": "For",
+    "start": 14.965,
+    "end": 15.093
+  },
+  {
+    "id": "w28",
+    "text": "the",
+    "start": 15.128,
+    "end": 15.197
+  },
+  {
+    "id": "w29",
+    "text": "password,",
+    "start": 15.232,
+    "end": 15.929
+  },
+  {
+    "id": "w30",
+    "text": "paste",
+    "start": 16.103,
+    "end": 16.393
+  },
+  {
+    "id": "w31",
+    "text": "the",
+    "start": 16.44,
+    "end": 16.509
+  },
+  {
+    "id": "w32",
+    "text": "sending",
+    "start": 16.567,
+    "end": 16.893
+  },
+  {
+    "id": "w33",
+    "text": "password",
+    "start": 16.974,
+    "end": 17.473
+  },
+  {
+    "id": "w34",
+    "text": "from",
+    "start": 17.519,
+    "end": 17.67
+  },
+  {
+    "id": "w35",
+    "text": "the",
+    "start": 17.705,
+    "end": 17.763
+  },
+  {
+    "id": "w36",
+    "text": "webmaster.",
+    "start": 17.81,
+    "end": 18.495
+  },
+  {
+    "id": "w37",
+    "text": "Choose",
+    "start": 19.064,
+    "end": 19.435
+  },
+  {
+    "id": "w38",
+    "text": "Secured",
+    "start": 19.47,
+    "end": 19.865
+  },
+  {
+    "id": "w39",
+    "text": "connection",
+    "start": 19.923,
+    "end": 20.41
+  },
+  {
+    "id": "w40",
+    "text": "using",
+    "start": 20.526,
+    "end": 20.852
+  },
+  {
+    "id": "w41",
+    "text": "SSL,",
+    "start": 20.956,
+    "end": 21.711
+  },
+  {
+    "id": "w42",
+    "text": "then",
+    "start": 21.943,
+    "end": 22.163
+  },
+  {
+    "id": "w43",
+    "text": "click",
+    "start": 22.245,
+    "end": 22.547
+  },
+  {
+    "id": "w44",
+    "text": "Add",
+    "start": 22.709,
+    "end": 22.965
+  },
+  {
+    "id": "w45",
+    "text": "Account.",
+    "start": 22.999,
+    "end": 23.684
+  }
+]
