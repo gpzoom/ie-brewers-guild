@@ -5,7 +5,7 @@ import { eventsLede } from "./SectionSteps";
 describe("Welcome copy (redesign)", () => {
   it("the logo item points to step 4's PNG help and photos accept JPG or PNG", () => {
     const items = welcomeHandyItems("producer");
-    expect(items[0].body).toContain("No PNG? You can get one made for free; step 4 shows you how.");
+    expect(items[0].body).toContain("No PNG? You can get one made for free; step 3 shows you how.");
     expect(items[1].body.startsWith("JPG or PNG.")).toBe(true);
   });
 

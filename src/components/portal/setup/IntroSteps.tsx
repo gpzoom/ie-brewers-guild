@@ -19,7 +19,7 @@ export function welcomeHandyItems(memberType: MemberType): { title: string; body
   return [
     {
       title: "Your logo, as a PNG",
-      body: "Ideally with a transparent background and at least 400px tall. No PNG? You can get one made for free; step 4 shows you how.",
+      body: "Ideally with a transparent background and at least 400px tall. No PNG? You can get one made for free; step 3 shows you how.",
     },
     {
       title: "A few photos",
