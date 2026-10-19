@@ -171,7 +171,9 @@ export type MembershipPick =
  * never grant access by itself (a removed link, or a hand-edited cookie,
  * simply brings the chooser back). `forceChoose` is the "Switch business"
  * link. One-manager businesses count as one entry (location-groups.ts);
- * with no usable cookie, the oldest link opens.
+ * with no usable cookie, such a business opens its first location by city
+ * (switching to one manager links every location at once, so the oldest
+ * link would be arbitrary), and a single link simply opens.
  */
 export function pickMembership(
   memberships: PortalMembership[],
@@ -179,11 +181,15 @@ export function pickMembership(
   forceChoose = false,
 ): MembershipPick {
   if (memberships.length === 0) return { kind: "none" };
-  const entryCount = chooserEntries(memberships).length;
-  if (!(forceChoose && entryCount > 1) && chosenMemberId) {
+  const entries = chooserEntries(memberships);
+  if (!(forceChoose && entries.length > 1) && chosenMemberId) {
     const chosen = memberships.find((m) => m.memberId === chosenMemberId);
     if (chosen) return { kind: "one", membership: chosen };
   }
-  if (entryCount === 1) return { kind: "one", membership: memberships[0] };
+  if (entries.length === 1) {
+    const entry = entries[0];
+    const openId = entry.kind === "business" ? entry.openMemberId : entry.memberId;
+    return { kind: "one", membership: memberships.find((m) => m.memberId === openId) ?? memberships[0] };
+  }
   return { kind: "choose", memberships };
 }

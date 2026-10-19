@@ -67,8 +67,15 @@ describe("chooserEntries remembered location", () => {
 });
 
 describe("pickMembership with businesses", () => {
-  it("linked only to one one-manager business: no chooser; no cookie opens the oldest link", () => {
+  it("linked only to one one-manager business: no chooser; no cookie opens its first location by city", () => {
+    // The switch to one manager links every location at once, so the
+    // oldest link is arbitrary; first by city matches "Set up [next] next".
     const list = [chain("r", "Riverside"), chain("i", "Irvine")];
+    expect(pickMembership(list, null)).toEqual({ kind: "one", membership: list[1] });
+  });
+
+  it("linked to a single location: that one opens", () => {
+    const list = [m({ memberId: "o", businessName: "Other", city: "Ontario" })];
     expect(pickMembership(list, null)).toEqual({ kind: "one", membership: list[0] });
   });
 
