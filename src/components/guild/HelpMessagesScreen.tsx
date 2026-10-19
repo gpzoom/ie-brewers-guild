@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { setHelpMessageStatus, type HelpMessagesPage } from "@/lib/guild/help-messages.server";
-import type { HelpMessageShow, HelpMessageView } from "@/lib/guild/help-messages";
+import { HELP_MESSAGE_KIND_LABEL, type HelpMessageShow, type HelpMessageView } from "@/lib/guild/help-messages";
 import { cn } from "@/lib/utils";
 
 const lightButtonClass =
@@ -27,7 +27,7 @@ function formatWhen(iso: string): string {
 }
 
 function replyHref(message: HelpMessageView): string {
-  const kind = message.kind === "bug" ? "Bug report" : "Feature request";
+  const kind = message.kind === "bug" ? "Bug report" : message.kind === "signin" ? "Sign-in help" : "Feature request";
   const subject = `Re: ${kind}${message.memberName ? `: ${message.memberName}` : ""}`;
   return `mailto:${encodeURIComponent(message.email)}?subject=${encodeURIComponent(subject)}`;
 }
@@ -118,10 +118,12 @@ export function HelpMessagesScreen({
                     "rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em]",
                     message.kind === "bug"
                       ? "bg-[#FBE3D6] text-[#8F4517]"
-                      : "bg-[#E1ECDF] text-[#2F5E2B]",
+                      : message.kind === "signin"
+                        ? "bg-[#E1E6F3] text-[#2E3F80]"
+                        : "bg-[#E1ECDF] text-[#2F5E2B]",
                   )}
                 >
-                  {message.kind === "bug" ? "Problem/bug" : "Feature request"}
+                  {HELP_MESSAGE_KIND_LABEL[message.kind]}
                 </span>
                 <span className="text-[13px] font-semibold text-ink">
                   {message.memberName ??
@@ -144,6 +146,9 @@ export function HelpMessagesScreen({
                   From {message.firstName} &lt;{message.email}&gt;
                   {message.sentByGuildAdmin ? " · Guild admin" : ""}
                 </span>
+                {message.previousEmail && (
+                  <span className="break-all">Used to sign in with: {message.previousEmail}</span>
+                )}
                 {message.pagePath && <span className="break-all">Page: {message.pagePath}</span>}
                 {message.userAgent && (
                   <span className="break-all">Device: {message.userAgent}</span>

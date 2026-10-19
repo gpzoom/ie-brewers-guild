@@ -16,11 +16,26 @@ describe("Member Guide PDFs", () => {
     expect(memberGuidePath("allied")).toBe("/member-guide-affiliate.pdf");
   });
 
-  it("MEMBER_GUIDES lists all three with their labels and paths", () => {
+  it("MEMBER_GUIDES lists all three with their labels, descriptions and paths", () => {
     expect(MEMBER_GUIDES).toEqual([
-      { type: "producer", label: "Producers", path: "/member-guide-producer.pdf" },
-      { type: "mobile", label: "Mobile members", path: "/member-guide-mobile.pdf" },
-      { type: "allied", label: "Affiliate Members", path: "/member-guide-affiliate.pdf" },
+      {
+        type: "producer",
+        label: "Producers",
+        description: "alcohol producers with a taproom",
+        path: "/member-guide-producer.pdf",
+      },
+      {
+        type: "mobile",
+        label: "Mobile",
+        description: "such as entertainment, food trucks or pop-up vendors",
+        path: "/member-guide-mobile.pdf",
+      },
+      {
+        type: "allied",
+        label: "Affiliate",
+        description: "industry partners such as suppliers and service providers",
+        path: "/member-guide-affiliate.pdf",
+      },
     ]);
   });
 

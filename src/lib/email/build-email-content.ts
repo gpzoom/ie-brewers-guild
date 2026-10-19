@@ -99,6 +99,21 @@ export type TransactionalEmailPayload =
       senderRole: "member" | "guild_admin" | "guild_admin_as_member";
       pagePath: string;
       userAgent: string | null;
+    }
+  | {
+      /** Sign-in help (docs/member-profiles.md, "Sign-in help"): to support@iscbrewersguild.org. */
+      trigger: "signin_help";
+      /** SIGNIN_HELP_INBOX_EMAIL, chosen by the server. */
+      to: string;
+      name: string;
+      businessName: string;
+      /** The address they used to sign in with. */
+      previousEmail: string;
+      /** Their new address; replies go here. */
+      newEmail: string;
+      /** Optional; empty when they left it blank. */
+      note: string;
+      userAgent: string | null;
     };
 
 /** replyTo: where hitting Reply goes, when it isn't the sender's no-reply address. */
@@ -432,6 +447,28 @@ ${signInUrl}`,
         )}</strong></p><p style="white-space: pre-wrap;">${escapeHtml(payload.message)}</p><p style="color: #6B6156; font-size: 13px;">${details
           .map(escapeHtml)
           .join("<br>")}</p></div>`,
+      };
+    }
+
+    case "signin_help": {
+      const staging = isStagingSite(siteUrl) ? "[Staging] " : "";
+      const lines = [
+        `Name: ${payload.name}`,
+        `Business: ${payload.businessName}`,
+        `Used to sign in with: ${payload.previousEmail}`,
+        `New email: ${payload.newEmail}`,
+      ];
+      const ask = "Update their sign-in email on the Guild roster, then reply to let them know.";
+      const device = `Device: ${payload.userAgent ?? "(unknown)"}`;
+      return {
+        subject: `${staging}Sign-in help: ${payload.businessName}`,
+        replyTo: payload.newEmail,
+        text: `SIGN-IN HELP\n\n${lines.join("\n")}\n\n${payload.note ? `Note:\n${payload.note}\n\n` : ""}${ask}\n\n${device}`,
+        html: `<div style="font-family: sans-serif; font-size: 15px; line-height: 1.6; color: #241F1A;"><p><strong>Sign-in help</strong></p><p>${lines
+          .map(escapeHtml)
+          .join("<br>")}</p>${
+          payload.note ? `<p style="white-space: pre-wrap;">${escapeHtml(payload.note)}</p>` : ""
+        }<p>${escapeHtml(ask)}</p><p style="color: #6B6156; font-size: 13px;">${escapeHtml(device)}</p></div>`,
       };
     }
   }

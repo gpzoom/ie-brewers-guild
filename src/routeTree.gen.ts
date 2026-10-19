@@ -26,6 +26,7 @@ import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as GuildIndexRouteImport } from './routes/guild.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as VisitTokenRouteImport } from './routes/visit.$token'
+import { Route as SigninHelpRouteImport } from './routes/signin_.help'
 import { Route as SendTokenRouteImport } from './routes/send.$token'
 import { Route as PortalSetupRouteImport } from './routes/portal.setup'
 import { Route as PortalPreviewRouteImport } from './routes/portal.preview'
@@ -140,6 +141,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const VisitTokenRoute = VisitTokenRouteImport.update({
   id: '/visit/$token',
   path: '/visit/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SigninHelpRoute = SigninHelpRouteImport.update({
+  id: '/signin_/help',
+  path: '/signin/help',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SendTokenRoute = SendTokenRouteImport.update({
@@ -331,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/portal/preview': typeof PortalPreviewRoute
   '/portal/setup': typeof PortalSetupRouteWithChildren
   '/send/$token': typeof SendTokenRoute
+  '/signin/help': typeof SigninHelpRoute
   '/visit/$token': typeof VisitTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/guild/': typeof GuildIndexRoute
@@ -377,6 +384,7 @@ export interface FileRoutesByTo {
   '/portal': typeof PortalIndexRoute
   '/portal/preview': typeof PortalPreviewRoute
   '/send/$token': typeof SendTokenRoute
+  '/signin/help': typeof SigninHelpRoute
   '/visit/$token': typeof VisitTokenRoute
   '/admin': typeof AdminIndexRoute
   '/guild': typeof GuildIndexRoute
@@ -426,6 +434,7 @@ export interface FileRoutesById {
   '/portal/preview': typeof PortalPreviewRoute
   '/portal/setup': typeof PortalSetupRouteWithChildren
   '/send/$token': typeof SendTokenRoute
+  '/signin_/help': typeof SigninHelpRoute
   '/visit/$token': typeof VisitTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/guild/': typeof GuildIndexRoute
@@ -477,6 +486,7 @@ export interface FileRouteTypes {
     | '/portal/preview'
     | '/portal/setup'
     | '/send/$token'
+    | '/signin/help'
     | '/visit/$token'
     | '/admin/'
     | '/guild/'
@@ -523,6 +533,7 @@ export interface FileRouteTypes {
     | '/portal'
     | '/portal/preview'
     | '/send/$token'
+    | '/signin/help'
     | '/visit/$token'
     | '/admin'
     | '/guild'
@@ -571,6 +582,7 @@ export interface FileRouteTypes {
     | '/portal/preview'
     | '/portal/setup'
     | '/send/$token'
+    | '/signin_/help'
     | '/visit/$token'
     | '/admin/'
     | '/guild/'
@@ -605,6 +617,7 @@ export interface RootRouteChildren {
   PortalPreviewRoute: typeof PortalPreviewRoute
   PortalSetupRoute: typeof PortalSetupRouteWithChildren
   SendTokenRoute: typeof SendTokenRoute
+  SigninHelpRoute: typeof SigninHelpRoute
   VisitTokenRoute: typeof VisitTokenRoute
   PortalIndexRoute: typeof PortalIndexRoute
   ApiAdminMediaAssetIdRoute: typeof ApiAdminMediaAssetIdRoute
@@ -731,6 +744,13 @@ declare module '@tanstack/react-router' {
       path: '/visit/$token'
       fullPath: '/visit/$token'
       preLoaderRoute: typeof VisitTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signin_/help': {
+      id: '/signin_/help'
+      path: '/signin/help'
+      fullPath: '/signin/help'
+      preLoaderRoute: typeof SigninHelpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/send/$token': {
@@ -1046,6 +1066,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortalPreviewRoute: PortalPreviewRoute,
   PortalSetupRoute: PortalSetupRouteWithChildren,
   SendTokenRoute: SendTokenRoute,
+  SigninHelpRoute: SigninHelpRoute,
   VisitTokenRoute: VisitTokenRoute,
   PortalIndexRoute: PortalIndexRoute,
   ApiAdminMediaAssetIdRoute: ApiAdminMediaAssetIdRoute,

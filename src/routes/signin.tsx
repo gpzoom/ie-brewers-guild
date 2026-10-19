@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Fragment, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { MEMBER_GUIDES } from "@/lib/member-guide";
@@ -269,29 +269,35 @@ function SignInPage() {
                 </button>
               </form>
 
+              {/* Owner's layout (2026-10-19): the three guides one per line, a
+                  divider, then sign-in help and joining. */}
               <div className="flex flex-col gap-2.5 border-t border-canvas-border pt-[18px]">
                 <p className="text-[13px] leading-[1.55] text-ink-muted text-pretty">
-                  New to the site? Read the Member Guide for{" "}
-                  {MEMBER_GUIDES.map((guide, i) => (
-                    <Fragment key={guide.type}>
-                      {i > 0 && (i === MEMBER_GUIDES.length - 1 ? " or " : ", ")}
+                  New to the site? Read the illustrated Member Guide (PDF) for your particular member
+                  type:
+                </p>
+                <ul className="flex flex-col gap-2">
+                  {MEMBER_GUIDES.map((guide) => (
+                    <li key={guide.type} className="text-[13px] leading-[1.55] text-ink-muted text-pretty">
                       <a href={guide.path} target="_blank" rel="noopener" className={cardLinkClass}>
                         {guide.label}
-                      </a>
-                    </Fragment>
-                  ))}{" "}
-                  (PDF), with a picture of each screen.
-                </p>
+                      </a>{" "}
+                      – {guide.description}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="flex flex-col gap-2.5 border-t border-canvas-border pt-[18px]">
                 <p className="text-[13px] leading-[1.55] text-ink-muted text-pretty">
-                  Not sure which address? It's whatever the Guild sent your invitation to. If that's
-                  changed,{" "}
-                  <Link to="/contact" className={cardLinkClass}>
-                    get in touch
+                  Not sure which email to use when signing in? Use the same email that the Guild used to
+                  send you the invitation. If that email has changed,{" "}
+                  <Link to="/signin/help" className={cardLinkClass}>
+                    contact support
                   </Link>{" "}
                   and we'll update it.
                 </p>
                 <p className="text-[13px] leading-[1.55] text-ink-muted text-pretty">
-                  Not a member?{" "}
+                  Not a member yet?{" "}
                   <Link to="/contact" className={cardLinkClass}>
                     Ask us about joining
                   </Link>

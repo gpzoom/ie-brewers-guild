@@ -14,13 +14,25 @@ export function parseHelpMessageShow(value: unknown): HelpMessageShow {
   return value === "done" || value === "all" ? value : "waiting";
 }
 
+/** bug and feature come from the Help button; signin from /signin/help (sign-in help). */
+export type HelpMessageKind = "bug" | "feature" | "signin";
+
+/** The pill on each message. */
+export const HELP_MESSAGE_KIND_LABEL: Record<HelpMessageKind, string> = {
+  bug: "Problem/bug",
+  feature: "Feature request",
+  signin: "Sign-in help",
+};
+
 export type HelpMessageView = {
   id: string;
-  kind: "bug" | "feature";
+  kind: HelpMessageKind;
   firstName: string;
   email: string;
   message: string;
   memberName: string | null;
+  /** Sign-in help: the address they used to sign in with. */
+  previousEmail: string | null;
   sentByGuildAdmin: boolean;
   pagePath: string | null;
   userAgent: string | null;
@@ -31,11 +43,12 @@ export type HelpMessageView = {
 
 export type HelpMessageRow = {
   id: string;
-  kind: "bug" | "feature";
+  kind: HelpMessageKind;
   first_name: string;
   email: string;
   message: string;
   member_name: string | null;
+  previous_email: string | null;
   sent_by_guild_admin: boolean;
   page_path: string | null;
   user_agent: string | null;
@@ -52,6 +65,7 @@ export function toHelpMessageView(row: HelpMessageRow): HelpMessageView {
     email: row.email,
     message: row.message,
     memberName: row.member_name,
+    previousEmail: row.previous_email ?? null,
     sentByGuildAdmin: row.sent_by_guild_admin,
     pagePath: row.page_path,
     userAgent: row.user_agent,

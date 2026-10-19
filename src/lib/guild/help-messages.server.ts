@@ -39,7 +39,7 @@ export const getHelpMessages = createServerFn({ method: "GET" })
     let query = supabase
       .from("support_messages")
       .select(
-        "id, kind, first_name, email, message, member_name, sent_by_guild_admin, page_path, user_agent, status, created_at, handled_at",
+        "id, kind, first_name, email, message, member_name, previous_email, sent_by_guild_admin, page_path, user_agent, status, created_at, handled_at",
       )
       .order("created_at", { ascending: false })
       .limit(PAGE + 1);

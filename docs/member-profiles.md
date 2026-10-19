@@ -473,6 +473,7 @@ Resend, called from a Worker. Supabase Auth sends the magic link; everything els
 | Super admin invites a Guild admin | the invitee | Who invited them, what a Guild admin does, and a sign-in link; the invite lasts 14 days |
 | A Guild member lists, changes or cancels a visit at a taproom | the taproom's owner and full editors | One email per taproom per 15 minutes, with Hide, or Approve / Decline when Ask me first is on (see Guild Mobile members at taprooms, Part 2) |
 | Help button message | the site owner | The bug report or feature request, with who sent it, the profile, the page and the device (see Help button) |
+| Sign-in help request | support@iscbrewersguild.org | Name, business, the old and new email and their note; Reply-To the new email (see Sign-in help) |
 
 On staging, Guild-bound mail (contact form, type changed in setup) goes to the test inbox **boblelle77+iscadmin@gmail.com** instead of the real Guild inbox; production and local dev use the real one. The public contact address shown on the site doesn't change.
 
@@ -501,6 +502,18 @@ Sending shows **"Thanks, we got it"** on screen. No confirmation email.
 - **Also saved** in `support_messages` before the email goes, so nothing is lost if an email fails or lands in spam. Only the super admin can read the table; nobody can change or delete a row through the API; the server writes it with the service role. `status` is `waiting` or `done`, with `handled_at` and `handled_by_user_id`; only the Help messages screen's server function changes it, after its super admin check.
 - A Guild admin editing as a member is marked as such in the email and the row.
 - Signed-in people only, and at most **5 messages an hour** per person.
+
+### Sign-in help
+
+Added 19 October 2026, at the owner's request. The sign-in page's footer (artboard T) reads, in this order: "New to the site? Read the illustrated Member Guide (PDF) for your particular member type:", then one line per guide (**Producers** – alcohol producers with a taproom; **Mobile** – such as entertainment, food trucks or pop-up vendors; **Affiliate** – industry partners such as suppliers and service providers), a divider, "Not sure which email to use when signing in? Use the same email that the Guild used to send you the invitation. If that email has changed, **contact support** and we'll update it.", and "Not a member yet? **Ask us about joining**." (the Contact page).
+
+**contact support** opens **`/signin/help`**, a public page on the sign-in page's card (no sign-in, no Help tab):
+
+- **Your name**, **Business name**, **Email you used to sign in with**, **Your new email** ("We'll sign you in with this one, and reply here."), all required; **Anything else?** optional, up to 2,000 characters. The new email can't be the same as the old one. The business name is asked because a free email address doesn't say who they are.
+- Sending shows **"Thanks, we got it"** with the new address. No confirmation email.
+- **Emailed to `support@iscbrewersguild.org`** (Cloudflare Email Routing forwards it to the site owner), subject "Sign-in help: [business]" ("[Staging]" first from staging), Reply-To the new email. The email lists both addresses and says what to do: update their sign-in email on the roster, then reply.
+- **Also saved** in `support_messages` with kind `signin`, so it shows on the Help messages screen as **Sign-in help** (with "Used to sign in with: …") and counts on the bell. The row's `first_name` is the name typed, `email` the new address, `member_name` the business name typed, `previous_email` the old address, `submitted_by_user_id` empty.
+- Public, so it has the Contact page's guards: a per-IP rate limit (refused when the limiter is missing) and a honeypot field that quietly drops bot submissions.
 
 ## Addresses and map pins
 

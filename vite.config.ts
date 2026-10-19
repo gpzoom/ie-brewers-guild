@@ -455,6 +455,9 @@ export default defineConfig(async ({ command, mode }) => {
             // SupportButton.tsx. The sender is worked out from the session
             // inside the handlers; its service-role use stays there.
             "src/lib/support/support-message.server.ts",
+            // signin-help.server.ts: sendSignInHelp, /signin/help's public
+            // send (per-IP rate limit, then the core). Called from the page.
+            "src/lib/support/signin-help.server.ts",
             // help-messages.server.ts: the super admin's Help messages
             // screen (getHelpMessages, setHelpMessageStatus), called from
             // guild.help.tsx and HelpMessagesScreen.tsx. The service key is

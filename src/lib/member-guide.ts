@@ -23,9 +23,22 @@ export function memberGuidePath(type: MemberType): string {
   return `/member-guide-${GUIDE_FILE[type]}.pdf`;
 }
 
-/** All three, in display order, for places that offer every guide (the sign-in page). */
-export const MEMBER_GUIDES: readonly { type: MemberType; label: string; path: string }[] = [
-  { type: "producer", label: "Producers", path: memberGuidePath("producer") },
-  { type: "mobile", label: "Mobile members", path: memberGuidePath("mobile") },
-  { type: "allied", label: "Affiliate Members", path: memberGuidePath("allied") },
+/**
+ * All three, in display order, for places that offer every guide (the
+ * sign-in page lists them one per line, owner's wording 2026-10-19).
+ */
+export const MEMBER_GUIDES: readonly { type: MemberType; label: string; description: string; path: string }[] = [
+  { type: "producer", label: "Producers", description: "alcohol producers with a taproom", path: memberGuidePath("producer") },
+  {
+    type: "mobile",
+    label: "Mobile",
+    description: "such as entertainment, food trucks or pop-up vendors",
+    path: memberGuidePath("mobile"),
+  },
+  {
+    type: "allied",
+    label: "Affiliate",
+    description: "industry partners such as suppliers and service providers",
+    path: memberGuidePath("allied"),
+  },
 ];
