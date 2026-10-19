@@ -69,9 +69,9 @@ export function HelpMessagesScreen({
           Help messages
         </h1>
         <p className="text-pretty text-[13px] text-[#564E45]">
-          Bug reports and feature requests sent with the Help button. Each one was also emailed to
-          you. Mark it done when it's handled; the bell counts the ones still waiting. Only you, the
-          super admin, see this page.
+          Bug reports and feature requests sent with the Help button, and sign-in help requests from
+          the sign-in page. Each one was also emailed to you. Mark it done when it's handled; the
+          bell counts the ones still waiting. Only you, the super admin, see this page.
         </p>
       </div>
 
