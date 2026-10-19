@@ -7,7 +7,7 @@ function row(o: Partial<DirectoryMemberRow>): DirectoryMemberRow {
   return {
     id: "p1", slug: "all-points", member_type: "producer", business_name: "All Points Brewing Co.", business_id: null,
     city: "Riverside", state: "CA", street_address: "2023 Chicago Ave Unit B8", postal_code: "92507",
-    latitude: 33.977, longitude: -117.353, logo_asset_id: null, ...o,
+    latitude: 33.977, longitude: -117.353, logo_asset_id: null, logo_background: "light", theme: "amber", ...o,
   };
 }
 const NOW = new Date("2026-10-05T22:00:00Z");
@@ -79,6 +79,7 @@ describe("buildV2", () => {
           locations: [{ slug: "s1", city: "Chino", street: "1 Main St", address: "1 Main St, Chino, CA", lat: 34, lng: -117.7 }],
           website: null,
           logo: null,
+          logoBackground: null,
         },
       ],
       rows: [],

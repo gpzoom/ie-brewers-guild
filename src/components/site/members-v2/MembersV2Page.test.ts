@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { V2Card } from "@/lib/members/members-v2";
 
 const c = (name: string, memberType: V2Card["memberType"], lat: number | null, lng: number | null, stopPin: V2Card["stopPin"] = null): V2Card => ({
-  key: name, groupKey: name, name, memberType, website: null, logo: null, tag: null, mobileIcon: null, stop: null, stopPin,
+  key: name, groupKey: name, name, memberType, website: null, logo: null, logoBackground: null, tag: null, mobileIcon: null, stop: null, stopPin,
   locations: [{ slug: name, city: "Riverside", street: null, address: "", lat, lng }],
 });
 

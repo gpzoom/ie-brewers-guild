@@ -1,4 +1,6 @@
 import type { MemberLinkKind, MemberType } from "@/lib/supabase/types";
+import { logoBackgroundColor } from "@/lib/members/logo-background";
+import type { MemberThemeName } from "@/lib/theme/member-themes";
 
 /**
  * The public /members page (map + card grid), built from the database:
@@ -15,7 +17,7 @@ import type { MemberLinkKind, MemberType } from "@/lib/supabase/types";
 
 /** The members columns the directory reads -- all in anon's column grant. */
 export const DIRECTORY_MEMBER_COLUMNS =
-  "id, slug, member_type, business_name, city, state, street_address, postal_code, latitude, longitude, logo_asset_id, business_id";
+  "id, slug, member_type, business_name, city, state, street_address, postal_code, latitude, longitude, logo_asset_id, logo_background, theme, business_id";
 
 export type DirectoryMemberRow = {
   id: string;
@@ -31,6 +33,9 @@ export type DirectoryMemberRow = {
   latitude: number | string | null;
   longitude: number | string | null;
   logo_asset_id: string | null;
+  /** The tile behind the logo, as on the profile (logo-background.ts). */
+  logo_background: string | null;
+  theme: string | null;
 };
 
 export type DirectoryLinkRow = {
@@ -62,6 +67,8 @@ export type DirectoryMember = {
   locations: DirectoryLocation[];
   website: string | null;
   logo: string | null;
+  /** The logo tile's color (logoBackgroundColor), from the location whose logo is shown; null with no logo. */
+  logoBackground: string | null;
   facebook?: string;
   instagram?: string;
   untappd?: string;
@@ -152,8 +159,8 @@ export function buildDirectoryMembers(args: {
     const firstUrl = (match: (link: DirectoryLinkRow) => boolean) =>
       allLinks.find(match)?.url ?? undefined;
 
-    const logoAssetId = sorted.find((row) => row.logo_asset_id && args.logoUrls.has(row.logo_asset_id))
-      ?.logo_asset_id;
+    const logoRow = sorted.find((row) => row.logo_asset_id && args.logoUrls.has(row.logo_asset_id));
+    const logoAssetId = logoRow?.logo_asset_id;
 
     const card: DirectoryMember = {
       name,
@@ -162,6 +169,9 @@ export function buildDirectoryMembers(args: {
       locations: sorted.map(toLocation),
       website: firstUrl((link) => link.kind === "website") ?? null,
       logo: logoAssetId ? (args.logoUrls.get(logoAssetId) ?? null) : null,
+      logoBackground: logoRow
+        ? logoBackgroundColor(logoRow.logo_background, (logoRow.theme ?? "amber") as MemberThemeName)
+        : null,
     };
     const facebook = firstUrl((link) => link.kind === "facebook");
     const instagram = firstUrl((link) => link.kind === "instagram");

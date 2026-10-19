@@ -7,6 +7,7 @@ import {
   type DirectoryLinkRow,
   type DirectoryMemberRow,
 } from "./directory";
+import { getMemberThemeHex } from "@/lib/theme/member-themes";
 
 function row(overrides: Partial<DirectoryMemberRow>): DirectoryMemberRow {
   return {
@@ -22,6 +23,8 @@ function row(overrides: Partial<DirectoryMemberRow>): DirectoryMemberRow {
     latitude: 33.992759,
     longitude: -117.347977,
     logo_asset_id: "logo-1",
+    logo_background: "light",
+    theme: "amber",
     ...overrides,
   };
 }
@@ -74,10 +77,36 @@ describe("buildDirectoryMembers", () => {
       ],
       website: "https://euryalebrewing.com/",
       logo: "https://cdn.example/logo.png",
+      logoBackground: "#FFFFFF",
       facebook: "https://facebook.com/euryale",
       instagram: "https://instagram.com/euryale",
       untappd: "https://untappd.com/Euryale",
     });
+  });
+
+  it("the logo tile uses the member's chosen background, like the profile (dark, or their theme color)", () => {
+    const logoUrls = new Map([["logo-1", "https://cdn.example/logo.png"]]);
+    const [dark] = buildDirectoryMembers({ rows: [row({ logo_background: "dark" })], links: [], logoUrls });
+    expect(dark.logoBackground).toBe("#241F1A");
+    const [themed] = buildDirectoryMembers({ rows: [row({ logo_background: "theme", theme: "teal" })], links: [], logoUrls });
+    expect(themed.logoBackground).toBe(getMemberThemeHex("teal"));
+  });
+
+  it("a multi-location card takes the background of the location whose logo it shows", () => {
+    const [card] = buildDirectoryMembers({
+      rows: [
+        row({ id: "a", city: "Chino", business_id: "biz", logo_asset_id: null, logo_background: "light" }),
+        row({ id: "b", city: "Ontario", business_id: "biz", logo_asset_id: "logo-1", logo_background: "dark" }),
+      ],
+      links: [],
+      logoUrls: new Map([["logo-1", "https://cdn.example/logo.png"]]),
+    });
+    expect(card.logoBackground).toBe("#241F1A");
+  });
+
+  it("no logo: no tile color", () => {
+    const [card] = buildDirectoryMembers({ rows: [row({ logo_background: "dark" })], links: [], logoUrls: new Map() });
+    expect(card.logoBackground).toBeNull();
   });
 
   it("groups a multi-location business into one card, locations by city, each with its own slug", () => {

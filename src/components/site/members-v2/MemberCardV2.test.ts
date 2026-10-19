@@ -13,7 +13,7 @@ import type { V2Card } from "@/lib/members/members-v2";
 function card(o: Partial<V2Card>): V2Card {
   return {
     key: "Hangar 24 Brewing Co.", groupKey: "Hangar 24 Brewing Co.", name: "Hangar 24 Brewing Co.", memberType: "producer", website: "https://hangar24.example",
-    logo: null, tag: null, mobileIcon: null, stop: null, stopPin: null,
+    logo: null, logoBackground: null, tag: null, mobileIcon: null, stop: null, stopPin: null,
     locations: [
       { slug: "h24-irvine", city: "Irvine", street: "17877 Von Karman Ave", address: "17877 Von Karman Ave, Irvine, CA", lat: 33.69, lng: -117.85 },
       { slug: "h24-redlands", city: "Redlands", street: "1710 Sessums Dr", address: "1710 Sessums Dr, Redlands, CA", lat: 34.06, lng: -117.2 },
@@ -26,6 +26,15 @@ const render = (c: V2Card) =>
   renderToStaticMarkup(createElement(MemberCardV2, { card: c, linkSearch: {}, origin: null, highlighted: false, focusedSlug: null, onHoverCard: () => {}, onHoverLocation: () => {} }));
 
 describe("MemberCardV2", () => {
+  it("the logo tile uses the member's chosen background, as on the profile", () => {
+    const html = render(card({ logo: "https://cdn.example/logo.png", logoBackground: "#241F1A" }));
+    expect(html).toContain("background-color:#241F1A");
+  });
+
+  it("no logo: the fallback icon stays on white", () => {
+    expect(render(card({ logo: null, logoBackground: "#241F1A" }))).not.toContain("background-color:#241F1A");
+  });
+
   it("several locations: 'N locations', two rows, '+ 1 more location', Website and Profile once", () => {
     const html = render(card({}));
     expect(html).toContain("3 locations");

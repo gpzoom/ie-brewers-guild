@@ -72,7 +72,12 @@ export function MemberCardV2(props: {
         props.compact && "px-4 py-4",
       )}
     >
-      <div className={cn("flex shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-border bg-white", props.compact ? "h-12 w-12" : "h-14 w-14")}>
+      {/* The logo sits on the tile color the member chose (White, Dark or their
+          theme color), the same as on their profile; white with no logo. */}
+      <div
+        className={cn("flex shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-border bg-white", props.compact ? "h-12 w-12" : "h-14 w-14")}
+        style={card.logo && card.logoBackground ? { backgroundColor: card.logoBackground } : undefined}
+      >
         {card.logo ? <img src={card.logo} alt="" className="h-full w-full object-contain" loading="lazy" /> : <Beer className="h-6 w-6 text-primary" />}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
