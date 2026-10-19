@@ -16,7 +16,13 @@ import type { MemberType } from "@/lib/supabase/types";
 export type TransactionalEmailPayload =
   | { trigger: "creator_upload_pending"; memberId: string; assetId: string; creatorName: string | null }
   | { trigger: "hours_stale"; memberId: string; confirmUrl: string }
-  | { trigger: "member_invited"; memberId: string; email: string }
+  | {
+      trigger: "member_invited";
+      memberId: string;
+      email: string;
+      /** The profile's business name; null falls back to "Your business". */
+      businessName?: string | null;
+    }
   | {
       /** Roster: one invite for a one-manager business (spec 2026-10-15). */
       trigger: "business_invited";
@@ -234,6 +240,38 @@ const MEMBER_TYPE_EMAIL_LABEL: Record<MemberType, string> = {
   allied: "Affiliate Member",
 };
 
+/**
+ * The Member and Business invite emails (owner's wording, 2026-10-19).
+ * `shared` is the business invite's extra sentence about the shared look.
+ */
+function inviteEmail(
+  siteUrl: string,
+  parts: { subject: string; intro: string; profile: "profile" | "profiles"; shared?: string },
+): EmailContent {
+  const signInUrl = `${siteUrl}/signin?next=/portal`;
+  const howTo =
+    "Sign in anytime using the email address this message was sent to. The sign-in page has links to our " +
+    `Member Guides showing you exactly how to complete your ${parts.profile}. It should take less than ` +
+    "10 minutes once you've got all your photos and information gathered.";
+  const linkLabel = "Here's the sign-in link:";
+  const help = "If you have any questions or get stuck, just reply to this email and we'll get you sorted out.";
+  const closing = `We look forward to seeing your ${parts.profile} live on the website.`;
+  const before = [parts.intro, howTo];
+  const after = [...(parts.shared ? [parts.shared] : []), help, closing];
+  return {
+    subject: parts.subject,
+    replyTo: MEMBER_INVITE_REPLY_TO,
+    text: [...before, `${linkLabel} ${signInUrl}`, ...after, `Cheers!\n\nThe ${ORG_NAME}`].join("\n\n"),
+    html: wrapHtml([
+      ...before.map(escapeHtml),
+      `${linkLabel} <a href="${signInUrl}">${signInUrl}</a>`,
+      ...after.map(escapeHtml),
+      "Cheers!",
+      escapeHtml(`The ${ORG_NAME}`),
+    ]),
+  };
+}
+
 export function buildEmailContent(payload: TransactionalEmailPayload, siteUrl: string = SITE_URL): EmailContent {
   switch (payload.trigger) {
     case "creator_upload_pending": {
@@ -268,37 +306,25 @@ export function buildEmailContent(payload: TransactionalEmailPayload, siteUrl: s
     }
 
     case "member_invited": {
-      // One link only (owner, 2026-10-15): fewer links reads less like bulk
-      // mail. The Member Guide is linked from the sign-in page and the
-      // portal sidebar instead.
-      const signInUrl = `${siteUrl}/signin?next=/portal`;
-      const welcome =
-        `Welcome to the ${ORG_NAME}! The Guild has created a profile for your business on the ` +
-        "member directory.";
-      const howTo = "Sign in anytime with this email address to start filling it in:";
-      const guide = "The sign-in page also links to our step-by-step Member Guide. Questions? Just reply to this email.";
-      return {
-        subject: `You're invited to the ${ORG_SHORT_NAME} member directory`,
-        replyTo: MEMBER_INVITE_REPLY_TO,
-        text: `${welcome} ${howTo}\n\n${signInUrl}\n\n${guide}`,
-        html: wrapHtml([welcome, `${howTo} <a href="${signInUrl}">${signInUrl}</a>`, guide]),
-      };
+      // Owner's wording, 2026-10-19. One link only (owner, 2026-10-15):
+      // fewer links reads less like bulk mail.
+      const name = payload.businessName?.trim() || "Your business";
+      return inviteEmail(siteUrl, {
+        subject: `${name} is invited to the ${ORG_SHORT_NAME} Member Directory`,
+        intro: `The ${ORG_NAME} has reserved a slot for ${name} to add your business profile to our Member Directory.`,
+        profile: "profile",
+      });
     }
 
     case "business_invited": {
-      const signInUrl = `${siteUrl}/signin?next=/portal`;
-      const intro =
-        `Welcome to the ${ORG_NAME}! The Guild has set up profiles on the member directory for ` +
-        `${payload.businessName}'s ${payload.locationCount} locations, and you manage all of them.`;
-      const howTo = "Sign in anytime with this email address to set them up:";
-      const after =
-        "You'll set up the logo, cover and theme once for every location, then each location's own details. Questions? Just reply to this email.";
-      return {
-        subject: `You're invited to manage ${payload.businessName}'s ${payload.locationCount} locations on the ${ORG_SHORT_NAME} member directory`,
-        replyTo: MEMBER_INVITE_REPLY_TO,
-        text: `${intro}\n\n${howTo}\n\n${signInUrl}\n\n${after}`,
-        html: wrapHtml([escapeHtml(intro), `${howTo} <a href="${signInUrl}">${signInUrl}</a>`, escapeHtml(after)]),
-      };
+      // Owner's wording, 2026-10-19.
+      return inviteEmail(siteUrl, {
+        subject: `${payload.businessName} is invited to the ${ORG_SHORT_NAME} Member Directory`,
+        intro: `The ${ORG_NAME} has reserved slots for ${payload.businessName} to add your business profiles to our Member Directory.`,
+        profile: "profiles",
+        shared:
+          "You'll set up the logo, cover photo and theme colors that will be shared by all locations, and then each location's own details.",
+      });
     }
 
     case "business_location_added": {

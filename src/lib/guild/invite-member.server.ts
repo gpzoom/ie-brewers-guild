@@ -114,7 +114,14 @@ export const inviteMember = createServerFn({ method: "POST" })
           await (await service()).auth.admin.deleteUser(userId);
         },
         async sendInviteEmail(memberId, email) {
-          await sendTransactionalEmail({ trigger: "member_invited", memberId, email });
+          // The email names the business (owner, 2026-10-19).
+          const { data: member } = await (await service())
+            .from("members")
+            .select("business_name")
+            .eq("id", memberId)
+            .maybeSingle();
+          const businessName = (member as { business_name: string | null } | null)?.business_name?.trim() || null;
+          await sendTransactionalEmail({ trigger: "member_invited", memberId, email, businessName });
         },
       },
       { memberId: data.memberId, email: data.email },

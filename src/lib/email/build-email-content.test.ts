@@ -100,11 +100,32 @@ describe("buildEmailContent: member_invited", () => {
     expect(content.text).not.toContain(SITE_URL);
   });
 
-  it("has one link, to sign in, and points to the guide on the sign-in page instead (owner, 2026-10-15)", () => {
+  it("has one link, to sign in, and points to the guides on the sign-in page instead (owner, 2026-10-15)", () => {
     const content = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" });
     expect(content.html.match(/<a /g)).toHaveLength(1);
     expect(content.text).not.toContain("member-guide.pdf");
-    expect(content.text).toContain("The sign-in page also links to our step-by-step Member Guide.");
+    expect(content.text).toContain("The sign-in page has links to our Member Guides");
+  });
+
+  it("names the business in the subject and opening (owner's wording, 2026-10-19)", () => {
+    const content = buildEmailContent({
+      trigger: "member_invited",
+      memberId: "m1",
+      email: "new@example.com",
+      businessName: "Metabolic Brewing Co.",
+    });
+    expect(content.subject).toBe(`Metabolic Brewing Co. is invited to the ${ORG_SHORT_NAME} Member Directory`);
+    expect(content.text).toContain(
+      `The ${ORG_NAME} has reserved a slot for Metabolic Brewing Co. to add your business profile to our Member Directory.`,
+    );
+    expect(content.text).toContain("complete your profile.");
+    expect(content.text).toContain(`Here's the sign-in link: ${SITE_URL}/signin?next=/portal`);
+    expect(content.text.endsWith(`Cheers!\n\nThe ${ORG_NAME}`)).toBe(true);
+  });
+
+  it("with no business name, says Your business", () => {
+    const content = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" });
+    expect(content.subject).toBe(`Your business is invited to the ${ORG_SHORT_NAME} Member Directory`);
   });
 
   it("replies go to the webmaster, since the sending address has no inbox", () => {
@@ -375,10 +396,13 @@ describe("buildEmailContent: business_invited (spec 2026-10-15)", () => {
     email: "boss@hangar24.example",
   };
 
-  it("names the business and its location count in the subject", () => {
-    expect(buildEmailContent(payload).subject).toBe(
-      `You're invited to manage Hangar 24 Brewing Co.'s 4 locations on the ${ORG_SHORT_NAME} member directory`,
+  it("names the business in the subject and opening (owner's wording, 2026-10-19)", () => {
+    const content = buildEmailContent(payload);
+    expect(content.subject).toBe(`Hangar 24 Brewing Co. is invited to the ${ORG_SHORT_NAME} Member Directory`);
+    expect(content.text).toContain(
+      `The ${ORG_NAME} has reserved slots for Hangar 24 Brewing Co. to add your business profiles to our Member Directory.`,
     );
+    expect(content.text).toContain("We look forward to seeing your profiles live on the website.");
   });
 
   it("has one link, to sign in to the Member Portal, and replies go to the webmaster", () => {
@@ -388,12 +412,12 @@ describe("buildEmailContent: business_invited (spec 2026-10-15)", () => {
     expect(content.replyTo).toBe(MEMBER_INVITE_REPLY_TO);
   });
 
-  it("says the look is set up once for every location, then invites replies", () => {
+  it("says the look is shared by all locations, then invites replies", () => {
     const content = buildEmailContent(payload);
     const sentence =
-      "You'll set up the logo, cover and theme once for every location, then each location's own details. Questions? Just reply to this email.";
-    expect(content.text).toContain(sentence);
-    expect(content.html).toContain("logo, cover and theme once for every location");
+      "You'll set up the logo, cover photo and theme colors that will be shared by all locations, and then each location's own details.";
+    expect(content.text).toContain(`${sentence}\n\nIf you have any questions or get stuck, just reply to this email`);
+    expect(content.html).toContain("shared by all locations");
   });
 
   it("escapes the business name in the HTML", () => {

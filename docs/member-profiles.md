@@ -465,8 +465,8 @@ Resend, called from a Worker. Supabase Auth sends the magic link; everything els
 | --- | --- | --- |
 | Contact form submitted | the sender | "Thank you for reaching out. We have received your submission." Plus, when the membership box is ticked, a line saying a Guild representative will be in touch to discuss membership. |
 | Contact form submitted | the Guild | The inquiry, flagged if it is a membership lead |
-| Member invited | the new member | Welcome and one link, to sign in; it says the sign-in page links to the Member Guide. Replies go to webmaster@iscbrewersguild.org (info@ once it's set up). One link only (owner, 15 October 2026): fewer links reads less like bulk mail |
-| Business invited | the business manager | "You're invited to manage [business]'s [N] locations on the ISC Brewers Guild member directory." One sign-in link; replies go to webmaster@iscbrewersguild.org |
+| Member invited | the new member | "[Business] is invited to the ISC Brewers Guild Member Directory": the owner's wording (19 October 2026), signed "Cheers! The Inland Southern California Brewers Guild". One link, to sign in; it says the sign-in page links to the Member Guides. Replies go to webmaster@iscbrewersguild.org (info@ once it's set up). One link only (owner, 15 October 2026): fewer links reads less like bulk mail |
+| Business invited | the business manager | "[Business] is invited to the ISC Brewers Guild Member Directory." Same wording as Member invited, plural, plus a sentence on the shared logo, cover and theme (owner, 19 October 2026). One sign-in link; replies go to webmaster@iscbrewersguild.org |
 | Business location added | the business manager | "A new location, [business] · [city], was added to your business." One sign-in link; replies go to webmaster@ |
 | Hours stale past 90 days | the member | One-click confirmation — the link itself sets the timestamp, no login |
 | Creator uploads to a gallery | the member | Something is waiting for review |
