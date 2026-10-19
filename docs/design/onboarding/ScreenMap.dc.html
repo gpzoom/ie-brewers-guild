@@ -52,39 +52,31 @@ a{color:#B3591F}a:hover{color:#8F4517}
 <span class="arrow">→</span>
 <div class="card" style="width: 300px"><p class="t">Magic link sign in</p><p class="m">The sign-in page (artboard T). Every member lands in the wizard/portal; a Guild admin lands on the Guild dashboard.</p></div>
 <span class="arrow">→</span>
-<div class="card" style="width: 360px; background: #EFEAE1"><p class="t">Type confirmed and Basics done?</p><p class="m">Checked per member, not per person. Once yes, it is yes for good: the wizard never shows again, for the owner or any editor.</p></div>
+<div class="card" style="width: 360px; background: #EFEAE1"><p class="t">Welcome and Basics done?</p><p class="m">Checked per member, not per person. Once yes, it is yes for good: the wizard never shows again, for the owner or any editor.</p></div>
 <span class="arrow">→</span>
 <div style="display: flex; flex-direction: column; gap: 10px; width: 520px">
-<div class="card" style="flex-direction: row; align-items: center; gap: 12px; padding: 12px 16px"><span class="tag req">No</span><p class="b"><strong>Setup wizard</strong>, back at step 1, 2 or 3 where they left off</p></div>
+<div class="card" style="flex-direction: row; align-items: center; gap: 12px; padding: 12px 16px"><span class="tag req">No</span><p class="b"><strong>Setup wizard</strong>, back at step 1 or 2 where they left off</p></div>
 <div class="card" style="flex-direction: row; align-items: center; gap: 12px; padding: 12px 16px"><span class="tag skip">Yes</span><p class="b"><strong>Portal</strong> (section 4), from now on</p></div>
-<div class="card" style="flex-direction: row; align-items: center; gap: 12px; padding: 12px 16px"><span class="tag skip">Left after step 3</span><p class="b"><strong>Portal</strong> with a "Finish your profile" card</p></div>
+<div class="card" style="flex-direction: row; align-items: center; gap: 12px; padding: 12px 16px"><span class="tag skip">Left after step 2</span><p class="b"><strong>Portal</strong> with a "Finish your profile" card</p></div>
 </div>
 </div>
 </div>
 
 <div style="display: flex; flex-direction: column; gap: 16px">
-<p class="lbl">2 · Setup wizard (redesigned 2 Oct 2026; hi-fi boards below): one step per screen · Back after Welcome, Skip on optional steps · type tag on every screen · Producer 8 steps, Mobile 7, Affiliate 9</p>
+<p class="lbl">2 · Setup wizard (redesigned 2 Oct 2026; hi-fi boards below): one step per screen · Back after Welcome, Skip on optional steps · type tag on every screen · Producer 7 steps, Mobile 6, Affiliate 8 · no separate Confirm type step (17 Oct 2026)</p>
 <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px">
 
 <div class="card">
 <div style="display: flex; gap: 10px; align-items: center"><span class="num">1</span><p class="t">Welcome</p></div>
-<p class="b">What you'll want handy: logo (PNG; step 4 shows how to make one), a few photos (JPG or PNG), your hours or calendar link.</p>
-<p class="m">About 10 minutes. Anything after step 3 can be skipped and finished later.</p>
-<div class="tags"><span class="tag p">P</span><span class="tag mo">M</span><span class="tag al">A</span></div>
+<p class="b">What you'll want handy: logo (PNG; step 3 shows how to make one), a few photos (JPG or PNG), your hours or calendar link.</p>
+<p class="m">Shows the type the Guild set: "You're set up as a …". <strong>Get started</strong> confirms it, and it locks.</p>
+<p class="m">About 10 minutes. Anything after step 2 can be skipped and finished later.</p>
+<div class="tags"><span class="tag p">P</span><span class="tag mo">M</span><span class="tag al">A</span><span class="tag req">Required</span></div>
 <p class="art">New screen</p>
 </div>
 
 <div class="card">
-<div style="display: flex; gap: 10px; align-items: center"><span class="num">2</span><p class="t">Confirm your member type</p></div>
-<p class="b">Shows the type the Guild set, with <strong>Yes, that's us</strong>. "That's not right" opens the other two types to choose from.</p>
-<p class="m">If they choose a different type, the Guild admin gets an email: "[Member] changed their type from X to Y during setup."</p>
-<p class="m"><strong>Locks after this step.</strong> Later changes go through a request to the Guild admin.</p>
-<div class="tags"><span class="tag req">Required</span></div>
-<p class="art">New screen · one-time only</p>
-</div>
-
-<div class="card">
-<div style="display: flex; gap: 10px; align-items: center"><span class="num">3</span><p class="t">The basics</p></div>
+<div style="display: flex; gap: 10px; align-items: center"><span class="num">2</span><p class="t">The basics</p></div>
 <ul class="ul"><li>Business name, city (required)</li><li>Tagline, 70 characters</li><li>Phone, member since</li><li>Address with Google suggestions, plus ZIP</li></ul>
 <div class="branch">
 <p class="m"><span class="tag p">P</span> street address</p>
@@ -97,7 +89,7 @@ a{color:#B3591F}a:hover{color:#8F4517}
 </div>
 
 <div class="card" style="border: 2px solid #B45309">
-<div style="display: flex; gap: 10px; align-items: center"><span class="num">4</span><p class="t">Logo, Photos &amp; Cover</p></div>
+<div style="display: flex; gap: 10px; align-items: center"><span class="num">3</span><p class="t">Logo, Photos &amp; Cover</p></div>
 <ul class="ul"><li>Logo (PNG), with "You don't have a PNG format?" and Canva's Background Removal tool above Logo background</li><li>Gallery, camera-roll hint, creator upload link</li><li>Carousel: up to 4 portrait slides</li><li>Cover, picked from the gallery</li></ul>
 <p class="m">Live preview of the profile top beside it (below on a phone). The old Photos step is part of this one.</p>
 <div class="tags"><span class="tag skip">Skippable</span></div>
@@ -105,7 +97,7 @@ a{color:#B3591F}a:hover{color:#8F4517}
 </div>
 
 <div class="card">
-<div style="display: flex; gap: 10px; align-items: center"><span class="num">5</span><p class="t">When you're open</p></div>
+<div style="display: flex; gap: 10px; align-items: center"><span class="num">4</span><p class="t">When you're open</p></div>
 <div class="branch">
 <p class="m"><span class="tag p">P</span> 7-day hours, split hours, past-midnight close, holidays</p>
 <p class="m"><span class="tag al">A</span> 5-day business hours</p>
@@ -117,16 +109,16 @@ a{color:#B3591F}a:hover{color:#8F4517}
 </div>
 
 <div class="card">
-<div style="display: flex; gap: 10px; align-items: center"><span class="num">6</span><p class="t">Events</p></div>
+<div style="display: flex; gap: 10px; align-items: center"><span class="num">5</span><p class="t">Events</p></div>
 <p class="b">Trivia nights, releases, open houses. Connect a calendar (only events with the tag, e.g. #guild, in the title or description come in) or add by hand.</p>
 <p class="m"><span class="tag p">P</span> also Food: trucks, pop-ups and kitchen specials tagged #food, plus the "We have our own kitchen" switch ("Kitchen open"); its own Food menu item</p>
-<p class="m">Mobile members skip this automatically: step 5 already did it. Events and their Canceled / Rescheduled marks update the live page right away (not drafted).</p>
+<p class="m">Mobile members skip this automatically: step 4 already did it. Events and their Canceled / Rescheduled marks update the live page right away (not drafted).</p>
 <div class="tags"><span class="tag p">P</span><span class="tag al">A</span><span class="tag skip">Skippable</span></div>
 <p class="art">M</p>
 </div>
 
 <div class="card">
-<div style="display: flex; gap: 10px; align-items: center"><span class="num">7</span><p class="t">Links</p></div>
+<div style="display: flex; gap: 10px; align-items: center"><span class="num">6</span><p class="t">Links</p></div>
 <p class="b">Link buttons: website, Instagram, Facebook, TikTok, plus one more button:</p>
 <div class="branch">
 <p class="m"><span class="tag p">P</span> Tap list · <span class="tag mo">M</span> Press kit · <span class="tag al">A</span> Catalog</p>
@@ -137,7 +129,7 @@ a{color:#B3591F}a:hover{color:#8F4517}
 </div>
 
 <div class="card" style="border: 2px solid #3B4B9A">
-<div style="display: flex; gap: 10px; align-items: center"><span class="num" style="background: #3B4B9A">8</span><p class="t">Member discount &amp; supplies</p></div>
+<div style="display: flex; gap: 10px; align-items: center"><span class="num" style="background: #3B4B9A">7</span><p class="t">Member discount &amp; supplies</p></div>
 <ul class="ul"><li>% off, or "no fixed percentage"</li><li>How members redeem it</li><li>What you supply (categories)</li></ul>
 <p class="m">Only shown to Affiliate Members. Hidden for everyone else.</p>
 <div class="tags"><span class="tag al">Affiliate only</span><span class="tag skip">Skippable</span></div>
@@ -145,7 +137,7 @@ a{color:#B3591F}a:hover{color:#8F4517}
 </div>
 
 <div class="card">
-<div style="display: flex; gap: 10px; align-items: center"><span class="num">9</span><p class="t">Pick your theme</p></div>
+<div style="display: flex; gap: 10px; align-items: center"><span class="num">8</span><p class="t">Pick your theme</p></div>
 <p class="b">Eight theme swatches with a small live preview of your header.</p>
 <p class="m">Skip keeps Amber.</p>
 <div class="tags"><span class="tag skip">Skippable</span></div>

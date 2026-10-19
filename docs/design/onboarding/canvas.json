@@ -34,7 +34,7 @@
     "W02-Type.dc.html": {
       "h": 900,
       "is_interactive": true,
-      "title": "2 · Confirm your member type",
+      "title": "Retired · 2 · Confirm your member type",
       "w": 1280,
       "x": 803,
       "y": 3700
@@ -42,7 +42,7 @@
     "W02b-Type-NotRight.dc.html": {
       "h": 940,
       "is_interactive": true,
-      "title": "2 · After “That's not right”",
+      "title": "Retired · 2 · After “That's not right”",
       "w": 1280,
       "x": 2163,
       "y": 3700
@@ -50,7 +50,7 @@
     "W03-Basics-Allied.dc.html": {
       "h": 1406,
       "is_interactive": true,
-      "title": "3 · The basics — Affiliate",
+      "title": "2 · The basics — Affiliate",
       "w": 1280,
       "x": 6243,
       "y": 3700
@@ -58,7 +58,7 @@
     "W03-Basics-Mobile.dc.html": {
       "h": 1319,
       "is_interactive": true,
-      "title": "3 · The basics — Mobile",
+      "title": "2 · The basics — Mobile",
       "w": 1280,
       "x": 4883,
       "y": 3700
@@ -66,7 +66,7 @@
     "W03-Basics-Producer.dc.html": {
       "h": 1209,
       "is_interactive": true,
-      "title": "3 · The basics — Producer",
+      "title": "2 · The basics — Producer",
       "w": 1280,
       "x": 3523,
       "y": 3700
@@ -74,7 +74,7 @@
     "W04-LogoPhotosCover.dc.html": {
       "h": 2316,
       "is_interactive": true,
-      "title": "4 · Logo, Photos & Cover — filled in (NEW)",
+      "title": "3 · Logo, Photos & Cover — filled in (NEW)",
       "w": 1280,
       "x": 803,
       "y": 5266
@@ -82,7 +82,7 @@
     "W04e-LogoPhotosCover-Empty.dc.html": {
       "h": 2093,
       "is_interactive": true,
-      "title": "4 · Logo, Photos & Cover — brand-new member (NEW)",
+      "title": "3 · Logo, Photos & Cover — brand-new member (NEW)",
       "w": 1280,
       "x": -557,
       "y": 5266
@@ -90,7 +90,7 @@
     "W04p-LogoPhotosCover-Phone.dc.html": {
       "h": 3107,
       "is_interactive": true,
-      "title": "4 · Logo, Photos & Cover — phone (NEW)",
+      "title": "3 · Logo, Photos & Cover — phone (NEW)",
       "w": 390,
       "x": 2163,
       "y": 5266
@@ -98,7 +98,7 @@
     "W05-Hours-Allied.dc.html": {
       "h": 1525,
       "is_interactive": true,
-      "title": "5 · When you're open — Affiliate",
+      "title": "4 · When you're open — Affiliate",
       "w": 1280,
       "x": 2163,
       "y": 8533
@@ -106,7 +106,7 @@
     "W05-Hours-Producer.dc.html": {
       "h": 1452,
       "is_interactive": true,
-      "title": "5 · When you're open — Producer",
+      "title": "4 · When you're open — Producer",
       "w": 1280,
       "x": -557,
       "y": 8533
@@ -114,7 +114,7 @@
     "W05-WhereWellBe-Mobile.dc.html": {
       "h": 941,
       "is_interactive": true,
-      "title": "5 · Where we'll be — Mobile",
+      "title": "4 · Where we'll be — Mobile",
       "w": 1280,
       "x": 803,
       "y": 8533
@@ -122,7 +122,7 @@
     "W06-Events-Allied.dc.html": {
       "h": 938,
       "is_interactive": true,
-      "title": "6 · Events — Affiliate",
+      "title": "5 · Events — Affiliate",
       "w": 1280,
       "x": 803,
       "y": 10218
@@ -130,7 +130,7 @@
     "W06-Events-Producer.dc.html": {
       "h": 1947,
       "is_interactive": true,
-      "title": "6 · Events + Food — Producer (new Food wording)",
+      "title": "5 · Events + Food — Producer (new Food wording)",
       "w": 1280,
       "x": -557,
       "y": 10218
@@ -138,7 +138,7 @@
     "W07-Links-Mobile.dc.html": {
       "h": 1255,
       "is_interactive": true,
-      "title": "7 · Links — Mobile (booking links)",
+      "title": "5 · Links — Mobile (booking links)",
       "w": 1280,
       "x": 3523,
       "y": 10218
@@ -146,7 +146,7 @@
     "W07-Links-Producer.dc.html": {
       "h": 1148,
       "is_interactive": true,
-      "title": "7 · Links — Producer",
+      "title": "6 · Links — Producer",
       "w": 1280,
       "x": 2163,
       "y": 10218
@@ -154,7 +154,7 @@
     "W08-Discount-Allied.dc.html": {
       "h": 1177,
       "is_interactive": true,
-      "title": "8 · Member discount & supplies — Affiliate",
+      "title": "7 · Member discount & supplies — Affiliate",
       "w": 1280,
       "x": 4883,
       "y": 10218
@@ -162,7 +162,7 @@
     "W09-Theme.dc.html": {
       "h": 933,
       "is_interactive": true,
-      "title": "9 · Pick your theme (renamed)",
+      "title": "8 · Pick your theme (Producer: step 7, Mobile: step 6)",
       "w": 1280,
       "x": -557,
       "y": 12325
@@ -228,7 +228,7 @@
     "q2": {
       "fill": "green",
       "size": 24,
-      "text": "DECIDED — Member type\nMember confirms the Guild's type, or picks the right one (Guild admin gets an email when they do). Locked after that. Later changes = support request to the Guild admin.",
+      "text": "DECIDED — Member type (updated 17 Oct)\nThe Guild always chooses the type when it adds a member. Welcome shows it and Get started confirms it; there's no separate Confirm type step. Locked after that. Later changes = Request a type change on the Basics page.",
       "w": 400,
       "x": 2470,
       "y": 420
@@ -236,7 +236,7 @@
     "q3": {
       "fill": "green",
       "size": 24,
-      "text": "DECIDED — Getting in & when the wizard shows\n'Member Portal' is the only sign-in link in the footer (the old 'Member Sign In' link was removed 27 Sep). Every member sign-in lands in the wizard/portal.\n\nWizard runs until the member confirms type AND clicks Continue on The Basics. After that: portal only, forever, for everyone on that member.",
+      "text": "DECIDED — Getting in & when the wizard shows\n'Member Portal' is the only sign-in link in the footer (the old 'Member Sign In' link was removed 27 Sep). Every member sign-in lands in the wizard/portal.\n\nWizard runs until the member clicks Get started on Welcome AND Continue on The basics. After that: portal only, forever, for everyone on that member.",
       "w": 400,
       "x": 2470,
       "y": 760
@@ -284,7 +284,7 @@
     "wn1": {
       "fill": "green",
       "size": 24,
-      "text": "DECIDED — Food on kitchen days (2 Oct)\nA \"We have our own kitchen\" switch on the Food section. When it's on, an open day with nothing tagged #food says \"Kitchen open\" instead of \"Bring your own food\". Closed days still say \"Closed\". See board 6 · Events + Food.",
+      "text": "DECIDED — Food on kitchen days (2 Oct)\nA \"We have our own kitchen\" switch on the Food section. When it's on, an open day with nothing tagged #food says \"Kitchen open\" instead of \"Bring your own food\". Closed days still say \"Closed\". See board 5 · Events + Food.",
       "w": 440,
       "x": 7603,
       "y": 3700
@@ -300,7 +300,7 @@
     "wn3": {
       "fill": "blue",
       "size": 24,
-      "text": "BACK EVERYWHERE\nEvery screen after Welcome has Back. The basics → Confirm your type (shows your locked type). Step 4 → The basics. You're live → Review.",
+      "text": "BACK EVERYWHERE\nEvery screen after Welcome has Back. The basics → Welcome. Step 4 → The basics. You're live → Review.",
       "w": 440,
       "x": 7603,
       "y": 4740
@@ -324,7 +324,7 @@
     "wn6": {
       "fill": "blue",
       "size": 24,
-      "text": "STEP NUMBERS\nBoards use the guide's numbers (1–9). The screen counts only your type's steps: Producer 8, Mobile 7, Affiliate 9. Back and Continue are clickable in Play.",
+      "text": "STEP NUMBERS\nBoards use the guide's numbers (1–8). The screen counts only your type's steps: Producer 7, Mobile 6, Affiliate 8. The Confirm type boards are retired (17 Oct). Back and Continue are clickable in Play.",
       "w": 440,
       "x": 7603,
       "y": 5780
