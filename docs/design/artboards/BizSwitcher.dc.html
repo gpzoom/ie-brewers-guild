@@ -81,8 +81,13 @@ a{color:#B3591F}a:hover{color:#8F4517}
     <div style="width: 390px; height: 700px; box-sizing: border-box; background: #F9F6F0; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; position: relative; box-shadow: 0 10px 30px rgba(36,31,26,0.14);">
 
       <div style="height: 56px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 6px;">
-        <button type="button" aria-expanded="true" aria-haspopup="dialog" style="min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 0; background: transparent; font-family: inherit; font-size: 14px; font-weight: 600; color: #F9F6F0;">Hangar 24 · Riverside<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="#F9F6F0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <span style="min-height: 44px; display: flex; align-items: center; padding: 0 10px; font-size: 14px; font-weight: 600; color: #F9F6F0;">Hangar 24 · Riverside</span>
         <a href="TaproomProfile.dc.html" style="min-height: 44px; display: flex; align-items: center; padding: 0 10px; font-size: 13px; font-weight: 500; color: #B6AC9D; text-decoration: none;">Preview</a>
+      </div>
+
+      <!-- The switcher gets its own full-width row on a phone, above the section tabs -->
+      <div style="flex-shrink: 0; border-bottom: 1px solid #EFEAE1; padding: 12px 14px 8px;">
+        <button type="button" aria-expanded="true" aria-haspopup="menu" style="width: 100%; min-height: 48px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 12px; border: 1px solid #241F1A; border-radius: 10px; background: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 600; color: #241F1A;">Hangar 24 · Riverside<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="#241F1A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
 
       <div style="flex-shrink: 0; border-bottom: 1px solid #EFEAE1; display: flex; gap: 4px; padding: 0 14px; overflow: hidden;">
@@ -99,18 +104,13 @@ a{color:#B3591F}a:hover{color:#8F4517}
         <div style="height: 48px; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF;"></div>
       </div>
 
-      <!-- Dim and bottom sheet -->
-      <div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(23,20,16,0.45);"></div>
-      <div role="dialog" aria-label="Choose a location" style="position: absolute; left: 0; right: 0; bottom: 0; box-sizing: border-box; padding: 10px 16px 22px; border-radius: 18px 18px 0 0; background: #FFFFFF; display: flex; flex-direction: column; gap: 4px;">
-        <div style="align-self: center; width: 40px; height: 4px; border-radius: 99px; background: #DED7CB; margin-bottom: 8px;"></div>
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 4px 6px;">
-          <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 19px; font-weight: 700; color: #241F1A;">Hangar 24 · 4 locations</div>
-          <button type="button" aria-label="Close" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0; background: transparent;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="#241F1A" stroke-width="1.6" stroke-linecap="round"/></svg></button>
-        </div>
-        <a href="#redlands" style="min-height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 10px; font-size: 15px; color: #241F1A; text-decoration: none;">Redlands<span style="padding: 4px 10px; border-radius: 99px; background: #E4F0E1; font-size: 12px; font-weight: 600; color: #2F5E2C;">Live</span></a>
-        <a href="#riverside" aria-current="page" style="min-height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 10px; background: #EFEAE1; font-size: 15px; font-weight: 600; color: #241F1A; text-decoration: none;"><span style="display: flex; align-items: center; gap: 8px;"><svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6.2 5 8.6l4.5-5" stroke="#241F1A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Riverside</span><span style="padding: 4px 10px; border-radius: 99px; background: #F8EBD3; font-size: 12px; font-weight: 600; color: #7A4E0E;">Setting up</span></a>
-        <a href="#irvine" style="min-height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 10px; font-size: 15px; color: #241F1A; text-decoration: none;">Irvine<span style="padding: 4px 10px; border-radius: 99px; background: #EFEAE1; font-size: 12px; font-weight: 600; color: #5C534A;">Not started</span></a>
-        <a href="#lake-havasu-city" style="min-height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 10px; font-size: 15px; color: #241F1A; text-decoration: none;">Lake Havasu City<span style="padding: 4px 10px; border-radius: 99px; background: #E4F0E1; font-size: 12px; font-weight: 600; color: #2F5E2C;">Live</span></a>
+      <!-- The open menu: the same dropdown as on a computer (no bottom sheet, no Close button) -->
+      <div role="menu" aria-label="Hangar 24 locations" style="position: absolute; left: 14px; top: 120px; width: 300px; box-sizing: border-box; padding: 8px; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; box-shadow: 0 14px 36px rgba(36,31,26,0.18); display: flex; flex-direction: column; gap: 2px;">
+        <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156; padding: 8px 10px 6px;">HANGAR 24 · 4 LOCATIONS</div>
+        <a role="menuitem" href="#redlands" style="min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 10px; border-radius: 8px; font-size: 14px; color: #241F1A; text-decoration: none;">Redlands<span style="padding: 3px 9px; border-radius: 99px; background: #E4F0E1; font-size: 11px; font-weight: 600; color: #2F5E2C;">Live</span></a>
+        <a role="menuitem" href="#riverside" aria-current="page" style="min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 10px; border-radius: 8px; background: #EFEAE1; font-size: 14px; font-weight: 600; color: #241F1A; text-decoration: none;"><span style="display: flex; align-items: center; gap: 8px;"><svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 6.2 5 8.6l4.5-5" stroke="#241F1A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Riverside</span><span style="padding: 3px 9px; border-radius: 99px; background: #F8EBD3; font-size: 11px; font-weight: 600; color: #7A4E0E;">Setting up</span></a>
+        <a role="menuitem" href="#irvine" style="min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 10px; border-radius: 8px; font-size: 14px; color: #241F1A; text-decoration: none;">Irvine<span style="padding: 3px 9px; border-radius: 99px; background: #EFEAE1; font-size: 11px; font-weight: 600; color: #5C534A;">Not started</span></a>
+        <a role="menuitem" href="#lake-havasu-city" style="min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 10px; border-radius: 8px; font-size: 14px; color: #241F1A; text-decoration: none;">Lake Havasu City<span style="padding: 3px 9px; border-radius: 99px; background: #E4F0E1; font-size: 11px; font-weight: 600; color: #2F5E2C;">Live</span></a>
       </div>
 
     </div>

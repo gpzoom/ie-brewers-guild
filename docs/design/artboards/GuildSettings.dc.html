@@ -15,7 +15,7 @@ a{color:#B3591F}a:hover{color:#8F4517}
 </style>
 </helmet>
 
-<div style="width: 1280px; height: 1560px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column;">
+<div style="width: 1280px; height: 1800px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column;">
 
   <div style="height: 64px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 28px;">
     <div style="display: flex; align-items: center; gap: 11px;">
@@ -69,12 +69,19 @@ a{color:#B3591F}a:hover{color:#8F4517}
         <div style="display: flex; gap: 8px;"><button type="button" style="height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #241F1A; background: #241F1A; font-family: inherit; font-size: 13px; font-weight: 600; color: #F9F6F0;">Replace image</button><button type="button" style="height: 44px; padding: 0 17px; border-radius: 9px; border: 1px solid #D3CBBD; background: #F9F6F0; font-family: inherit; font-size: 13px; font-weight: 500; color: #241F1A;">Use the built-in image</button></div>
       </div>
 
+      <div style="max-width: 640px; display: flex; flex-direction: column; gap: 16px; padding: 20px 24px; border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF;">
+        <div style="display: flex; flex-direction: column; gap: 4px;"><div style="font-size: 16px; font-weight: 600; color: #241F1A;">Homepage spotlight</div><div style="font-size: 13px; line-height: 1.5; color: #6B6156;">A temporary section under the homepage image for news worth celebrating, like awards. Turn it off when it's no longer news.</div></div>
+        <div style="border-radius: 9px; border: 1px solid #DED7CB; background: #F9F6F0; padding: 10px 12px; font-size: 13px; color: #241F1A;"><span style="font-weight: 600;">Great American Beer Festival 2026</span><span style="color: #6B6156;"> · 5 slides</span></div>
+        <label style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 16px;"><span style="font-size: 14px; font-weight: 500; color: #241F1A;">Show on the homepage</span><span style="width: 42px; height: 24px; border-radius: 99px; background: #241F1A; position: relative; flex-shrink: 0;"><span style="position: absolute; top: 3px; left: 21px; width: 18px; height: 18px; border-radius: 99px; background: #FFFFFF;"></span></span></label>
+        <div style="font-size: 12px; color: #6B6156;">Turning it on or off says so here: "It's on the homepage now." With no spotlight content: "No spotlight content right now. Send new slides to your webmaster."</div>
+      </div>
+
     </div>
   </div>
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1560}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1800}}'>
 class Component extends DCLogic {
   renderVals() {
     return {};

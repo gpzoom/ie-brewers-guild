@@ -157,8 +157,8 @@
       "y": 2300
     },
     "GuildSettings.dc.html": {
-      "h": 1560,
-      "title": "Z · Super admin — Settings (calendar sync, homepage carousel, hero image)",
+      "h": 1800,
+      "title": "Z · Super admin — Settings (calendar sync, homepage carousel, hero image, homepage spotlight)",
       "w": 1280,
       "x": 19460,
       "y": 2300
@@ -279,7 +279,7 @@
       "x": 0,
       "y": 11000,
       "w": 1280,
-      "h": 1300,
+      "h": 1420,
       "title": "BZ1 · Roster — business row, Managed by, mode switches, Part of"
     },
     "BizSwitcher.dc.html": {
@@ -293,14 +293,14 @@
       "x": 3200,
       "y": 11000,
       "w": 1280,
-      "h": 1200,
+      "h": 1260,
       "title": "BZ3 · Short setup for another location"
     },
     "BizPeople.dc.html": {
       "x": 4560,
       "y": 11000,
       "w": 1280,
-      "h": 1000,
+      "h": 1200,
       "title": "BZ4 · People — Business manager, hand off, take back"
     },
     "BizLookReadOnly.dc.html": {
