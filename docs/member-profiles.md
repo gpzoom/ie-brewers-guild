@@ -340,6 +340,8 @@ What the import does per member:
 
 Imported members are unclaimed until invited. The roster needs that state alongside "invited, not signed in" — a member nobody has written to yet is a different job from one who was written to and hasn't acted.
 
+**Re-invite** (owner, 19 October 2026): an "invited, not signed in" row's ⋯ menu has Re-invite, which sends the same invite email again to the address already invited. Nothing else changes. A location of a one-manager business re-sends the Business invite to its manager. It's refused once they've signed in, and a failed send is reported (resend-invite-core.ts).
+
 Imported members start with `type_confirmed_at` and `setup_completed_at` both null, so their first sign-in through Member Portal lands in the setup wizard. See Setup wizard, member portal and drafts. The portal's first screen still must not assume a filled-in profile.
 
 ## Accounts, sign-in and joining

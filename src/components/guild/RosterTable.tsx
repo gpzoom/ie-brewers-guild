@@ -24,7 +24,7 @@ import { BusinessRow } from "@/components/guild/BusinessRow";
 import { PartOfDialog } from "@/components/guild/PartOfDialog";
 import { BusinessModeDialog } from "@/components/guild/BusinessModeDialog";
 import { inviteBusinessManager } from "@/lib/guild/businesses.server";
-import { inviteMember } from "@/lib/guild/invite-member.server";
+import { inviteMember, resendInvite } from "@/lib/guild/invite-member.server";
 import { startImpersonation } from "@/lib/guild/impersonation.server";
 import { hasStaleHours, resolveDetailLine } from "@/lib/guild/roster-detail";
 import {
@@ -101,6 +101,7 @@ function MemberRow({
   inviting,
   impersonating,
   onInvite,
+  onReinvite,
   onEditAsThem,
   onDelete,
   onPartOf,
@@ -113,6 +114,8 @@ function MemberRow({
   inviting: boolean;
   impersonating: boolean;
   onInvite: () => void;
+  /** Invited, not signed in: send the invite email again. */
+  onReinvite: () => void;
   onEditAsThem: () => void;
   onDelete: () => void;
   onPartOf: () => void;
@@ -246,6 +249,11 @@ function MemberRow({
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator className="bg-[#F0EBE3]" />
+            {entry.claimState === "invited_not_signed_in" && (
+              <DropdownMenuItem className={menuItemClass} onSelect={onReinvite}>
+                Re-invite
+              </DropdownMenuItem>
+            )}
             {isSuperAdmin && (
               <DropdownMenuItem
                 className={menuItemClass}
@@ -490,6 +498,14 @@ export function RosterTable({
         inviting={invitingId === entry.member.id}
         impersonating={impersonatingId === entry.member.id}
         onInvite={() => handleInvite(entry)}
+        onReinvite={async () => {
+          try {
+            const result = await resendInvite({ data: { memberId: entry.member.id } });
+            toast.success(`Invite sent again to ${result.email}`);
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Could not send the invite again.");
+          }
+        }}
         onEditAsThem={() => handleEditAsThem(entry)}
         onDelete={() => {
           setDeleteTarget(entry);

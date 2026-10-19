@@ -3,6 +3,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { sendTransactionalEmail } from "@/lib/email/send";
 import { inviteMemberCore } from "@/lib/guild/invite-member-core";
+import { resendInviteCore } from "@/lib/guild/resend-invite-core";
+import { requireGuildAdminSession } from "@/lib/guild/member-business";
 
 /**
  * "Invite": supabase.auth.admin.createUser() creates the auth.users row
@@ -128,4 +130,67 @@ export const inviteMember = createServerFn({ method: "POST" })
     );
 
     return { ok: true as const, userId: result.userId };
+  });
+
+/**
+ * The roster's "Re-invite" (resend-invite-core.ts): the invite email again,
+ * to the address already invited, for someone who hasn't signed in yet.
+ * The Guild admin check runs before the service-role client is opened.
+ */
+export const resendInvite = createServerFn({ method: "POST" })
+  .inputValidator((data: { memberId: string }) => data)
+  .handler(async ({ data }) => {
+    await requireGuildAdminSession();
+    const service = await getSupabaseServiceRoleClient();
+    return resendInviteCore(
+      {
+        async loadMember(memberId) {
+          const { data: member, error } = await service
+            .from("members")
+            .select("business_name, business_id")
+            .eq("id", memberId)
+            .maybeSingle();
+          if (error || !member) throw new Error("That member no longer exists.");
+          const row = member as { business_name: string | null; business_id: string | null };
+          if (!row.business_id) return { businessName: row.business_name, business: null };
+          const { data: business } = await service
+            .from("businesses")
+            .select("id, name, management_mode, manager_user_id")
+            .eq("id", row.business_id)
+            .maybeSingle();
+          if (!business) return { businessName: row.business_name, business: null };
+          const { count } = await service
+            .from("members")
+            .select("id", { count: "exact", head: true })
+            .eq("business_id", row.business_id);
+          const b = business as { id: string; name: string; management_mode: "separate" | "one_manager"; manager_user_id: string | null };
+          return {
+            businessName: row.business_name,
+            business: { id: b.id, name: b.name, mode: b.management_mode, managerUserId: b.manager_user_id, locationCount: count ?? 1 },
+          };
+        },
+        async loadOwnerUserId(memberId) {
+          const { data: owner } = await service
+            .from("member_users")
+            .select("user_id")
+            .eq("member_id", memberId)
+            .eq("role", "owner")
+            .limit(1)
+            .maybeSingle();
+          return (owner as { user_id: string } | null)?.user_id ?? null;
+        },
+        async loadUser(userId) {
+          const { data: userData } = await service.auth.admin.getUserById(userId);
+          if (!userData?.user) return null;
+          return { email: userData.user.email ?? null, lastSignInAt: userData.user.last_sign_in_at ?? null };
+        },
+        async sendMemberInvite(payload) {
+          await sendTransactionalEmail({ trigger: "member_invited", ...payload });
+        },
+        async sendBusinessInvite(payload) {
+          await sendTransactionalEmail({ trigger: "business_invited", ...payload });
+        },
+      },
+      data.memberId,
+    );
   });
