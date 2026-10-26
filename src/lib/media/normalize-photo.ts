@@ -11,26 +11,6 @@
 export const MAX_PHOTO_EDGE = 4096;
 const JPEG_QUALITY = 0.9;
 
-/**
- * The largest photo the server accepts (owner, 2026-10-26: 5 MB, down from
- * 25). validate-file.ts uses it as its default cap.
- */
-export const MAX_PHOTO_UPLOAD_BYTES = 5 * 1024 * 1024;
-
-/**
- * Redraw attempts, in order, until the photo fits MAX_PHOTO_UPLOAD_BYTES:
- * the first is the usual redraw; the rest lower the quality, then the size.
- * 2048 px is still sharp on any screen the site is shown on.
- */
-const FIT_ATTEMPTS: ReadonlyArray<{ edge: number; quality: number }> = [
-  { edge: MAX_PHOTO_EDGE, quality: JPEG_QUALITY },
-  { edge: MAX_PHOTO_EDGE, quality: 0.82 },
-  { edge: 3200, quality: 0.82 },
-  { edge: 2560, quality: 0.8 },
-  { edge: 2048, quality: 0.8 },
-  { edge: 1600, quality: 0.78 },
-];
-
 export function normalizedTarget(file: { type: string; name: string }): { mime: "image/jpeg" | "image/png"; name: string } {
   if (file.type === "image/png") return { mime: "image/png", name: file.name };
   const base = file.name.replace(/\.[A-Za-z0-9]{1,5}$/, "") || "photo";
@@ -48,43 +28,16 @@ export type NormalizeDeps = {
   /** Read the image, upright (EXIF orientation applied). Throws if the browser can't. */
   decode: (file: File) => Promise<{ width: number; height: number; source: unknown }>;
   /** Draw it at width x height and encode; null if the browser can't. */
-  encode: (
-    source: unknown,
-    width: number,
-    height: number,
-    mime: "image/jpeg" | "image/png",
-    quality: number,
-  ) => Promise<Blob | null>;
+  encode: (source: unknown, width: number, height: number, mime: "image/jpeg" | "image/png") => Promise<Blob | null>;
 };
 
-/**
- * Also shrinks a photo that comes out over MAX_PHOTO_UPLOAD_BYTES (owner,
- * 2026-10-26), so an ordinary phone photo is never refused for its size:
- * lower JPEG quality first, then fewer pixels (a PNG only gets fewer
- * pixels). If even the last attempt is too big, it goes up and the server
- * refuses it with the size message.
- */
-export async function normalizePhotoForUpload(
-  file: File,
-  deps: NormalizeDeps = browserDeps(),
-  maxBytes: number = MAX_PHOTO_UPLOAD_BYTES,
-): Promise<File> {
+export async function normalizePhotoForUpload(file: File, deps: NormalizeDeps = browserDeps()): Promise<File> {
   try {
     const target = normalizedTarget(file);
     const decoded = await deps.decode(file);
-    let blob: Blob | null = null;
-    let lastEdge = 0;
-    for (const attempt of FIT_ATTEMPTS) {
-      const size = fitWithin(decoded.width, decoded.height, attempt.edge);
-      // A PNG ignores quality, so a step that doesn't change its size would redraw the same file.
-      const edge = Math.max(size.width, size.height);
-      if (blob && target.mime === "image/png" && edge === lastEdge) continue;
-      lastEdge = edge;
-      blob = await deps.encode(decoded.source, size.width, size.height, target.mime, attempt.quality);
-      if (!blob || blob.size === 0) return file;
-      if (blob.size <= maxBytes) break;
-    }
-    if (!blob) return file;
+    const size = fitWithin(decoded.width, decoded.height);
+    const blob = await deps.encode(decoded.source, size.width, size.height, target.mime);
+    if (!blob || blob.size === 0) return file;
     return new File([blob], target.name, { type: target.mime, lastModified: file.lastModified });
   } catch {
     return file;
@@ -114,7 +67,7 @@ function browserDeps(): NormalizeDeps {
         setTimeout(() => URL.revokeObjectURL(url), 0);
       }
     },
-    async encode(source, width, height, mime, quality) {
+    async encode(source, width, height, mime) {
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
@@ -126,7 +79,7 @@ function browserDeps(): NormalizeDeps {
         ctx.fillRect(0, 0, width, height);
       }
       ctx.drawImage(source as CanvasImageSource, 0, 0, width, height);
-      return new Promise((resolve) => canvas.toBlob((b) => resolve(b), mime, quality));
+      return new Promise((resolve) => canvas.toBlob((b) => resolve(b), mime, JPEG_QUALITY));
     },
   };
 }

@@ -43,7 +43,7 @@ export const Route = createFileRoute("/send/$token")({
   component: SendPage,
 });
 
-/** Formats the server actually accepts (validate-file.ts: JPEG/PNG, 5MB cap). */
+/** Formats the server actually accepts (validate-file.ts: JPEG/PNG, 25MB cap). */
 // Any image: the browser redraws it as a clean JPEG/PNG before sending.
 const ACCEPTED_TYPES = "image/*";
 
@@ -271,7 +271,7 @@ function SendPage() {
                 <path d="M4.5 19.5v1a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
               <span className="text-[15px] font-semibold text-ink">Choose a photo</span>
-              <span className="text-xs text-ink-muted">Any photo (JPG, PNG, iPhone or WebP) · up to 5 MB, bigger ones are shrunk to fit</span>
+              <span className="text-xs text-ink-muted">Any photo (JPG, PNG, iPhone or WebP) · up to 25 MB</span>
             </button>
           )}
 

@@ -1,11 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  MAX_PHOTO_UPLOAD_BYTES,
-  fitWithin,
-  normalizePhotoForUpload,
-  normalizedTarget,
-  type NormalizeDeps,
-} from "./normalize-photo";
+import { fitWithin, normalizePhotoForUpload, normalizedTarget, type NormalizeDeps } from "./normalize-photo";
 
 describe("normalizedTarget", () => {
   it("a PNG stays a PNG (keeps transparency), same name", () => {
@@ -44,38 +38,7 @@ describe("normalizePhotoForUpload", () => {
     const out = await normalizePhotoForUpload(new File(["x"], "beer.jpg", { type: "image/webp" }), deps);
     expect(out.type).toBe("image/jpeg");
     expect(out.name).toBe("beer.jpg");
-    expect(deps.encode).toHaveBeenCalledWith(expect.anything(), 1215, 911, "image/jpeg", 0.9);
-    expect(deps.encode).toHaveBeenCalledTimes(1);
-  });
-
-  it("a photo over the size limit is redrawn at lower quality, then smaller, until it fits (owner, 2026-10-26)", async () => {
-    // Fake sizes: bytes = width * quality * 1000; the limit is 2,100,000.
-    const deps = fakeDeps({
-      decode: vi.fn(async () => ({ width: 4000, height: 3000, source: {} })),
-      encode: vi.fn(async (_src, w, _h, mime, q) => new Blob([new Uint8Array(Math.round(w * q * 1000))], { type: mime })),
-    });
-    const out = await normalizePhotoForUpload(new File(["x"], "big.jpg", { type: "image/jpeg" }), deps, 2_100_000);
-    expect((deps.encode as ReturnType<typeof vi.fn>).mock.calls.map((c) => [c[1], c[4]])).toEqual([
-      [4000, 0.9],
-      [4000, 0.82],
-      [3200, 0.82],
-      [2560, 0.8],
-    ]);
-    expect(out.size).toBe(2_048_000);
-  });
-
-  it("a PNG only gets fewer pixels, skipping quality-only steps", async () => {
-    const deps = fakeDeps({
-      decode: vi.fn(async () => ({ width: 4000, height: 3000, source: {} })),
-      encode: vi.fn(async (_src, w, _h, mime) => new Blob([new Uint8Array(w * 1000)], { type: mime })),
-    });
-    const out = await normalizePhotoForUpload(new File(["x"], "shot.png", { type: "image/png" }), deps, 3_000_000);
-    expect((deps.encode as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[1])).toEqual([4000, 3200, 2560]);
-    expect(out.type).toBe("image/png");
-  });
-
-  it("the limit is 5 MB", () => {
-    expect(MAX_PHOTO_UPLOAD_BYTES).toBe(5 * 1024 * 1024);
+    expect(deps.encode).toHaveBeenCalledWith(expect.anything(), 1215, 911, "image/jpeg");
   });
 
   it("a file the browser can't read goes up unchanged (the server decides)", async () => {

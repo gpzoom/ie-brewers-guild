@@ -1,5 +1,4 @@
 import { fileTypeFromBuffer } from "file-type";
-import { MAX_PHOTO_UPLOAD_BYTES } from "@/lib/media/normalize-photo";
 
 /**
  * ============================================================================
@@ -106,9 +105,7 @@ export type FileValidationResult =
   | { valid: true; detectedMimeType: string }
   | { valid: false; reason: string };
 
-// 5MB cap (owner, 2026-10-26; was 25MB). The browser shrinks a photo to fit
-// before uploading it (normalize-photo.ts), so this only refuses outliers.
-const MAX_UPLOAD_BYTES = MAX_PHOTO_UPLOAD_BYTES;
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25MB cap (spec: "cap file size").
 
 /**
  * Which raster formats validate as "real" for this call, keyed by context.
