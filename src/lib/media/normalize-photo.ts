@@ -31,6 +31,26 @@ export type NormalizeDeps = {
   encode: (source: unknown, width: number, height: number, mime: "image/jpeg" | "image/png") => Promise<Blob | null>;
 };
 
+/** A WebP file, by its type or, when the browser gives none, its name. */
+export function isWebpFile(file: { type: string; name: string }): boolean {
+  return file.type === "image/webp" || (file.type === "" && /\.webp$/i.test(file.name));
+}
+
+/**
+ * A WebP logo redrawn as a PNG before upload (owner, 2026-10-26): members
+ * may pick a WebP, but logos stay PNG everywhere after that, including as a
+ * page's link-preview image, which some apps can't show as WebP. Full size
+ * (the 400px minimum is checked on the PNG) and transparency kept. Throws
+ * if the browser can't read it.
+ */
+export async function webpLogoToPng(file: File, deps: NormalizeDeps = browserDeps()): Promise<File> {
+  const decoded = await deps.decode(file);
+  const blob = await deps.encode(decoded.source, decoded.width, decoded.height, "image/png");
+  if (!blob || blob.size === 0) throw new Error("Couldn't convert the WebP.");
+  const base = file.name.replace(/\.[A-Za-z0-9]{1,5}$/, "") || "logo";
+  return new File([blob], `${base}.png`, { type: "image/png", lastModified: file.lastModified });
+}
+
 export async function normalizePhotoForUpload(file: File, deps: NormalizeDeps = browserDeps()): Promise<File> {
   try {
     const target = normalizedTarget(file);

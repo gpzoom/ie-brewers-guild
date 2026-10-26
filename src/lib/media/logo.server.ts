@@ -73,7 +73,7 @@ export const uploadMemberLogo = createServerFn({ method: "POST" })
       // "Reject at upload with a message that says why, rather than accepting and looking bad" (spec).
       throw new Error(
         validation.reason.includes("PNG or SVG")
-          ? "Logos must be PNG — JPG can't have a transparent background, so it won't sit cleanly on the cross-link card. Export a PNG instead."
+          ? "Logos must be PNG or WebP — JPG can't have a transparent background, so it won't sit cleanly on the cross-link card. Export a PNG instead."
           : validation.reason,
       );
     }
@@ -83,7 +83,7 @@ export const uploadMemberLogo = createServerFn({ method: "POST" })
     // was safe and well-formed. This is a scope narrowing, not a security
     // failure of that module -- do not "fix" by loosening this check.
     if (validation.detectedMimeType === "image/svg+xml") {
-      throw new Error("SVG logos aren't supported — please upload a PNG with a transparent background instead.");
+      throw new Error("SVG logos aren't supported — please upload a PNG or WebP with a transparent background instead.");
     }
 
     if (validation.detectedMimeType === "image/png") {

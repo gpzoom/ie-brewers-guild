@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { uploadMemberLogo } from "@/lib/media/logo.server";
 import { appendMeasuredDimensions } from "@/lib/media/image-dimensions";
+import { isWebpFile, webpLogoToPng } from "@/lib/media/normalize-photo";
 import { useDraftStatus, useSaveDraftSection } from "@/components/admin/DraftStatusContext";
 import {
   LOGO_BACKGROUNDS,
@@ -14,7 +15,8 @@ import { EditorSharedLookNote, useSharedLookLock } from "@/components/admin/Shar
 
 /**
  * The logo row card inside "Basics & hours" (artboard AdminBasics's
- * IDENTITY section; phone: AdminPhone). Copy says PNG only -- the artboard
+ * IDENTITY section; phone: AdminPhone). Copy says PNG or WebP (a WebP is
+ * redrawn as a PNG before upload, owner 2026-10-26) -- the artboard
  * says "PNG or SVG", but logo.server.ts's uploadMemberLogo deliberately
  * rejects SVG (product-owner decision documented there), so the copy
  * follows what the upload actually accepts.
@@ -76,15 +78,24 @@ export function LogoUploader({
   const reportSaved = useDraftStatus()?.reportSaved;
 
   async function onFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const picked = event.target.files?.[0];
+    if (!picked) return;
     setUploadError(null);
     setUploading(true);
-    const formData = new FormData();
-    formData.append("memberId", memberId);
-    formData.append("file", file);
-    await appendMeasuredDimensions(formData, file);
     try {
+      // WebP is accepted here and uploaded as a PNG (webpLogoToPng).
+      let file = picked;
+      if (isWebpFile(picked)) {
+        try {
+          file = await webpLogoToPng(picked);
+        } catch {
+          throw new Error("We couldn't read this WebP file. Save it as a PNG and upload that instead.");
+        }
+      }
+      const formData = new FormData();
+      formData.append("memberId", memberId);
+      formData.append("file", file);
+      await appendMeasuredDimensions(formData, file);
       const { publicUrl, dirtySections } = await uploadMemberLogo({ data: formData });
       setLogoUrl(publicUrl);
       reportSaved?.("basics", dirtySections);
@@ -134,8 +145,8 @@ export function LogoUploader({
             <div className="text-[13px] font-semibold text-ink md:text-[14px]">Your logo</div>
             {!locked && (
               <div className="text-[11px] leading-[1.4] text-ink-muted md:text-[12px]">
-                PNG only, transparent background, at least 400px tall, up to 5 MB. JPGs and SVGs are
-                rejected.
+                PNG or WebP, transparent background, at least 400px tall, up to 5 MB. JPGs and SVGs
+                are rejected.
               </div>
             )}
           </div>
@@ -148,7 +159,7 @@ export function LogoUploader({
                 ref={fileInputRef}
                 id="logo-upload"
                 type="file"
-                accept="image/png"
+                accept="image/png,image/webp"
                 className="hidden"
                 onChange={onFileSelected}
               />

@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { fitWithin, normalizePhotoForUpload, normalizedTarget, type NormalizeDeps } from "./normalize-photo";
+import {
+  fitWithin,
+  isWebpFile,
+  normalizePhotoForUpload,
+  normalizedTarget,
+  webpLogoToPng,
+  type NormalizeDeps,
+} from "./normalize-photo";
 
 describe("normalizedTarget", () => {
   it("a PNG stays a PNG (keeps transparency), same name", () => {
@@ -51,5 +58,27 @@ describe("normalizePhotoForUpload", () => {
     const original = new File(["x"], "a.jpg", { type: "image/jpeg" });
     const out = await normalizePhotoForUpload(original, fakeDeps({ encode: vi.fn(async () => null) }));
     expect(out).toBe(original);
+  });
+});
+
+describe("WebP logos (owner, 2026-10-26)", () => {
+  it("isWebpFile: by type, or by name when the browser gives no type", () => {
+    expect(isWebpFile({ type: "image/webp", name: "logo.png" })).toBe(true);
+    expect(isWebpFile({ type: "", name: "Logo.WEBP" })).toBe(true);
+    expect(isWebpFile({ type: "image/png", name: "logo.webp" })).toBe(false);
+    expect(isWebpFile({ type: "image/png", name: "logo.png" })).toBe(false);
+  });
+
+  it("webpLogoToPng redraws it as a full-size PNG named .png", async () => {
+    const deps = fakeDeps({ decode: vi.fn(async () => ({ width: 1200, height: 600, source: {} })) });
+    const out = await webpLogoToPng(new File(["x"], "mars-logo.webp", { type: "image/webp" }), deps);
+    expect(deps.encode).toHaveBeenCalledWith(expect.anything(), 1200, 600, "image/png");
+    expect(out.type).toBe("image/png");
+    expect(out.name).toBe("mars-logo.png");
+  });
+
+  it("webpLogoToPng throws when the browser can't read it", async () => {
+    const deps = fakeDeps({ decode: vi.fn(async () => { throw new Error("no decoder"); }) });
+    await expect(webpLogoToPng(new File(["x"], "a.webp", { type: "image/webp" }), deps)).rejects.toThrow();
   });
 });
