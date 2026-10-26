@@ -175,7 +175,7 @@ export function MediaGallery({ memberId, assets }: { memberId: string; assets: M
       >
         <p className="text-[14px] font-semibold text-ink">Drop a photo here</p>
         <p className="text-[12px] leading-[1.5] text-ink-muted">
-          Any photo (JPG, PNG, iPhone or WebP), up to 25 MB. Once it's in your gallery, add it as a slide and choose what
+          Any photo (JPG, PNG, iPhone or WebP), up to 5 MB; bigger photos are shrunk to fit automatically. Once it's in your gallery, add it as a slide and choose what
           stays in the portrait frame.
         </p>
         <label htmlFor="gallery-upload" className="sr-only">
