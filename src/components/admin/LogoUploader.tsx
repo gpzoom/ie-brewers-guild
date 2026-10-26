@@ -134,7 +134,7 @@ export function LogoUploader({
             <div className="text-[13px] font-semibold text-ink md:text-[14px]">Your logo</div>
             {!locked && (
               <div className="text-[11px] leading-[1.4] text-ink-muted md:text-[12px]">
-                PNG only, transparent background, at least 400px tall, up to 2 MB. JPGs and SVGs are
+                PNG only, transparent background, at least 400px tall, up to 5 MB. JPGs and SVGs are
                 rejected.
               </div>
             )}

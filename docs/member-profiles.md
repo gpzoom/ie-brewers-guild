@@ -121,7 +121,7 @@ Mobile members have no weekly hours, so the gate for them is the appearance cale
 
 ## Logos and assets
 
-PNG or SVG only, transparent background, minimum 400px tall, 2 MB maximum (the upload copy states the limit, and rejections show directly under "Your logo"). Logos live in the public logos bucket and never appear in the media gallery. Reject JPGs at upload with a message that says why, rather than accepting and looking bad. Validate the actual file signature, not the extension.
+PNG or SVG only, transparent background, minimum 400px tall, 5 MB maximum (2 MB until 26 October 2026) (the upload copy states the limit, and rejections show directly under "Your logo"). Logos live in the public logos bucket and never appear in the media gallery. Reject JPGs at upload with a message that says why, rather than accepting and looking bad. Validate the actual file signature, not the extension.
 
 **Always place a member logo on a light chip**, never directly on a dark surface. A transparent PNG of a dark-ink mark disappears against the dark guild chrome, and a large share of craft logos are exactly that. The cross-link card at the bottom of every profile is the place this bites — it is a dark card carrying another member's logo. An ivory rounded chip behind it costs nothing and removes the whole class of problem. The alternative, asking members for a light variant, is one more thing to chase and will be inconsistently supplied.
 

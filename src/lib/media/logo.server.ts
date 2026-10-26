@@ -60,13 +60,14 @@ export const uploadMemberLogo = createServerFn({ method: "POST" })
     // tokenize/scan inside validateUploadedImage would still run to
     // completion on anything up to the module's general 25MB default before
     // that later PNG-only rejection ever happens -- reachable before any
-    // auth check in this handler. 2MB is well above any legitimate PNG logo
-    // size and keeps that worst-case scan cost small.
+    // auth check in this handler. 5MB (owner, 2026-10-26; was 2MB) is well
+    // above any legitimate PNG logo, matches the member-logos bucket's own
+    // limit, and keeps that worst-case scan cost small.
     const validation = await validateUploadedImage({
       bytes,
       claimedMimeType: file.type,
       allowSvg: true,
-      maxBytes: 2 * 1024 * 1024,
+      maxBytes: 5 * 1024 * 1024,
     });
     if (!validation.valid) {
       // "Reject at upload with a message that says why, rather than accepting and looking bad" (spec).
