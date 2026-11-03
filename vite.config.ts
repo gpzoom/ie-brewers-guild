@@ -1,4 +1,5 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
+import { missingBuildEnv, missingBuildEnvMessage } from "./src/lib/build/required-build-env";
 import tailwindcss from "@tailwindcss/vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 import viteReact from "@vitejs/plugin-react";
@@ -9,6 +10,15 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
 export default defineConfig(async ({ command, mode }) => {
+  // Builds bake VITE_* values into the browser bundle from this computer's
+  // .env, so refuse to build without them rather than deploy a site with no
+  // map and no sign-in (see src/lib/build/required-build-env.ts). `vite dev`
+  // is left alone.
+  if (command === "build") {
+    const missing = missingBuildEnv(loadEnv(mode, process.cwd(), "VITE_"));
+    if (missing.length > 0) throw new Error(missingBuildEnvMessage(missing, mode));
+  }
+
   const plugins = [
     tailwindcss(),
     tsConfigPaths({ projects: ["./tsconfig.json"] }),
