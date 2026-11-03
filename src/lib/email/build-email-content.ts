@@ -254,10 +254,15 @@ function inviteEmail(
     `Member Guides showing you exactly how to complete your ${parts.profile}. It should take less than ` +
     "10 minutes once you've got all your photos and information gathered.";
   const linkLabel = "Here's the sign-in link:";
+  // Owner's wording, 2026-11-02. The homepage stays plain text so the email
+  // keeps its one link.
+  const homepage = siteUrl.replace(/^https?:\/\//, "");
+  const portalLink =
+    `You can always login to your account by going to the "Member Portal" link at the bottom-right of the homepage: ${homepage}`;
   const help = "If you have any questions or get stuck, just reply to this email and we'll get you sorted out.";
   const closing = `We look forward to seeing your ${parts.profile} live on the website.`;
   const before = [parts.intro, howTo];
-  const after = [...(parts.shared ? [parts.shared] : []), help, closing];
+  const after = [portalLink, ...(parts.shared ? [parts.shared] : []), help, closing];
   return {
     subject: parts.subject,
     replyTo: MEMBER_INVITE_REPLY_TO,

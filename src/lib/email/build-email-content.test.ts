@@ -107,6 +107,21 @@ describe("buildEmailContent: member_invited", () => {
     expect(content.text).toContain("The sign-in page has links to our Member Guides");
   });
 
+  it("points to the homepage's Member Portal link, as plain text (owner, 2026-11-02)", () => {
+    const sentence =
+      'You can always login to your account by going to the "Member Portal" link at the bottom-right of the homepage: iscbrewersguild.org';
+    const content = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" });
+    expect(content.text).toContain(sentence);
+    expect(content.html).toContain("&quot;Member Portal&quot; link at the bottom-right of the homepage: iscbrewersguild.org");
+    expect(content.html).not.toContain(`href="${SITE_URL}"`);
+  });
+
+  it("names the staging homepage when sent from staging", () => {
+    const staging = "https://ie-brewers-guild-staging.boblelle77.workers.dev";
+    const content = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" }, staging);
+    expect(content.text).toContain("bottom-right of the homepage: ie-brewers-guild-staging.boblelle77.workers.dev");
+  });
+
   it("names the business in the subject and opening (owner's wording, 2026-10-19)", () => {
     const content = buildEmailContent({
       trigger: "member_invited",
@@ -410,6 +425,13 @@ describe("buildEmailContent: business_invited (spec 2026-10-15)", () => {
     expect(content.html.match(/<a /g)).toHaveLength(1);
     expect(content.text).toContain(`${SITE_URL}/signin?next=/portal`);
     expect(content.replyTo).toBe(MEMBER_INVITE_REPLY_TO);
+  });
+
+  it("points to the homepage's Member Portal link too", () => {
+    const content = buildEmailContent(payload);
+    expect(content.text).toContain(
+      'You can always login to your account by going to the "Member Portal" link at the bottom-right of the homepage: iscbrewersguild.org',
+    );
   });
 
   it("says the look is shared by all locations, then invites replies", () => {
