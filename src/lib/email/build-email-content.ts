@@ -241,6 +241,23 @@ const MEMBER_TYPE_EMAIL_LABEL: Record<MemberType, string> = {
 };
 
 /**
+ * The homepage as plain text for an email: the staging site and local dev
+ * name themselves, and every live-site address (www, the production
+ * workers.dev host) names the Guild's real domain.
+ */
+function homepageLabel(siteUrl: string): string {
+  const own = siteUrl.replace(/^https?:\/\//, "");
+  if (isStagingSite(siteUrl)) return own;
+  try {
+    const host = new URL(siteUrl).hostname;
+    if (host === "localhost" || host === "127.0.0.1") return own;
+  } catch {
+    // Fall through to the real domain.
+  }
+  return SITE_URL.replace(/^https?:\/\//, "");
+}
+
+/**
  * The Member and Business invite emails (owner's wording, 2026-10-19).
  * `shared` is the business invite's extra sentence about the shared look.
  */
@@ -255,8 +272,9 @@ function inviteEmail(
     "10 minutes once you've got all your photos and information gathered.";
   const linkLabel = "Here's the sign-in link:";
   // Owner's wording, 2026-11-02. The homepage stays plain text so the email
-  // keeps its one link.
-  const homepage = siteUrl.replace(/^https?:\/\//, "");
+  // keeps its one link, and the live site always names its real domain
+  // (owner, 2026-11-02), whichever of its addresses the admin was on.
+  const homepage = homepageLabel(siteUrl);
   const portalLink =
     `You can always login to your account by going to the "Member Portal" link at the bottom-right of the homepage: ${homepage}`;
   const help = "If you have any questions or get stuck, just reply to this email and we'll get you sorted out.";

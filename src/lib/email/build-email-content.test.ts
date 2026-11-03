@@ -122,6 +122,13 @@ describe("buildEmailContent: member_invited", () => {
     expect(content.text).toContain("bottom-right of the homepage: ie-brewers-guild-staging.boblelle77.workers.dev");
   });
 
+  it("names iscbrewersguild.org from any live-site address (owner, 2026-11-02)", () => {
+    for (const live of ["https://www.iscbrewersguild.org", "https://ie-brewers-guild.boblelle77.workers.dev"]) {
+      const content = buildEmailContent({ trigger: "member_invited", memberId: "m1", email: "new@example.com" }, live);
+      expect(content.text).toContain("bottom-right of the homepage: iscbrewersguild.org\n");
+    }
+  });
+
   it("names the business in the subject and opening (owner's wording, 2026-10-19)", () => {
     const content = buildEmailContent({
       trigger: "member_invited",
