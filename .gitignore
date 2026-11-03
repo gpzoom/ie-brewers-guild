@@ -56,3 +56,4 @@ scripts/geocoded-members.json
 
 # Browser-check screenshots
 .playwright-mcp/
+.claude/settings.local.json
