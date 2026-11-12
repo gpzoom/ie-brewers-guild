@@ -258,7 +258,7 @@ export function normalizeSections(raw: unknown): DraftSection[] {
 // this only decides what the UI offers)
 // ---------------------------------------------------------------------------
 
-export type MemberRole = "owner" | "editor" | "media_events";
+export type MemberRole = "owner" | "co_owner" | "editor" | "media_events";
 
 /**
  * The viewer's effective rights on one member. A Guild admin who isn't
@@ -270,7 +270,7 @@ export function resolveViewerRole(
   memberRole: string | null,
   isGuildAdmin: boolean,
 ): ViewerRole | null {
-  if (memberRole === "owner" || memberRole === "editor") return memberRole;
+  if (memberRole === "owner" || memberRole === "co_owner" || memberRole === "editor") return memberRole;
   // A Guild admin always has full rights (is_member_full_editor), even if
   // they also happen to be linked with a narrower role.
   if (isGuildAdmin) return "guild_admin";
@@ -278,7 +278,7 @@ export function resolveViewerRole(
 }
 
 export function isFullEditor(role: ViewerRole | null): boolean {
-  return role === "owner" || role === "editor" || role === "guild_admin";
+  return role === "owner" || role === "co_owner" || role === "editor" || role === "guild_admin";
 }
 
 export function canEditSection(role: ViewerRole | null, section: DraftSection): boolean {

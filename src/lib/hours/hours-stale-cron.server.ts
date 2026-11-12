@@ -61,12 +61,21 @@ export async function sendHoursStaleNotices(): Promise<void> {
     // the try/catch would have permanently (and silently) marked every currently-stale
     // member "notified" on this cron's very first production run without a single real
     // email going out -- a review finding, not a hypothetical.
+    //
+    // The notice goes to the owner and every co-owner. If at least one email went
+    // out, the member was notified: stamp it, or the daily run would re-email
+    // everyone each day while one address keeps failing. Nothing sent (no one to
+    // email yet) means no stamp.
     try {
-      await sendTransactionalEmail({
+      const { sent, failed } = await sendTransactionalEmail({
         trigger: "hours_stale",
         memberId: member.id,
         confirmUrl: `${siteOrigin}/api/confirm-hours/${token}`,
       });
+      if (failed.length > 0) {
+        console.error(`sendTransactionalEmail(hours_stale): ${failed.length} recipient(s) failed for member ${member.id}`);
+      }
+      if (sent.length === 0) continue;
       await supabase.from("members").update({ hours_stale_notice_sent_at: new Date().toISOString() }).eq("id", member.id);
     } catch (err) {
       console.error("sendTransactionalEmail(hours_stale) failed", err);

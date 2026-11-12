@@ -6,6 +6,7 @@ import { getDraftStatus } from "@/lib/drafts/drafts.server";
 import { getMemberDisplayName } from "@/lib/guild/impersonation.server";
 import { AdminShell, adminNavItemsFor } from "@/components/admin/AdminShell";
 import { PublishGateDialog } from "@/components/admin/PublishGateDialog";
+import { canInvitePeople } from "@/components/admin/CameraRollHint";
 import { DraftStatusProvider, useDraftStatus } from "@/components/admin/DraftStatusContext";
 import {
   ADMIN_EDITING_PATHS,
@@ -82,7 +83,7 @@ function AdminLayout() {
 
 function AdminLayoutInner() {
   const { memberId, isImpersonating, locationSwitcher } = Route.useRouteContext();
-  const { publishGateData, memberName } = Route.useLoaderData();
+  const { publishGateData, memberName, draftStatus } = Route.useLoaderData();
   const epoch = useDraftStatus()?.epoch ?? 0;
   const isPublished = publishGateData.status === "published";
   return (
@@ -95,7 +96,9 @@ function AdminLayoutInner() {
       previewHref="/admin/preview"
       liveHref={isPublished ? `/members/${publishGateData.slug}` : undefined}
       publishSlot={<PublishGateDialog memberId={memberId} initial={publishGateData} />}
-      navItems={adminNavItemsFor(publishGateData.memberType)}
+      navItems={adminNavItemsFor(publishGateData.memberType, {
+        people: canInvitePeople(draftStatus.role, isImpersonating),
+      })}
       locationSwitcher={locationSwitcher}
     >
       {/* Remounted after a discard so every editor starts again from the reloaded draft. */}

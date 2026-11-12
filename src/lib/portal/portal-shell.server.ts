@@ -27,6 +27,7 @@ import {
 } from "@/lib/portal/portal-sections";
 import { supabasePeopleStore } from "@/lib/portal/people-store.server";
 import { loadPeople } from "@/lib/portal/people";
+import { actorFor } from "@/lib/portal/portal-people.server";
 import { loadSharedLook, type SharedLook } from "@/lib/portal/shared-look";
 
 /**
@@ -166,11 +167,14 @@ export const getPortalSectionData = createServerFn({ method: "GET" })
         return { section: "discount", ...(await loadDiscountSection(supabase, id)) };
       case "people": {
         // canOpenPortalSection has already checked the caller is the owner,
-        // the business manager, or a Guild admin editing as them.
+        // a co-owner, the business manager, or a Guild admin editing as them.
         const store = supabasePeopleStore(await getSupabaseServiceRoleClient());
-        return { section: "people", ...(await loadPeople(store, id, member.userId, new Date(), {
+        return {
+          section: "people",
+          ...(await loadPeople(store, id, actorFor(member), new Date(), {
             viewerIsGuildAdmin: member.isImpersonating,
-          })) };
+          })),
+        };
       }
     }
   });

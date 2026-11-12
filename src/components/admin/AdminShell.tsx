@@ -45,11 +45,29 @@ const FOOD_NAV_ITEM: ShellNavItem = {
   match: ["/admin/food"],
 };
 
-/** /admin's sections for this member: a producer also gets Food, after Events. */
-export function adminNavItemsFor(memberType: MemberType | null | undefined): readonly ShellNavItem[] {
-  if (memberType !== "producer") return NAV_ITEMS;
-  const events = NAV_ITEMS.findIndex((item) => item.to === "/admin/events");
-  return [...NAV_ITEMS.slice(0, events + 1), FOOD_NAV_ITEM, ...NAV_ITEMS.slice(events + 1)];
+// /admin has no People page of its own; this goes to the portal's, which
+// opens for the owner and for a Guild admin editing as the member.
+const PEOPLE_NAV_ITEM: ShellNavItem = {
+  to: "/portal/people",
+  label: "People",
+  short: "People",
+  match: ["/portal/people"],
+};
+
+/**
+ * /admin's sections for this member: a producer also gets Food, after
+ * Events; `people` (canInvitePeople) adds People at the end.
+ */
+export function adminNavItemsFor(
+  memberType: MemberType | null | undefined,
+  { people = false }: { people?: boolean } = {},
+): readonly ShellNavItem[] {
+  let items: readonly ShellNavItem[] = NAV_ITEMS;
+  if (memberType === "producer") {
+    const events = NAV_ITEMS.findIndex((item) => item.to === "/admin/events");
+    items = [...NAV_ITEMS.slice(0, events + 1), FOOD_NAV_ITEM, ...NAV_ITEMS.slice(events + 1)];
+  }
+  return people ? [...items, PEOPLE_NAV_ITEM] : items;
 }
 
 function isActivePath(pathname: string, prefixes: readonly string[]) {

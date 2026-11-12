@@ -3,6 +3,7 @@ import {
   DRAFT_SECTIONS,
   canEditSection,
   computeTopBarState,
+  isFullEditor,
   normalizeDraftData,
   normalizeSections,
   publishNeedsHoursCheck,
@@ -16,6 +17,10 @@ describe("resolveViewerRole", () => {
   it("keeps a linked owner or full editor's role", () => {
     expect(resolveViewerRole("owner", false)).toBe("owner");
     expect(resolveViewerRole("editor", true)).toBe("editor");
+  });
+  it("keeps a co-owner's role, and a co-owner is a full editor", () => {
+    expect(resolveViewerRole("co_owner", false)).toBe("co_owner");
+    expect(isFullEditor("co_owner")).toBe(true);
   });
   it("treats an unlinked Guild admin (impersonating) as full rights", () => {
     expect(resolveViewerRole(null, true)).toBe("guild_admin");

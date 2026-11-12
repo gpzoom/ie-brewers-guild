@@ -75,7 +75,7 @@ export type TransactionalEmailPayload =
       memberId: string;
       memberName: string;
       email: string;
-      role: "editor" | "media_events";
+      role: "co_owner" | "editor" | "media_events";
       /** The owner's address, or null when a Guild admin invited while editing as them. */
       inviterEmail: string | null;
     }
@@ -451,9 +451,11 @@ ${signInUrl}`,
       const signInUrl = `${siteUrl}/signin?next=/portal`;
       const inviter = payload.inviterEmail ?? `The ${ORG_NAME}`;
       const canEdit =
-        payload.role === "media_events"
-          ? "You'll be able to update its photos and its events."
-          : "You'll be able to edit everything on its profile.";
+        payload.role === "co_owner"
+          ? "You'll be a co-owner: you can do everything the owner can, including adding people and connecting calendars, and you'll get the Guild's emails about the profile."
+          : payload.role === "media_events"
+            ? "You'll be able to update its photos and its events."
+            : "You'll be able to edit everything on its profile.";
       const intro = `${inviter} invited you to help with ${payload.memberName}'s profile on the ${ORG_SHORT_NAME} member directory.`;
       const howTo = `Sign in to the Member Portal with this email address (${payload.email}). The invitation lasts 14 days.`;
       return {

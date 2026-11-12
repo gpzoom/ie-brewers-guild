@@ -78,7 +78,7 @@ Files enter the gallery two ways:
 
 The outbound link on a slide is a plain text field the member types. Pasting a post URL there makes the slide tap through to the post — no fetching involved, and it is optional.
 
-**The camera roll hint.** Directly under the gallery upload box (portal Photos, the wizard's Photos step, `/admin/media`), a short info box says: "Posted it on Instagram or Facebook? The original photo is probably still in your phone's camera roll. Upload that one for the sharpest result." Members' best photos are often ones they've already posted, and the original in their camera roll beats the compressed image the platform keeps. A second line depends on the viewer: the owner (and a Guild admin editing as them) reads "Someone else takes your photos? Invite them as a Photos & events editor, or send them a creator upload link", linking to People and to the creator link panel on the same page; a full editor or Photos & events editor gets only the creator link half, since only the owner sees People. In the setup wizard, which has no People page yet, "Photos & events editor" isn't a link and says it's in People once setup is done. The hint is always shown and can't be dismissed. It deliberately replaces any idea of importing from a post link: the rule above stands.
+**The camera roll hint.** Directly under the gallery upload box (portal Photos, the wizard's Photos step, `/admin/media`), a short info box says: "Posted it on Instagram or Facebook? The original photo is probably still in your phone's camera roll. Upload that one for the sharpest result." Members' best photos are often ones they've already posted, and the original in their camera roll beats the compressed image the platform keeps. A second line depends on the viewer: the owner (and a Guild admin editing as them) reads "Someone else takes your photos? Invite them as a Photos & events editor, or send them a creator upload link", linking to People and to the creator link panel on the same page; a full editor or Photos & events editor gets only the creator link half, since only the owner and co-owners see People. In the setup wizard, which has no People page yet, "Photos & events editor" isn't a link and says it's in People once setup is done. The hint is always shown and can't be dismissed. It deliberately replaces any idea of importing from a post link: the rule above stands.
 
 ### The creator upload link
 
@@ -203,7 +203,7 @@ Events come from a connected calendar, not hand entry. Hand entry is the fallbac
 
 **Set up the link on a computer (owner, 1 October 2026).** Google Calendar shows a calendar's iCal link only on a computer, never in its phone app. Every calendar box (events, food, and a Mobile member's "Where we'll be") therefore carries a strong orange note until a link is saved, and again whenever Edit link is open: "Set up the link on a computer — one time only. … After that, add and change your events on your phone or your computer, whichever you like."
 
-**Remove calendar (owner, 30 September 2026).** Under **Edit link**, the owner (or a Guild admin editing as them) can **Remove calendar**, for the events calendar and the food calendar alike. A confirm box says what happens: the entries it brought in come off the profile (events, or vendor visits and the food week), entries added by hand stay, and the Google calendar itself isn't changed. The database keeps a removed connection's events unlinked (`on delete set null`, so overlays survive an accidental disconnect), so `removeIcsConnection` deletes that connection's imported events itself, after the owner-only delete succeeds. Editors don't see the button, and the database refuses them.
+**Remove calendar (owner, 30 September 2026).** Under **Edit link**, the owner or a co-owner (or a Guild admin editing as them) can **Remove calendar**, for the events calendar and the food calendar alike. A confirm box says what happens: the entries it brought in come off the profile (events, or vendor visits and the food week), entries added by hand stay, and the Google calendar itself isn't changed. The database keeps a removed connection's events unlinked (`on delete set null`, so overlays survive an accidental disconnect), so `removeIcsConnection` deletes that connection's imported events itself, after the owner-level delete succeeds. Editors don't see the button, and the database refuses them.
 
 **Watch how (owner, 30 September 2026).** The events calendar box carries a **Watch how to connect a Google Calendar for EVENTS (2:53)** link, in the portal's Events section, the wizard's Events step and `/admin/events`, whether or not a calendar is connected yet. It opens a how-to video in a pop-up on the same page, and closing the pop-up stops the video. The video is hosted on the Guild's livid.com account (embed `https://livid.com/embed/H1WWGjbnsr9p?autoplay=1`, so it starts playing when the pop-up opens, watch page `https://livid.com/watch/H1WWGjbnsr9p`). The player is loaded only when the pop-up opens. The member guide links to the watch page. Its source project is `videos/google-events-calendar/` in the repo. The food calendar box has its own: **Watch how to connect a Google Calendar for FOOD (2:04)** (renamed from "…FOOD VENDORS" and re-voiced with the kitchen line, 2 October 2026) (embed `https://livid.com/embed/v5XYPWwgyFVb?autoplay=1`, watch page `https://livid.com/watch/v5XYPWwgyFVb`; source `videos/google-food-calendar/`). It teaches the one-calendar way and starts by pointing to the events video.
 
@@ -232,14 +232,14 @@ On the profile each event's date column reads weekday, day and **month** ("THU /
 
 ### Food calendar
 
-Decided with the owner on 27 September 2026. **Producers only.** A taproom can connect a **second** calendar for the food trucks and pop-ups parked there, with **its own ICS link and its own tag** (for example `#food`; it must differ from their events tag). It has **its own menu item, Food** (owner's request, 27 September 2026), for producers only: the portal section `/portal/food` and the old editor's `/admin/food` (where Edit as them opens). In the setup wizard it sits in step 6, under the events calendar. Only the owner (or a Guild admin editing as them) connects it, like the events calendar.
+Decided with the owner on 27 September 2026. **Producers only.** A taproom can connect a **second** calendar for the food trucks and pop-ups parked there, with **its own ICS link and its own tag** (for example `#food`; it must differ from their events tag). It has **its own menu item, Food** (owner's request, 27 September 2026), for producers only: the portal section `/portal/food` and the old editor's `/admin/food` (where Edit as them opens). In the setup wizard it sits in step 6, under the events calendar. Only the owner or a co-owner (or a Guild admin editing as them) connects it, like the events calendar.
 
 - **The Food page points to the events video (owner, 30 September 2026):** under its intro, "If your Events calendar isn't set up yet, watch this video first:" with the **Watch how to connect a Google Calendar for EVENTS** pop-up link, since the food setup builds on the events calendar.
 - **One calendar, two tags (owner, 30 September 2026).** The recommended way is now to use the **same calendar link** as the Events page, with a different tag (`#guild` for events, `#food` for vendor visits). Each connection imports only its own tag, so one entry tagged both shows in both places, as intended (for example "Taco Tuesday with El Gordo"). A separate food calendar is still allowed, for example when someone else books the vendors; the Food page's hint says both. The food how-to video (`videos/google-food-calendar/`) teaches the one-calendar way.
 - **Tags match whole (owner, 30 September 2026), for events and food alike.** A tag counts only as `#tag` on its own (not inside a longer tag: `#food` doesn't match `#foodtruck` or `#foodie`), or in brackets (`[food]`, `(#food)`), or as an equal CATEGORIES value, in any case. A plain word never counts, so an event that just mentions food stays out of Food for the next week, and taking the tag out of a title leaves the plain word ("Brewers Guild meetup #guild" shows as "Brewers Guild meetup"). Tags are saved with their "#": typing `food` saves and shows `#food`.
 - Each entry is a **vendor's day**: the vendor's name in the title, the time, and anything else (a menu or Instagram link) in the description. Title and description are cleaned the same way as events (tag taken out, links clickable).
 - The profile shows **Food for the next week** (owner, 30 September 2026; it was "Food for the next week" and opened collapsed): all **7 days** at once, today first, like "Upcoming events", in the member's time zone, each with the weekday, day and month. On a phone and tablet it sits between the hours and "Upcoming events". On desktop, when the profile has a photo carousel, it sits **under the carousel**, filling the space the photos leave in the left column. A day lists its vendors (name, time, description; several in time order). A day with no vendor says **"Bring your own food"**, or **"Closed"** when their posted hours (weekly, or a holiday) say they're closed that day, the same rule "open now" uses. With no hours posted, no day is Closed.
-- **Kitchen specials and "We have our own kitchen" (owner, 2 October 2026).** The one `#food` tag covers both visiting trucks and a taproom's own kitchen specials ("Brisket Tuesday"), with the wording on the Food section saying so. A producer with its own kitchen turns on **We have our own kitchen** (a switch on the Food section, owner or Guild admin only, saved straight away, not drafted; `members.has_kitchen`, written through `set_member_has_kitchen()`). With it on, an open day with nothing tagged says **"Kitchen open"** instead of "Bring your own food". Closed days still say Closed, and listed days still list.
+- **Kitchen specials and "We have our own kitchen" (owner, 2 October 2026).** The one `#food` tag covers both visiting trucks and a taproom's own kitchen specials ("Brisket Tuesday"), with the wording on the Food section saying so. A producer with its own kitchen turns on **We have our own kitchen** (a switch on the Food section, the owner, a co-owner, or a Guild admin only, saved straight away, not drafted; `members.has_kitchen`, written through `set_member_has_kitchen()`). With it on, an open day with nothing tagged says **"Kitchen open"** instead of "Bring your own food". Closed days still say Closed, and listed days still list.
 - It shows only once a food calendar is connected **or the taproom has turned on We have our own kitchen** (owner, 2 October 2026: a brewpub with a kitchen and no food calendar sees a week of "Kitchen open" / "Closed"), so a taproom with neither never gets a week of "Bring your own food". The Food page's "Next 7 days on your profile" preview follows the same rule. Visitors can't read calendar links, so `member_has_food_calendar(member_id)` (security definer) answers only yes or no, for a published producer (or for someone who can see the unpublished profile).
 - **No vendor photos.** Showing a photo from the calendar entry was built and then removed (owner, 27 September 2026): a Google Calendar photo lives in Google Drive and only shows once the member shares it "Anyone with the link", which was too cumbersome.
 - **All-day entries** (a date, no time) start at the member's own local midnight and show **"All day"** instead of a time (`events.all_day`), for events and food alike. (Before this, an all-day entry on Oct 1 landed on the evening of Sept 30 in California.)
@@ -530,7 +530,7 @@ Decided with the owner on 25 September 2026. The screen map is snapshotted in [`
 
 ### Who uses it
 
-The member's own profile admin, meaning the owner or an editor in `member_users`. There are three roles: owner, full editor, and Photos & events editor (see People and permissions). A Guild admin reaches the same screens only through **Edit as them**, and every impersonation rule above still applies.
+The member's own profile admin, meaning the owner or an editor in `member_users`. There are four roles: owner, co-owner, full editor, and Photos & events editor (see People and permissions). A Guild admin reaches the same screens only through **Edit as them**, and every impersonation rule above still applies.
 
 ### Getting in
 
@@ -616,30 +616,32 @@ This supersedes the current behaviour, where edits to a published profile go liv
 
 ### People and permissions
 
-A member's profile can have three kinds of people. The role lives in `member_users.role`.
+A member's profile can have four kinds of people. The role lives in `member_users.role`.
 
-| Can they… | Owner (`owner`) | Full editor (`editor`) | Photos & events editor (`media_events`) |
-| --- | --- | --- | --- |
-| Go through the setup wizard | yes | yes, if setup isn't done | never |
-| Basics & hours, Links, Discount, Theme, Food (producers); the logo and cover on Logo, Photos & Cover | yes | yes | no, hidden |
-| Logo, Photos & Cover's gallery and slides: upload, crop, reorder, tap-through links, creator upload links, approve or reject creator uploads | yes | yes | yes (they see only these two parts of the page) |
-| Events: add, edit, hide, set Postponed / Rescheduled / Canceled, Refresh now | yes | yes | yes |
-| Connect or disconnect the Google / Apple calendar | yes | no | no |
-| Preview | whole draft | whole draft | live page plus their Photos draft |
-| Publish | everything | everything | Photos only |
-| Discard changes | everything | everything | Photos only |
-| Request a type change | yes | yes | no |
-| People: invite, resend, cancel invite, remove | yes | no | no |
+| Can they… | Owner (`owner`) | Co-owner (`co_owner`) | Full editor (`editor`) | Photos & events editor (`media_events`) |
+| --- | --- | --- | --- | --- |
+| Go through the setup wizard | yes | yes | yes, if setup isn't done | never |
+| Basics & hours, Links, Discount, Theme, Food (producers); the logo and cover on Logo, Photos & Cover | yes | yes | yes | no, hidden |
+| Logo, Photos & Cover's gallery and slides: upload, crop, reorder, tap-through links, creator upload links, approve or reject creator uploads | yes | yes | yes | yes (they see only these two parts of the page) |
+| Events: add, edit, hide, set Postponed / Rescheduled / Canceled, Refresh now | yes | yes | yes | yes |
+| Connect or disconnect the Google / Apple calendar | yes | yes | no | no |
+| Preview | whole draft | whole draft | whole draft | live page plus their Photos draft |
+| Publish | everything | everything | everything | Photos only |
+| Discard changes | everything | everything | everything | Photos only |
+| Request a type change | yes | yes | yes | no |
+| People: invite, resend, cancel invite, remove | yes | Full and Photos & events editors only, never a co-owner or the owner | no | no |
 
 - **Cover and logo are not part of Photos** for this purpose. They stay with the owner and full editors. Since the redesign (2 October 2026) they share one page, **Logo, Photos & Cover** (`/portal/logo-cover`; `/portal/photos` redirects there); a Photos & events editor opens it and sees only Gallery and Carousel.
-- Only the owner connects the calendar, so sync doesn't break when an editor leaves or used their own Google account.
+- Only the owner or a co-owner connects the calendar, so sync doesn't break when an editor leaves or used their own Google account.
 - A Photos & events editor never sees the wizard. If the member's setup isn't done yet, they still land on their two sections.
-- One owner per member. Changing who the owner is is a Guild admin job, from the roster. The owner can't remove themselves.
+- One owner per member, and any number of co-owners (owner's call, 12 November 2026). Changing who the owner is is a Guild admin job, from the roster. The owner can't remove themselves.
+- **A co-owner has the owner's rights on that one profile** (design `docs/superpowers/specs/2026-11-12-co-owner-design.md`): everything in the Owner column, including both calendars, "We have our own kitchen" and type-change requests, plus People. The exceptions: a co-owner can't invite, resend, cancel, remove or change a co-owner (or a pending Co-owner invite), can't remove or demote the owner, and can't hand off or take back a location. Only the owner (or a Guild admin editing as them) manages co-owners. A co-owner can **Leave this profile** from their own row on People, after confirming.
 - **Hiding a section in the UI is not the protection.** Every write is checked on the server against the caller's role (below).
+- **Co-owner enforcement.** `co_owner` is a `member_users.role` value. The database rules that gate owner-only actions (calendar connections, "We have our own kitchen", drafts and publishing) accept a co-owner too; every People write is checked in the Worker (`people.ts`) before the service key is used, and only the owner (a Guild admin editing as them has owner rights) may touch a co-owner or a pending Co-owner invite. Hand-off and take-back turn the location's co-owners into Full editors and cancel its pending Co-owner invites; the business manager of a handed-off location can never be a co-owner there. Guild emails that go to "the member" (`creator_upload_pending`, `hours_stale`) go to the owner and every co-owner, one separate email each; business-manager editor rows never get them. The Guild roster shows each member's co-owners under the detail line.
 
 #### The People section
 
-A portal section only the owner sees. It lists everyone on the member with their role, plus pending invites. To invite, the owner enters an email address and picks **Photos & events** or **Full editor**. The invitee gets an email with a Member Portal sign-in link. When they sign in with that address, the invite is accepted and a `member_users` row is created with the invited role. Invites expire after 14 days and can be resent (at most once every 5 minutes per invite) or cancelled. Removing someone deletes their `member_users` row and ends their access on their next request. Changing someone's role is remove-and-reinvite, for now. The Guild admin can do all of this from the roster too.
+A portal section only the owner and co-owners see. It lists everyone on the member with their role, plus pending invites. To invite, they enter an email address and pick **Photos & events** or **Full editor**; the owner (and a Guild admin editing as them) also sees **Co-owner**: "Everything the owner can do, including People and calendars. Only you can add or remove co-owners." The invitee gets an email with a Member Portal sign-in link. When they sign in with that address, the invite is accepted and a `member_users` row is created with the invited role. Invites expire after 14 days and can be resent (at most once every 5 minutes per invite) or cancelled. Removing someone deletes their `member_users` row and ends their access on their next request. **Change access** next to a person moves them between Photos & events, Full editor and Co-owner without removing and re-inviting; only the owner can move someone to or from Co-owner. Every change on People (invite, resend, cancel, remove, change access, leave) is audit-logged with the real signed-in user as actor, whoever makes it. The Guild admin can do all of this from the roster too.
 
 Invites go through the same server path the Guild admin's create-member invite already uses, not a client-side Supabase call.
 
@@ -659,8 +661,8 @@ This refines Drafts above. The draft is split into sections so a limited editor 
 
 - Draft writes go through a Postgres function, `save_member_draft_section(member_id, section, data)`, which checks the caller's `member_users.role` against the section. `media_events` may write only `media`. Clients have no direct update on `member_drafts`.
 - `publish_member_draft` checks the same way: `media_events` may publish only `media`.
-- `events` writes and `media_assets` / `upload_tokens` writes allow all three roles. `calendar_connections` writes allow `owner` only. **Refresh now** runs in a Worker that allows all three roles.
-- People actions (invite, cancel, remove) are owner-only, checked in the Worker.
+- `events` writes and `media_assets` / `upload_tokens` writes allow all four roles. `calendar_connections` writes allow the owner or a co-owner only (`is_member_owner_level`). **Refresh now** runs in a Worker that allows all four roles.
+- People actions are checked in the Worker: the owner or a co-owner (or the business manager of a handed-off location) may manage Full editors and Photos & events editors; only the owner (or a Guild admin editing as them) may invite, change or remove co-owners or touch pending Co-owner invites. Every People change is audit-logged.
 - Impersonation still logs against the real actor. A Guild admin impersonating acts with owner rights, but still can't change sign-in settings.
 
 ### Portal shell
@@ -673,7 +675,7 @@ The menu is headed "[Business name] Profile" in the display font, so editors alw
 - `/portal/setup/[step]`: wizard steps, by name, not number (`type`, `basics`, `hours`…), so type-specific steps don't renumber URLs.
 - `/portal/[section]`: portal sections, reusing the `/admin` components.
 - `/portal/preview`: the draft rendered in the profile template, behind a "Preview · not live yet" band.
-- `/portal/people`: owner only.
+- `/portal/people`: owner and co-owners (and the business manager on a handed-off location).
 - `/admin/*` stays as the fallback until testing is done.
 
 ### Data model additions

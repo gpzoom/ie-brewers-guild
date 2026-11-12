@@ -19,6 +19,7 @@ import type { CalendarConnectionRow, CalendarPurpose } from "@/lib/supabase/type
 import { HELP_VIDEOS } from "@/data/help-videos";
 import { canonicalTag } from "@/lib/events/calendar-purpose";
 import { HelpVideoButton } from "@/components/admin/HelpVideoButton";
+import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 
 const inputClass =
   "h-[46px] w-full rounded-[9px] border border-canvas-border bg-white px-[13px] text-sm text-ink placeholder:text-ink-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30";
@@ -123,7 +124,7 @@ const COPY = {
     addTitle: "Add a calendar",
     importing: "importing events tagged",
     tagPlaceholder: "e.g. #guild",
-    nobody: "No calendar is connected. Only the profile's owner can connect one. You can still add dates by hand below.",
+    nobody: "No calendar is connected. Only the profile's owner or a co-owner can connect one. You can still add dates by hand below.",
     removeWhat: "The events it brought in come off your profile. Events you added by hand stay.",
     hint: "Paste your calendar's ICS subscription URL. Only events with your sync tag (for example #guild) in their title or description are imported; the tag is left off on your profile. Each event's description shows on your profile too, so keep private notes out of tagged events. Deleting an event, or taking its tag off, removes it here too.",
   },
@@ -133,7 +134,7 @@ const COPY = {
     addTitle: "Add a food calendar",
     importing: "importing vendors tagged",
     tagPlaceholder: "e.g. #food",
-    nobody: "No food calendar is connected. Only the profile's owner can connect one.",
+    nobody: "No food calendar is connected. Only the profile's owner or a co-owner can connect one.",
     removeWhat: "The vendor visits it brought in come off your profile, and \"Food for the next week\" goes away until you connect one again.",
     hint: "Use the same calendar link as your Events page. Tag each food listing #food: a visiting vendor's name, or your own special (for example \"Brisket Tuesday\"), in the title, and a menu or Instagram link in the description. (If someone else books your vendors, a separate calendar works too.) Your profile shows the next 7 days; a day with nothing listed says \"Bring your own food\" (or \"Kitchen open\" with the switch on), or \"Closed\" when your hours say you're closed.",
   },
@@ -156,6 +157,12 @@ export function CalendarConnectionPanel({
 }) {
   const copy = COPY[purpose];
   const router = useRouter();
+  // A Guild admin editing as the member gets a stronger warning before
+  // removing: the link isn't kept anywhere, so only the member can supply it
+  // again (2026-11-12, after a test removal took a member's events with it).
+  const memberEditing = useMemberEditing();
+  const adminRemoving = memberEditing?.isImpersonating === true;
+  const memberLabel = memberEditing?.memberName ?? "this member";
   const fieldId = (name: string) => (purpose === "food" ? `food-${name}` : name);
   const [connection, setConnection] = useState(initialConnection);
   const [icsUrl, setIcsUrl] = useState(initialConnection?.ics_url ?? "");
@@ -473,6 +480,17 @@ export function CalendarConnectionPanel({
               {copy.removeWhat} Your Google Calendar itself isn't changed, and you can connect it
               again any time.
             </AlertDialogDescription>
+            {adminRemoving && (
+              <div
+                role="note"
+                className="mt-3 rounded-[12px] border-2 border-danger bg-danger/10 p-4 text-[14px] leading-[1.5] text-ink"
+              >
+                <strong className="font-semibold">You're editing as {memberLabel}.</strong> This is
+                their calendar, not yours. The link isn't saved anywhere once it's removed, so the
+                Guild can't put it back: {memberLabel} would have to send you the link again. Their
+                calendar events disappear from their live profile right away.
+              </div>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="h-[46px] rounded-[9px] border-[#D3CBBD] bg-transparent px-[19px] text-[14px] font-medium text-ink hover:bg-canvas-2">
@@ -487,7 +505,7 @@ export function CalendarConnectionPanel({
                 void onRemove();
               }}
             >
-              Remove calendar
+              {adminRemoving ? `Remove ${memberLabel}'s calendar` : "Remove calendar"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

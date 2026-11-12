@@ -32,8 +32,8 @@ const MEMBER_MUTATION_FILES = [
   "src/lib/media/review-tray.server.ts",
   "src/lib/events/events.server.ts",
   "src/lib/events/calendar-connection.server.ts",
-  // The portal's People actions (service-role writes) and type-change requests.
-  "src/lib/portal/portal-people.server.ts",
+  // Type-change requests. (The portal's People actions log every change
+  // with recordPeopleAudit instead; see below.)
   "src/lib/portal/type-change.server.ts",
 ];
 
@@ -64,6 +64,34 @@ describe("audit-log coverage", () => {
     ]) {
       expect(source).toContain(`rpc("${fn}"`);
     }
+  });
+});
+
+describe("People audit coverage (spec 2026-11-12)", () => {
+  // Every People change is logged, whoever makes it, not only a Guild
+  // admin's -- so each People server function calls recordPeopleAudit.
+  const PEOPLE_FILE = "src/lib/portal/portal-people.server.ts";
+  const source = () => readFileSync(resolve(process.cwd(), PEOPLE_FILE), "utf-8");
+
+  it("portal-people.server.ts uses recordPeopleAudit, not the admin-only wrapper", () => {
+    expect(source()).toContain("recordPeopleAudit");
+    expect(source()).not.toContain("recordAuditLogIfImpersonating(");
+  });
+
+  it.each([
+    "invitePortalPerson",
+    "resendPortalInvite",
+    "cancelPortalInvite",
+    "removePortalPerson",
+    "changePortalAccess",
+    "leavePortalProfile",
+  ])("%s records the change", (fn) => {
+    const text = source();
+    const start = text.indexOf(`export const ${fn}`);
+    expect(start).toBeGreaterThan(-1);
+    const next = text.indexOf("\nexport ", start + 1);
+    const body = text.slice(start, next === -1 ? undefined : next);
+    expect(body.match(/recordPeopleAudit\(/g)).toHaveLength(1);
   });
 });
 

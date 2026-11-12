@@ -3,6 +3,7 @@ import type { ChooserEntry } from "@/lib/portal/location-groups";
 
 const ROLE_LABELS: Record<PortalRole, string> = {
   owner: "Owner",
+  co_owner: "Co-owner",
   editor: "Full editor",
   media_events: "Photos & events editor",
 };

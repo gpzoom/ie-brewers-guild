@@ -6,11 +6,13 @@
  * hours-stale-cron.server.ts, invite-member.server.ts, and this phase's own
  * submit-contact-form.server.ts) -- that contract is unchanged from the
  * throwing stub this replaces. It still throws on a genuine send failure
- * (a non-2xx Resend response, or a missing RESEND_API_KEY), so those
- * existing try/catch blocks keep doing something meaningful.
+ * (every recipient got a non-2xx Resend response, or a missing
+ * RESEND_API_KEY), so those existing try/catch blocks keep doing something
+ * meaningful. When only some of several recipients fail, it logs them and
+ * returns them in `failed` instead (hours-stale-cron.server.ts uses this).
  *
  * It does NOT throw when a memberId-only trigger's target member has no
- * one to email yet (resolveRecipient returns null for an unclaimed,
+ * one to email yet (resolveRecipient returns [] for an unclaimed,
  * imported member -- spec, "Migrating the existing members") -- that's an
  * expected, non-error state, not a broken send, so it logs a notice and
  * returns instead of raising an alarm for something that isn't failing.
@@ -57,17 +59,25 @@ function currentRequestUrl(): string | null {
   }
 }
 
-export async function sendTransactionalEmail(payload: TransactionalEmailPayload): Promise<void> {
+/** Which recipients were emailed and which failed (Guild emails go to the owner and every co-owner). */
+export type SendResult = { sent: string[]; failed: string[] };
+
+/**
+ * One separate email per recipient. Throws when every recipient failed (so a
+ * single-recipient send throws on failure, as before); when only some failed
+ * it logs them and returns them in `failed`.
+ */
+export async function sendTransactionalEmail(payload: TransactionalEmailPayload): Promise<SendResult> {
   const supabase = await getSupabaseServiceRoleClient();
   const siteUrl = resolveEmailSiteUrl(currentRequestUrl());
-  const to = await resolveRecipient(payload, supabase, siteUrl);
+  const recipients = await resolveRecipient(payload, supabase, siteUrl);
 
-  if (!to) {
+  if (recipients.length === 0) {
     const memberIdNote = "memberId" in payload ? ` (memberId: ${payload.memberId})` : "";
     console.warn(
       `sendTransactionalEmail: no recipient for trigger "${payload.trigger}"${memberIdNote} -- skipping, nothing sent.`,
     );
-    return;
+    return { sent: [], failed: [] };
   }
 
   const env = await getEmailWorkerEnv();
@@ -77,28 +87,46 @@ export async function sendTransactionalEmail(payload: TransactionalEmailPayload)
 
   const content = buildEmailContent(payload, siteUrl);
 
-  const response = await fetch(RESEND_API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: TRANSACTIONAL_FROM_ADDRESS,
-      to: [to],
-      subject: content.subject,
-      html: content.html,
-      text: content.text,
-      ...(content.replyTo ? { reply_to: content.replyTo } : {}),
-    }),
-  });
-
-  if (!response.ok) {
-    const responseBody = await response.text().catch(() => "");
-    throw new Error(
-      `Resend request failed for trigger "${payload.trigger}" (${response.status} ${response.statusText}): ${responseBody}`,
-    );
+  // One separate email per recipient; a failure for one doesn't stop the rest.
+  const sent: string[] = [];
+  const failed: string[] = [];
+  const failures: string[] = [];
+  for (const to of recipients) {
+    try {
+      const response = await fetch(RESEND_API_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: TRANSACTIONAL_FROM_ADDRESS,
+          to: [to],
+          subject: content.subject,
+          html: content.html,
+          text: content.text,
+          ...(content.replyTo ? { reply_to: content.replyTo } : {}),
+        }),
+      });
+      if (response.ok) {
+        sent.push(to);
+      } else {
+        const responseBody = await response.text().catch(() => "");
+        failed.push(to);
+        failures.push(`${response.status} ${response.statusText}: ${responseBody}`);
+      }
+    } catch (error) {
+      failed.push(to);
+      failures.push(error instanceof Error ? error.message : String(error));
+    }
   }
+
+  if (failed.length > 0) {
+    const message = `Resend request failed for trigger "${payload.trigger}" (${failed.length} of ${recipients.length} recipients): ${failures.join("; ")}`;
+    if (sent.length === 0) throw new Error(message);
+    console.error(message);
+  }
+  return { sent, failed };
 }
 
 /** A prebuilt email to several addresses (Guild member visit emails). Throws on a Resend error. */

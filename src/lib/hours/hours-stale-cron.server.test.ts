@@ -120,7 +120,7 @@ describe("sendHoursStaleNotices", () => {
   /** The counterpart: a successful send still marks the member notified, exactly as before. */
   it("writes hours_stale_notice_sent_at when sendTransactionalEmail succeeds", async () => {
     listMembers.mockReturnValue([makeMember({ id: "member-2" })]);
-    sendTransactionalEmail.mockResolvedValue(undefined);
+    sendTransactionalEmail.mockResolvedValue({ sent: ["owner@x.co"], failed: [] });
 
     await sendHoursStaleNotices();
 
@@ -135,11 +135,38 @@ describe("sendHoursStaleNotices", () => {
     listMembers.mockReturnValue([makeMember({ id: "member-fail" }), makeMember({ id: "member-ok" })]);
     sendTransactionalEmail.mockImplementation(async (payload: { memberId: string }) => {
       if (payload.memberId === "member-fail") throw new Error("not implemented yet");
+      return { sent: ["owner@x.co"], failed: [] };
     });
 
     await sendHoursStaleNotices();
 
     expect(updateCalls.map((c) => c.memberId)).toEqual(["member-ok"]);
+  });
+
+  /**
+   * The owner and every co-owner get the notice. If one address fails but
+   * another went out, the member was notified -- stamp it, or the daily cron
+   * re-emails everyone each day while that one address keeps failing.
+   */
+  it("writes hours_stale_notice_sent_at when some recipients failed but at least one email went out", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    listMembers.mockReturnValue([makeMember({ id: "member-partial" })]);
+    sendTransactionalEmail.mockResolvedValue({ sent: ["owner@x.co"], failed: ["co-owner@x.co"] });
+
+    await sendHoursStaleNotices();
+
+    expect(updateCalls.map((c) => c.memberId)).toEqual(["member-partial"]);
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it("does NOT write hours_stale_notice_sent_at when there was no one to email", async () => {
+    listMembers.mockReturnValue([makeMember({ id: "member-unclaimed" })]);
+    sendTransactionalEmail.mockResolvedValue({ sent: [], failed: [] });
+
+    await sendHoursStaleNotices();
+
+    expect(updateCalls).toEqual([]);
   });
 
   it("skips members already notified for the current staleness episode, without calling sendTransactionalEmail", async () => {

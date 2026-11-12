@@ -1,5 +1,5 @@
 import type { MemberType } from "@/lib/supabase/types";
-import type { PortalRole } from "@/lib/portal/portal-destination";
+import { isOwnerLevel, type PortalRole } from "@/lib/portal/portal-destination";
 import type { CompletenessStep } from "@/lib/portal/section-completeness";
 
 /**
@@ -7,16 +7,16 @@ import type { CompletenessStep } from "@/lib/portal/section-completeness";
  * permissions"; plan phase 5). Pure, so the routes, the sidebar and the
  * tests share one definition of who sees what:
  *
- *   section      owner  editor  media_events
- *   basics       yes    yes     --
- *   logo-cover   yes    yes     yes       (Logo, Photos & Cover; a Photos & events
- *                                          editor sees its Gallery and Carousel only)
- *   events       yes    yes     yes
- *   food         yes    yes     --        (Producers only: the food truck calendar)
- *   links        yes    yes     --
- *   discount     yes    yes     --        (Affiliate Members only)
- *   theme        yes    yes     --
- *   people       yes    --      --        (also the business manager on a handed-off location)
+ *   section      owner  co_owner  editor  media_events
+ *   basics       yes    yes       yes     --
+ *   logo-cover   yes    yes       yes     yes       (Logo, Photos & Cover; a Photos & events
+ *                                                   editor sees its Gallery and Carousel only)
+ *   events       yes    yes       yes     yes
+ *   food         yes    yes       yes     --        (Producers only: the food truck calendar)
+ *   links        yes    yes       yes     --
+ *   discount     yes    yes       yes     --        (Affiliate Members only)
+ *   theme        yes    yes       yes     --
+ *   people       yes    yes       --      --        (also the business manager on a handed-off location)
  *
  * A Guild admin editing as a member acts with owner rights, so the portal
  * shell hands them the role "owner". Hiding a section here is not the
@@ -61,7 +61,7 @@ export function canOpenPortalSection(
   if (section === "discount" && viewer.memberType !== "allied") return false;
   if (section === "food" && viewer.memberType !== "producer") return false;
   if (viewer.role === "media_events") return MEDIA_EVENTS_SECTIONS.includes(section);
-  if (section === "people") return viewer.role === "owner" || viewer.isBusinessManager === true;
+  if (section === "people") return isOwnerLevel(viewer.role) || viewer.isBusinessManager === true;
   return true;
 }
 

@@ -11,3 +11,19 @@ export function pickAccountUserId(
   if (!rows || rows.length === 0) return null;
   return (rows.find((r) => r.role === "owner") ?? rows[0]).user_id;
 }
+
+/**
+ * Everyone who receives the Guild's emails "to the member": the owner first,
+ * then each co-owner in created_at order. Business-manager editor rows never
+ * qualify. With neither an owner nor a co-owner, the earliest row (the
+ * original rule). `rows` must already be ordered by created_at ascending.
+ */
+export function pickOwnerLevelUserIds(
+  rows: Array<{ user_id: string; role: string | null }> | null | undefined,
+): string[] {
+  if (!rows || rows.length === 0) return [];
+  const owners = rows.filter((r) => r.role === "owner").map((r) => r.user_id);
+  const coOwners = rows.filter((r) => r.role === "co_owner").map((r) => r.user_id);
+  const ids = [...owners.slice(0, 1), ...coOwners];
+  return ids.length > 0 ? ids : [rows[0].user_id];
+}

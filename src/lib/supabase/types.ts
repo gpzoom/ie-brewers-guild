@@ -292,7 +292,7 @@ export type ProfileRow = {
 
 // 'editor' is the full editor; 'media_events' is the Photos & events editor
 // (20260925200200_member_users_roles.sql; spec, "People and permissions").
-export type MemberRole = "owner" | "editor" | "media_events";
+export type MemberRole = "owner" | "co_owner" | "editor" | "media_events";
 
 export type MemberUserRow = {
   id: string;

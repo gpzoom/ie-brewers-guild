@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveDetailLine } from "./roster-detail";
+import { coOwnerLine, resolveDetailLine } from "./roster-detail";
 import type { RosterEntry } from "@/lib/guild/roster.server";
 import type { RosterBusiness } from "@/lib/guild/roster-groups";
 import type { MemberRow } from "@/lib/supabase/types";
@@ -21,6 +21,7 @@ const entry = (
   } as MemberRow,
   claimState,
   ownerEmail: null,
+  coOwnerEmails: [],
   ownerUserId: null,
 });
 const oneManager: RosterBusiness = {
@@ -94,5 +95,19 @@ describe("resolveDetailLine", () => {
     expect(
       resolveDetailLine(entry("claimed", { member_since_year: null }), now, { withoutCity: true }),
     ).toBe("");
+  });
+});
+
+describe("coOwnerLine", () => {
+  it("is null with no co-owners", () => {
+    expect(coOwnerLine(entry("claimed"))).toBeNull();
+  });
+  it("names one co-owner", () => {
+    expect(coOwnerLine({ ...entry("claimed"), coOwnerEmails: ["a@x.com"] })).toBe("Co-owner: a@x.com");
+  });
+  it("lists two co-owners", () => {
+    expect(coOwnerLine({ ...entry("claimed"), coOwnerEmails: ["a@x.com", "b@y.com"] })).toBe(
+      "Co-owners: a@x.com, b@y.com",
+    );
   });
 });

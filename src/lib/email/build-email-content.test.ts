@@ -327,6 +327,13 @@ describe("buildEmailContent: editor_invited", () => {
     expect(content.text).toContain("edit everything on its profile");
   });
 
+  it("describes a co-owner's access", () => {
+    const content = buildEmailContent({ ...payload, role: "co_owner" });
+    expect(content.text).toContain("co-owner");
+    expect(content.text).toContain("including adding people and connecting calendars");
+    expect(content.subject).toBe("You're invited to help with Hop House's profile");
+  });
+
   it("links to the Member Portal sign-in on the site that sent it", () => {
     const content = buildEmailContent(payload, "https://staging.example");
     expect(content.text).toContain("https://staging.example/signin?next=/portal");

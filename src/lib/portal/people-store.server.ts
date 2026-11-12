@@ -134,14 +134,33 @@ export function supabasePeopleStore(service: SupabaseClient): PeopleStore {
       if (error) throw new Error(error.message);
     },
 
-    async deleteMemberUser(memberId, userId) {
-      const { error } = await service
+    // Both writes are scoped to the role the caller just read, so a role
+    // changed in between (e.g. the owner made them a co-owner) stops the
+    // write; .select() returns the affected rows so the caller can tell.
+    async deleteMemberUser(memberId, userId, expectedRole) {
+      const { data, error } = await service
         .from("member_users")
         .delete()
         .eq("member_id", memberId)
         .eq("user_id", userId)
-        .neq("role", "owner");
+        .eq("role", expectedRole)
+        .neq("role", "owner")
+        .select("user_id");
       if (error) throw new Error(error.message);
+      return (data ?? []).length > 0;
+    },
+
+    async updateMemberUserRole(memberId, userId, role, expectedRole) {
+      const { data, error } = await service
+        .from("member_users")
+        .update({ role })
+        .eq("member_id", memberId)
+        .eq("user_id", userId)
+        .eq("role", expectedRole)
+        .neq("role", "owner")
+        .select("user_id");
+      if (error) throw new Error(error.message);
+      return (data ?? []).length > 0;
     },
   };
 }

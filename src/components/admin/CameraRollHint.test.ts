@@ -69,6 +69,7 @@ describe("CameraRollHint", () => {
 
   it("canInvitePeople: owner rights only", () => {
     expect(canInvitePeople("owner", false)).toBe(true);
+    expect(canInvitePeople("co_owner", false)).toBe(true);
     expect(canInvitePeople("guild_admin", false)).toBe(true);
     expect(canInvitePeople("editor", true)).toBe(true);
     expect(canInvitePeople("editor", false)).toBe(false);

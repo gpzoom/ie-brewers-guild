@@ -272,7 +272,7 @@ export const removeIcsConnection = createServerFn({ method: "POST" })
       .select("id, member_id");
     if (error) throw new Error(error.message);
     const row = removed?.[0];
-    if (!row) throw new Error("Couldn't remove it — only the profile's owner can remove a calendar.");
+    if (!row) throw new Error("Couldn't remove it — only the profile's owner or a co-owner can remove a calendar.");
 
     const importedIds = (imported ?? []).map((event) => event.id as string);
     if (importedIds.length > 0) {
@@ -447,7 +447,7 @@ export const refreshIcsConnectionNow = createServerFn({ method: "POST" })
     const { data: connection, error } = await supabase.from("calendar_connections").select("*").eq("id", data.connectionId).single();
     if (error || !connection) throw new Error("Calendar connection not found.");
     // Refresh now is open to all three roles (spec, "Enforcement"), but
-    // calendar_connections writes are owner-only under RLS, so the sync
+    // calendar_connections writes are owner/co-owner-only under RLS, so the sync
     // itself -- which records its status on the connection row -- runs on
     // the service-role client. The session read just above is the
     // permission check: RLS returns the row only to someone linked to this
@@ -498,7 +498,7 @@ export const refreshIcsConnectionNow = createServerFn({ method: "POST" })
  * The Food section's "We have our own kitchen" switch (owner, 2026-10-02):
  * on, an open day with nothing tagged #food reads "Kitchen open". It isn't
  * drafted -- it changes straight away, like the food calendar -- and
- * set_member_has_kitchen checks the caller is the owner (or a Guild admin)
+ * set_member_has_kitchen checks the caller is the owner, a co-owner (or a Guild admin)
  * and the member a producer.
  */
 export const setMemberHasKitchen = createServerFn({ method: "POST" })

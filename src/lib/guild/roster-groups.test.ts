@@ -7,6 +7,7 @@ function entry(id: string, name: string, city: string, businessId: string | null
     member: { id, business_name: name, city, business_id: businessId } as RosterEntry["member"],
     claimState: "unclaimed",
     ownerEmail: null,
+    coOwnerEmails: [],
     ownerUserId: null,
   };
 }
