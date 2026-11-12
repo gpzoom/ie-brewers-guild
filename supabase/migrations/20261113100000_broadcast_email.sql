@@ -5,10 +5,14 @@
 -- on with no write policies at all. Attachments are JSON objects shaped
 -- { path, filename, size_bytes, content_type }.
 
--- One row per send: the history the super admin reads.
+-- One row per send: the history the super admin reads. The Worker writes
+-- it with status 'sending' BEFORE the first email goes out, updates the
+-- counts as it goes, and sets 'sent' or 'failed' at the end; a 'sending' row
+-- more than 15 minutes old was cut off and reads as interrupted.
 create table public.broadcast_emails (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
+  -- No on delete action, same as audit_log.actor_user_id: a sender's account can't be deleted out from under the history.
   sent_by_user_id uuid not null references auth.users (id),
   subject text not null,
   body_html text not null,
@@ -18,7 +22,7 @@ create table public.broadcast_emails (
   member_ids uuid[],
   recipient_count integer not null,
   failed_emails text[] not null default '{}',
-  status text not null default 'sent' check (status in ('sent', 'failed')),
+  status text not null default 'sent' check (status in ('sending', 'sent', 'failed')),
   sent_at timestamptz not null default now()
 );
 alter table public.broadcast_emails enable row level security;
@@ -38,7 +42,7 @@ create table public.broadcast_draft (
   body_html text not null default '',
   attachments jsonb not null default '[]',
   updated_at timestamptz not null default now(),
-  updated_by_user_id uuid references auth.users (id)
+  updated_by_user_id uuid references auth.users (id) on delete set null
 );
 alter table public.broadcast_draft enable row level security;
 
@@ -54,8 +58,11 @@ create policy "broadcast_unsubscribes: super admin reads"
   to authenticated
   using (public.is_super_admin());
 
--- broadcast-attachments: PRIVATE (files go out as email attachments, never
--- linked publicly), managed only by the super admin. 10 MB, documents and images.
+-- broadcast-attachments: PRIVATE (Resend fetches each file through a
+-- short-lived signed URL the Worker makes per send; never linked publicly).
+-- 10 MB, documents and images. The Worker uploads and deletes with the
+-- service key after its super-admin check, so the only client policy is
+-- select, for the super admin.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'broadcast-attachments', 'broadcast-attachments', false, 10485760,
@@ -73,8 +80,7 @@ values (
 )
 on conflict (id) do nothing;
 
-create policy "broadcast-attachments: super admins manage"
-  on storage.objects for all
+create policy "broadcast-attachments: super admin reads"
+  on storage.objects for select
   to authenticated
-  using (bucket_id = 'broadcast-attachments' and public.is_super_admin())
-  with check (bucket_id = 'broadcast-attachments' and public.is_super_admin());
+  using (bucket_id = 'broadcast-attachments' and public.is_super_admin());

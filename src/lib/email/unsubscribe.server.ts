@@ -21,7 +21,11 @@ export const checkUnsubscribe = createServerFn({ method: "GET" })
 
 /** The write, called only from the page's button. */
 export const setBroadcastSubscription = createServerFn({ method: "POST" })
-  .inputValidator((data: { token: string; subscribed: boolean }) => data)
+  .inputValidator((data: { token: string; subscribed: boolean }) => ({
+    token: typeof data?.token === "string" ? data.token : "",
+    // Only a real true resubscribes; anything else (missing, "false") unsubscribes.
+    subscribed: data?.subscribed === true,
+  }))
   .handler(async ({ data }) => {
     const secret = await readSecret();
     if (!secret) throw new Error("Server misconfigured.");

@@ -1,4 +1,11 @@
-export type OutgoingAttachment = { filename: string; content: string };
+/**
+ * A file Resend fetches itself: `path` is a short-lived signed Storage URL,
+ * so the Worker never holds the file's bytes (Resend's remote attachment).
+ */
+export type OutgoingAttachment = { filename: string; path: string };
+
+/** How often (in recipients) onProgress is called. */
+export const BROADCAST_PROGRESS_EVERY = 20;
 
 export type BroadcastRecipient = {
   email: string;
@@ -21,16 +28,14 @@ export async function sendBroadcastEmails(p: {
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
   gapMs?: number;
+  /** Called every BROADCAST_PROGRESS_EVERY recipients; a throw is logged, never stops the send. */
+  onProgress?: (sent: string[], failed: string[]) => Promise<void> | void;
 }): Promise<{ sent: string[]; failed: string[] }> {
   const fetchImpl = p.fetchImpl ?? globalThis.fetch;
   const sleep = p.sleep ?? defaultSleep;
   const gapMs = p.gapMs ?? 550;
   const sent: string[] = [];
   const failed: string[] = [];
-
-  // Attachments can be ~13 MB of base64: serialize them once per call and
-  // splice the JSON into each recipient's body, instead of per recipient.
-  const attachmentsJson = p.attachments.length > 0 ? JSON.stringify(p.attachments) : null;
 
   const post = async (r: BroadcastRecipient): Promise<{ ok: boolean; status: number; text: string }> => {
     const body: Record<string, unknown> = {
@@ -44,12 +49,11 @@ export async function sendBroadcastEmails(p: {
     if (r.oneClickUrl) {
       body.headers = { "List-Unsubscribe": `<${r.oneClickUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" };
     }
-    let json = JSON.stringify(body);
-    if (attachmentsJson) json = `${json.slice(0, -1)},"attachments":${attachmentsJson}}`;
+    if (p.attachments.length > 0) body.attachments = p.attachments;
     const res = await fetchImpl(RESEND_URL, {
       method: "POST",
       headers: { Authorization: `Bearer ${p.apiKey}`, "Content-Type": "application/json" },
-      body: json,
+      body: JSON.stringify(body),
     });
     // Always read the body so the Worker doesn't hold an unread response.
     const text = await res.text().catch(() => "");
@@ -74,6 +78,13 @@ export async function sendBroadcastEmails(p: {
     } catch (err) {
       console.error(`Broadcast: couldn't send to ${r.email}`, err instanceof Error ? err.message : err);
       failed.push(r.email);
+    }
+    if (p.onProgress && (i + 1) % BROADCAST_PROGRESS_EVERY === 0 && i + 1 < p.recipients.length) {
+      try {
+        await p.onProgress([...sent], [...failed]);
+      } catch (err) {
+        console.error("Broadcast: couldn't record progress", err instanceof Error ? err.message : err);
+      }
     }
   }
   return { sent, failed };

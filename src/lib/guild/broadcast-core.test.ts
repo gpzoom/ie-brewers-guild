@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   addBroadcastAttachment,
+  BROADCAST_SENDING_STALE_MS,
+  collectUserEmails,
   loadBroadcastPage,
   previewBroadcastAudienceCore,
   removeBroadcastAttachmentCore,
@@ -15,6 +17,7 @@ import {
   type BroadcastMailer,
   type BroadcastStore,
   type BroadcastSendRequest,
+  type BroadcastUpdatePatch,
 } from "@/lib/guild/broadcast-core";
 import { buildRecipients, matchMembers, type AudienceMember, type AudienceUserRow } from "@/lib/guild/broadcast-audience";
 import { sendBroadcastEmails } from "@/lib/guild/broadcast-send";
@@ -59,11 +62,25 @@ const ATTACHMENT: BroadcastAttachment = {
   content_type: "application/pdf",
 };
 
-function memoryStore(seed: { draft?: BroadcastDraftRow | null; unsubscribed?: string[]; failInsert?: boolean } = {}) {
+type StoredBroadcast = BroadcastInsertRow & { sent_at: string };
+
+function memoryStore(
+  seed: {
+    draft?: BroadcastDraftRow | null;
+    unsubscribed?: string[];
+    failInsert?: boolean;
+    failUpdate?: boolean;
+    failSign?: boolean;
+    failRemove?: boolean;
+    broadcasts?: StoredBroadcast[];
+  } = {},
+) {
   const calls: string[] = [];
   const state = {
     draft: seed.draft ?? null,
     inserted: [] as BroadcastInsertRow[],
+    broadcasts: [...(seed.broadcasts ?? [])] as StoredBroadcast[],
+    updates: [] as { id: string; patch: BroadcastUpdatePatch }[],
     audits: [] as BroadcastAuditEntry[],
     objects: new Map<string, Uint8Array>([[ATTACHMENT.path, new TextEncoder().encode("hello")]]),
     removed: [] as string[],
@@ -116,17 +133,29 @@ function memoryStore(seed: { draft?: BroadcastDraftRow | null; unsubscribed?: st
       state.objects.set(path, bytes);
     }),
     removeAttachment: track("removeAttachment", async (path: string) => {
+      if (seed.failRemove) throw new Error("storage down");
       state.removed.push(path);
       state.objects.delete(path);
     }),
-    downloadAttachment: track("downloadAttachment", async (path: string) => {
-      const bytes = state.objects.get(path);
-      if (!bytes) throw new Error("missing");
-      return bytes;
+    signAttachmentUrl: track("signAttachmentUrl", async (path: string) => {
+      if (seed.failSign || !state.objects.has(path)) {
+        throw new Error("Couldn't read an attachment. Remove it and attach it again.");
+      }
+      return `https://storage.example/signed/${path}?token=t`;
     }),
+    hasSendingSince: track("hasSendingSince", async (sinceIso: string) =>
+      state.broadcasts.some((b) => b.status === "sending" && b.sent_at >= sinceIso),
+    ),
     insertBroadcast: track("insertBroadcast", async (row: BroadcastInsertRow) => {
       if (seed.failInsert) throw new Error("db down");
-      state.inserted.push(row);
+      state.inserted.push({ ...row });
+      state.broadcasts.push({ ...row, sent_at: new Date().toISOString() });
+    }),
+    updateBroadcast: track("updateBroadcast", async (id: string, patch: BroadcastUpdatePatch) => {
+      if (seed.failUpdate) throw new Error("db down");
+      state.updates.push({ id, patch: { ...patch, failed_emails: [...patch.failed_emails] } });
+      const row = state.inserted.find((r) => r.id === id);
+      if (row) Object.assign(row, patch);
     }),
     audit: track("audit", async (entry: BroadcastAuditEntry) => {
       state.audits.push(entry);
@@ -149,13 +178,17 @@ function gateFor(store: BroadcastStore, opts: { superAdmin?: boolean } = {}) {
   return { gate, openStore };
 }
 
-function fakeMailer(result?: (emails: string[]) => { sent: string[]; failed: string[] }) {
+function fakeMailer(
+  result?: (emails: string[]) => { sent: string[]; failed: string[] },
+  onSend?: (p: Parameters<BroadcastMailer["sendEmails"]>[0]) => Promise<void> | void,
+) {
   const sends: Parameters<BroadcastMailer["sendEmails"]>[0][] = [];
   const mailer: BroadcastMailer = {
     siteUrl: SITE,
     unsubscribeSecret: SECRET,
     async sendEmails(p) {
       sends.push(p);
+      await onSend?.(p);
       const emails = p.recipients.map((r) => r.email);
       return result ? result(emails) : { sent: emails, failed: [] };
     },
@@ -171,6 +204,21 @@ const DRAFT_WITH_ATTACHMENT: BroadcastDraftRow = {
   body_html: "<p>Hi</p>",
   attachments: [ATTACHMENT],
   updated_at: "2026-11-11T00:00:00Z",
+};
+
+const SENDING_ROW: StoredBroadcast = {
+  id: "b-sending",
+  sent_by_user_id: "u-super",
+  subject: "Earlier",
+  body_html: "<p>x</p>",
+  attachments: [],
+  audience_type: "all",
+  audience_filter: null,
+  member_ids: null,
+  recipient_count: 0,
+  failed_emails: [],
+  status: "sending",
+  sent_at: "",
 };
 
 const SEND: BroadcastSendRequest = {
@@ -239,6 +287,59 @@ describe("loadBroadcastPage", () => {
     ]);
     expect(page.categories).toEqual([{ id: CAT, name: "Food trucks" }]);
     expect(page.superAdminEmail).toBe("boss@example.com");
+  });
+});
+
+describe("loadBroadcastPage: sends in progress", () => {
+  it("labels a fresh 'sending' row sending and an old one interrupted", async () => {
+    const { store } = memoryStore();
+    const fresh = new Date(Date.now() - 60_000).toISOString();
+    const stale = new Date(Date.now() - BROADCAST_SENDING_STALE_MS - 60_000).toISOString();
+    store.listRecent = async () => [
+      { id: "s-fresh", sent_at: fresh, subject: "A", audience_type: "all", audience_filter: null, member_ids: null, recipient_count: 4, status: "sending", failed_emails: [] },
+      { id: "s-stale", sent_at: stale, subject: "B", audience_type: "all", audience_filter: null, member_ids: null, recipient_count: 20, status: "sending", failed_emails: ["x@example.com"] },
+    ];
+    const page = await loadBroadcastPage(gateFor(store).gate);
+    expect(page.recent.map((r) => [r.id, r.status, r.recipient_count, r.failedCount])).toEqual([
+      ["s-fresh", "sending", 4, 0],
+      ["s-stale", "interrupted", 20, 1],
+    ]);
+  });
+});
+
+describe("collectUserEmails", () => {
+  it("pages through the users 1000 at a time and maps only the wanted ids", async () => {
+    const pages: number[] = [];
+    const users = Array.from({ length: 1500 }, (_v, i) => ({ id: `u${i}`, email: `u${i}@example.com` }));
+    const emails = await collectUserEmails(["u3", "u1203", "missing"], async (page, perPage) => {
+      pages.push(page);
+      return { users: users.slice((page - 1) * perPage, page * perPage), error: null };
+    });
+    expect(pages).toEqual([1, 2]);
+    expect(emails).toEqual(
+      new Map([
+        ["u3", "u3@example.com"],
+        ["u1203", "u1203@example.com"],
+        ["missing", null],
+      ]),
+    );
+  });
+
+  it("stops early once every wanted id is found", async () => {
+    const pages: number[] = [];
+    await collectUserEmails(["u1"], async (page) => {
+      pages.push(page);
+      return { users: Array.from({ length: 1000 }, (_v, i) => ({ id: `u${i}`, email: null })), error: null };
+    });
+    expect(pages).toEqual([1]);
+  });
+
+  it("refuses when a lookup call errors", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    await expect(
+      collectUserEmails(["u1"], async () => ({ users: [], error: new Error("auth down") })),
+    ).rejects.toThrow("Couldn't look up who gets this email. Try again.");
+    error.mockRestore();
   });
 });
 
@@ -360,11 +461,21 @@ describe("addBroadcastAttachment", () => {
 });
 
 describe("removeBroadcastAttachmentCore", () => {
-  it("deletes the object and the draft entry", async () => {
-    const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT });
+  it("saves the draft without the entry first, then deletes the object", async () => {
+    const { store, state, calls } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT });
     await removeBroadcastAttachmentCore(gateFor(store).gate, { path: ATTACHMENT.path });
     expect(state.removed).toEqual([ATTACHMENT.path]);
     expect(state.draft?.attachments).toEqual([]);
+    expect(calls.indexOf("saveDraft")).toBeLessThan(calls.indexOf("removeAttachment"));
+  });
+
+  it("a failed file delete only orphans the file: the draft is saved and nothing throws", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT, failRemove: true });
+    await expect(removeBroadcastAttachmentCore(gateFor(store).gate, { path: ATTACHMENT.path })).resolves.toEqual({ ok: true });
+    expect(state.draft?.attachments).toEqual([]);
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
   });
 
   it("refuses paths outside draft/ or not in the draft (a sent broadcast's file stays)", async () => {
@@ -406,7 +517,9 @@ describe("sendBroadcastCore", () => {
     const send = sends[0];
     expect(send.subject).toBe("Meeting Thursday");
     expect(send.replyTo).toBe("boss@example.com");
-    expect(send.attachments).toEqual([{ filename: "agenda.pdf", content: btoa("hello") }]);
+    expect(send.attachments).toEqual([
+      { filename: "agenda.pdf", path: `https://storage.example/signed/${ATTACHMENT.path}?token=t` },
+    ]);
     expect(send.recipients.map((r) => r.email)).toEqual(["one@example.com", "two@example.com", "three@example.com"]);
 
     const ids = ["u1", "u2", "u3"];
@@ -441,6 +554,13 @@ describe("sendBroadcastCore", () => {
         tableName: "broadcast_emails",
         rowId: row.id,
         action: "insert",
+        details: { subject: "Meeting Thursday", audience: "All members", planned_count: 3, status: "sending" },
+      },
+      {
+        actorUserId: "u-super",
+        tableName: "broadcast_emails",
+        rowId: row.id,
+        action: "update",
         details: {
           subject: "Meeting Thursday",
           recipient_count: 3,
@@ -468,7 +588,7 @@ describe("sendBroadcastCore", () => {
       recipient_count: 0,
       failed_emails: ["one@example.com", "two@example.com", "three@example.com"],
     });
-    expect(state.audits[0].details).toMatchObject({
+    expect(state.audits[1].details).toMatchObject({
       recipient_count: 0,
       failed_count: 3,
       failed_emails: ["one@example.com", "two@example.com", "three@example.com"],
@@ -482,7 +602,7 @@ describe("sendBroadcastCore", () => {
     const result = await sendBroadcastCore(gateFor(store).gate, SEND, openMailer);
     expect(result.sent).toBe(2);
     expect(state.inserted[0]).toMatchObject({ status: "sent", recipient_count: 2, failed_emails: ["one@example.com"] });
-    expect(state.audits[0].details).toMatchObject({ failed_count: 1, failed_emails: ["one@example.com"] });
+    expect(state.audits[1].details).toMatchObject({ failed_count: 1, failed_emails: ["one@example.com"] });
     expect(state.draft).toBeNull();
   });
 
@@ -498,13 +618,94 @@ describe("sendBroadcastCore", () => {
     expect(sends).toEqual([]);
   });
 
-  it("a failed row insert after sending is logged, not thrown (the email already went out)", async () => {
-    const { store, state } = memoryStore({ failInsert: true });
+  it("writes the 'sending' row and its audit row before the first email goes out", async () => {
+    const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT });
+    let seen: { rows: BroadcastInsertRow[]; audits: number } | null = null;
+    const { openMailer } = fakeMailer(undefined, () => {
+      seen = { rows: state.inserted.map((r) => ({ ...r })), audits: state.audits.length };
+    });
+    await sendBroadcastCore(gateFor(store).gate, SEND, openMailer);
+    expect(seen!.rows).toHaveLength(1);
+    expect(seen!.rows[0]).toMatchObject({ status: "sending", recipient_count: 0, failed_emails: [], subject: "Meeting Thursday" });
+    expect(seen!.audits).toBe(1);
+    expect(state.updates.at(-1)).toEqual({
+      id: seen!.rows[0].id,
+      patch: { status: "sent", recipient_count: 3, failed_emails: [] },
+    });
+  });
+
+  it("refuses while another send started in the last 15 minutes is still 'sending'", async () => {
+    const recent = new Date(Date.now() - 5 * 60_000).toISOString();
+    const { store, calls } = memoryStore({ broadcasts: [{ ...SENDING_ROW, sent_at: recent }] });
+    const { openMailer, sends } = fakeMailer();
+    await expect(sendBroadcastCore(gateFor(store).gate, SEND, openMailer)).rejects.toThrow(
+      "A broadcast is still sending. Wait a few minutes and check Recent broadcasts.",
+    );
+    expect(sends).toEqual([]);
+    expect(calls).not.toContain("insertBroadcast");
+  });
+
+  it("allows a send when the only 'sending' row is older than 15 minutes (interrupted)", async () => {
+    const old = new Date(Date.now() - BROADCAST_SENDING_STALE_MS - 60_000).toISOString();
+    const { store } = memoryStore({ broadcasts: [{ ...SENDING_ROW, sent_at: old }] });
+    const { openMailer, sends } = fakeMailer();
+    const result = await sendBroadcastCore(gateFor(store).gate, SEND, openMailer);
+    expect(result.sent).toBe(3);
+    expect(sends).toHaveLength(1);
+  });
+
+  it("a failed 'sending' row insert refuses before anything is sent", async () => {
+    const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT, failInsert: true });
+    const { openMailer, sends } = fakeMailer();
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    await expect(sendBroadcastCore(gateFor(store).gate, SEND, openMailer)).rejects.toThrow(
+      "Couldn't start the send. Nothing was sent.",
+    );
+    expect(sends).toEqual([]);
+    expect(state.audits).toEqual([]);
+    expect(state.draft).toEqual(DRAFT_WITH_ATTACHMENT);
+    error.mockRestore();
+  });
+
+  it("an attachment that can't be signed refuses before anything is written or sent", async () => {
+    const { store, calls } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT, failSign: true });
+    const { openMailer, sends } = fakeMailer();
+    await expect(
+      sendBroadcastCore(gateFor(store).gate, { ...SEND, attachments: [{ path: ATTACHMENT.path }] }, openMailer),
+    ).rejects.toThrow("Couldn't read an attachment. Remove it and attach it again.");
+    expect(sends).toEqual([]);
+    expect(calls).not.toContain("insertBroadcast");
+  });
+
+  it("signs each attachment once per send, not per recipient", async () => {
+    const { store, calls } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT });
+    const { openMailer } = fakeMailer();
+    await sendBroadcastCore(gateFor(store).gate, { ...SEND, attachments: [{ path: ATTACHMENT.path }] }, openMailer);
+    expect(calls.filter((c) => c === "signAttachmentUrl")).toHaveLength(1);
+  });
+
+  it("progress updates the row's count and failures while still 'sending'", async () => {
+    const { store, state } = memoryStore();
+    const { openMailer } = fakeMailer(undefined, async (p) => {
+      await p.onProgress?.(["one@example.com"], ["two@example.com"]);
+    });
+    await sendBroadcastCore(gateFor(store).gate, SEND, openMailer);
+    expect(state.updates[0]).toEqual({
+      id: state.inserted[0].id,
+      patch: { recipient_count: 1, failed_emails: ["two@example.com"] },
+    });
+    expect(state.updates).toHaveLength(2);
+    expect(state.inserted[0].status).toBe("sent");
+  });
+
+  it("a failed final update after sending is logged, not thrown (the emails already went out)", async () => {
+    const { store, state } = memoryStore({ failUpdate: true });
     const { openMailer } = fakeMailer();
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const result = await sendBroadcastCore(gateFor(store).gate, SEND, openMailer);
     expect(result.sent).toBe(3);
     expect(error).toHaveBeenCalled();
+    expect(state.audits.map((a) => a.action)).toEqual(["insert", "update"]);
     expect(state.draft).toBeNull();
     error.mockRestore();
   });

@@ -8,7 +8,11 @@ import { sendBroadcastEmails } from "@/lib/guild/broadcast-send";
 import type { BroadcastAudience } from "@/lib/guild/broadcast-audience";
 import {
   addBroadcastAttachment,
+  AUDIENCE_LOOKUP_FAILED,
+  BROADCAST_ATTACHMENT_URL_SECONDS,
   BROADCAST_FROM,
+  collectUserEmails,
+  COULDNT_START,
   loadBroadcastPage,
   previewBroadcastAudienceCore,
   removeBroadcastAttachmentCore,
@@ -48,7 +52,7 @@ function fail(friendly: string, original: unknown): never {
 }
 
 const LOAD = "Couldn't load the broadcast screen. Try again.";
-const AUDIENCE = "Couldn't look up who gets this email. Try again.";
+const AUDIENCE = AUDIENCE_LOOKUP_FAILED;
 
 function chunks<T>(items: T[], size: number): T[][] {
   const out: T[][] = [];
@@ -135,17 +139,13 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
       return rows;
     },
 
+    // One listUsers call per 1000 accounts instead of one call per person:
+    // keeps a send well under the Worker's subrequest limit.
     async emailsFor(userIds) {
-      const emails = new Map<string, string | null>();
-      for (const ids of chunks(userIds, 10)) {
-        await Promise.all(
-          ids.map(async (id) => {
-            const { data, error } = await service.auth.admin.getUserById(id);
-            emails.set(id, error ? null : (data?.user?.email ?? null));
-          }),
-        );
-      }
-      return emails;
+      return collectUserEmails(userIds, async (page, perPage) => {
+        const { data, error } = await service.auth.admin.listUsers({ page, perPage });
+        return { users: data?.users ?? [], error };
+      });
     },
 
     async unsubscribedUserIds() {
@@ -164,15 +164,33 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
       if (error) fail("Couldn't remove that file. Try again.", error);
     },
 
-    async downloadAttachment(path) {
-      const { data, error } = await service.storage.from(BUCKET).download(path);
-      if (error || !data) fail("Couldn't read an attachment. Remove it and attach it again.", error);
-      return new Uint8Array(await data.arrayBuffer());
+    async signAttachmentUrl(path) {
+      const { data, error } = await service.storage
+        .from(BUCKET)
+        .createSignedUrl(path, BROADCAST_ATTACHMENT_URL_SECONDS);
+      if (error || !data?.signedUrl) fail("Couldn't read an attachment. Remove it and attach it again.", error);
+      return data.signedUrl;
+    },
+
+    async hasSendingSince(sinceIso) {
+      const { data, error } = await service
+        .from("broadcast_emails")
+        .select("id")
+        .eq("status", "sending")
+        .gte("sent_at", sinceIso)
+        .limit(1);
+      if (error) fail(COULDNT_START, error);
+      return (data ?? []).length > 0;
     },
 
     async insertBroadcast(row) {
       const { error } = await service.from("broadcast_emails").insert(row);
-      if (error) fail("Couldn't save the broadcast record.", error);
+      if (error) fail(COULDNT_START, error);
+    },
+
+    async updateBroadcast(id, patch) {
+      const { error } = await service.from("broadcast_emails").update(patch).eq("id", id);
+      if (error) fail("Couldn't update the broadcast record.", error);
     },
 
     async audit(entry) {

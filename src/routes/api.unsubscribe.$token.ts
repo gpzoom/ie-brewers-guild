@@ -11,6 +11,13 @@ import { oneClickUnsubscribeCore, supabaseUnsubscribeStore } from "@/lib/email/u
 export const Route = createFileRoute("/api/unsubscribe/$token")({
   server: {
     handlers: {
+      // A person (or mail scanner) opening the one-click URL lands on the
+      // read-only page; only the page's button or a one-click POST writes.
+      GET: async ({ params }) =>
+        new Response(null, {
+          status: 302,
+          headers: { Location: `/unsubscribe/${encodeURIComponent(params.token)}` },
+        }),
       POST: async ({ request, params }) => {
         const { env } = await import("cloudflare:workers");
         const secret = (env as { HOURS_CONFIRM_SECRET?: string }).HOURS_CONFIRM_SECRET;

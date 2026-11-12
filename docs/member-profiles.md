@@ -465,6 +465,12 @@ As built (13 November 2026):
 - The draft is cleared only when at least one email was accepted; if every address fails, the draft stays.
 - Recent broadcasts shows the latest 20.
 - If the connection drops mid-send, the screen refreshes and says "We lost contact while sending. Check Recent broadcasts and the Audit log before sending again." rather than offering a retry.
+- Final review (13 November 2026): the `broadcast_emails` row is written with status `sending` (and an audit row) **before the first email goes out**, its count and failures are updated every 20 people, and it's set to `sent` or `failed` at the end (with a second audit row listing the result). So a send the Worker cuts off still leaves a record: Recent broadcasts shows a `sending` row more than 15 minutes old as "interrupted, may be partly sent (N so far)", a fresh one as "sending…", and a sent one with refused addresses as "N failed". If that first row can't be written, nothing is sent ("Couldn't start the send. Nothing was sent.").
+- Double-submit guard on the server: Send is refused while another broadcast started in the last 15 minutes is still `sending` ("A broadcast is still sending. Wait a few minutes and check Recent broadcasts.").
+- Attachments aren't loaded into the Worker: each file gets a one-hour signed Storage link once per send, and Resend fetches it from there (its remote-attachment `path`). If a link can't be made, Send refuses before anything goes out.
+- Recipient addresses come from paging the sign-in accounts 1000 at a time (one call per 1000 people, not one per person), to stay within the Worker's request limits.
+- Removing an attachment saves the draft first and then deletes the file, so a failed delete only leaves an unused file behind.
+- Opening the one-click address (`/api/unsubscribe/<token>`) in a browser redirects to the read-only `/unsubscribe/<token>` page; only a one-click POST or the page's button changes anything.
 
 #### Enforcement
 
@@ -480,7 +486,7 @@ As built (13 November 2026):
   - `categories`: split the current "guild admins can manage" policy. Guild admins keep insert and update; delete becomes super admin only. Deleting goes through `delete_category(id)`, a security definer function that checks for the super admin, takes the category out of every member's draft (otherwise that member's next publish would fail) and deletes it, in one transaction. `category_usage(id)` counts the members using it, live or in a draft, for the delete confirmation.
   - `audit_log` select: super admin only. Guild admins still insert their own rows. A new `details jsonb` column keeps names that would otherwise be lost: a deleted member's business name, the address on a Guild admin invite, grant or removal.
   - `guild_admin_invites` (new): `email` (lower-case), `invited_by_user_id`, `expires_at` (default 14 days), `accepted_at`, `accepted_user_id`, `cancelled_at`; one open invite per address. No client access at all; the Worker reads and writes it with the service key.
-  - `broadcast_emails` (new): written by the Worker with the service key once Resend accepts the send; no other client access at all. Select is super admin only, same as `audit_log`. Every send is also written to the audit log, with the subject and final recipient count in `details`.
+  - `broadcast_emails` (new): written by the Worker with the service key (status `sending` before the first email, then `sent` or `failed`); no other client access at all. Select is super admin only, same as `audit_log`. Every send is also written to the audit log, with the subject and final recipient count in `details`.
 - Server functions that run with the service key bypass these policies, so each one checks for the super admin (the real signed-in person, never the member being impersonated) before doing anything: delete member (including the storage wipe), change sign-in email, save brand settings, delete category, set Trail eligible, the Guild admins list, invite, resend, cancel and remove, and the audit log reader. Unit tests call each one as an ordinary Guild admin and check it's refused before anything is read or written; database tests (`supabase/tests/super_admin.test.sql`) check the same refusals straight through the database.
 - A super admin editing as a member is still subject to every impersonation rule except the email one: the band that can't be dismissed, the 30-minute idle timeout, and every write logged against the real person.
 
@@ -1070,7 +1076,7 @@ Nothing in the current build writes visitor data of any kind.
 
 ### Storage buckets
 
-`member-media` private, served through a Worker that applies the crop and resize. `member-logos` may be public since logos are published anyway. Strip EXIF on ingest for both. `site-images` (28 September 2026) is public and holds the homepage hero (`hero/…`); only the super admin can add, replace or delete files in it; JPEG or PNG, up to 10 MB. `broadcast-attachments` (new, 12 November 2026) is private; only the super admin can upload to it, and the Worker streams each file into the outgoing email rather than linking to it, so nothing in the bucket needs to stay public.
+`member-media` private, served through a Worker that applies the crop and resize. `member-logos` may be public since logos are published anyway. Strip EXIF on ingest for both. `site-images` (28 September 2026) is public and holds the homepage hero (`hero/…`); only the super admin can add, replace or delete files in it; JPEG or PNG, up to 10 MB. `broadcast-attachments` (new, 12 November 2026) is private. The Worker uploads and deletes its files with the service key after the super-admin check; the only client policy is select, for the super admin. At send time the Worker makes a one-hour signed link per file and Resend fetches the file from it, so nothing in the bucket is ever public.
 
 ### inquiries
 
@@ -1099,16 +1105,16 @@ Added 12 November 2026. One row per super-admin broadcast send (see Super admin 
 - `audience_type text not null`, check in `(all, type_or_category, members)`
 - `audience_filter jsonb` -- the member type and/or category id, when `audience_type = 'type_or_category'`
 - `member_ids uuid[]` -- the hand-picked list, when `audience_type = 'members'`
-- `recipient_count integer not null` -- people, not members; one row per matched member's owner and every co-owner (as built: the number of people Resend accepted)
+- `recipient_count integer not null` -- people, not members; one row per matched member's owner and every co-owner (as built: the number of people Resend accepted; 0 when the row is first written, updated every 20 people while sending)
 - `failed_emails text[] not null default '{}'` -- addresses Resend refused at send time (decision 6); also listed in the audit row's `details`
-- `status text not null default 'sent'`, check in `(sent, failed)`
-- `sent_at timestamptz not null default now()`
+- `status text not null default 'sent'`, check in `(sending, sent, failed)` -- `sending` from just before the first email until the send finishes; a `sending` row more than 15 minutes old was cut off and the screen shows it as interrupted
+- `sent_at timestamptz not null default now()` -- when the send started
 
-RLS: no public select at all. The Worker inserts the row with the service key once Resend accepts the send; nothing else writes it. Select is super admin only, same as `audit_log`.
+RLS: no public select at all. The Worker inserts the row with the service key before the first email and updates it as the send goes; nothing else writes it. Select is super admin only, same as `audit_log`. `sent_by_user_id` has no on-delete action, the same restriction as `audit_log.actor_user_id`.
 
 ### broadcast\_draft
 
-The super admin's one saved draft (decision 3 above). One row at most (`id boolean primary key default true check (id)`), `audience_type`, `audience_filter`, `member_ids`, `subject`, `body_html`, `attachments` (same shapes as `broadcast_emails`), `updated_at`, `updated_by_user_id`. RLS: no client access; read and written by the Worker with the service key after the super-admin check.
+The super admin's one saved draft (decision 3 above). One row at most (`id boolean primary key default true check (id)`), `audience_type`, `audience_filter`, `member_ids`, `subject`, `body_html`, `attachments` (same shapes as `broadcast_emails`), `updated_at`, `updated_by_user_id` (on delete set null). RLS: no client access; read and written by the Worker with the service key after the super-admin check.
 
 ### broadcast\_unsubscribes
 

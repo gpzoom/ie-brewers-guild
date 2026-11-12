@@ -714,7 +714,7 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
                     {row.subject}
                   </span>
                   <span
-                    className={`text-[12px] md:w-[220px] md:shrink-0 ${row.status === "failed" ? "text-danger" : "text-[#6B6156]"}`}
+                    className={`text-[12px] md:w-[220px] md:shrink-0 ${row.status === "failed" || row.status === "interrupted" ? "text-danger" : "text-[#6B6156]"}`}
                   >
                     {recentAudienceLine(row)}
                   </span>

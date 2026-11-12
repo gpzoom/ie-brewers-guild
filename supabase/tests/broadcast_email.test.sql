@@ -1,12 +1,13 @@
 -- Broadcast email (20261113100000_broadcast_email.sql): broadcast_emails,
 -- broadcast_draft, broadcast_unsubscribes and the private broadcast-attachments
 -- bucket. Only the super admin can read the history, the unsubscribe list or
--- the attachment files; nobody writes through the client (the Worker uses the
--- service key). Runs inside one transaction that is rolled back.
+-- the attachment files; nobody writes through the client, not even the super
+-- admin (the Worker uses the service key). Runs inside one transaction that is
+-- rolled back.
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(62);
+insert into _tap (line) select plan(66);
 
 insert into auth.users (id, email, aud, role) values
   ('f0000000-0000-4000-8000-000000000007', 'pgtap-super@example.test', 'authenticated', 'authenticated');
@@ -42,6 +43,19 @@ insert into _tap (line) select throws_ok(
   $q$ insert into public.broadcast_emails (sent_by_user_id, subject, body_html, audience_type, recipient_count, status)
       values ('f0000000-0000-4000-8000-000000000007', 's', 'b', 'all', 1, 'pending') $q$,
   '23514', null, 'broadcast_emails: status ''pending'' rejected');
+insert into _tap (line) select lives_ok(
+  $q$ insert into public.broadcast_emails (sent_by_user_id, subject, body_html, audience_type, recipient_count, status)
+      values ('f0000000-0000-4000-8000-000000000007', 's', 'b', 'all', 0, 'sending') $q$,
+  'broadcast_emails: status ''sending'' accepted (written before the first email)');
+insert into _tap (line) select is(
+  (select confdeltype::text from pg_constraint c
+    join pg_attribute a on a.attrelid = c.conrelid and a.attnum = any (c.conkey)
+   where c.conrelid = 'public.broadcast_draft'::regclass and c.contype = 'f' and a.attname = 'updated_by_user_id'),
+  'n', 'broadcast_draft.updated_by_user_id: on delete set null');
+insert into _tap (line) select is(
+  (select array_agg(cmd::text) from pg_policies where schemaname = 'storage' and tablename = 'objects'
+     and (qual like '%broadcast-attachments%' or with_check like '%broadcast-attachments%')),
+  array['SELECT'], 'broadcast-attachments: the only client policy is select');
 
 reset role;
 set local role anon;
@@ -113,8 +127,9 @@ insert into _tap (line) select isnt_empty($q$ select 1 from public.broadcast_uns
 insert into _tap (line) select throws_ok($q$ insert into public.broadcast_unsubscribes (user_id) values ('f0000000-0000-4000-8000-000000000005') $q$, '42501', null, 'super admin: no client unsubscribe insert');
 insert into _tap (line) select is_empty($q$ update public.broadcast_unsubscribes set created_at = now() returning 1 $q$, 'super admin: no client unsubscribe update');
 insert into _tap (line) select is_empty($q$ delete from public.broadcast_unsubscribes returning 1 $q$, 'super admin: no client unsubscribe delete');
-insert into _tap (line) select lives_ok($q$ insert into storage.objects (bucket_id, name) values ('broadcast-attachments', 'pgtap/x.pdf') $q$, 'super admin: uploads an attachment');
 insert into _tap (line) select isnt_empty($q$ select 1 from storage.objects where bucket_id = 'broadcast-attachments' $q$, 'super admin: sees attachment files');
+insert into _tap (line) select throws_ok($q$ insert into storage.objects (bucket_id, name) values ('broadcast-attachments', 'pgtap/x.pdf') $q$, '42501', null, 'super admin: can''t upload as a client (the Worker uploads with the service key)');
+insert into _tap (line) select is_empty($q$ update storage.objects set name = 'pgtap/moved.pdf' where bucket_id = 'broadcast-attachments' returning 1 $q$, 'super admin: can''t rename an attachment as a client');
 
 reset role;
 insert into _tap (line) select * from finish();

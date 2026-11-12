@@ -46,7 +46,9 @@ export async function oneClickUnsubscribeCore(args: {
     if (type.startsWith("application/x-www-form-urlencoded")) {
       value = new URLSearchParams(raw).get("List-Unsubscribe");
     } else if (type.startsWith("multipart/form-data")) {
-      const m = raw.match(/name="List-Unsubscribe"\r?\n\r?\n([^\r\n]*)/);
+      // The part's Content-Disposition line, any further part headers
+      // (Content-Type, ...), a blank line, then the value.
+      const m = raw.match(/name="List-Unsubscribe"[^\r\n]*\r?\n(?:[^\r\n]+\r?\n)*\r?\n([^\r\n]*)/);
       value = m ? m[1] : null;
     }
   } catch {

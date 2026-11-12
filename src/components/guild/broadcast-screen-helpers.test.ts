@@ -40,11 +40,26 @@ describe("broadcast screen helpers", () => {
 
   it("describes a recent broadcast, flagging a failed one", () => {
     expect(
-      recentAudienceLine({ audienceLabel: "All members", recipient_count: 31, status: "sent" }),
+      recentAudienceLine({ audienceLabel: "All members", recipient_count: 31, status: "sent", failedCount: 0 }),
     ).toBe("All members · 31 people");
     expect(
-      recentAudienceLine({ audienceLabel: "All members", recipient_count: 0, status: "failed" }),
+      recentAudienceLine({ audienceLabel: "All members", recipient_count: 0, status: "failed", failedCount: 3 }),
     ).toBe("All members · 0 people · failed");
+  });
+
+  it("shows how many addresses failed on a sent broadcast", () => {
+    expect(
+      recentAudienceLine({ audienceLabel: "All members", recipient_count: 29, status: "sent", failedCount: 2 }),
+    ).toBe("All members · 29 people · 2 failed");
+  });
+
+  it("flags a send still going, and one that was cut off", () => {
+    expect(
+      recentAudienceLine({ audienceLabel: "All members", recipient_count: 4, status: "sending", failedCount: 0 }),
+    ).toBe("All members · 4 people · sending…");
+    expect(
+      recentAudienceLine({ audienceLabel: "All members", recipient_count: 20, status: "interrupted", failedCount: 1 }),
+    ).toBe("All members · 20 people · interrupted, may be partly sent (20 so far)");
   });
 
   it("turns the tabs into an audience and back", () => {
@@ -104,6 +119,10 @@ describe("isSendRefusal", () => {
     expect(isSendRefusal("Write a message.")).toBe(true);
     expect(isSendRefusal("No one to send to.")).toBe(true);
     expect(isSendRefusal("Only the super admin can send a broadcast email.")).toBe(true);
+    expect(isSendRefusal("Your account has no email address to send from.")).toBe(true);
+    expect(isSendRefusal("Not signed in.")).toBe(true);
+    expect(isSendRefusal("A broadcast is still sending. Wait a few minutes and check Recent broadcasts.")).toBe(true);
+    expect(isSendRefusal("Couldn't start the send. Nothing was sent.")).toBe(true);
   });
   it("treats anything else as possibly sent", () => {
     expect(isSendRefusal("Failed to fetch")).toBe(false);

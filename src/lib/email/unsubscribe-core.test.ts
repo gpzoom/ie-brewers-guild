@@ -82,6 +82,31 @@ describe("unsubscribe core", () => {
     expect(rows.has("u1")).toBe(true);
   });
 
+  it("one-click accepts multipart with extra part headers (e.g. Content-Type)", async () => {
+    const { store, rows } = fakeStore();
+    const token = await signUnsubscribeToken("u1", SECRET);
+    const body = {
+      contentType: "multipart/form-data; boundary=x",
+      text: async () =>
+        '--x\r\nContent-Disposition: form-data; name="List-Unsubscribe"\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nOne-Click\r\n--x--\r\n',
+    };
+    const res = await oneClickUnsubscribeCore({ token, body, secret: SECRET, store });
+    expect(res.status).toBe(200);
+    expect(rows.has("u1")).toBe(true);
+  });
+
+  it("one-click multipart with a different value returns 400", async () => {
+    const { store, calls } = fakeStore();
+    const token = await signUnsubscribeToken("u1", SECRET);
+    const body = {
+      contentType: "multipart/form-data; boundary=x",
+      text: async () =>
+        '--x\r\nContent-Disposition: form-data; name="List-Unsubscribe"\r\nContent-Type: text/plain\r\n\r\nNope\r\n--x--\r\n',
+    };
+    expect((await oneClickUnsubscribeCore({ token, body, secret: SECRET, store })).status).toBe(400);
+    expect(calls).toEqual([]);
+  });
+
   it("one-click with any other body returns 400 and writes nothing", async () => {
     const { store, calls } = fakeStore();
     const token = await signUnsubscribeToken("u1", SECRET);

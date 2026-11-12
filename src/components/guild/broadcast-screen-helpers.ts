@@ -54,8 +54,19 @@ export function recentAudienceLine(row: {
   audienceLabel: string;
   recipient_count: number;
   status: string;
+  failedCount: number;
 }): string {
-  return `${row.audienceLabel} · ${peopleText(row.recipient_count)}${row.status === "failed" ? " · failed" : ""}`;
+  const base = `${row.audienceLabel} · ${peopleText(row.recipient_count)}`;
+  switch (row.status) {
+    case "failed":
+      return `${base} · failed`;
+    case "sending":
+      return `${base} · sending…`;
+    case "interrupted":
+      return `${base} · interrupted, may be partly sent (${row.recipient_count} so far)`;
+    default:
+      return row.failedCount > 0 ? `${base} · ${row.failedCount} failed` : base;
+  }
 }
 
 /** The audience the screen's current tab and fields describe. */
@@ -147,6 +158,10 @@ const SEND_REFUSALS = [
   "Couldn't read an attachment. Remove it and attach it again.",
   "Couldn't look up who gets this email. Try again.",
   "Couldn't load the draft. Try again.",
+  "Your account has no email address to send from.",
+  "Not signed in.",
+  "A broadcast is still sending. Wait a few minutes and check Recent broadcasts.",
+  "Couldn't start the send. Nothing was sent.",
 ];
 
 export const LOST_CONTACT_MESSAGE =
