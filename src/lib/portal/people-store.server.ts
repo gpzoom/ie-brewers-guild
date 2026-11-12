@@ -143,5 +143,15 @@ export function supabasePeopleStore(service: SupabaseClient): PeopleStore {
         .neq("role", "owner");
       if (error) throw new Error(error.message);
     },
+
+    async updateMemberUserRole(memberId, userId, role) {
+      const { error } = await service
+        .from("member_users")
+        .update({ role })
+        .eq("member_id", memberId)
+        .eq("user_id", userId)
+        .neq("role", "owner");
+      if (error) throw new Error(error.message);
+    },
   };
 }

@@ -226,6 +226,13 @@ export function PortalSectionView({
     }
 
     case "people":
-      return <PeopleSection people={data.people} invites={data.invites} business={data.business} />;
+      return (
+        <PeopleSection
+          people={data.people}
+          invites={data.invites}
+          business={data.business}
+          inviteRoles={data.inviteRoles}
+        />
+      );
   }
 }

@@ -12,6 +12,7 @@ import {
   resendInvite,
   type InviteRole,
   type OpenInviteRole,
+  type PeopleActor,
 } from "@/lib/portal/people";
 import { sendTransactionalEmail } from "@/lib/email/send";
 import { ORG_NAME } from "@/lib/email/build-email-content";
@@ -37,6 +38,10 @@ async function requirePeopleAccess(): Promise<PortalMember> {
     throw new Error("Only the profile's owner or the business manager can manage people.");
   }
   return member;
+}
+
+function peopleActor(member: PortalMember): PeopleActor {
+  return { userId: member.userId, role: member.role, isBusinessManager: member.isBusinessManager };
 }
 
 async function peopleStore() {
@@ -104,6 +109,7 @@ export const invitePortalPerson = createServerFn({ method: "POST" })
       email: data.email,
       role: data.role,
       invitedByUserId: member.userId,
+      actor: peopleActor(member),
     });
     await recordAuditLogIfImpersonating({
       memberId: member.memberId,
@@ -122,6 +128,7 @@ export const resendPortalInvite = createServerFn({ method: "POST" })
     const invite = await resendInvite(await peopleStore(), {
       memberId: member.memberId,
       inviteId: data.inviteId,
+      actor: peopleActor(member),
     });
     await recordAuditLogIfImpersonating({
       memberId: member.memberId,
@@ -137,7 +144,11 @@ export const cancelPortalInvite = createServerFn({ method: "POST" })
   .inputValidator((data: { inviteId: string }) => ({ inviteId: data?.inviteId }))
   .handler(async ({ data }) => {
     const member = await requirePeopleAccess();
-    await cancelInvite(await peopleStore(), { memberId: member.memberId, inviteId: data.inviteId });
+    await cancelInvite(await peopleStore(), {
+      memberId: member.memberId,
+      inviteId: data.inviteId,
+      actor: peopleActor(member),
+    });
     await recordAuditLogIfImpersonating({
       memberId: member.memberId,
       tableName: "member_invites",
@@ -151,7 +162,11 @@ export const removePortalPerson = createServerFn({ method: "POST" })
   .inputValidator((data: { userId: string }) => ({ userId: data?.userId }))
   .handler(async ({ data }) => {
     const member = await requirePeopleAccess();
-    await removePerson(await peopleStore(), { memberId: member.memberId, userId: data.userId });
+    await removePerson(await peopleStore(), {
+      memberId: member.memberId,
+      userId: data.userId,
+      actor: peopleActor(member),
+    });
     await recordAuditLogIfImpersonating({
       memberId: member.memberId,
       tableName: "member_users",

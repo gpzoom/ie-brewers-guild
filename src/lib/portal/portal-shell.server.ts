@@ -168,7 +168,11 @@ export const getPortalSectionData = createServerFn({ method: "GET" })
         // canOpenPortalSection has already checked the caller is the owner,
         // the business manager, or a Guild admin editing as them.
         const store = supabasePeopleStore(await getSupabaseServiceRoleClient());
-        return { section: "people", ...(await loadPeople(store, id, member.userId, new Date(), {
+        return { section: "people", ...(await loadPeople(store, id, {
+            userId: member.userId,
+            role: member.role,
+            isBusinessManager: member.isBusinessManager,
+          }, new Date(), {
             viewerIsGuildAdmin: member.isImpersonating,
           })) };
       }

@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 // An open invite with role owner is a hand-off, so its pill reads "Location manager".
 const INVITE_PILL: Record<OpenInviteRole, string> = {
   owner: "Location manager",
+  co_owner: "Co-owner",
   editor: "Full editor",
   media_events: "Photos & events",
 };
@@ -42,6 +43,8 @@ const ROLE_LABEL: Record<PortalRole, string> = {
 };
 
 const ROLE_HELP: Record<InviteRole, string> = {
+  co_owner:
+    "Everything the owner can do, including People and calendars. Only you can add or remove co-owners.",
   media_events: "Photos and Events. They can publish photo changes, nothing else.",
   editor: "Everything on the profile except People. They can publish all changes.",
 };

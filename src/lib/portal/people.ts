@@ -8,16 +8,21 @@ import type { PortalRole } from "@/lib/portal/portal-destination";
  * real store (service-role client, after its own owner check) and sends
  * the emails.
  *
- * - Invites go to a Full editor or a Photos & events editor -- never a
- *   second owner (one owner per member; changing owner is a Guild job).
+ * - Invites go to a Co-owner, a Full editor or a Photos & events editor --
+ *   never a second owner (one owner per member; changing owner is a Guild job).
+ * - Only the owner (or a Guild admin editing as them, whose portal role is
+ *   "owner") may invite, resend, cancel, remove or change a co-owner or a
+ *   pending co-owner invite. A co-owner, or a business manager on a
+ *   handed-off location (role editor), manages editors only.
  * - An address that already has access can't be invited again.
  * - Inviting an address with an invite still open (pending or expired, not
  *   accepted or canceled) refreshes that invite instead of adding a second
  *   one -- the database allows one open invite per address per member.
  * - Invites last 14 days; Resend restarts the 14 days. The same invite
  *   can be sent again only after a few minutes (INVITE_RESEND_COOLDOWN_MINUTES).
- * - The owner can't be removed (so the owner can't remove themselves).
- *   Changing someone's role is remove-and-reinvite, for now.
+ * - The owner can't be removed or changed (so the owner can't remove
+ *   themselves). Everyone else's role can be changed with changeAccess.
+ * - Anyone but the owner and the business manager can leave the profile.
  * - In a one-manager business the business manager (businesses.manager_user_id)
  *   is listed first, labeled for all locations, and can't be removed here.
  *   After a hand-off the location manager is the location's owner and the
@@ -27,9 +32,9 @@ import type { PortalRole } from "@/lib/portal/portal-destination";
  *   an address that has one waiting.
  */
 
-export type InviteRole = "editor" | "media_events";
+export type InviteRole = "co_owner" | "editor" | "media_events";
 
-export const INVITE_ROLES: readonly InviteRole[] = ["media_events", "editor"];
+export const INVITE_ROLES: readonly InviteRole[] = ["co_owner", "editor", "media_events"];
 
 export const INVITE_LIFETIME_DAYS = 14;
 
@@ -50,7 +55,31 @@ function assertCooledDown(invite: InviteRecord, now: Date) {
 }
 
 export function isInviteRole(value: unknown): value is InviteRole {
-  return value === "editor" || value === "media_events";
+  return value === "co_owner" || value === "editor" || value === "media_events";
+}
+
+/** Who is acting on People: the signed-in user's role on this member. */
+export type PeopleActor = { userId: string; role: PortalRole; isBusinessManager: boolean };
+
+const CO_OWNER_FORBIDDEN = "Only the owner can add or change co-owners.";
+const OWNER_UNTOUCHABLE = "The owner can't be removed. To change the owner, contact the Guild.";
+
+/**
+ * Only the owner -- including a Guild admin editing as them, whose portal
+ * role is "owner" -- adds, changes or removes co-owners. A business manager
+ * on a handed-off location has role editor, so manages editors only.
+ */
+export function canManageCoOwners(actor: PeopleActor): boolean {
+  return actor.role === "owner";
+}
+
+/** The roles this person may invite someone as (or change someone to), in picker order. */
+export function inviteRolesFor(actor: PeopleActor): InviteRole[] {
+  return INVITE_ROLES.filter((role) => role !== "co_owner" || canManageCoOwners(actor));
+}
+
+function assertMayTouchRole(actor: PeopleActor, role: OpenInviteRole | PortalRole) {
+  if (role === "co_owner" && !canManageCoOwners(actor)) throw new Error(CO_OWNER_FORBIDDEN);
 }
 
 /** Open invites may also be a hand-off (owner), made by the business manager in SQL. */
@@ -130,6 +159,8 @@ export interface PeopleStore {
   }): Promise<InviteRecord>;
   updateInvite(memberId: string, inviteId: string, patch: InvitePatch): Promise<void>;
   deleteMemberUser(memberId: string, userId: string): Promise<void>;
+  /** Never touches the owner's row. */
+  updateMemberUserRole(memberId: string, userId: string, role: InviteRole): Promise<void>;
 }
 
 // Deliberately simple, the same bar as member-email.server.ts: sign-in
@@ -155,6 +186,11 @@ export type PersonView = {
   role: PortalRole;
   isYou: boolean;
   canRemove: boolean;
+  canChangeAccess: boolean;
+  /** The viewer's own row, when they may leave the profile. */
+  canLeave: boolean;
+  /** The roles the viewer may change this person to; empty unless canChangeAccess. */
+  accessOptions: InviteRole[];
   label: string;
   isBusinessManager: boolean;
 };
@@ -171,6 +207,8 @@ export type PeopleView = {
   people: PersonView[];
   invites: InviteView[];
   business: PeopleBusinessView | null;
+  /** The roles the viewer may invite someone as. */
+  inviteRoles: InviteRole[];
 };
 
 const ROLE_ORDER: Record<PortalRole, number> = { owner: 0, co_owner: 1, editor: 2, media_events: 3 };
@@ -190,13 +228,14 @@ function personLabel(
   if (!business) return PLAIN_LABEL[role];
   if (isManager) return `Business manager · all ${business.locationCount} locations`;
   if (role === "owner") return `Location manager · ${business.city}`;
+  if (role === "co_owner") return `Co-owner · ${business.city}`;
   return `${role === "editor" ? "Full editor" : "Photos & events editor"} · ${business.city}`;
 }
 
 export async function loadPeople(
   store: PeopleStore,
   memberId: string,
-  viewerUserId: string,
+  viewer: PeopleActor,
   now: Date = new Date(),
   options: { viewerIsGuildAdmin?: boolean } = {},
 ): Promise<PeopleView> {
@@ -207,6 +246,7 @@ export async function loadPeople(
   ]);
   const emails = await Promise.all(users.map((user) => store.userEmail(user.userId)));
   const isManagerUser = (userId: string) => business !== null && business.managerUserId === userId;
+  const inviteRoles = inviteRolesFor(viewer);
   const people: PersonView[] = users
     .map((user, index) => ({ user, email: emails[index] }))
     .sort(
@@ -217,12 +257,22 @@ export async function loadPeople(
     )
     .map(({ user, email }) => {
       const isBusinessManager = isManagerUser(user.userId);
+      const isYou = user.userId === viewer.userId;
+      // The same rules removePerson and changeAccess enforce.
+      const manageable =
+        user.role !== "owner" &&
+        !isBusinessManager &&
+        (user.role !== "co_owner" || canManageCoOwners(viewer));
+      const accessOptions = manageable ? inviteRoles.filter((role) => role !== user.role) : [];
       return {
         userId: user.userId,
         email,
         role: user.role,
-        isYou: user.userId === viewerUserId,
-        canRemove: user.role !== "owner" && !isBusinessManager,
+        isYou,
+        canRemove: manageable,
+        canChangeAccess: accessOptions.length > 0,
+        canLeave: isYou && user.role !== "owner" && !isBusinessManager,
+        accessOptions,
         label: personLabel(user.role, isBusinessManager, business),
         isBusinessManager,
       };
@@ -237,7 +287,7 @@ export async function loadPeople(
     const handOffPending = invites.some((invite) => invite.role === "owner");
     const viewerIsManager =
       Boolean(options.viewerIsGuildAdmin) ||
-      (business.managerUserId !== null && business.managerUserId === viewerUserId);
+      (business.managerUserId !== null && business.managerUserId === viewer.userId);
     businessView = {
       name: business.name,
       city: business.city,
@@ -255,6 +305,7 @@ export async function loadPeople(
 
   return {
     business: businessView,
+    inviteRoles,
     people,
     invites: [...invites]
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -276,12 +327,14 @@ export async function invitePerson(
     email: unknown;
     role: unknown;
     invitedByUserId: string;
+    actor: PeopleActor;
     now?: Date;
   },
 ): Promise<{ inviteId: string; email: string; role: InviteRole; refreshed: boolean }> {
   const email = normalizeInviteEmail(input.email);
   if (!isInviteRole(input.role)) throw new Error("Choose what they can edit.");
   const role = input.role;
+  assertMayTouchRole(input.actor, role);
   const now = input.now ?? new Date();
 
   const users = await store.listMemberUsers(input.memberId);
@@ -300,6 +353,8 @@ export async function invitePerson(
     );
   }
   if (open) {
+    // Re-inviting would re-role a pending co-owner invite.
+    assertMayTouchRole(input.actor, open.role);
     assertCooledDown(open, now);
     await store.updateInvite(input.memberId, open.id, {
       role,
@@ -331,9 +386,10 @@ async function findOpenInvite(store: PeopleStore, memberId: string, inviteId: un
 /** Resend: another 14 days from now. Returns what the email needs. */
 export async function resendInvite(
   store: PeopleStore,
-  input: { memberId: string; inviteId: unknown; now?: Date },
+  input: { memberId: string; inviteId: unknown; actor: PeopleActor; now?: Date },
 ): Promise<{ email: string; role: OpenInviteRole }> {
   const invite = await findOpenInvite(store, input.memberId, input.inviteId);
+  assertMayTouchRole(input.actor, invite.role);
   const now = input.now ?? new Date();
   assertCooledDown(invite, now);
   await store.updateInvite(input.memberId, invite.id, { expiresAt: inviteExpiry(now) });
@@ -342,9 +398,10 @@ export async function resendInvite(
 
 export async function cancelInvite(
   store: PeopleStore,
-  input: { memberId: string; inviteId: unknown; now?: Date },
+  input: { memberId: string; inviteId: unknown; actor: PeopleActor; now?: Date },
 ): Promise<void> {
   const invite = await findOpenInvite(store, input.memberId, input.inviteId);
+  assertMayTouchRole(input.actor, invite.role);
   await store.updateInvite(input.memberId, invite.id, {
     cancelledAt: (input.now ?? new Date()).toISOString(),
   });
@@ -353,7 +410,7 @@ export async function cancelInvite(
 /** Ends someone's access (on their next request). Never the owner. */
 export async function removePerson(
   store: PeopleStore,
-  input: { memberId: string; userId: unknown },
+  input: { memberId: string; userId: unknown; actor: PeopleActor },
 ): Promise<void> {
   const users = await store.listMemberUsers(input.memberId);
   const target = users.find((user) => user.userId === input.userId);
@@ -364,8 +421,49 @@ export async function removePerson(
       `The business manager can't be removed here. To change who manages ${business.name}, contact the Guild.`,
     );
   }
-  if (target.role === "owner") {
-    throw new Error("The owner can't be removed. To change the owner, contact the Guild.");
-  }
+  if (target.role === "owner") throw new Error(OWNER_UNTOUCHABLE);
+  assertMayTouchRole(input.actor, target.role);
   await store.deleteMemberUser(input.memberId, target.userId);
+}
+
+/** Changes someone's level without remove-and-reinvite. Never the owner or the business manager. */
+export async function changeAccess(
+  store: PeopleStore,
+  input: { memberId: string; userId: unknown; role: unknown; actor: PeopleActor },
+): Promise<{ fromRole: PortalRole; toRole: InviteRole }> {
+  if (!isInviteRole(input.role)) throw new Error("Choose what they can edit.");
+  const role = input.role;
+  const users = await store.listMemberUsers(input.memberId);
+  const target = users.find((user) => user.userId === input.userId);
+  if (!target) throw new Error("That person doesn't have access anymore.");
+  const business = await store.businessFor(input.memberId);
+  if (business && business.managerUserId === target.userId) {
+    throw new Error("The business manager's access can't be changed here. Contact the Guild.");
+  }
+  if (target.role === "owner") throw new Error(OWNER_UNTOUCHABLE);
+  // Moving someone to or from co-owner is the owner's call.
+  assertMayTouchRole(input.actor, target.role);
+  assertMayTouchRole(input.actor, role);
+  if (target.role === role) throw new Error("They already have that access.");
+  await store.updateMemberUserRole(input.memberId, target.userId, role);
+  return { fromRole: target.role, toRole: role };
+}
+
+/** Ends the actor's own access. Never the owner or the business manager. */
+export async function leaveProfile(
+  store: PeopleStore,
+  input: { memberId: string; actor: PeopleActor },
+): Promise<{ role: PortalRole }> {
+  const users = await store.listMemberUsers(input.memberId);
+  const self = users.find((user) => user.userId === input.actor.userId);
+  if (!self) throw new Error("You don't have access to this profile anymore.");
+  const business = await store.businessFor(input.memberId);
+  if (business && business.managerUserId === self.userId) {
+    throw new Error("The business manager can't leave here. Contact the Guild.");
+  }
+  if (self.role === "owner") {
+    throw new Error("The owner can't leave the profile. To change the owner, contact the Guild.");
+  }
+  await store.deleteMemberUser(input.memberId, self.userId);
+  return { role: self.role };
 }

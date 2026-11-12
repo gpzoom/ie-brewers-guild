@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   cancelInvite,
+  changeAccess,
   invitePerson,
+  leaveProfile,
   loadPeople,
   normalizeInviteEmail,
   peopleBusinessCopy,
@@ -10,6 +12,7 @@ import {
   type InvitePatch,
   type InviteRecord,
   type MemberUserRecord,
+  type PeopleActor,
   type PeopleBusiness,
   type PeopleStore,
 } from "@/lib/portal/people";
@@ -24,7 +27,8 @@ function memoryStore(seed: {
   invites?: StoredInvite[];
   business?: PeopleBusiness | null;
 }) {
-  const users = [...(seed.users ?? [])];
+  // Copies, so a role change never leaks into the shared fixtures.
+  const users = (seed.users ?? []).map((user) => ({ ...user }));
   const invites = [...(seed.invites ?? [])];
   let nextId = 1;
   const store: PeopleStore = {
@@ -66,6 +70,10 @@ function memoryStore(seed: {
       const index = users.findIndex((u) => u.userId === userId);
       users.splice(index, 1);
     },
+    async updateMemberUserRole(_memberId, userId, role) {
+      const user = users.find((u) => u.userId === userId);
+      if (user && user.role !== "owner") user.role = role;
+    },
   };
   return { store, users, invites };
 }
@@ -89,6 +97,13 @@ const PHOTOS = {
   email: "photos@brewery.com",
 };
 
+const AS_OWNER: PeopleActor = { userId: "u-owner", role: "owner", isBusinessManager: false };
+const actorFor = (userId: string, role: PeopleActor["role"], isBusinessManager = false) => ({
+  userId,
+  role,
+  isBusinessManager,
+});
+
 describe("normalizeInviteEmail", () => {
   it("trims and lower-cases", () => {
     expect(normalizeInviteEmail("  Sam@Example.COM ")).toBe("sam@example.com");
@@ -104,7 +119,7 @@ describe("normalizeInviteEmail", () => {
 describe("loadPeople", () => {
   it("lists the owner first, marks the viewer, and never offers to remove the owner", async () => {
     const { store } = memoryStore({ users: [EDITOR, PHOTOS, OWNER] });
-    const view = await loadPeople(store, MEMBER, "u-owner", NOW);
+    const view = await loadPeople(store, MEMBER, AS_OWNER, NOW);
     expect(view.people.map((p) => p.userId)).toEqual(["u-owner", "u-editor", "u-photos"]);
     expect(view.people[0]).toMatchObject({ isYou: true, canRemove: false });
     expect(view.people[1]).toMatchObject({ isYou: false, canRemove: true });
@@ -126,7 +141,7 @@ describe("loadPeople", () => {
         },
       ],
     });
-    const view = await loadPeople(store, MEMBER, "u-owner", NOW);
+    const view = await loadPeople(store, MEMBER, AS_OWNER, NOW);
     expect(view.invites[0]).toMatchObject({ id: "old", expired: true });
   });
 });
@@ -139,6 +154,7 @@ describe("invitePerson", () => {
       email: " New@Person.com",
       role: "media_events",
       invitedByUserId: "u-owner",
+      actor: AS_OWNER,
       now: NOW,
     });
     expect(result).toMatchObject({
@@ -157,6 +173,7 @@ describe("invitePerson", () => {
         email: "owner@brewery.com",
         role: "editor",
         invitedByUserId: "u-owner",
+        actor: AS_OWNER,
         now: NOW,
       }),
     ).rejects.toThrow("already has access");
@@ -183,6 +200,7 @@ describe("invitePerson", () => {
       email: "Sam@X.com",
       role: "editor",
       invitedByUserId: "u-owner",
+      actor: AS_OWNER,
       now: NOW,
     });
     expect(result).toMatchObject({ inviteId: "open", refreshed: true, role: "editor" });
@@ -198,6 +216,7 @@ describe("invitePerson", () => {
         email: "x@y.com",
         role: "owner",
         invitedByUserId: "u-owner",
+        actor: AS_OWNER,
         now: NOW,
       }),
     ).rejects.toThrow("Choose what they can edit.");
@@ -209,7 +228,7 @@ describe("resendInvite and cancelInvite", () => {
     const recent = { ...pending(), updatedAt: "2026-09-26T11:58:00Z" };
     const { store } = memoryStore({ invites: [recent] });
     await expect(
-      resendInvite(store, { memberId: MEMBER, inviteId: "p1", now: NOW }),
+      resendInvite(store, { memberId: MEMBER, inviteId: "p1", actor: AS_OWNER, now: NOW }),
     ).rejects.toThrow("send it again in a few minutes");
     await expect(
       invitePerson(store, {
@@ -217,6 +236,7 @@ describe("resendInvite and cancelInvite", () => {
         email: "sam@x.com",
         role: "editor",
         invitedByUserId: "u-owner",
+        actor: AS_OWNER,
         now: NOW,
       }),
     ).rejects.toThrow("send it again in a few minutes");
@@ -235,49 +255,54 @@ describe("resendInvite and cancelInvite", () => {
 
   it("resend restarts the 14 days", async () => {
     const { store, invites } = memoryStore({ invites: [pending()] });
-    const result = await resendInvite(store, { memberId: MEMBER, inviteId: "p1", now: NOW });
+    const result = await resendInvite(store, {
+      memberId: MEMBER,
+      inviteId: "p1",
+      actor: AS_OWNER,
+      now: NOW,
+    });
     expect(result).toEqual({ email: "sam@x.com", role: "editor" });
     expect(invites[0].expiresAt).toBe("2026-10-10T12:00:00.000Z");
   });
 
   it("cancel marks the invite canceled", async () => {
     const { store, invites } = memoryStore({ invites: [pending()] });
-    await cancelInvite(store, { memberId: MEMBER, inviteId: "p1", now: NOW });
+    await cancelInvite(store, { memberId: MEMBER, inviteId: "p1", actor: AS_OWNER, now: NOW });
     expect(invites[0].cancelledAt).toBe(NOW.toISOString());
   });
 
   it("refuses an invite from another member, or one already canceled", async () => {
     const other = { ...pending(), memberId: "member-2" };
     const { store } = memoryStore({ invites: [other] });
-    await expect(resendInvite(store, { memberId: MEMBER, inviteId: "p1" })).rejects.toThrow(
-      "isn't pending",
-    );
-    await expect(cancelInvite(store, { memberId: MEMBER, inviteId: "p1" })).rejects.toThrow(
-      "isn't pending",
-    );
+    await expect(
+      resendInvite(store, { memberId: MEMBER, inviteId: "p1", actor: AS_OWNER }),
+    ).rejects.toThrow("isn't pending");
+    await expect(
+      cancelInvite(store, { memberId: MEMBER, inviteId: "p1", actor: AS_OWNER }),
+    ).rejects.toThrow("isn't pending");
   });
 });
 
 describe("removePerson", () => {
   it("removes an editor", async () => {
     const { store, users } = memoryStore({ users: [OWNER, EDITOR] });
-    await removePerson(store, { memberId: MEMBER, userId: "u-editor" });
+    await removePerson(store, { memberId: MEMBER, userId: "u-editor", actor: AS_OWNER });
     expect(users.map((u) => u.userId)).toEqual(["u-owner"]);
   });
 
   it("never removes the owner", async () => {
     const { store, users } = memoryStore({ users: [OWNER, EDITOR] });
-    await expect(removePerson(store, { memberId: MEMBER, userId: "u-owner" })).rejects.toThrow(
-      "The owner can't be removed",
-    );
+    await expect(
+      removePerson(store, { memberId: MEMBER, userId: "u-owner", actor: AS_OWNER }),
+    ).rejects.toThrow("The owner can't be removed");
     expect(users).toHaveLength(2);
   });
 
   it("says so when the person is already gone", async () => {
     const { store } = memoryStore({ users: [OWNER] });
-    await expect(removePerson(store, { memberId: MEMBER, userId: "u-editor" })).rejects.toThrow(
-      "doesn't have access anymore",
-    );
+    await expect(
+      removePerson(store, { memberId: MEMBER, userId: "u-editor", actor: AS_OWNER }),
+    ).rejects.toThrow("doesn't have access anymore");
   });
 });
 
@@ -322,7 +347,7 @@ describe("People in a one-manager business (spec 2026-10-15, BZ4)", () => {
       ],
       business,
     });
-    const view = await loadPeople(store, MEMBER, "u-boss");
+    const view = await loadPeople(store, MEMBER, actorFor("u-boss", "owner", true));
     expect(view.people.map((p) => [p.label, p.canRemove])).toEqual([
       ["Business manager · all 4 locations", false],
       ["Photos & events editor · Riverside", true],
@@ -336,7 +361,7 @@ describe("People in a one-manager business (spec 2026-10-15, BZ4)", () => {
 
   it("after a hand-off: location manager listed after the manager, Take back offered", async () => {
     const { store } = memoryStore({ users: handedOff(), business });
-    const view = await loadPeople(store, MEMBER, "u-boss");
+    const view = await loadPeople(store, MEMBER, actorFor("u-boss", "editor", true));
     expect(view.people.map((p) => p.label)).toEqual([
       "Business manager · all 4 locations",
       "Location manager · Riverside",
@@ -350,7 +375,7 @@ describe("People in a one-manager business (spec 2026-10-15, BZ4)", () => {
 
   it("the location manager sees no hand-off or take-back", async () => {
     const { store } = memoryStore({ users: handedOff(), business });
-    const view = await loadPeople(store, MEMBER, "u-loc");
+    const view = await loadPeople(store, MEMBER, actorFor("u-loc", "owner"));
     expect(view.business).toMatchObject({
       viewerIsManager: false,
       canHandOff: false,
@@ -363,7 +388,7 @@ describe("People in a one-manager business (spec 2026-10-15, BZ4)", () => {
       users: [user("u-boss", "owner", "2026-01-01", "boss@x.com")],
       business,
     });
-    const view = await loadPeople(store, MEMBER, "u-admin", new Date(), {
+    const view = await loadPeople(store, MEMBER, actorFor("u-admin", "owner"), new Date(), {
       viewerIsGuildAdmin: true,
     });
     expect(view.business?.canHandOff).toBe(true);
@@ -375,14 +400,20 @@ describe("People in a one-manager business (spec 2026-10-15, BZ4)", () => {
       invites: [handOffInvite()],
       business,
     });
-    const view = await loadPeople(store, MEMBER, "u-boss");
+    const view = await loadPeople(store, MEMBER, actorFor("u-boss", "owner", true));
     expect(view.business).toMatchObject({ handOffPending: true, canHandOff: false });
     expect(view.invites[0].role).toBe("owner");
   });
 
   it("removePerson refuses the business manager", async () => {
     const { store } = memoryStore({ users: handedOff(), business });
-    await expect(removePerson(store, { memberId: MEMBER, userId: "u-boss" })).rejects.toThrow(
+    await expect(
+      removePerson(store, {
+        memberId: MEMBER,
+        userId: "u-boss",
+        actor: actorFor("u-loc", "owner"),
+      }),
+    ).rejects.toThrow(
       "The business manager can't be removed here. To change who manages Hangar 24, contact the Guild.",
     );
   });
@@ -399,10 +430,316 @@ describe("People in a one-manager business (spec 2026-10-15, BZ4)", () => {
         email: "NEW@x.com",
         role: "editor",
         invitedByUserId: "u-boss",
+        actor: actorFor("u-boss", "owner", true),
       }),
     ).rejects.toThrow(
       "That address has a hand-off waiting. Cancel it first to invite them as an editor.",
     );
+  });
+});
+
+describe("co-owners (spec 2026-11-12)", () => {
+  const FORBIDDEN = "Only the owner can add or change co-owners.";
+  const CO = {
+    userId: "u-co",
+    role: "co_owner" as const,
+    createdAt: "2026-09-02T00:00:00Z",
+    email: "co@brewery.com",
+  };
+  const CO2 = {
+    userId: "u-co2",
+    role: "co_owner" as const,
+    createdAt: "2026-09-03T00:00:00Z",
+    email: "co2@brewery.com",
+  };
+  const AS_CO: PeopleActor = { userId: "u-co", role: "co_owner", isBusinessManager: false };
+  const coInvite = (): StoredInvite => ({
+    id: "c1",
+    memberId: MEMBER,
+    email: "pending-co@x.com",
+    role: "co_owner",
+    expiresAt: "2026-10-01T00:00:00Z",
+    createdAt: "2026-09-13T00:00:00Z",
+    updatedAt: "2026-09-13T00:00:00Z",
+    cancelledAt: null,
+  });
+
+  it("the owner invites a co-owner", async () => {
+    const { store, invites } = memoryStore({ users: [OWNER] });
+    const result = await invitePerson(store, {
+      memberId: MEMBER,
+      email: "new-co@x.com",
+      role: "co_owner",
+      invitedByUserId: "u-owner",
+      actor: AS_OWNER,
+      now: NOW,
+    });
+    expect(result).toMatchObject({ role: "co_owner", refreshed: false });
+    expect(invites[0].role).toBe("co_owner");
+  });
+
+  it("a co-owner can't invite a co-owner", async () => {
+    const { store, invites } = memoryStore({ users: [OWNER, CO] });
+    await expect(
+      invitePerson(store, {
+        memberId: MEMBER,
+        email: "new-co@x.com",
+        role: "co_owner",
+        invitedByUserId: "u-co",
+        actor: AS_CO,
+        now: NOW,
+      }),
+    ).rejects.toThrow(FORBIDDEN);
+    expect(invites).toHaveLength(0);
+  });
+
+  it("a co-owner can't re-invite an address with a pending co-owner invite", async () => {
+    const { store, invites } = memoryStore({ users: [OWNER, CO], invites: [coInvite()] });
+    await expect(
+      invitePerson(store, {
+        memberId: MEMBER,
+        email: "pending-co@x.com",
+        role: "editor",
+        invitedByUserId: "u-co",
+        actor: AS_CO,
+        now: NOW,
+      }),
+    ).rejects.toThrow(FORBIDDEN);
+    expect(invites[0].role).toBe("co_owner");
+  });
+
+  it("a co-owner can't resend or cancel a co-owner invite", async () => {
+    const { store, invites } = memoryStore({ users: [OWNER, CO], invites: [coInvite()] });
+    await expect(
+      resendInvite(store, { memberId: MEMBER, inviteId: "c1", actor: AS_CO, now: NOW }),
+    ).rejects.toThrow(FORBIDDEN);
+    await expect(
+      cancelInvite(store, { memberId: MEMBER, inviteId: "c1", actor: AS_CO, now: NOW }),
+    ).rejects.toThrow(FORBIDDEN);
+    expect(invites[0]).toMatchObject({ cancelledAt: null, expiresAt: "2026-10-01T00:00:00Z" });
+  });
+
+  it("the owner resends and cancels a co-owner invite", async () => {
+    const { store, invites } = memoryStore({ users: [OWNER], invites: [coInvite()] });
+    await resendInvite(store, { memberId: MEMBER, inviteId: "c1", actor: AS_OWNER, now: NOW });
+    await cancelInvite(store, { memberId: MEMBER, inviteId: "c1", actor: AS_OWNER, now: NOW });
+    expect(invites[0].cancelledAt).toBe(NOW.toISOString());
+  });
+
+  it("a co-owner invites, changes and removes editors and Photos & events editors", async () => {
+    const { store, users, invites } = memoryStore({ users: [OWNER, CO, EDITOR, PHOTOS] });
+    await invitePerson(store, {
+      memberId: MEMBER,
+      email: "new-ed@x.com",
+      role: "editor",
+      invitedByUserId: "u-co",
+      actor: AS_CO,
+      now: NOW,
+    });
+    await invitePerson(store, {
+      memberId: MEMBER,
+      email: "new-photos@x.com",
+      role: "media_events",
+      invitedByUserId: "u-co",
+      actor: AS_CO,
+      now: NOW,
+    });
+    expect(invites.map((i) => i.role)).toEqual(["editor", "media_events"]);
+    await expect(
+      changeAccess(store, {
+        memberId: MEMBER,
+        userId: "u-editor",
+        role: "media_events",
+        actor: AS_CO,
+      }),
+    ).resolves.toEqual({ fromRole: "editor", toRole: "media_events" });
+    await expect(
+      changeAccess(store, { memberId: MEMBER, userId: "u-photos", role: "editor", actor: AS_CO }),
+    ).resolves.toEqual({ fromRole: "media_events", toRole: "editor" });
+    await removePerson(store, { memberId: MEMBER, userId: "u-editor", actor: AS_CO });
+    await removePerson(store, { memberId: MEMBER, userId: "u-photos", actor: AS_CO });
+    expect(users.map((u) => u.userId)).toEqual(["u-owner", "u-co"]);
+  });
+
+  it("the owner removes a co-owner", async () => {
+    const { store, users } = memoryStore({ users: [OWNER, CO] });
+    await removePerson(store, { memberId: MEMBER, userId: "u-co", actor: AS_OWNER });
+    expect(users.map((u) => u.userId)).toEqual(["u-owner"]);
+  });
+
+  it("a co-owner can't remove another co-owner", async () => {
+    const { store, users } = memoryStore({ users: [OWNER, CO, CO2] });
+    await expect(
+      removePerson(store, { memberId: MEMBER, userId: "u-co2", actor: AS_CO }),
+    ).rejects.toThrow(FORBIDDEN);
+    expect(users).toHaveLength(3);
+  });
+
+  it("nobody can remove or change the owner", async () => {
+    const OWNER_MESSAGE = "The owner can't be removed. To change the owner, contact the Guild.";
+    const { store, users } = memoryStore({ users: [OWNER, CO] });
+    for (const actor of [AS_OWNER, AS_CO]) {
+      await expect(
+        removePerson(store, { memberId: MEMBER, userId: "u-owner", actor }),
+      ).rejects.toThrow(OWNER_MESSAGE);
+      await expect(
+        changeAccess(store, { memberId: MEMBER, userId: "u-owner", role: "co_owner", actor }),
+      ).rejects.toThrow(OWNER_MESSAGE);
+    }
+    expect(users.find((u) => u.userId === "u-owner")?.role).toBe("owner");
+  });
+
+  describe("changeAccess", () => {
+    it("the owner makes a Full editor a co-owner", async () => {
+      const { store, users } = memoryStore({ users: [OWNER, EDITOR] });
+      const result = await changeAccess(store, {
+        memberId: MEMBER,
+        userId: "u-editor",
+        role: "co_owner",
+        actor: AS_OWNER,
+      });
+      expect(result).toEqual({ fromRole: "editor", toRole: "co_owner" });
+      expect(users.find((u) => u.userId === "u-editor")?.role).toBe("co_owner");
+    });
+
+    it("refuses a change to the role they already have", async () => {
+      const { store } = memoryStore({ users: [OWNER, EDITOR] });
+      await expect(
+        changeAccess(store, {
+          memberId: MEMBER,
+          userId: "u-editor",
+          role: "editor",
+          actor: AS_OWNER,
+        }),
+      ).rejects.toThrow("They already have that access.");
+    });
+
+    it("refuses to change the business manager", async () => {
+      const { store, users } = memoryStore({
+        users: [
+          { ...EDITOR, userId: "u-boss", email: "boss@x.com" },
+          { ...OWNER, userId: "u-loc", email: "loc@x.com" },
+        ],
+        business: {
+          name: "Hangar 24",
+          city: "Riverside",
+          locationCount: 4,
+          managerUserId: "u-boss",
+        },
+      });
+      await expect(
+        changeAccess(store, {
+          memberId: MEMBER,
+          userId: "u-boss",
+          role: "co_owner",
+          actor: actorFor("u-loc", "owner"),
+        }),
+      ).rejects.toThrow("The business manager's access can't be changed here. Contact the Guild.");
+      expect(users[0].role).toBe("editor");
+    });
+
+    it("a co-owner can't make a Full editor a co-owner", async () => {
+      const { store, users } = memoryStore({ users: [OWNER, CO, EDITOR] });
+      await expect(
+        changeAccess(store, {
+          memberId: MEMBER,
+          userId: "u-editor",
+          role: "co_owner",
+          actor: AS_CO,
+        }),
+      ).rejects.toThrow(FORBIDDEN);
+      expect(users.find((u) => u.userId === "u-editor")?.role).toBe("editor");
+    });
+
+    it("a co-owner can't change another co-owner", async () => {
+      const { store } = memoryStore({ users: [OWNER, CO, CO2] });
+      await expect(
+        changeAccess(store, { memberId: MEMBER, userId: "u-co2", role: "editor", actor: AS_CO }),
+      ).rejects.toThrow(FORBIDDEN);
+    });
+  });
+
+  describe("leaveProfile", () => {
+    it("a co-owner leaves", async () => {
+      const { store, users } = memoryStore({ users: [OWNER, CO] });
+      await expect(leaveProfile(store, { memberId: MEMBER, actor: AS_CO })).resolves.toEqual({
+        role: "co_owner",
+      });
+      expect(users.map((u) => u.userId)).toEqual(["u-owner"]);
+    });
+
+    it("the owner can't leave", async () => {
+      const { store, users } = memoryStore({ users: [OWNER, CO] });
+      await expect(leaveProfile(store, { memberId: MEMBER, actor: AS_OWNER })).rejects.toThrow(
+        "The owner can't leave the profile. To change the owner, contact the Guild.",
+      );
+      expect(users).toHaveLength(2);
+    });
+
+    it("the business manager can't leave", async () => {
+      const { store, users } = memoryStore({
+        users: [
+          { ...EDITOR, userId: "u-boss", email: "boss@x.com" },
+          { ...OWNER, userId: "u-loc", email: "loc@x.com" },
+        ],
+        business: {
+          name: "Hangar 24",
+          city: "Riverside",
+          locationCount: 4,
+          managerUserId: "u-boss",
+        },
+      });
+      await expect(
+        leaveProfile(store, { memberId: MEMBER, actor: actorFor("u-boss", "editor", true) }),
+      ).rejects.toThrow("The business manager can't leave here. Contact the Guild.");
+      expect(users).toHaveLength(2);
+    });
+  });
+
+  describe("loadPeople", () => {
+    it("as a co-owner: invite editors only, leave own row, hands off other co-owners", async () => {
+      const { store } = memoryStore({ users: [OWNER, CO, CO2, EDITOR] });
+      const view = await loadPeople(store, MEMBER, AS_CO, NOW);
+      expect(view.inviteRoles).toEqual(["editor", "media_events"]);
+      const row = (userId: string) => view.people.find((p) => p.userId === userId);
+      expect(row("u-co")).toMatchObject({ isYou: true, canLeave: true, canRemove: false });
+      expect(row("u-co2")).toMatchObject({
+        canRemove: false,
+        canChangeAccess: false,
+        canLeave: false,
+        accessOptions: [],
+      });
+      expect(row("u-editor")).toMatchObject({
+        canRemove: true,
+        canChangeAccess: true,
+        accessOptions: ["media_events"],
+      });
+      expect(row("u-owner")).toMatchObject({ canRemove: false, canChangeAccess: false });
+    });
+
+    it("as the owner: co-owners can be removed and changed, all three roles to invite", async () => {
+      const { store } = memoryStore({ users: [OWNER, CO, EDITOR] });
+      const view = await loadPeople(store, MEMBER, AS_OWNER, NOW);
+      expect(view.inviteRoles).toEqual(["co_owner", "editor", "media_events"]);
+      expect(view.people.map((p) => p.userId)).toEqual(["u-owner", "u-co", "u-editor"]);
+      expect(view.people[0]).toMatchObject({ canLeave: false, canChangeAccess: false });
+      expect(view.people[1]).toMatchObject({
+        label: "Co-owner",
+        canRemove: true,
+        canChangeAccess: true,
+        accessOptions: ["editor", "media_events"],
+      });
+      expect(view.people[2].accessOptions).toEqual(["co_owner", "media_events"]);
+    });
+
+    it("labels a co-owner in a one-manager business", async () => {
+      const { store } = memoryStore({
+        users: [OWNER, CO],
+        business: { name: "Hangar 24", city: "Riverside", locationCount: 4, managerUserId: null },
+      });
+      const view = await loadPeople(store, MEMBER, AS_OWNER, NOW);
+      expect(view.people[1].label).toBe("Co-owner · Riverside");
+    });
   });
 });
 

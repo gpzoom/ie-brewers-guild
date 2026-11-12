@@ -75,7 +75,7 @@ export type TransactionalEmailPayload =
       memberId: string;
       memberName: string;
       email: string;
-      role: "editor" | "media_events";
+      role: "co_owner" | "editor" | "media_events";
       /** The owner's address, or null when a Guild admin invited while editing as them. */
       inviterEmail: string | null;
     }
