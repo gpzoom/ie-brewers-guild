@@ -430,7 +430,15 @@ export async function syncOneIcsConnection(supabase: SupabaseClient, connection:
     // point this at their own feed, and this is stored text rendered
     // through React's normal escaping, not markup), but there's no reason
     // to let an unbounded string land in this column regardless.
-    const message = (err instanceof Error ? err.message : String(err)).slice(0, 500);
+    // A database error (PostgrestError) is a plain object, not an Error:
+    // String() of it is "[object Object]", so its message is read directly.
+    const raw =
+      err instanceof Error
+        ? err.message
+        : err && typeof err === "object" && typeof (err as { message?: unknown }).message === "string"
+          ? (err as { message: string }).message
+          : String(err);
+    const message = raw.slice(0, 500);
     await supabase.from("calendar_connections").update({ last_sync_error: message, sync_status: "failing" }).eq("id", connection.id);
   }
 }
