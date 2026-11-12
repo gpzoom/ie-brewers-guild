@@ -134,7 +134,8 @@ real Guild or owner details. Changes:
 2. **Change access.** A short note with a screenshot: on People, use **Change access** next to a
    person to move them between levels without re-inviting them. Only the owner can make someone a
    co-owner or change a co-owner.
-3. **Leaving.** One line: a co-owner or editor can leave a profile from their own row on People.
+3. **Leaving.** One line: a co-owner can leave a profile from their own row on People. (Editors
+   don't see People; the owner removes them.)
 4. **Calendars (Events and Food).** Where the guide covers connecting a calendar, say the owner
    **or a co-owner** connects it; editors see its status and can press **Refresh now**.
 5. **Managing several locations (section "Managing several locations").** Add to the hand-off
@@ -152,3 +153,9 @@ real Guild or owner details. Changes:
 - No cap on the number of co-owners.
 - Co-owners can't hand off or take back locations.
 - "Change access" is part of this work rather than a separate change.
+
+## Calls made while planning (Claude's)
+
+- On a handed-off location, the business manager (an editor there) manages editors only, like a
+  co-owner; adding or changing co-owners there is the location manager's.
+- Only co-owners get "Leave this profile" (editors can't open People).
