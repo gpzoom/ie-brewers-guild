@@ -446,6 +446,27 @@ describe("People in a one-manager business (spec 2026-10-15, BZ4)", () => {
       "That address has a hand-off waiting. Cancel it first to invite them as an editor.",
     );
   });
+
+  it("the business manager of a handed-off location can't add or change co-owners", async () => {
+    const { store, users } = memoryStore({
+      users: [...handedOff(), user("u-ed", "editor", "2026-03-01", "ed@x.com")],
+      business,
+    });
+    const manager = actorFor("u-boss", "editor", true);
+    await expect(
+      invitePerson(store, {
+        memberId: MEMBER,
+        email: "partner@x.com",
+        role: "co_owner",
+        invitedByUserId: "u-boss",
+        actor: manager,
+      }),
+    ).rejects.toThrow("Only the owner can add or change co-owners.");
+    await expect(
+      changeAccess(store, { memberId: MEMBER, userId: "u-ed", role: "co_owner", actor: manager }),
+    ).rejects.toThrow("Only the owner can add or change co-owners.");
+    expect(users.find((u) => u.userId === "u-ed")?.role).toBe("editor");
+  });
 });
 
 describe("co-owners (spec 2026-11-12)", () => {
