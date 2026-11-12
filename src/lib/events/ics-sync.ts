@@ -206,17 +206,15 @@ export function venueFromLocation(location: string | null): string | null {
  * would publish. The description counts because Google Calendar has no
  * categories and a tag in the description keeps the title clean.
  *
- * LIMITATION -- recurring events (an `RRULE` on the VEVENT, e.g. a weekly
- * Thursday trivia night) are read via `ICAL.Event#startDate`/`endDate`,
- * which only ever reflects the FIRST occurrence in the recurrence series.
- * This function does not expand recurrences, so a recurring event syncs
- * once as a single, non-advancing occurrence: its date will not move
- * forward on subsequent re-syncs as time passes and later occurrences
- * become "next up". This mirrors the hand-entry events feature's existing
- * single-occurrence-only scope and is a deliberate v1 boundary, not an
- * oversight -- callers (calendar-connection.server.ts, ics-refresh-cron.server.ts)
- * should be aware a synced recurring event will effectively go stale after
- * its first occurrence passes, until/unless RRULE expansion is added.
+ * Repeating events (an `RRULE`, e.g. trivia every Thursday) are expanded:
+ * each date from RECURRENCE_PAST_DAYS back to RECURRENCE_FUTURE_DAYS ahead
+ * becomes its own event, with the id "<UID>::<its date in the series>".
+ * The window moves forward with every sync (the cron re-syncs every 15
+ * minutes). A date edited on its own (Google's "This event" edit: a VEVENT
+ * with the same UID plus a RECURRENCE-ID) replaces the series' date, so the
+ * tag can be on the whole series or on single dates. No id appears twice in
+ * the result: the database refuses a batch that writes one row twice, which
+ * would stop the whole calendar from syncing.
  *
  * This parses untrusted, member-controlled external calendar feeds, so it
  * fails closed/skips defensively rather than trusting the feed to be
@@ -249,6 +247,7 @@ export function parseIcsFeedForTag(
   icsText: string,
   syncTag: string,
   timeZone = "America/Los_Angeles",
+  now: Date = new Date(),
 ): ParsedIcsEvent[] {
   const tag = syncTagPattern(syncTag);
   if (!tag) {
@@ -260,61 +259,166 @@ export function parseIcsFeedForTag(
   const component = new ICAL.Component(jcalData);
   const vevents = component.getAllSubcomponents("vevent");
 
-  const parsedEvents: ParsedIcsEvent[] = [];
+  const windowStart = now.getTime() - RECURRENCE_PAST_DAYS * DAY_MS;
+  const windowEnd = now.getTime() + RECURRENCE_FUTURE_DAYS * DAY_MS;
 
+  const matchesTag = (item: ICAL.Event): boolean => {
+    const categoriesProp = item.component.getFirstProperty("categories");
+    const categories: string[] = categoriesProp
+      ? (categoriesProp.getValues() as string[]).map((c) =>
+          String(c).trim().replace(/^#+/, "").toLowerCase(),
+        )
+      : [];
+    return (
+      tag.test(item.summary ?? "") ||
+      tag.test(item.description ?? "") ||
+      categories.includes(bareTag)
+    );
+  };
+
+  const toParsed = (
+    item: ICAL.Event,
+    externalEventId: string,
+    startDate: ICAL.Time,
+    endDate: ICAL.Time | null,
+  ): ParsedIcsEvent => {
+    const { summary, description, location } = item;
+    const place = (location ?? "").replace(/\s+/g, " ").trim();
+    // An all-day entry is a DATE with no time: start it at the member's
+    // own local midnight (toJSDate would use the server's, UTC, which
+    // puts Oct 1 on the evening of Sept 30 in California). Its end is
+    // the day after its last day (or the next day when there's none).
+    const allDay = startDate.isDate;
+    const startDay = startDate.toString().slice(0, 10);
+    const startsAt = allDay ? zonedMidnightUtc(startDay, timeZone) : startDate.toJSDate().toISOString();
+    let endsAt: string | null;
+    if (allDay) {
+      const endDay = endDate?.isDate ? endDate.toString().slice(0, 10) : null;
+      endsAt = zonedMidnightUtc(endDay ?? nextDay(startDay), timeZone);
+    } else {
+      endsAt = endDate ? endDate.toJSDate().toISOString() : null;
+    }
+    return {
+      externalEventId,
+      startsAt,
+      endsAt,
+      summary: summary ?? "",
+      title: stripSyncTag(summary ?? "", syncTag),
+      location: place ? place.slice(0, LOCATION_MAX) : null,
+      description: cleanEventDescription(description, syncTag),
+      allDay,
+    };
+  };
+
+  // A series' dates edited on their own share the series' UID and carry a
+  // RECURRENCE-ID; they're attached to their series below.
+  const editedDatesByUid = new Map<string, ICAL.Component[]>();
+  const seriesUids = new Set<string>();
   for (const vevent of vevents) {
-    const event = new ICAL.Event(vevent);
     try {
-      // Read every property this event needs up front, inside the try:
-      // a syntactically invalid DTSTART/DTEND/UID throws the moment it's
-      // read (not lazily later), so anything that can throw must be read
-      // here rather than after the tag-match check below.
-      const { uid, startDate, endDate, summary, description, location } = event;
-      if (!uid || !startDate) continue;
-
-      const categoriesProp = event.component.getFirstProperty("categories");
-      const categories: string[] = categoriesProp
-        ? (categoriesProp.getValues() as string[]).map((c) =>
-            String(c).trim().replace(/^#+/, "").toLowerCase(),
-          )
-        : [];
-      const matchesTag =
-        tag.test(summary ?? "") ||
-        tag.test(description ?? "") ||
-        categories.includes(bareTag);
-      if (!matchesTag) continue;
-
-      const place = (location ?? "").replace(/\s+/g, " ").trim();
-      // An all-day entry is a DATE with no time: start it at the member's
-      // own local midnight (toJSDate would use the server's, UTC, which
-      // puts Oct 1 on the evening of Sept 30 in California). Its end is
-      // the day after its last day (or the next day when there's none).
-      const allDay = startDate.isDate;
-      const startDay = startDate.toString().slice(0, 10);
-      const startsAt = allDay ? zonedMidnightUtc(startDay, timeZone) : startDate.toJSDate().toISOString();
-      let endsAt: string | null;
-      if (allDay) {
-        const endDay = endDate?.isDate ? endDate.toString().slice(0, 10) : null;
-        endsAt = zonedMidnightUtc(endDay ?? nextDay(startDay), timeZone);
-      } else {
-        endsAt = endDate ? endDate.toJSDate().toISOString() : null;
+      const uid = vevent.getFirstPropertyValue("uid");
+      if (!uid) continue;
+      if (vevent.hasProperty("recurrence-id")) {
+        const list = editedDatesByUid.get(String(uid)) ?? [];
+        list.push(vevent);
+        editedDatesByUid.set(String(uid), list);
+      } else if (vevent.hasProperty("rrule") || vevent.hasProperty("rdate")) {
+        seriesUids.add(String(uid));
       }
-      parsedEvents.push({
-        externalEventId: uid,
-        startsAt,
-        endsAt,
-        summary: summary ?? "",
-        title: stripSyncTag(summary ?? "", syncTag),
-        location: place ? place.slice(0, LOCATION_MAX) : null,
-        description: cleanEventDescription(description, syncTag),
-        allDay,
-      });
     } catch {
       continue;
     }
   }
 
-  return parsedEvents;
+  const parsedEvents: ParsedIcsEvent[] = [];
+
+  for (const vevent of vevents) {
+    try {
+      // Read every property this event needs up front, inside the try:
+      // a syntactically invalid DTSTART/DTEND/UID throws the moment it's
+      // read (not lazily later), so anything that can throw must be read
+      // here rather than after the tag-match check below.
+      const event = new ICAL.Event(vevent);
+      const { uid, startDate, endDate } = event;
+      if (!uid || !startDate) continue;
+
+      if (vevent.hasProperty("recurrence-id")) {
+        // An edited date: handled with its series, unless the feed has no
+        // series for it (then it stands alone).
+        if (seriesUids.has(uid)) continue;
+        if (!matchesTag(event) || isCancelled(event)) continue;
+        parsedEvents.push(toParsed(event, occurrenceId(uid, event.recurrenceId), startDate, endDate));
+        continue;
+      }
+
+      if (!event.isRecurring()) {
+        if (!matchesTag(event)) continue;
+        parsedEvents.push(toParsed(event, uid, startDate, endDate));
+        continue;
+      }
+
+      // A series: every date in the window, each its own event. An edited
+      // date (new time, title or tag) uses the edited copy, so a tag on the
+      // series covers every date and a tag on one date covers that date.
+      // Deleted dates (EXDATE) are left out by the expansion itself.
+      for (const edited of editedDatesByUid.get(uid) ?? []) {
+        try {
+          event.relateException(edited);
+        } catch {
+          /* a malformed edited date: the series' own date is used */
+        }
+      }
+      const iterator = event.iterator();
+      let added = 0;
+      for (let steps = 0; steps < MAX_RECURRENCE_STEPS && added < MAX_OCCURRENCES; steps += 1) {
+        const next = iterator.next();
+        if (!next) break;
+        const details = event.getOccurrenceDetails(next);
+        const occurrenceStart = details.startDate.toJSDate().getTime();
+        // Dates come in series order; once past the window (both the
+        // series' date and any edited move of it), the rest are too.
+        if (next.toJSDate().getTime() > windowEnd && occurrenceStart > windowEnd) break;
+        const occurrenceEnd = details.endDate ? details.endDate.toJSDate().getTime() : occurrenceStart;
+        if (Math.max(occurrenceStart, occurrenceEnd) < windowStart) continue;
+        if (occurrenceStart > windowEnd) continue;
+        if (!matchesTag(details.item) || isCancelled(details.item)) continue;
+        parsedEvents.push(
+          toParsed(details.item, occurrenceId(uid, details.recurrenceId), details.startDate, details.endDate),
+        );
+        added += 1;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  const seen = new Set<string>();
+  return parsedEvents.filter((event) => {
+    if (seen.has(event.externalEventId)) return false;
+    seen.add(event.externalEventId);
+    return true;
+  });
+}
+
+/** How far back and ahead a repeating event's dates are imported. */
+export const RECURRENCE_PAST_DAYS = 2;
+export const RECURRENCE_FUTURE_DAYS = 90;
+/** At most this many dates per series (a daily series over the window fits). */
+const MAX_OCCURRENCES = 100;
+/** A guard for a series that began long ago or repeats very often. */
+const MAX_RECURRENCE_STEPS = 20000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** One date of a series: the series' UID plus that date's place in the series. */
+function occurrenceId(uid: string, recurrenceId: ICAL.Time | null | undefined): string {
+  if (!recurrenceId) return uid;
+  const when = recurrenceId.isDate ? recurrenceId.toString() : recurrenceId.toJSDate().toISOString();
+  return `${uid}::${when}`;
+}
+
+function isCancelled(item: ICAL.Event): boolean {
+  const status = item.component.getFirstPropertyValue("status");
+  return typeof status === "string" && status.toUpperCase() === "CANCELLED";
 }
 
 export type EventUpsertRow = {

@@ -228,6 +228,8 @@ A mobile member's "Next appearance" block skips anything postponed or canceled a
 
 Sync is tag-based opt-in: only events matching the member's chosen tag are imported. Most members' calendars contain private entries, and pulling everything would publish them.
 
+Repeating events (an RRULE series) are expanded: each date from two days back to 90 days ahead is imported as its own event, re-checked on every sync. A date edited on its own in the calendar (a RECURRENCE-ID copy) replaces the series' date, so the tag can be on the whole series or on single dates.
+
 On the profile each event's date column reads weekday, day and **month** ("THU / 24 / OCT"), in the member's time zone (owner, 27 September 2026).
 
 ### Food calendar

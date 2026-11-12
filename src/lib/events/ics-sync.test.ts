@@ -482,3 +482,134 @@ describe("whole tags only", () => {
     expect(syncTagPattern("#")).toBeNull();
   });
 });
+
+describe("repeating events", () => {
+  const NOW = new Date("2026-11-12T20:00:00Z");
+  const feed = (body: string) =>
+    `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Test//Test//EN\n${body}\nEND:VCALENDAR`;
+
+  it("expands a tagged weekly series into each date in the window, each with its own id", () => {
+    const events = parseIcsFeedForTag(
+      feed(`BEGIN:VEVENT
+UID:trivia@example.com
+DTSTART:20260702T023000Z
+DTEND:20260702T043000Z
+RRULE:FREQ=WEEKLY
+SUMMARY:Trivia night #guild
+END:VEVENT`),
+      "#guild",
+      "America/Los_Angeles",
+      NOW,
+    );
+    expect(events.length).toBe(13);
+    expect(events[0].startsAt).toBe("2026-11-12T02:30:00.000Z");
+    expect(events[0].externalEventId).toBe("trivia@example.com::2026-11-12T02:30:00.000Z");
+    expect(new Set(events.map((e) => e.externalEventId)).size).toBe(events.length);
+    expect(events.every((e) => e.title === "Trivia night")).toBe(true);
+  });
+
+  it("keeps only the edited dates tagged on their own, once each (the Mars feed shape)", () => {
+    const events = parseIcsFeedForTag(
+      feed(`BEGIN:VEVENT
+UID:papas@google.com
+DTSTART;VALUE=DATE:20261121
+DTEND;VALUE=DATE:20261122
+RRULE:FREQ=WEEKLY;INTERVAL=2
+SUMMARY:Papas El Guero
+END:VEVENT
+BEGIN:VEVENT
+UID:papas@google.com
+RECURRENCE-ID;VALUE=DATE:20261121
+DTSTART;VALUE=DATE:20261121
+DTEND;VALUE=DATE:20261122
+SUMMARY:Papas El Guero #eats
+END:VEVENT
+BEGIN:VEVENT
+UID:papas@google.com
+RECURRENCE-ID;VALUE=DATE:20261205
+DTSTART;VALUE=DATE:20261205
+DTEND;VALUE=DATE:20261206
+SUMMARY:Papas El Guero #eats
+END:VEVENT`),
+      "#eats",
+      "America/Los_Angeles",
+      NOW,
+    );
+    expect(events.map((e) => e.externalEventId)).toEqual([
+      "papas@google.com::2026-11-21",
+      "papas@google.com::2026-12-05",
+    ]);
+    expect(events[0].title).toBe("Papas El Guero");
+    expect(events[0].allDay).toBe(true);
+  });
+
+  it("uses an edited date's new time and leaves out deleted and canceled dates", () => {
+    const events = parseIcsFeedForTag(
+      feed(`BEGIN:VEVENT
+UID:karaoke@example.com
+DTSTART:20261113T030000Z
+DTEND:20261113T050000Z
+RRULE:FREQ=WEEKLY;COUNT=4
+EXDATE:20261120T030000Z
+SUMMARY:Karaoke #guild
+END:VEVENT
+BEGIN:VEVENT
+UID:karaoke@example.com
+RECURRENCE-ID:20261127T030000Z
+DTSTART:20261127T040000Z
+DTEND:20261127T060000Z
+SUMMARY:Karaoke (late start) #guild
+END:VEVENT
+BEGIN:VEVENT
+UID:karaoke@example.com
+RECURRENCE-ID:20261204T030000Z
+DTSTART:20261204T030000Z
+DTEND:20261204T050000Z
+STATUS:CANCELLED
+SUMMARY:Karaoke #guild
+END:VEVENT`),
+      "guild",
+      "America/Los_Angeles",
+      NOW,
+    );
+    expect(events.map((e) => [e.startsAt, e.title])).toEqual([
+      ["2026-11-13T03:00:00.000Z", "Karaoke"],
+      ["2026-11-27T04:00:00.000Z", "Karaoke (late start)"],
+    ]);
+  });
+
+  it("leaves out a series whose dates are all in the past", () => {
+    const events = parseIcsFeedForTag(
+      feed(`BEGIN:VEVENT
+UID:old@example.com
+DTSTART:20260204T020000Z
+DTEND:20260204T040000Z
+RRULE:FREQ=WEEKLY;UNTIL=20260428T000000Z
+SUMMARY:Old series #guild
+END:VEVENT`),
+      "guild",
+      "America/Los_Angeles",
+      NOW,
+    );
+    expect(events).toEqual([]);
+  });
+
+  it("never returns the same id twice", () => {
+    const events = parseIcsFeedForTag(
+      feed(`BEGIN:VEVENT
+UID:same@example.com
+DTSTART:20261201T020000Z
+SUMMARY:One #guild
+END:VEVENT
+BEGIN:VEVENT
+UID:same@example.com
+DTSTART:20261202T020000Z
+SUMMARY:Two #guild
+END:VEVENT`),
+      "guild",
+      "America/Los_Angeles",
+      NOW,
+    );
+    expect(events.map((e) => e.externalEventId)).toEqual(["same@example.com"]);
+  });
+});

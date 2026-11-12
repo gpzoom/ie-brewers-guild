@@ -126,7 +126,7 @@ const COPY = {
     tagPlaceholder: "e.g. #guild",
     nobody: "No calendar is connected. Only the profile's owner or a co-owner can connect one. You can still add dates by hand below.",
     removeWhat: "The events it brought in come off your profile. Events you added by hand stay.",
-    hint: "Paste your calendar's ICS subscription URL. Only events with your sync tag (for example #guild) in their title or description are imported; the tag is left off on your profile. Each event's description shows on your profile too, so keep private notes out of tagged events. Deleting an event, or taking its tag off, removes it here too.",
+    hint: "Paste your calendar's ICS subscription URL. Only events with your sync tag (for example #guild) in their title or description are imported; the tag is left off on your profile. Each event's description shows on your profile too, so keep private notes out of tagged events. Repeating events work: tag the whole series to show every date (up to three months ahead), or tag single dates. Deleting an event, or taking its tag off, removes it here too.",
   },
   food: {
     label: "Food calendar",
