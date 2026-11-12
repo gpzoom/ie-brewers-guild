@@ -458,6 +458,14 @@ Decisions settled with the site owner, 12 November 2026:
 8. **Rich text:** a small, well-known editor library in the browser; the Worker sanitizes `body_html` to the allowed tags (p, br, strong/b, em/i, u, a with http(s)/mailto href, ul, ol, li) before saving or sending.
 9. **Member Guide:** no change (super-admin-only screen).
 
+As built (13 November 2026):
+
+- One person gets one email even when they own or co-own several matched members (deduped by user and by email address).
+- Unsubscribe links are signed with the existing `HOURS_CONFIRM_SECRET` (payload prefix `unsubscribe:`), so no new Worker secret is needed. The page is `/unsubscribe/<token>`; the one-click endpoint is `/api/unsubscribe/<token>`. Opening the link changes nothing until the person presses the button, so mail scanners can't unsubscribe anyone.
+- The draft is cleared only when at least one email was accepted; if every address fails, the draft stays.
+- Recent broadcasts shows the latest 20.
+- If the connection drops mid-send, the screen refreshes and says "We lost contact while sending. Check Recent broadcasts and the Audit log before sending again." rather than offering a retry.
+
 #### Enforcement
 
 **Hiding menu items is not the protection.** Every super-admin-only action is checked on the server, and the database enforces it too.
@@ -1087,11 +1095,12 @@ Added 12 November 2026. One row per super-admin broadcast send (see Super admin 
 - `id`, `created_at` -- the standard convention
 - `sent_by_user_id uuid not null`, fk `auth.users` -- always the super admin; there's only one, but the column is written explicitly rather than assumed
 - `subject text not null`, `body_html text not null`
-- `attachments jsonb not null default '[]'` -- an array of `{path, filename, size_bytes}`, files held in the `broadcast-attachments` storage bucket
+- `attachments jsonb not null default '[]'` -- an array of `{path, filename, size_bytes, content_type}`, files held in the `broadcast-attachments` storage bucket
 - `audience_type text not null`, check in `(all, type_or_category, members)`
 - `audience_filter jsonb` -- the member type and/or category id, when `audience_type = 'type_or_category'`
 - `member_ids uuid[]` -- the hand-picked list, when `audience_type = 'members'`
-- `recipient_count integer not null` -- people, not members; one row per matched member's owner and every co-owner
+- `recipient_count integer not null` -- people, not members; one row per matched member's owner and every co-owner (as built: the number of people Resend accepted)
+- `failed_emails text[] not null default '{}'` -- addresses Resend refused at send time (decision 6); also listed in the audit row's `details`
 - `status text not null default 'sent'`, check in `(sent, failed)`
 - `sent_at timestamptz not null default now()`
 
