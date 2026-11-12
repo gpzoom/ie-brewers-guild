@@ -16,7 +16,7 @@
  * still in setup by the rule above and goes to "welcome".
  *
  */
-export type PortalRole = "owner" | "editor" | "media_events";
+export type PortalRole = "owner" | "co_owner" | "editor" | "media_events";
 
 export type WizardStepName = "welcome" | "basics";
 
@@ -34,5 +34,10 @@ export function resolvePortalDestination(input: {
 }
 
 export function isPortalRole(value: unknown): value is PortalRole {
-  return value === "owner" || value === "editor" || value === "media_events";
+  return value === "owner" || value === "co_owner" || value === "editor" || value === "media_events";
+}
+
+/** The owner and a co-owner: the two roles with owner-level rights on a location. */
+export function isOwnerLevel(role: string | null | undefined): boolean {
+  return role === "owner" || role === "co_owner";
 }

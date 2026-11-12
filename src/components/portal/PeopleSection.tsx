@@ -36,6 +36,7 @@ const INVITE_PILL: Record<OpenInviteRole, string> = {
 
 const ROLE_LABEL: Record<PortalRole, string> = {
   owner: "Owner",
+  co_owner: "Co-owner",
   editor: "Full editor",
   media_events: "Photos & events",
 };

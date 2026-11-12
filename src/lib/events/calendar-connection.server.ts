@@ -272,7 +272,7 @@ export const removeIcsConnection = createServerFn({ method: "POST" })
       .select("id, member_id");
     if (error) throw new Error(error.message);
     const row = removed?.[0];
-    if (!row) throw new Error("Couldn't remove it — only the profile's owner can remove a calendar.");
+    if (!row) throw new Error("Couldn't remove it — only the profile's owner or a co-owner can remove a calendar.");
 
     const importedIds = (imported ?? []).map((event) => event.id as string);
     if (importedIds.length > 0) {

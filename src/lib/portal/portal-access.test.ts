@@ -117,6 +117,18 @@ describe("acceptPendingInvites", () => {
     expect(invites[0].accepted_user_id).toBe("u1");
   });
 
+  it("accepts a co_owner invite like an editor invite", async () => {
+    const invites = [invite({ id: "i1", email: "pat@example.com", role: "co_owner" })];
+    const { client, memberUsers } = fakeClient({ invites });
+
+    const result = await acceptPendingInvites(client, { id: "u1", email: "pat@example.com" }, NOW);
+
+    expect(result.accepted).toEqual([{ memberId: "m1", role: "co_owner" }]);
+    expect(memberUsers).toEqual([{ member_id: "m1", user_id: "u1", role: "co_owner" }]);
+    expect(invites[0].accepted_at).toBe(NOW.toISOString());
+    expect(invites[0].accepted_user_id).toBe("u1");
+  });
+
   it("never accepts an invite for a different address, even if the database filter over-matches", async () => {
     const invites = [invite({ id: "i1", email: "someone-else@example.com" })];
     const { client, memberUsers } = fakeClient({ invites, ilikeOverride: () => true });
@@ -229,6 +241,27 @@ describe("listPortalMemberships", () => {
       },
     } as unknown as SupabaseClient;
   }
+
+  it("keeps a co_owner membership", async () => {
+    const client = listClient([
+      {
+        member_id: "m1",
+        role: "co_owner",
+        members: {
+          business_name: "Alpha Brewing",
+          city: "Redlands",
+          street_address: null,
+          status: "draft",
+          business_id: null,
+          businesses: null,
+          type_confirmed_at: "t",
+          setup_completed_at: "t",
+        },
+      },
+    ]);
+    const memberships = await listPortalMemberships(client, "u1");
+    expect(memberships.map((m) => [m.memberId, m.role])).toEqual([["m1", "co_owner"]]);
+  });
 
   it("maps rows, keeps order, and drops unknown roles or missing members", async () => {
     const calls: string[] = [];

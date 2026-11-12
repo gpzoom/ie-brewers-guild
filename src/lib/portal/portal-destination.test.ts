@@ -1,24 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { isPortalRole, resolvePortalDestination } from "./portal-destination";
+import { isOwnerLevel, isPortalRole, resolvePortalDestination } from "./portal-destination";
 
 const T = "2026-09-25T12:00:00Z";
 
 describe("resolvePortalDestination", () => {
-  it.each(["owner", "editor"] as const)("%s: nothing done → wizard welcome", (role) => {
+  it.each(["owner", "co_owner", "editor"] as const)("%s: nothing done → wizard welcome", (role) => {
     expect(resolvePortalDestination({ typeConfirmedAt: null, setupCompletedAt: null, role })).toEqual({
       kind: "wizard",
       step: "welcome",
     });
   });
 
-  it.each(["owner", "editor"] as const)("%s: type confirmed, setup not done → wizard basics", (role) => {
+  it.each(["owner", "co_owner", "editor"] as const)("%s: type confirmed, setup not done → wizard basics", (role) => {
     expect(resolvePortalDestination({ typeConfirmedAt: T, setupCompletedAt: null, role })).toEqual({
       kind: "wizard",
       step: "basics",
     });
   });
 
-  it.each(["owner", "editor"] as const)("%s: both set → portal", (role) => {
+  it.each(["owner", "co_owner", "editor"] as const)("%s: both set → portal", (role) => {
     expect(resolvePortalDestination({ typeConfirmedAt: T, setupCompletedAt: T, role })).toEqual({ kind: "portal" });
   });
 
@@ -47,5 +47,22 @@ describe("isPortalRole", () => {
     expect(isPortalRole("media_events")).toBe(true);
     expect(isPortalRole("admin")).toBe(false);
     expect(isPortalRole(null)).toBe(false);
+  });
+});
+
+describe("isOwnerLevel", () => {
+  it("is true for the owner and a co-owner only", () => {
+    expect(isOwnerLevel("owner")).toBe(true);
+    expect(isOwnerLevel("co_owner")).toBe(true);
+    expect(isOwnerLevel("editor")).toBe(false);
+    expect(isOwnerLevel("media_events")).toBe(false);
+    expect(isOwnerLevel(null)).toBe(false);
+    expect(isOwnerLevel(undefined)).toBe(false);
+  });
+});
+
+describe("isPortalRole co_owner", () => {
+  it("accepts co_owner", () => {
+    expect(isPortalRole("co_owner")).toBe(true);
   });
 });

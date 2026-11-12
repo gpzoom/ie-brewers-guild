@@ -92,7 +92,7 @@ export async function acceptPendingInvites(
       if (!rpcError && ok === true) accepted.push({ memberId: invite.member_id, role: "owner" });
       continue;
     }
-    if (invite.role !== "editor" && invite.role !== "media_events") continue;
+    if (invite.role !== "co_owner" && invite.role !== "editor" && invite.role !== "media_events") continue;
 
     const { error: insertError } = await client
       .from("member_users")

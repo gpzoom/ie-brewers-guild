@@ -2,6 +2,7 @@ import type { MemberDraftBundle } from "@/lib/drafts/drafts.server";
 import type { PortalSetupShell } from "@/lib/portal/portal-setup.server";
 import type { ScheduleData } from "@/lib/portal/section-data.server";
 import type { CategoryRow, MediaAssetRow, UploadTokenRow } from "@/lib/supabase/types";
+import { isOwnerLevel } from "@/lib/portal/portal-destination";
 import { LogoPhotosCoverSection } from "@/components/admin/LogoPhotosCoverSection";
 import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 import { HoursEditor } from "@/components/admin/HoursEditor";
@@ -21,9 +22,9 @@ import { WizardInfoBox, WizardStep } from "@/components/portal/setup/WizardStep"
  * /admin -- in the step chrome. Skipping a step saves nothing.
  */
 
-/** Only the owner connects the calendar (calendar_connections writes are owner-only in SQL). */
+/** Only the owner or a co-owner connects the calendar (calendar_connections writes are owner-level in SQL). */
 export function canConnectCalendar(shell: { role: PortalSetupShell["role"]; isImpersonating: boolean }): boolean {
-  return shell.role === "owner" || shell.isImpersonating;
+  return isOwnerLevel(shell.role) || shell.isImpersonating;
 }
 
 function CalendarBlock({ shell, schedule }: { shell: PortalSetupShell; schedule: ScheduleData }) {

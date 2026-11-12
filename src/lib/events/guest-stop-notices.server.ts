@@ -40,7 +40,7 @@ export async function sendGuestStopNotices(): Promise<void> {
       async loadTaproom(hostId, eventIds) {
         const [host, people, links] = await Promise.all([
           db.from("members").select("slug, business_name, street_address, timezone").eq("id", hostId).maybeSingle(),
-          db.from("member_users").select("user_id").eq("member_id", hostId).in("role", ["owner", "editor"]),
+          db.from("member_users").select("user_id").eq("member_id", hostId).in("role", ["owner", "co_owner", "editor"]),
           eventIds.length
             ? db.from("event_hosts").select("event_id, status").in("event_id", eventIds)
             : Promise.resolve({ data: [], error: null }),

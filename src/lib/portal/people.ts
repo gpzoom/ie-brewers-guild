@@ -173,10 +173,11 @@ export type PeopleView = {
   business: PeopleBusinessView | null;
 };
 
-const ROLE_ORDER: Record<PortalRole, number> = { owner: 0, editor: 1, media_events: 2 };
+const ROLE_ORDER: Record<PortalRole, number> = { owner: 0, co_owner: 1, editor: 2, media_events: 3 };
 
 const PLAIN_LABEL: Record<PortalRole, string> = {
   owner: "Owner",
+  co_owner: "Co-owner",
   editor: "Full editor",
   media_events: "Photos & events",
 };

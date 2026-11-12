@@ -1,4 +1,5 @@
 import type { ViewerRole } from "@/lib/drafts/sections";
+import { isOwnerLevel } from "@/lib/portal/portal-destination";
 import { InfoBox } from "@/components/admin/basics/ui";
 import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 
@@ -6,12 +7,12 @@ import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 export const CREATOR_LINK_ANCHOR = "creator-link";
 
 /**
- * Only the owner sees People. A Guild admin editing as the member acts with
+ * Only the owner and co-owners see People. A Guild admin editing as the member acts with
  * owner rights (resolveViewerRole gives them "guild_admin"; the portal shell
  * gives them "owner").
  */
 export function canInvitePeople(role: ViewerRole | null, isImpersonating: boolean): boolean {
-  return isImpersonating || role === "owner" || role === "guild_admin";
+  return isImpersonating || isOwnerLevel(role) || role === "guild_admin";
 }
 
 // Inline links: the vertical padding widens the tap target to 44px+ without

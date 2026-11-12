@@ -81,6 +81,11 @@ describe("canOpenPortalSection", () => {
     );
   });
 
+  it("opens People, and Food on a producer, for a co-owner like the owner", () => {
+    expect(canOpenPortalSection("people", { role: "co_owner", memberType: "producer" })).toBe(true);
+    expect(canOpenPortalSection("food", { role: "co_owner", memberType: "producer" })).toBe(true);
+  });
+
   it("refuses Basics to a Photos & events editor", () => {
     expect(canOpenPortalSection("basics", { role: "media_events", memberType: "producer" })).toBe(
       false,
