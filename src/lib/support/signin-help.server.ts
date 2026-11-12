@@ -36,7 +36,9 @@ export const sendSignInHelp = createServerFn({ method: "POST" })
         raw: data,
         inbox: SIGNIN_HELP_INBOX_EMAIL,
         userAgent: getRequestHeader("User-Agent") ?? null,
-        sendEmail: sendTransactionalEmail,
+        async sendEmail(payload) {
+          await sendTransactionalEmail(payload);
+        },
         async insert(row) {
           const { error } = await service.from("support_messages").insert(row);
           if (error) throw new Error(error.message);

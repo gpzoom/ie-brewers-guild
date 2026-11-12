@@ -144,7 +144,9 @@ export const sendSupportMessage = createServerFn({ method: "POST" })
         inbox,
         userAgent: getRequestHeader("User-Agent") ?? null,
         now: new Date(),
-        sendEmail: sendTransactionalEmail,
+        async sendEmail(payload) {
+          await sendTransactionalEmail(payload);
+        },
         store: {
           async countSince(userId, sinceIso) {
             const { count, error } = await service
