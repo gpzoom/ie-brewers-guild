@@ -446,6 +446,18 @@ Added 12 November 2026. One screen (`/guild/broadcast`, artboard AA) for sending
 - **Recent broadcasts** lists what's been sent, newest first: date, subject, and audience with its final people count. There's no "edit and resend" — a new send is a new broadcast.
 - Sent from `hello@iscbrewersguild.org` as "ISC Brewers Guild"; replies go to the sending super admin's own address.
 
+Decisions settled with the site owner, 12 November 2026:
+
+1. **Who counts as a member:** active members only, `status in ('published', 'draft')`. Applicants, declined and suspended members are never included.
+2. **Unsubscribe:** each recipient's email carries their own signed link (and the one-click `List-Unsubscribe` / `List-Unsubscribe-Post` headers Gmail and Yahoo expect from bulk senders). The link opens a public page, "You won't get Guild broadcast emails anymore", with a **Subscribe again** button. The choice is stored per person (per auth user), so one co-owner unsubscribing doesn't affect the other, and it stops only broadcasts: invites, sign-in links, hours reminders and every other site email still arrive. The screen's count says how many people are skipped as unsubscribed.
+3. **Save draft:** one draft, kept in the database (the super admin works from two computers), including its audience, subject, body and attachments. Sending clears it.
+4. **From:** "ISC Brewers Guild <hello@iscbrewersguild.org>" (the root domain is verified in Resend); `reply_to` is the sending super admin's own address. hello@ needs no inbox.
+5. **Attachments:** at most 5 files and 10 MB in total; PDF, JPEG, PNG, GIF, WebP, Word (.doc, .docx) and Excel (.xls, .xlsx) only.
+6. **Failures:** only addresses Resend refuses at send time are known. The confirmation and the audit row list them ("Any address that couldn't be sent to is listed there"); later bounces (Resend webhooks) are out of scope for now.
+7. **Sending:** one email per person, paced under Resend's default rate limit (2 requests a second); the Send button shows "Sending…" until it finishes. `status = 'failed'` only when no email was accepted.
+8. **Rich text:** a small, well-known editor library in the browser; the Worker sanitizes `body_html` to the allowed tags (p, br, strong/b, em/i, u, a with http(s)/mailto href, ul, ol, li) before saving or sending.
+9. **Member Guide:** no change (super-admin-only screen).
+
 #### Enforcement
 
 **Hiding menu items is not the protection.** Every super-admin-only action is checked on the server, and the database enforces it too.
@@ -1084,6 +1096,14 @@ Added 12 November 2026. One row per super-admin broadcast send (see Super admin 
 - `sent_at timestamptz not null default now()`
 
 RLS: no public select at all. The Worker inserts the row with the service key once Resend accepts the send; nothing else writes it. Select is super admin only, same as `audit_log`.
+
+### broadcast\_draft
+
+The super admin's one saved draft (decision 3 above). One row at most (`id boolean primary key default true check (id)`), `audience_type`, `audience_filter`, `member_ids`, `subject`, `body_html`, `attachments` (same shapes as `broadcast_emails`), `updated_at`, `updated_by_user_id`. RLS: no client access; read and written by the Worker with the service key after the super-admin check.
+
+### broadcast\_unsubscribes
+
+One row per person who unsubscribed from broadcasts (decision 2 above): `user_id uuid primary key` fk `auth.users` on delete cascade, `created_at`. Written and deleted only by the Worker (the public unsubscribe page verifies the signed link first). Select is super admin only.
 
 ## Computing "open now"
 
