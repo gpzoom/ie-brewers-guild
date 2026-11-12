@@ -396,6 +396,7 @@ Decided with the owner on 27 September 2026. The site's creator gets a **super a
 | **Delete category**: the confirmation says how many members use it, since deleting removes it from all of them | Add, rename and reorder only |
 | **Settings** (`/guild/settings`, new): how often members' calendars re-sync automatically, the homepage carousel's dwell time, the homepage hero image | Menu item hidden |
 | **Help messages** (`/guild/help`, new): the Help button's bug reports and feature requests, with a **bell** in the top bar counting the waiting ones (see Help button) | Menu item and bell hidden |
+| **Broadcast email** (`/guild/broadcast`, new): compose one email to members, filtered by audience, with attachments | Menu item hidden |
 
 Everything else in the Guild admin stays with Guild admins: inquiries; the roster (search, create, invite, view, Edit as them); approve, decline and suspend; dues; changing member type; member requests; categories add, rename and reorder; and Applications when it's built.
 
@@ -421,7 +422,7 @@ This changes three earlier rules:
 
 #### Menus
 
-- The Guild sidebar gains a second group, **Super admin**, with Brand & theme (moved out of the Guild group), Guild admins, Audit log, Help messages (with the waiting count) and Settings. Only the super admin sees it; `/guild/brand`, `/guild/admins`, `/guild/audit`, `/guild/help` and `/guild/settings` send anyone else to the roster.
+- The Guild sidebar gains a second group, **Super admin**, with Brand & theme (moved out of the Guild group), Guild admins, Broadcast email, Audit log, Help messages (with the waiting count) and Settings. Only the super admin sees it; `/guild/brand`, `/guild/admins`, `/guild/broadcast`, `/guild/audit`, `/guild/help` and `/guild/settings` send anyone else to the roster.
 - The super admin's top bar has a **bell** that opens Help messages, with a number when any are waiting (no number when none are; "99+" past 99).
 - A Guild admin's roster menu has no **Delete member…** and no Trail switch; Categories has no **Delete** (the page says only the super admin can delete one). While a Guild admin edits as a member, the sign-in email shows read-only ("Only the super admin can change it"), in `/admin` and in `/portal`.
 
@@ -434,6 +435,16 @@ Added 27 September 2026. One screen of site-wide settings (artboard Z):
 - **Homepage hero image** (added 28 September 2026) — shows the current image, **Upload an image** / **Replace image** (JPEG or PNG, up to 10 MB, a landscape photo at least 2000 pixels wide recommended; location data is stripped), and **Use the built-in image**. It goes live on the homepage straight away; the replaced file is deleted.
 - How it works: the Worker's cron still fires every 15 minutes. Each tick reads the setting from `site_settings` and syncs every calendar only when that much time has passed since the last run (two minutes of slack, so "every 15 minutes" doesn't slip to 30). It records the run with a conditional update, so when staging and production (same database) fire on the same tick only one of them syncs.
 - `site_settings` (new): exactly one row (`id boolean primary key default true check (id)`); `calendar_sync_interval_minutes` (one of 0, 15, 30, 60, 180, 360, 720, 1440; default 15), `calendar_sync_last_run_at`, `carousel_dwell_seconds` (4, 6, 8, 10 or 15; default 6), `hero_image_path` (a file in `site-images/hero/`, or null for the built-in image), `updated_at`, `updated_by_user_id`. Only the super admin can read or update it; nobody can insert or delete through the API. The screen's server functions check for the super admin first and write through the session client, so the table's policy checks again.
+
+#### Broadcast email screen
+
+Added 12 November 2026. One screen (`/guild/broadcast`, artboard AA) for sending a single email to members — a composer, not a template system.
+
+- **Audience:** All members (the default), by member type or category, or a hand-picked list via search-and-add. The screen shows a live count of members and of people (every owner and co-owner on file for the matched members — business-manager editor rows never get a Guild broadcast, the same rule as the owner-facing emails in People and permissions > Enforcement).
+- **Composer:** subject line, a rich-text body (bold, italic, underline, link, bulleted and numbered lists), and file attachments. Each recipient gets one email with their own unsubscribe link added automatically, as required for bulk mail.
+- **Save draft** keeps the composer's state without sending. **Send test to yourself** sends one copy to the super admin's own address, unchanged, with no recipients and no audit row. **Send** is the only irreversible action on the screen and asks for confirmation (recipient count and audience) first.
+- **Recent broadcasts** lists what's been sent, newest first: date, subject, and audience with its final people count. There's no "edit and resend" — a new send is a new broadcast.
+- Sent from `hello@iscbrewersguild.org` as "ISC Brewers Guild"; replies go to the sending super admin's own address.
 
 #### Enforcement
 
@@ -449,6 +460,7 @@ Added 27 September 2026. One screen of site-wide settings (artboard Z):
   - `categories`: split the current "guild admins can manage" policy. Guild admins keep insert and update; delete becomes super admin only. Deleting goes through `delete_category(id)`, a security definer function that checks for the super admin, takes the category out of every member's draft (otherwise that member's next publish would fail) and deletes it, in one transaction. `category_usage(id)` counts the members using it, live or in a draft, for the delete confirmation.
   - `audit_log` select: super admin only. Guild admins still insert their own rows. A new `details jsonb` column keeps names that would otherwise be lost: a deleted member's business name, the address on a Guild admin invite, grant or removal.
   - `guild_admin_invites` (new): `email` (lower-case), `invited_by_user_id`, `expires_at` (default 14 days), `accepted_at`, `accepted_user_id`, `cancelled_at`; one open invite per address. No client access at all; the Worker reads and writes it with the service key.
+  - `broadcast_emails` (new): written by the Worker with the service key once Resend accepts the send; no other client access at all. Select is super admin only, same as `audit_log`. Every send is also written to the audit log, with the subject and final recipient count in `details`.
 - Server functions that run with the service key bypass these policies, so each one checks for the super admin (the real signed-in person, never the member being impersonated) before doing anything: delete member (including the storage wipe), change sign-in email, save brand settings, delete category, set Trail eligible, the Guild admins list, invite, resend, cancel and remove, and the audit log reader. Unit tests call each one as an ordinary Guild admin and check it's refused before anything is read or written; database tests (`supabase/tests/super_admin.test.sql`) check the same refusals straight through the database.
 - A super admin editing as a member is still subject to every impersonation rule except the email one: the band that can't be dismissed, the 30-minute idle timeout, and every write logged against the real person.
 
@@ -1034,11 +1046,11 @@ Nothing in the current build writes visitor data of any kind.
 - `media_assets`: public select only when `review_status = 'approved'` **and** the asset is referenced by a published slide, logo or cover. Members see all of their own rows including pending.
 - `upload_tokens` and `calendar_connections`: no public select at all. The creator upload route reads tokens with the service key inside a Worker.
 - `profiles`: each person reads their own row; Guild admins read all. No client writes at all (see Super admin > Enforcement).
-- Super admin only: `members` delete, `brand_settings` writes, `categories` delete, `audit_log` reads, the `members.trail_eligible` column. `guild_admin_invites` and `member_invites` have no client access.
+- Super admin only: `members` delete, `brand_settings` writes, `categories` delete, `audit_log` reads, `broadcast_emails` reads, the `members.trail_eligible` column. `guild_admin_invites`, `member_invites` and `broadcast_emails` writes have no client access at all.
 
 ### Storage buckets
 
-`member-media` private, served through a Worker that applies the crop and resize. `member-logos` may be public since logos are published anyway. Strip EXIF on ingest for both. `site-images` (28 September 2026) is public and holds the homepage hero (`hero/…`); only the super admin can add, replace or delete files in it; JPEG or PNG, up to 10 MB.
+`member-media` private, served through a Worker that applies the crop and resize. `member-logos` may be public since logos are published anyway. Strip EXIF on ingest for both. `site-images` (28 September 2026) is public and holds the homepage hero (`hero/…`); only the super admin can add, replace or delete files in it; JPEG or PNG, up to 10 MB. `broadcast-attachments` (new, 12 November 2026) is private; only the super admin can upload to it, and the Worker streams each file into the outgoing email rather than linking to it, so nothing in the bucket needs to stay public.
 
 ### inquiries
 
@@ -1055,6 +1067,23 @@ Public contact form submissions, captured by the Worker so the row lands even if
 No IP or honeypot columns; rejection happens before a row is written.
 
 RLS: no public select at all. Inserts go through the Worker with the service key, never a client-side Supabase call. Select and update are restricted to `is_guild_admin`.
+
+### broadcast\_emails
+
+Added 12 November 2026. One row per super-admin broadcast send (see Super admin > Broadcast email screen).
+
+- `id`, `created_at` -- the standard convention
+- `sent_by_user_id uuid not null`, fk `auth.users` -- always the super admin; there's only one, but the column is written explicitly rather than assumed
+- `subject text not null`, `body_html text not null`
+- `attachments jsonb not null default '[]'` -- an array of `{path, filename, size_bytes}`, files held in the `broadcast-attachments` storage bucket
+- `audience_type text not null`, check in `(all, type_or_category, members)`
+- `audience_filter jsonb` -- the member type and/or category id, when `audience_type = 'type_or_category'`
+- `member_ids uuid[]` -- the hand-picked list, when `audience_type = 'members'`
+- `recipient_count integer not null` -- people, not members; one row per matched member's owner and every co-owner
+- `status text not null default 'sent'`, check in `(sent, failed)`
+- `sent_at timestamptz not null default now()`
+
+RLS: no public select at all. The Worker inserts the row with the service key once Resend accepts the send; nothing else writes it. Select is super admin only, same as `audit_log`.
 
 ## Computing "open now"
 
