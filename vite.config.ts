@@ -206,6 +206,8 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/events/events.server.ts",
             "src/lib/events/calendar-connection.server.ts",
             "src/lib/hours/confirm-token.server.ts",
+            // src/lib/email/unsubscribe.server.ts -- both exports are createServerFns called from the unsubscribe page.
+            "src/lib/email/unsubscribe.server.ts",
             // src/lib/guild/delete-member.server.ts -- its createServerFn
             // export, deleteMember, is called directly from
             // src/components/guild/DeleteMemberDialog.tsx's confirm handler;

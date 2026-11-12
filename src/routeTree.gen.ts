@@ -27,6 +27,7 @@ import { Route as PortalIndexRouteImport } from './routes/portal.index'
 import { Route as GuildIndexRouteImport } from './routes/guild.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as VisitTokenRouteImport } from './routes/visit.$token'
+import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as SigninHelpRouteImport } from './routes/signin_.help'
 import { Route as SendTokenRouteImport } from './routes/send.$token'
 import { Route as PortalSetupRouteImport } from './routes/portal.setup'
@@ -55,6 +56,7 @@ import { Route as AdminBasicsRouteImport } from './routes/admin.basics'
 import { Route as PortalSetupIndexRouteImport } from './routes/portal.setup.index'
 import { Route as PortalSetupStepRouteImport } from './routes/portal.setup.$step'
 import { Route as PortalSectionsSectionRouteImport } from './routes/portal._sections.$section'
+import { Route as ApiUnsubscribeTokenRouteImport } from './routes/api.unsubscribe.$token'
 import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
 import { Route as ApiConfirmHoursTokenRouteImport } from './routes/api.confirm-hours.$token'
 import { Route as ApiAdminMediaAssetIdRouteImport } from './routes/api.admin-media.$assetId'
@@ -147,6 +149,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const VisitTokenRoute = VisitTokenRouteImport.update({
   id: '/visit/$token',
   path: '/visit/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeTokenRoute = UnsubscribeTokenRouteImport.update({
+  id: '/unsubscribe/$token',
+  path: '/unsubscribe/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SigninHelpRoute = SigninHelpRouteImport.update({
@@ -289,6 +296,11 @@ const PortalSectionsSectionRoute = PortalSectionsSectionRouteImport.update({
   path: '/$section',
   getParentRoute: () => PortalSectionsRoute,
 } as any)
+const ApiUnsubscribeTokenRoute = ApiUnsubscribeTokenRouteImport.update({
+  id: '/api/unsubscribe/$token',
+  path: '/api/unsubscribe/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMemberMediaAssetIdRoute = ApiMemberMediaAssetIdRouteImport.update({
   id: '/api/member-media/$assetId',
   path: '/api/member-media/$assetId',
@@ -345,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/portal/setup': typeof PortalSetupRouteWithChildren
   '/send/$token': typeof SendTokenRoute
   '/signin/help': typeof SigninHelpRoute
+  '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/visit/$token': typeof VisitTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/guild/': typeof GuildIndexRoute
@@ -352,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
+  '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
   '/portal/$section': typeof PortalSectionsSectionRoute
   '/portal/setup/$step': typeof PortalSetupStepRoute
   '/portal/setup/': typeof PortalSetupIndexRoute
@@ -393,12 +407,14 @@ export interface FileRoutesByTo {
   '/portal/preview': typeof PortalPreviewRoute
   '/send/$token': typeof SendTokenRoute
   '/signin/help': typeof SigninHelpRoute
+  '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/visit/$token': typeof VisitTokenRoute
   '/admin': typeof AdminIndexRoute
   '/guild': typeof GuildIndexRoute
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
+  '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
   '/portal/$section': typeof PortalSectionsSectionRoute
   '/portal/setup/$step': typeof PortalSetupStepRoute
   '/portal/setup': typeof PortalSetupIndexRoute
@@ -444,6 +460,7 @@ export interface FileRoutesById {
   '/portal/setup': typeof PortalSetupRouteWithChildren
   '/send/$token': typeof SendTokenRoute
   '/signin_/help': typeof SigninHelpRoute
+  '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/visit/$token': typeof VisitTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/guild/': typeof GuildIndexRoute
@@ -451,6 +468,7 @@ export interface FileRoutesById {
   '/api/admin-media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
+  '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
   '/portal/_sections/$section': typeof PortalSectionsSectionRoute
   '/portal/setup/$step': typeof PortalSetupStepRoute
   '/portal/setup/': typeof PortalSetupIndexRoute
@@ -497,6 +515,7 @@ export interface FileRouteTypes {
     | '/portal/setup'
     | '/send/$token'
     | '/signin/help'
+    | '/unsubscribe/$token'
     | '/visit/$token'
     | '/admin/'
     | '/guild/'
@@ -504,6 +523,7 @@ export interface FileRouteTypes {
     | '/api/admin-media/$assetId'
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
+    | '/api/unsubscribe/$token'
     | '/portal/$section'
     | '/portal/setup/$step'
     | '/portal/setup/'
@@ -545,12 +565,14 @@ export interface FileRouteTypes {
     | '/portal/preview'
     | '/send/$token'
     | '/signin/help'
+    | '/unsubscribe/$token'
     | '/visit/$token'
     | '/admin'
     | '/guild'
     | '/api/admin-media/$assetId'
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
+    | '/api/unsubscribe/$token'
     | '/portal/$section'
     | '/portal/setup/$step'
     | '/portal/setup'
@@ -595,6 +617,7 @@ export interface FileRouteTypes {
     | '/portal/setup'
     | '/send/$token'
     | '/signin_/help'
+    | '/unsubscribe/$token'
     | '/visit/$token'
     | '/admin/'
     | '/guild/'
@@ -602,6 +625,7 @@ export interface FileRouteTypes {
     | '/api/admin-media/$assetId'
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
+    | '/api/unsubscribe/$token'
     | '/portal/_sections/$section'
     | '/portal/setup/$step'
     | '/portal/setup/'
@@ -631,11 +655,13 @@ export interface RootRouteChildren {
   PortalSetupRoute: typeof PortalSetupRouteWithChildren
   SendTokenRoute: typeof SendTokenRoute
   SigninHelpRoute: typeof SigninHelpRoute
+  UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   VisitTokenRoute: typeof VisitTokenRoute
   PortalIndexRoute: typeof PortalIndexRoute
   ApiAdminMediaAssetIdRoute: typeof ApiAdminMediaAssetIdRoute
   ApiConfirmHoursTokenRoute: typeof ApiConfirmHoursTokenRoute
   ApiMemberMediaAssetIdRoute: typeof ApiMemberMediaAssetIdRoute
+  ApiUnsubscribeTokenRoute: typeof ApiUnsubscribeTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -764,6 +790,13 @@ declare module '@tanstack/react-router' {
       path: '/visit/$token'
       fullPath: '/visit/$token'
       preLoaderRoute: typeof VisitTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unsubscribe/$token': {
+      id: '/unsubscribe/$token'
+      path: '/unsubscribe/$token'
+      fullPath: '/unsubscribe/$token'
+      preLoaderRoute: typeof UnsubscribeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signin_/help': {
@@ -962,6 +995,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalSectionsSectionRouteImport
       parentRoute: typeof PortalSectionsRoute
     }
+    '/api/unsubscribe/$token': {
+      id: '/api/unsubscribe/$token'
+      path: '/api/unsubscribe/$token'
+      fullPath: '/api/unsubscribe/$token'
+      preLoaderRoute: typeof ApiUnsubscribeTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/member-media/$assetId': {
       id: '/api/member-media/$assetId'
       path: '/api/member-media/$assetId'
@@ -1088,11 +1128,13 @@ const rootRouteChildren: RootRouteChildren = {
   PortalSetupRoute: PortalSetupRouteWithChildren,
   SendTokenRoute: SendTokenRoute,
   SigninHelpRoute: SigninHelpRoute,
+  UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   VisitTokenRoute: VisitTokenRoute,
   PortalIndexRoute: PortalIndexRoute,
   ApiAdminMediaAssetIdRoute: ApiAdminMediaAssetIdRoute,
   ApiConfirmHoursTokenRoute: ApiConfirmHoursTokenRoute,
   ApiMemberMediaAssetIdRoute: ApiMemberMediaAssetIdRoute,
+  ApiUnsubscribeTokenRoute: ApiUnsubscribeTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
