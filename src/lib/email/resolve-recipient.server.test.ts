@@ -45,7 +45,7 @@ describe("resolveRecipient", () => {
   it("member_invited uses the payload's own email, with no DB lookup", async () => {
     const supabase = fakeSupabase({ memberUser: null, userEmail: null });
     const to = await resolveRecipient({ trigger: "member_invited", memberId: "m1", email: "new@example.com" }, supabase);
-    expect(to).toBe("new@example.com");
+    expect(to).toEqual(["new@example.com"]);
   });
 
   it("contact_confirmation uses the payload's own email", async () => {
@@ -54,7 +54,7 @@ describe("resolveRecipient", () => {
       { trigger: "contact_confirmation", inquiryId: "i1", name: "Jo", email: "jo@example.com", wantsMembershipInfo: false },
       supabase,
     );
-    expect(to).toBe("jo@example.com");
+    expect(to).toEqual(["jo@example.com"]);
   });
 
   it("contact_form_submitted always goes to the Guild's notification address", async () => {
@@ -71,7 +71,7 @@ describe("resolveRecipient", () => {
       },
       supabase,
     );
-    expect(to).toBe(GUILD_NOTIFICATION_EMAIL);
+    expect(to).toEqual([GUILD_NOTIFICATION_EMAIL]);
   });
 
   it("type_change_requested always goes to the Guild's notification address", async () => {
@@ -80,7 +80,7 @@ describe("resolveRecipient", () => {
       { trigger: "type_change_requested", memberId: "m1", memberName: "Hop House", currentType: "producer", requestedType: "allied", note: null, requestedByEmail: null },
       supabase,
     );
-    expect(to).toBe(GUILD_NOTIFICATION_EMAIL);
+    expect(to).toEqual([GUILD_NOTIFICATION_EMAIL]);
   });
 
   it("Guild-bound emails sent from the staging site go to the staging test inbox", async () => {
@@ -90,7 +90,7 @@ describe("resolveRecipient", () => {
       supabase,
       "https://ie-brewers-guild-staging.boblelle77.workers.dev",
     );
-    expect(to).toBe(STAGING_GUILD_NOTIFICATION_EMAIL);
+    expect(to).toEqual([STAGING_GUILD_NOTIFICATION_EMAIL]);
   });
 
   it("Guild-bound emails from production (or anywhere else) go to the real Guild inbox", async () => {
@@ -109,7 +109,7 @@ describe("resolveRecipient", () => {
         supabase,
         siteUrl,
       );
-      expect(to).toBe(GUILD_NOTIFICATION_EMAIL);
+      expect(to).toEqual([GUILD_NOTIFICATION_EMAIL]);
     }
   });
 
@@ -119,7 +119,7 @@ describe("resolveRecipient", () => {
       { trigger: "creator_upload_pending", memberId: "m1", assetId: "a1", creatorName: null },
       supabase,
     );
-    expect(to).toBe("owner@example.com");
+    expect(to).toEqual(["owner@example.com"]);
   });
 
   it("hours_stale resolves the first member_users owner's real email", async () => {
@@ -128,7 +128,7 @@ describe("resolveRecipient", () => {
       { trigger: "hours_stale", memberId: "m1", confirmUrl: "https://x/y" },
       supabase,
     );
-    expect(to).toBe("owner@example.com");
+    expect(to).toEqual(["owner@example.com"]);
   });
 
   it("emails the owner, not an older editor link (a handed-off location's business manager)", async () => {
@@ -142,7 +142,7 @@ describe("resolveRecipient", () => {
       emailsByUser: { manager: "manager@example.com", owner: "owner@example.com" },
     });
     const to = await resolveRecipient({ trigger: "hours_stale", memberId: "m1", confirmUrl: "https://x/y" }, supabase);
-    expect(to).toBe("owner@example.com");
+    expect(to).toEqual(["owner@example.com"]);
   });
 
   it("with no owner row, falls back to the earliest member_users row", async () => {
@@ -156,7 +156,7 @@ describe("resolveRecipient", () => {
       emailsByUser: { first: "first@example.com", second: "second@example.com" },
     });
     const to = await resolveRecipient({ trigger: "hours_stale", memberId: "m1", confirmUrl: "https://x/y" }, supabase);
-    expect(to).toBe("first@example.com");
+    expect(to).toEqual(["first@example.com"]);
   });
 
   it("returns null when the member has no member_users row yet (unclaimed, imported member)", async () => {
@@ -165,7 +165,7 @@ describe("resolveRecipient", () => {
       { trigger: "hours_stale", memberId: "m1", confirmUrl: "https://x/y" },
       supabase,
     );
-    expect(to).toBeNull();
+    expect(to).toEqual([]);
   });
 
   it("returns null when the member_users row's user can't be looked up", async () => {
@@ -174,7 +174,7 @@ describe("resolveRecipient", () => {
       { trigger: "creator_upload_pending", memberId: "m1", assetId: "a1", creatorName: null },
       supabase,
     );
-    expect(to).toBeNull();
+    expect(to).toEqual([]);
   });
 });
 
@@ -193,7 +193,7 @@ describe("resolveRecipient: portal emails", () => {
       },
       supabase,
     );
-    expect(to).toBe(GUILD_NOTIFICATION_EMAIL);
+    expect(to).toEqual([GUILD_NOTIFICATION_EMAIL]);
   });
 
   it("editor_invited goes to the invitee", async () => {
@@ -209,7 +209,7 @@ describe("resolveRecipient: portal emails", () => {
       },
       supabase,
     );
-    expect(to).toBe("sam@example.com");
+    expect(to).toEqual(["sam@example.com"]);
   });
 });
 
@@ -233,22 +233,56 @@ describe("resolveRecipient: Help button", () => {
       },
       supabase,
     );
-    expect(to).toBe("support@example.com");
+    expect(to).toEqual(["support@example.com"]);
   });
 
   it("business emails go to the address in the payload", async () => {
     const supabase = fakeSupabase({ memberUser: null, userEmail: null });
     await expect(
       resolveRecipient({ trigger: "business_invited", businessId: "b", businessName: "B", locationCount: 2, email: "a@x.com" }, supabase),
-    ).resolves.toBe("a@x.com");
+    ).resolves.toEqual(["a@x.com"]);
     await expect(
       resolveRecipient({ trigger: "business_location_added", memberId: "m", businessName: "B", city: "C", email: "a@x.com" }, supabase),
-    ).resolves.toBe("a@x.com");
+    ).resolves.toEqual(["a@x.com"]);
     await expect(
       resolveRecipient(
         { trigger: "location_handoff_invited", memberId: "m", businessName: "B", city: "C", email: "a@x.com", managerLabel: "boss@x.com" },
         supabase,
       ),
-    ).resolves.toBe("a@x.com");
+    ).resolves.toEqual(["a@x.com"]);
+  });
+});
+
+describe("resolveRecipient: owner and co-owners", () => {
+  it("hours_stale goes to the owner and every co-owner, not the business manager", async () => {
+    const supabase = fakeSupabase({
+      memberUser: null,
+      userEmail: null,
+      rows: [
+        { user_id: "manager", role: "editor" },
+        { user_id: "owner", role: "owner" },
+        { user_id: "co", role: "co_owner" },
+      ],
+      emailsByUser: { manager: "manager@example.com", owner: "owner@example.com", co: "co@example.com" },
+    });
+    const to = await resolveRecipient({ trigger: "hours_stale", memberId: "m1", confirmUrl: "https://x/y" }, supabase);
+    expect(to).toEqual(["owner@example.com", "co@example.com"]);
+  });
+
+  it("drops a recipient whose user can't be looked up", async () => {
+    const supabase = fakeSupabase({
+      memberUser: null,
+      userEmail: null,
+      rows: [
+        { user_id: "owner", role: "owner" },
+        { user_id: "co", role: "co_owner" },
+      ],
+      emailsByUser: { owner: "owner@example.com" },
+    });
+    const to = await resolveRecipient(
+      { trigger: "creator_upload_pending", memberId: "m1", assetId: "a1", creatorName: null },
+      supabase,
+    );
+    expect(to).toEqual(["owner@example.com"]);
   });
 });

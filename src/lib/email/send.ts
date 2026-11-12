@@ -10,7 +10,7 @@
  * existing try/catch blocks keep doing something meaningful.
  *
  * It does NOT throw when a memberId-only trigger's target member has no
- * one to email yet (resolveRecipient returns null for an unclaimed,
+ * one to email yet (resolveRecipient returns [] for an unclaimed,
  * imported member -- spec, "Migrating the existing members") -- that's an
  * expected, non-error state, not a broken send, so it logs a notice and
  * returns instead of raising an alarm for something that isn't failing.
@@ -60,9 +60,9 @@ function currentRequestUrl(): string | null {
 export async function sendTransactionalEmail(payload: TransactionalEmailPayload): Promise<void> {
   const supabase = await getSupabaseServiceRoleClient();
   const siteUrl = resolveEmailSiteUrl(currentRequestUrl());
-  const to = await resolveRecipient(payload, supabase, siteUrl);
+  const recipients = await resolveRecipient(payload, supabase, siteUrl);
 
-  if (!to) {
+  if (recipients.length === 0) {
     const memberIdNote = "memberId" in payload ? ` (memberId: ${payload.memberId})` : "";
     console.warn(
       `sendTransactionalEmail: no recipient for trigger "${payload.trigger}"${memberIdNote} -- skipping, nothing sent.`,
@@ -77,26 +77,37 @@ export async function sendTransactionalEmail(payload: TransactionalEmailPayload)
 
   const content = buildEmailContent(payload, siteUrl);
 
-  const response = await fetch(RESEND_API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: TRANSACTIONAL_FROM_ADDRESS,
-      to: [to],
-      subject: content.subject,
-      html: content.html,
-      text: content.text,
-      ...(content.replyTo ? { reply_to: content.replyTo } : {}),
-    }),
-  });
+  // One separate email per recipient; a failure for one doesn't stop the rest.
+  const failures: string[] = [];
+  for (const to of recipients) {
+    try {
+      const response = await fetch(RESEND_API_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: TRANSACTIONAL_FROM_ADDRESS,
+          to: [to],
+          subject: content.subject,
+          html: content.html,
+          text: content.text,
+          ...(content.replyTo ? { reply_to: content.replyTo } : {}),
+        }),
+      });
+      if (!response.ok) {
+        const responseBody = await response.text().catch(() => "");
+        failures.push(`${response.status} ${response.statusText}: ${responseBody}`);
+      }
+    } catch (error) {
+      failures.push(error instanceof Error ? error.message : String(error));
+    }
+  }
 
-  if (!response.ok) {
-    const responseBody = await response.text().catch(() => "");
+  if (failures.length > 0) {
     throw new Error(
-      `Resend request failed for trigger "${payload.trigger}" (${response.status} ${response.statusText}): ${responseBody}`,
+      `Resend request failed for trigger "${payload.trigger}" (${failures.length} of ${recipients.length} recipients): ${failures.join("; ")}`,
     );
   }
 }
