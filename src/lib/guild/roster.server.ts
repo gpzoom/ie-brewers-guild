@@ -8,6 +8,8 @@ export type RosterEntry = {
   member: MemberRow;
   claimState: MemberClaimState;
   ownerEmail: string | null;
+  /** Emails of the co_owner rows, in created_at order; [] when none. */
+  coOwnerEmails: string[];
   /** The owner-role link only (null if none); differing from the business manager means a hand-off. */
   ownerUserId: string | null;
 };
@@ -54,10 +56,21 @@ export const getRoster = createServerFn({ method: "GET" }).handler(async (): Pro
       ownerEmail = userData?.user?.email ?? null;
     }
 
+    const coOwnerEmails: string[] = [];
+    const coOwnerRows = owners
+      .filter((row) => row.role === "co_owner")
+      .sort((a, b) => a.created_at.localeCompare(b.created_at));
+    for (const row of coOwnerRows) {
+      const { data: coOwnerData } = await serviceClient.auth.admin.getUserById(row.user_id);
+      const email = coOwnerData?.user?.email;
+      if (email) coOwnerEmails.push(email);
+    }
+
     entries.push({
       member,
       claimState: resolveMemberClaimState({ hasMemberUser: owners.length > 0, lastSignInAt }),
       ownerEmail,
+      coOwnerEmails,
       ownerUserId: owners.find((row) => row.role === "owner")?.user_id ?? null,
     });
   }

@@ -26,7 +26,7 @@ import { BusinessModeDialog } from "@/components/guild/BusinessModeDialog";
 import { inviteBusinessManager } from "@/lib/guild/businesses.server";
 import { inviteMember, resendInvite } from "@/lib/guild/invite-member.server";
 import { startImpersonation } from "@/lib/guild/impersonation.server";
-import { hasStaleHours, resolveDetailLine } from "@/lib/guild/roster-detail";
+import { coOwnerLine, hasStaleHours, resolveDetailLine } from "@/lib/guild/roster-detail";
 import {
   approveMember,
   declineMember,
@@ -127,6 +127,7 @@ function MemberRow({
   const indented = business !== undefined;
   const hideInvite = business?.mode === "one_manager";
   const detailLine = resolveDetailLine(entry, now, { business, withoutCity: indented });
+  const coOwners = coOwnerLine(entry);
   return (
     <li
       className={`flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-[#F0EBE3] px-4 py-3.5 last:border-b-0 md:flex-nowrap md:px-5 ${indented ? "md:pl-12" : ""}`}
@@ -150,6 +151,7 @@ function MemberRow({
           {indented ? member.city : member.business_name}
         </div>
         {detailLine && <div className="text-xs text-ink-muted">{detailLine}</div>}
+        {coOwners && <div className="text-xs text-ink-muted">{coOwners}</div>}
         <div className="flex items-center gap-1.5 text-xs text-[#3A332C] md:hidden">
           {typeLabel} ·
           <span className="block h-2 w-2 rounded-full" style={{ background: status.dot }} />

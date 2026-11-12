@@ -58,3 +58,10 @@ export function resolveDetailLine(
   if (options.withoutCity) return detail ?? "";
   return detail ? `${member.city} · ${detail}` : member.city;
 }
+
+/** The second muted line under a row: "Co-owner: a@x" or "Co-owners: a@x, b@y"; null when none. */
+export function coOwnerLine(entry: RosterEntry): string | null {
+  const emails = entry.coOwnerEmails;
+  if (emails.length === 0) return null;
+  return `${emails.length === 1 ? "Co-owner" : "Co-owners"}: ${emails.join(", ")}`;
+}
