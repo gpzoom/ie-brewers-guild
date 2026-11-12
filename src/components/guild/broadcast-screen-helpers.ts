@@ -43,6 +43,20 @@ export function successTitle(sent: number, memberCount: number): string {
   return `Sent to ${peopleText(sent)} across ${membersText(memberCount)}, just now.`;
 }
 
+/** After Finish sending: the broadcast's total, all batches together. */
+export function finishedTitle(sent: number): string {
+  return `Finished sending. Sent to ${peopleText(sent)} in all.`;
+}
+
+/** The dialog's progress line while batches go out. */
+export function progressText(done: number, total: number): string {
+  return `Sent ${done} of ${total}…`;
+}
+
+export function finishConfirmTitle(left: number): string {
+  return `Finish sending to ${peopleText(left)}?`;
+}
+
 /** "2.1 MB", or "340 KB" under 1 MB (never "0 KB"). */
 export function formatAttachmentSize(bytes: number): string {
   const MB = 1024 * 1024;
@@ -55,6 +69,8 @@ export function recentAudienceLine(row: {
   recipient_count: number;
   status: string;
   failedCount: number;
+  processedCount?: number;
+  totalCount?: number;
 }): string {
   const base = `${row.audienceLabel} · ${peopleText(row.recipient_count)}`;
   switch (row.status) {
@@ -63,7 +79,7 @@ export function recentAudienceLine(row: {
     case "sending":
       return `${base} · sending…`;
     case "interrupted":
-      return `${base} · interrupted, may be partly sent (${row.recipient_count} so far)`;
+      return `${base} · interrupted after ${row.processedCount ?? 0} of ${row.totalCount ?? 0}`;
     default:
       return row.failedCount > 0 ? `${base} · ${row.failedCount} failed` : base;
   }
@@ -142,10 +158,11 @@ export function normalizeLinkUrl(input: string): string | null {
 }
 
 /**
- * Refusals the server gives BEFORE any email goes out (broadcast-core.ts
- * validation and setup checks). Anything else from Send -- a dropped
- * connection, a sleeping tab, a timeout -- may have happened after the
- * emails went out, so the screen treats it as "lost contact".
+ * Refusals startBroadcast gives BEFORE any email goes out (broadcast-core.ts
+ * validation and setup checks). Anything else -- a dropped connection, a
+ * sleeping tab, a timeout -- may have come after the record was written, so
+ * the screen treats it as "lost contact". Once batches are going, any error
+ * stops the loop and offers Finish sending.
  */
 const SEND_REFUSALS = [
   "Add a subject.",
@@ -162,6 +179,7 @@ const SEND_REFUSALS = [
   "Not signed in.",
   "A broadcast is still sending. Wait a few minutes and check Recent broadcasts.",
   "Couldn't start the send. Nothing was sent.",
+  "That broadcast wasn't found.",
 ];
 
 export const LOST_CONTACT_MESSAGE =

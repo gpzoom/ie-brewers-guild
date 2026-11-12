@@ -3,10 +3,13 @@ import {
   audienceFromForm,
   confirmDescription,
   confirmTitle,
+  finishConfirmTitle,
+  finishedTitle,
   formatAttachmentSize,
   formFromAudience,
   isSendRefusal,
   normalizeLinkUrl,
+  progressText,
   recentAudienceLine,
   searchMembers,
   sendButtonLabel,
@@ -29,6 +32,14 @@ describe("broadcast screen helpers", () => {
     );
     expect(successTitle(31, 24)).toBe("Sent to 31 people across 24 members, just now.");
     expect(successTitle(1, 1)).toBe("Sent to 1 person across 1 member, just now.");
+    expect(finishedTitle(37)).toBe("Finished sending. Sent to 37 people in all.");
+    expect(finishConfirmTitle(19)).toBe("Finish sending to 19 people?");
+    expect(finishConfirmTitle(1)).toBe("Finish sending to 1 person?");
+  });
+
+  it("words the progress line while batches go out", () => {
+    expect(progressText(0, 45)).toBe("Sent 0 of 45…");
+    expect(progressText(20, 45)).toBe("Sent 20 of 45…");
   });
 
   it("formats attachment sizes in MB with one decimal, KB under 1 MB", () => {
@@ -58,8 +69,15 @@ describe("broadcast screen helpers", () => {
       recentAudienceLine({ audienceLabel: "All members", recipient_count: 4, status: "sending", failedCount: 0 }),
     ).toBe("All members · 4 people · sending…");
     expect(
-      recentAudienceLine({ audienceLabel: "All members", recipient_count: 20, status: "interrupted", failedCount: 1 }),
-    ).toBe("All members · 20 people · interrupted, may be partly sent (20 so far)");
+      recentAudienceLine({
+        audienceLabel: "All members",
+        recipient_count: 20,
+        status: "interrupted",
+        failedCount: 1,
+        processedCount: 21,
+        totalCount: 40,
+      }),
+    ).toBe("All members · 20 people · interrupted after 21 of 40");
   });
 
   it("turns the tabs into an audience and back", () => {

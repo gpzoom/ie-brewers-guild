@@ -153,43 +153,4 @@ describe("sendBroadcastEmails", () => {
     const r = await sendBroadcastEmails({ ...base, recipients: [recipient("a@x.com"), recipient("b@x.com")], attachments: [], fetchImpl: s.fetchImpl, sleep: s.sleep });
     expect(r).toEqual({ sent: ["b@x.com"], failed: ["a@x.com"] });
   });
-
-  it("reports progress every 20 recipients with the running sent and failed lists", async () => {
-    const s = setup((c) => (body(c).to[0] === "p3@x.com" ? new Response("{}", { status: 422 }) : ok()));
-    const progress: [number, string[]][] = [];
-    const recipients = Array.from({ length: 45 }, (_v, i) => recipient(`p${i}@x.com`));
-    const r = await sendBroadcastEmails({
-      ...base,
-      recipients,
-      attachments: [],
-      fetchImpl: s.fetchImpl,
-      sleep: s.sleep,
-      onProgress: async (sent, failed) => {
-        progress.push([sent.length, [...failed]]);
-      },
-    });
-    expect(r.sent).toHaveLength(44);
-    expect(progress).toEqual([
-      [19, ["p3@x.com"]],
-      [39, ["p3@x.com"]],
-    ]);
-  });
-
-  it("keeps sending when the progress callback throws", async () => {
-    const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    const s = setup(ok);
-    const recipients = Array.from({ length: 21 }, (_v, i) => recipient(`p${i}@x.com`));
-    const r = await sendBroadcastEmails({
-      ...base,
-      recipients,
-      attachments: [],
-      fetchImpl: s.fetchImpl,
-      sleep: s.sleep,
-      onProgress: async () => {
-        throw new Error("db down");
-      },
-    });
-    expect(r.sent).toHaveLength(21);
-    error.mockRestore();
-  });
 });

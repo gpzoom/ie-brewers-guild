@@ -7,7 +7,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(66);
+insert into _tap (line) select plan(71);
 
 insert into auth.users (id, email, aud, role) values
   ('f0000000-0000-4000-8000-000000000007', 'pgtap-super@example.test', 'authenticated', 'authenticated');
@@ -47,6 +47,26 @@ insert into _tap (line) select lives_ok(
   $q$ insert into public.broadcast_emails (sent_by_user_id, subject, body_html, audience_type, recipient_count, status)
       values ('f0000000-0000-4000-8000-000000000007', 's', 'b', 'all', 0, 'sending') $q$,
   'broadcast_emails: status ''sending'' accepted (written before the first email)');
+-- Batched sending: the recipient list, how far it got, and when it last moved.
+insert into _tap (line) select is(
+  (select pending_recipients from public.broadcast_emails where subject = 'pgTAP subject'), '[]'::jsonb,
+  'broadcast_emails.pending_recipients: defaults to an empty list');
+insert into _tap (line) select is(
+  (select (next_index, total_recipients)::text from public.broadcast_emails where subject = 'pgTAP subject'), '(0,0)',
+  'broadcast_emails.next_index and total_recipients: default 0');
+insert into _tap (line) select isnt(
+  (select updated_at from public.broadcast_emails where subject = 'pgTAP subject'), null,
+  'broadcast_emails.updated_at: set on insert');
+insert into _tap (line) select throws_ok(
+  $q$ insert into public.broadcast_emails (sent_by_user_id, subject, body_html, audience_type, recipient_count, next_index)
+      values ('f0000000-0000-4000-8000-000000000007', 's', 'b', 'all', 0, -1) $q$,
+  '23514', null, 'broadcast_emails: a negative next_index is rejected');
+insert into _tap (line) select lives_ok(
+  $q$ insert into public.broadcast_emails (sent_by_user_id, subject, body_html, audience_type, recipient_count, status,
+        pending_recipients, next_index, total_recipients)
+      values ('f0000000-0000-4000-8000-000000000007', 's', 'b', 'all', 0, 'sending',
+        '[{"userId":"f0000000-0000-4000-8000-000000000001","email":"a@example.test"}]', 0, 1) $q$,
+  'broadcast_emails: a started send stores its recipient list');
 insert into _tap (line) select is(
   (select confdeltype::text from pg_constraint c
     join pg_attribute a on a.attrelid = c.conrelid and a.attnum = any (c.conkey)

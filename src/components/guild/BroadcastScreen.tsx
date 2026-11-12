@@ -2,14 +2,16 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
+  continueBroadcast,
   previewBroadcastAudience,
   removeBroadcastAttachment,
   saveBroadcastDraft,
-  sendBroadcast,
   sendBroadcastTest,
+  startBroadcast,
   uploadBroadcastAttachment,
   type BroadcastAttachment,
   type BroadcastAudiencePreview,
+  type BroadcastContinueResult,
   type BroadcastPage,
 } from "@/lib/guild/broadcast.server";
 import { audienceLabel } from "@/lib/guild/broadcast-audience";
@@ -29,11 +31,14 @@ import {
   BROADCAST_FROM_LABEL,
   confirmDescription,
   confirmTitle,
+  finishConfirmTitle,
+  finishedTitle,
   formatAttachmentSize,
   formFromAudience,
   MEMBER_TYPE_CHOICES,
   membersText,
   peopleText,
+  progressText,
   recentAudienceLine,
   searchMembers,
   sendButtonLabel,
@@ -60,7 +65,11 @@ const chipRemoveClass =
   "flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[13px] text-ink-subtle hover:text-ink disabled:opacity-50 md:h-7 md:w-7";
 
 type Busy = "save" | "test" | "send" | "upload" | "remove";
-type SendResult = { sent: number; failed: string[]; memberCount: number };
+/** memberCount is null after Finish sending (the screen didn't start that send). */
+type SendResult = { sent: number; failed: string[]; memberCount: number | null };
+/** A started broadcast to pick up where it stopped (Finish sending). */
+type FinishTarget = { id: string; subject: string; processed: number; total: number };
+type Progress = { done: number; total: number };
 
 const TABS: { value: AudienceTab; label: string }[] = [
   { value: "all", label: "All members" },
@@ -117,6 +126,12 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [result, setResult] = useState<SendResult | null>(null);
   const [lostContact, setLostContact] = useState(false);
+  // After losing contact mid-send: the alert's Finish sending resumes this one.
+  const [resumeTarget, setResumeTarget] = useState<FinishTarget | null>(null);
+  // Set while the dialog is confirming Finish sending instead of a new send.
+  const [finishTarget, setFinishTarget] = useState<FinishTarget | null>(null);
+  const [progress, setProgressState] = useState<Progress | null>(null);
+  const progressRef = useRef<Progress | null>(null);
   const successHeadingRef = useRef<HTMLParagraphElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -209,11 +224,34 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
     });
   }
 
+  function setProgress(p: Progress | null) {
+    progressRef.current = p;
+    setProgressState(p);
+  }
+
   /**
-   * Send stays "busy" (so disabled) until the refreshed page data is in:
-   * Recent broadcasts must show what happened before another send is
-   * possible. Any failure that isn't a known before-sending refusal may
-   * have come after the emails went out, so it gets the lost-contact alert,
+   * Sends the broadcast in batches (10 people per request: the site is on
+   * the Cloudflare Workers Free plan), one continueBroadcast call after
+   * another until the server says it's done. Throws on any error.
+   */
+  async function sendBatches(id: string, start: Progress): Promise<BroadcastContinueResult> {
+    setProgress(start);
+    // Each call moves at least one person on; the cap only guards a bug.
+    const maxCalls = Math.ceil(Math.max(start.total - start.done, 0) / 10) + 3;
+    for (let call = 0; call < maxCalls; call++) {
+      const r = await continueBroadcast({ data: { id } });
+      setProgress({ done: r.sentSoFar + r.failedSoFar, total: r.total });
+      if (r.done) return r;
+    }
+    throw new Error("The send didn't finish.");
+  }
+
+  /**
+   * Send now (or Finish sending): stays "busy" (so disabled) until the
+   * refreshed page data is in, so Recent broadcasts shows what happened
+   * before another send is possible. A start refusal is shown as is; any
+   * other failure may have come after emails went out, so it gets the
+   * lost-contact alert (with Finish sending once batches had started),
    * never a "try again".
    */
   async function onSendNow() {
@@ -221,29 +259,64 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
     busyRef.current = "send";
     setBusyState("send");
     setLostContact(false);
+    setResumeTarget(null);
+    const resuming = finishTarget;
     try {
-      let sent: SendResult | null = null;
+      let target: FinishTarget;
+      let memberCount: number | null = null;
+      if (resuming) {
+        target = resuming;
+      } else {
+        try {
+          const started = await startBroadcast({ data: message });
+          target = { id: started.id, subject: subject.trim(), processed: 0, total: started.total };
+          memberCount = started.memberCount;
+        } catch (err) {
+          const text = err instanceof Error ? err.message : "";
+          if (isSendRefusal(text)) toast.error(text);
+          else setLostContact(true);
+          setConfirmOpen(false);
+          await router.invalidate().catch(() => {});
+          return;
+        }
+      }
+
+      let last: BroadcastContinueResult | null = null;
       try {
-        sent = await sendBroadcast({ data: message });
+        last = await sendBatches(target.id, { done: target.processed, total: target.total });
       } catch (err) {
         const text = err instanceof Error ? err.message : "";
         if (isSendRefusal(text)) toast.error(text);
-        else setLostContact(true);
+        const reached = progressRef.current;
+        setResumeTarget({
+          ...target,
+          processed: reached?.done ?? target.processed,
+          total: reached?.total ?? target.total,
+        });
+        setLostContact(true);
       }
       setConfirmOpen(false);
-      if (sent && sent.sent === 0) {
+      setFinishTarget(null);
+      if (last && last.sentSoFar === 0) {
         toast.error(
           "Nothing was sent: no address accepted the email. Your message is still here, so you can try again.",
         );
-      } else if (sent) {
-        setResult(sent);
+      } else if (last) {
+        setResult({ sent: last.sentSoFar, failed: last.failed, memberCount });
       }
-      // Recent broadcasts gets the new row; on success the draft is cleared too.
+      // Recent broadcasts gets the row's new state; on success the draft is cleared too.
       await router.invalidate().catch(() => {});
     } finally {
+      setProgress(null);
       busyRef.current = null;
       setBusyState(null);
     }
+  }
+
+  function onFinishSending(target: FinishTarget) {
+    if (busyRef.current) return;
+    setFinishTarget(target);
+    setConfirmOpen(true);
   }
 
   function onSendAnother() {
@@ -629,11 +702,26 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
           role="alert"
           className="flex max-w-[820px] items-start gap-3 rounded-[13px] border-2 border-danger bg-white px-4 py-4 md:px-[22px]"
         >
-          <p className="min-w-0 flex-1 text-[14px] font-medium text-ink">{LOST_CONTACT_MESSAGE}</p>
+          <div className="flex min-w-0 flex-1 flex-col items-start gap-3">
+            <p className="text-[14px] font-medium text-ink">{LOST_CONTACT_MESSAGE}</p>
+            {resumeTarget && resumeTarget.processed < resumeTarget.total && (
+              <button
+                type="button"
+                disabled={busy !== null}
+                onClick={() => onFinishSending(resumeTarget)}
+                className="inline-flex h-11 items-center justify-center rounded-[9px] bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-60 md:h-10"
+              >
+                Finish sending
+              </button>
+            )}
+          </div>
           <button
             type="button"
             aria-label="Dismiss"
-            onClick={() => setLostContact(false)}
+            onClick={() => {
+              setLostContact(false);
+              setResumeTarget(null);
+            }}
             className={chipRemoveClass}
           >
             ✕
@@ -667,7 +755,9 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
                 tabIndex={-1}
                 className="text-[15px] font-semibold text-ink outline-none"
               >
-                {successTitle(result.sent, result.memberCount)}
+                {result.memberCount === null
+                  ? finishedTitle(result.sent)
+                  : successTitle(result.sent, result.memberCount)}
               </p>
               <p className="text-[13px] text-[#3A332C]">
                 Recorded in the{" "}
@@ -718,6 +808,24 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
                   >
                     {recentAudienceLine(row)}
                   </span>
+                  {row.canResume && (
+                    <button
+                      type="button"
+                      disabled={busy !== null}
+                      aria-label={`Finish sending ${row.subject}`}
+                      onClick={() =>
+                        onFinishSending({
+                          id: row.id,
+                          subject: row.subject,
+                          processed: row.processedCount,
+                          total: row.totalCount,
+                        })
+                      }
+                      className="inline-flex h-11 shrink-0 items-center justify-center self-start rounded-[9px] border border-canvas-border bg-white px-[15px] text-[13px] font-medium text-ink hover:bg-canvas-2 disabled:opacity-50 md:h-10 md:self-auto"
+                    >
+                      Finish sending
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -729,28 +837,61 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
         open={confirmOpen}
         onOpenChange={(open) => {
           // Stay open while sending, so the result can't be missed.
-          if (busyRef.current !== "send") setConfirmOpen(open);
+          if (busyRef.current === "send") return;
+          setConfirmOpen(open);
+          if (!open) setFinishTarget(null);
         }}
       >
         <AlertDialogContent className="gap-5 rounded-[14px] border-canvas-border bg-white p-6 font-sans sm:max-w-[460px] sm:rounded-[14px]">
           <AlertDialogHeader className="gap-1.5 text-left">
             <AlertDialogTitle className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink">
-              {confirmTitle(peopleCount)}
+              {finishTarget
+                ? finishConfirmTitle(Math.max(finishTarget.total - finishTarget.processed, 0))
+                : confirmTitle(peopleCount)}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-[13px] leading-[1.55] text-[#564E45]">
-              {confirmDescription(label)}
+              {finishTarget
+                ? `“${finishTarget.subject}” picks up where it stopped: people who already got it won't get it again. This can't be undone.`
+                : confirmDescription(label)}
             </AlertDialogDescription>
             {busy === "send" && (
-              <p role="status" className="text-[13px] font-medium text-ink">
-                This can take a minute or two. Keep this page open.
-              </p>
+              <div className="flex flex-col gap-2 pt-1">
+                <p role="status" className="text-[13px] font-medium text-ink">
+                  This can take a minute or two. Keep this page open.
+                  {progress && (
+                    <span className="mt-1 block font-normal text-[#3A332C]">
+                      {progressText(progress.done, progress.total)}
+                    </span>
+                  )}
+                </p>
+                {progress && (
+                  <div
+                    role="progressbar"
+                    aria-label="Sending progress"
+                    aria-valuemin={0}
+                    aria-valuemax={progress.total}
+                    aria-valuenow={progress.done}
+                    className="h-2 w-full overflow-hidden rounded-full bg-[#F2EEE7]"
+                  >
+                    <div
+                      className="h-full rounded-full bg-brand transition-[width] duration-300"
+                      style={{
+                        width: `${progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0}%`,
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             )}
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-2">
             <button
               type="button"
               disabled={busy === "send"}
-              onClick={() => setConfirmOpen(false)}
+              onClick={() => {
+                setConfirmOpen(false);
+                setFinishTarget(null);
+              }}
               className="inline-flex h-11 items-center justify-center rounded-[9px] border border-canvas-border bg-canvas px-[17px] text-[13px] font-medium text-ink hover:bg-canvas-2 disabled:opacity-50"
             >
               Cancel
@@ -761,7 +902,7 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
               onClick={() => void onSendNow()}
               className="inline-flex h-11 items-center justify-center rounded-[9px] bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
             >
-              {busy === "send" ? "Sending…" : "Send now"}
+              {busy === "send" ? "Sending…" : finishTarget ? "Finish sending" : "Send now"}
             </button>
           </AlertDialogFooter>
         </AlertDialogContent>

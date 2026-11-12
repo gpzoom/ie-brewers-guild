@@ -5,10 +5,15 @@
 -- on with no write policies at all. Attachments are JSON objects shaped
 -- { path, filename, size_bytes, content_type }.
 
--- One row per send: the history the super admin reads. The Worker writes
--- it with status 'sending' BEFORE the first email goes out, updates the
--- counts as it goes, and sets 'sent' or 'failed' at the end; a 'sending' row
--- more than 15 minutes old was cut off and reads as interrupted.
+-- One row per send: the history the super admin reads. The site is on the
+-- Cloudflare Workers Free plan (50 subrequests per request), so a send is
+-- split into batches of 10 people, each its own request, driven by the
+-- screen. Starting writes the row with status 'sending' and the full
+-- recipient list (pending_recipients) BEFORE any email goes out; each batch
+-- sends the next people from next_index and moves next_index, the counts and
+-- updated_at on; the last batch sets 'sent' or 'failed'. A 'sending' row not
+-- updated for 15 minutes was cut off: it reads as interrupted and Finish
+-- sending picks it up from next_index.
 create table public.broadcast_emails (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
@@ -23,7 +28,15 @@ create table public.broadcast_emails (
   recipient_count integer not null,
   failed_emails text[] not null default '{}',
   status text not null default 'sent' check (status in ('sending', 'sent', 'failed')),
-  sent_at timestamptz not null default now()
+  sent_at timestamptz not null default now(),
+  -- Everyone it goes to, resolved at the start, in order: [{userId, email}].
+  pending_recipients jsonb not null default '[]',
+  -- How many of pending_recipients have been tried (sent or refused).
+  next_index integer not null default 0 check (next_index >= 0),
+  -- pending_recipients' length, so the history can say "N of M" without loading the list.
+  total_recipients integer not null default 0 check (total_recipients >= 0),
+  -- Moved on by every batch; a 'sending' row untouched for 15 minutes was interrupted.
+  updated_at timestamptz not null default now()
 );
 alter table public.broadcast_emails enable row level security;
 

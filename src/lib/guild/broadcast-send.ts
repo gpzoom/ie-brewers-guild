@@ -4,9 +4,6 @@
  */
 export type OutgoingAttachment = { filename: string; path: string };
 
-/** How often (in recipients) onProgress is called. */
-export const BROADCAST_PROGRESS_EVERY = 20;
-
 export type BroadcastRecipient = {
   email: string;
   html: string;
@@ -28,8 +25,6 @@ export async function sendBroadcastEmails(p: {
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
   gapMs?: number;
-  /** Called every BROADCAST_PROGRESS_EVERY recipients; a throw is logged, never stops the send. */
-  onProgress?: (sent: string[], failed: string[]) => Promise<void> | void;
 }): Promise<{ sent: string[]; failed: string[] }> {
   const fetchImpl = p.fetchImpl ?? globalThis.fetch;
   const sleep = p.sleep ?? defaultSleep;
@@ -78,13 +73,6 @@ export async function sendBroadcastEmails(p: {
     } catch (err) {
       console.error(`Broadcast: couldn't send to ${r.email}`, err instanceof Error ? err.message : err);
       failed.push(r.email);
-    }
-    if (p.onProgress && (i + 1) % BROADCAST_PROGRESS_EVERY === 0 && i + 1 < p.recipients.length) {
-      try {
-        await p.onProgress([...sent], [...failed]);
-      } catch (err) {
-        console.error("Broadcast: couldn't record progress", err instanceof Error ? err.message : err);
-      }
     }
   }
   return { sent, failed };

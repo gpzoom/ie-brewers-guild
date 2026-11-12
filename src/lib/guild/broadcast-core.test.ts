@@ -1,24 +1,28 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   addBroadcastAttachment,
+  BROADCAST_BATCH_SIZE,
   BROADCAST_SENDING_STALE_MS,
   collectUserEmails,
+  continueBroadcastCore,
+  LOST_CONTACT,
   loadBroadcastPage,
   previewBroadcastAudienceCore,
   removeBroadcastAttachmentCore,
   saveBroadcastDraftCore,
-  sendBroadcastCore,
   sendBroadcastTestCore,
+  startBroadcastCore,
   type BroadcastAttachment,
   type BroadcastAuditEntry,
   type BroadcastDraftRow,
   type BroadcastGate,
   type BroadcastInsertRow,
   type BroadcastMailer,
+  type BroadcastProgressPatch,
   type BroadcastStore,
   type BroadcastSendRequest,
-  type BroadcastUpdatePatch,
 } from "@/lib/guild/broadcast-core";
+import { LOST_CONTACT_MESSAGE } from "@/components/guild/broadcast-screen-helpers";
 import { buildRecipients, matchMembers, type AudienceMember, type AudienceUserRow } from "@/lib/guild/broadcast-audience";
 import { sendBroadcastEmails } from "@/lib/guild/broadcast-send";
 import { verifyUnsubscribeToken } from "@/lib/email/unsubscribe-token";
@@ -62,7 +66,11 @@ const ATTACHMENT: BroadcastAttachment = {
   content_type: "application/pdf",
 };
 
-type StoredBroadcast = BroadcastInsertRow & { sent_at: string };
+type StoredBroadcast = Omit<BroadcastInsertRow, "status"> & {
+  status: "sending" | "sent" | "failed";
+  sent_at: string;
+  updated_at: string;
+};
 
 function memoryStore(
   seed: {
@@ -79,8 +87,8 @@ function memoryStore(
   const state = {
     draft: seed.draft ?? null,
     inserted: [] as BroadcastInsertRow[],
-    broadcasts: [...(seed.broadcasts ?? [])] as StoredBroadcast[],
-    updates: [] as { id: string; patch: BroadcastUpdatePatch }[],
+    broadcasts: (seed.broadcasts ?? []).map((b) => structuredClone(b)),
+    updates: [] as { id: string; from: number; patch: BroadcastProgressPatch }[],
     audits: [] as BroadcastAuditEntry[],
     objects: new Map<string, Uint8Array>([[ATTACHMENT.path, new TextEncoder().encode("hello")]]),
     removed: [] as string[],
@@ -109,6 +117,9 @@ function memoryStore(
         recipient_count: 3,
         status: "sent",
         failed_emails: ["x@example.com"],
+        updated_at: "2026-11-01T00:01:00Z",
+        next_index: 4,
+        total_recipients: 4,
       },
       {
         id: "b-new",
@@ -120,6 +131,9 @@ function memoryStore(
         recipient_count: 1,
         status: "failed",
         failed_emails: [],
+        updated_at: "2026-11-10T00:01:00Z",
+        next_index: 1,
+        total_recipients: 1,
       },
     ]),
     listMembers: track("listMembers", async () => MEMBERS),
@@ -144,18 +158,25 @@ function memoryStore(
       return `https://storage.example/signed/${path}?token=t`;
     }),
     hasSendingSince: track("hasSendingSince", async (sinceIso: string) =>
-      state.broadcasts.some((b) => b.status === "sending" && b.sent_at >= sinceIso),
+      state.broadcasts.some((b) => b.status === "sending" && b.updated_at >= sinceIso),
     ),
     insertBroadcast: track("insertBroadcast", async (row: BroadcastInsertRow) => {
       if (seed.failInsert) throw new Error("db down");
-      state.inserted.push({ ...row });
-      state.broadcasts.push({ ...row, sent_at: new Date().toISOString() });
+      state.inserted.push(structuredClone(row));
+      const now = new Date().toISOString();
+      state.broadcasts.push({ ...structuredClone(row), sent_at: now, updated_at: now });
     }),
-    updateBroadcast: track("updateBroadcast", async (id: string, patch: BroadcastUpdatePatch) => {
+    getBroadcast: track("getBroadcast", async (id: string) => {
+      const row = state.broadcasts.find((b) => b.id === id);
+      return row ? structuredClone(row) : null;
+    }),
+    advanceBroadcast: track("advanceBroadcast", async (id: string, from: number, patch: BroadcastProgressPatch) => {
       if (seed.failUpdate) throw new Error("db down");
-      state.updates.push({ id, patch: { ...patch, failed_emails: [...patch.failed_emails] } });
-      const row = state.inserted.find((r) => r.id === id);
-      if (row) Object.assign(row, patch);
+      const row = state.broadcasts.find((b) => b.id === id);
+      if (!row || row.status !== "sending" || row.next_index !== from) return false;
+      state.updates.push({ id, from, patch: structuredClone(patch) });
+      Object.assign(row, structuredClone(patch), { updated_at: new Date().toISOString() });
+      return true;
     }),
     audit: track("audit", async (entry: BroadcastAuditEntry) => {
       state.audits.push(entry);
@@ -206,8 +227,9 @@ const DRAFT_WITH_ATTACHMENT: BroadcastDraftRow = {
   updated_at: "2026-11-11T00:00:00Z",
 };
 
+const SENDING_ROW_ID = "5e000000-0000-4000-8000-000000000001";
 const SENDING_ROW: StoredBroadcast = {
-  id: "b-sending",
+  id: SENDING_ROW_ID,
   sent_by_user_id: "u-super",
   subject: "Earlier",
   body_html: "<p>x</p>",
@@ -218,7 +240,11 @@ const SENDING_ROW: StoredBroadcast = {
   recipient_count: 0,
   failed_emails: [],
   status: "sending",
+  pending_recipients: [],
+  next_index: 0,
+  total_recipients: 0,
   sent_at: "",
+  updated_at: "",
 };
 
 const SEND: BroadcastSendRequest = {
@@ -236,7 +262,8 @@ describe("super admin gate", () => {
     ["upload", (g) => addBroadcastAttachment(g, { name: "a.pdf", type: "application/pdf", bytes: new Uint8Array(3) })],
     ["remove", (g) => removeBroadcastAttachmentCore(g, { path: ATTACHMENT.path })],
     ["test", (g) => sendBroadcastTestCore(g, SEND, fakeMailer().openMailer)],
-    ["send", (g) => sendBroadcastCore(g, SEND, fakeMailer().openMailer)],
+    ["start", (g) => startBroadcastCore(g, SEND, fakeMailer().openMailer)],
+    ["continue", (g) => continueBroadcastCore(g, { id: SENDING_ROW_ID }, fakeMailer().openMailer)],
   ];
   for (const [name, run] of actions) {
     it(`refuses a non-super-admin before any store call (${name})`, async () => {
@@ -269,6 +296,9 @@ describe("loadBroadcastPage", () => {
         recipient_count: 1,
         status: "failed",
         failedCount: 0,
+        processedCount: 1,
+        totalCount: 1,
+        canResume: false,
       },
       {
         id: "b-old",
@@ -278,6 +308,9 @@ describe("loadBroadcastPage", () => {
         recipient_count: 3,
         status: "sent",
         failedCount: 1,
+        processedCount: 4,
+        totalCount: 4,
+        canResume: false,
       },
     ]);
     expect(page.members).toEqual([
@@ -291,18 +324,23 @@ describe("loadBroadcastPage", () => {
 });
 
 describe("loadBroadcastPage: sends in progress", () => {
-  it("labels a fresh 'sending' row sending and an old one interrupted", async () => {
+  it("labels a 'sending' row by when a batch last moved it: fresh is sending, 15+ minutes is interrupted and resumable", async () => {
     const { store } = memoryStore();
     const fresh = new Date(Date.now() - 60_000).toISOString();
     const stale = new Date(Date.now() - BROADCAST_SENDING_STALE_MS - 60_000).toISOString();
+    const longAgo = new Date(Date.now() - 3 * BROADCAST_SENDING_STALE_MS).toISOString();
+    const row = { subject: "A", audience_type: "all", audience_filter: null, member_ids: null, sent_at: longAgo, status: "sending" };
     store.listRecent = async () => [
-      { id: "s-fresh", sent_at: fresh, subject: "A", audience_type: "all", audience_filter: null, member_ids: null, recipient_count: 4, status: "sending", failed_emails: [] },
-      { id: "s-stale", sent_at: stale, subject: "B", audience_type: "all", audience_filter: null, member_ids: null, recipient_count: 20, status: "sending", failed_emails: ["x@example.com"] },
+      // Started long ago, but a batch moved it a minute ago: still sending.
+      { ...row, id: "s-fresh", updated_at: fresh, recipient_count: 4, failed_emails: [], next_index: 4, total_recipients: 40 },
+      { ...row, id: "s-stale", updated_at: stale, recipient_count: 20, failed_emails: ["x@example.com"], next_index: 21, total_recipients: 40 },
     ];
     const page = await loadBroadcastPage(gateFor(store).gate);
-    expect(page.recent.map((r) => [r.id, r.status, r.recipient_count, r.failedCount])).toEqual([
-      ["s-fresh", "sending", 4, 0],
-      ["s-stale", "interrupted", 20, 1],
+    expect(
+      page.recent.map((r) => [r.id, r.status, r.recipient_count, r.failedCount, r.processedCount, r.totalCount, r.canResume]),
+    ).toEqual([
+      ["s-fresh", "sending", 4, 0, 4, 40, false],
+      ["s-stale", "interrupted", 20, 1, 21, 40, true],
     ]);
   });
 });
@@ -490,52 +528,62 @@ describe("removeBroadcastAttachmentCore", () => {
   });
 });
 
-describe("sendBroadcastCore", () => {
+/** A started broadcast to n people (p0..p{n-1}@example.com, users u0..), nothing sent yet. */
+function jobRow(n: number, over: Partial<StoredBroadcast> = {}): StoredBroadcast {
+  const now = new Date().toISOString();
+  return {
+    ...SENDING_ROW,
+    subject: "Batch news",
+    body_html: "<p>News</p>",
+    pending_recipients: Array.from({ length: n }, (_v, i) => ({ userId: `u${i}`, email: `p${i}@example.com` })),
+    total_recipients: n,
+    sent_at: now,
+    updated_at: now,
+    ...over,
+  };
+}
+
+/** Calls continue until it says done (as the screen does); returns every response. */
+async function finish(gate: BroadcastGate, id: string, openMailer: () => Promise<BroadcastMailer>) {
+  const responses = [];
+  for (let i = 0; i < 100; i++) {
+    const r = await continueBroadcastCore(gate, { id }, openMailer);
+    responses.push(r);
+    if (r.done) return responses;
+  }
+  throw new Error("never finished");
+}
+
+describe("startBroadcastCore", () => {
   it("validates subject, body and recipients", async () => {
     const { store, calls } = memoryStore();
     const { gate } = gateFor(store);
     const { openMailer, sends } = fakeMailer();
-    await expect(sendBroadcastCore(gate, { ...SEND, subject: "   " }, openMailer)).rejects.toThrow("Add a subject.");
+    await expect(startBroadcastCore(gate, { ...SEND, subject: "   " }, openMailer)).rejects.toThrow("Add a subject.");
     await expect(
-      sendBroadcastCore(gate, { ...SEND, bodyHtml: "<p> <script>x</script></p>" }, openMailer),
+      startBroadcastCore(gate, { ...SEND, bodyHtml: "<p> <script>x</script></p>" }, openMailer),
     ).rejects.toThrow("Write a message.");
     await expect(
-      sendBroadcastCore(gate, { ...SEND, audience: { type: "members", memberIds: [M4] } }, openMailer),
+      startBroadcastCore(gate, { ...SEND, audience: { type: "members", memberIds: [M4] } }, openMailer),
     ).rejects.toThrow("No one to send to.");
     expect(sends).toEqual([]);
     expect(calls).not.toContain("insertBroadcast");
     expect(calls).not.toContain("audit");
   });
 
-  it("sends the sanitized body with a per-recipient unsubscribe link, writes the row and audit, and clears the draft", async () => {
+  it("sends nothing: writes the 'sending' row with the recipient list and its audit row, and keeps the draft", async () => {
     const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT });
-    const { mailer, sends, openMailer } = fakeMailer();
-    const result = await sendBroadcastCore(gateFor(store).gate, { ...SEND, attachments: [{ path: ATTACHMENT.path }] }, openMailer);
+    const { sends, openMailer } = fakeMailer();
+    const result = await startBroadcastCore(
+      gateFor(store).gate,
+      { ...SEND, attachments: [{ path: ATTACHMENT.path }] },
+      openMailer,
+    );
 
-    expect(result).toEqual({ sent: 3, failed: [], memberCount: 3 });
-    expect(sends).toHaveLength(1);
-    const send = sends[0];
-    expect(send.subject).toBe("Meeting Thursday");
-    expect(send.replyTo).toBe("boss@example.com");
-    expect(send.attachments).toEqual([
-      { filename: "agenda.pdf", path: `https://storage.example/signed/${ATTACHMENT.path}?token=t` },
-    ]);
-    expect(send.recipients.map((r) => r.email)).toEqual(["one@example.com", "two@example.com", "three@example.com"]);
-
-    const ids = ["u1", "u2", "u3"];
-    for (const [i, r] of send.recipients.entries()) {
-      expect(r.html).toContain("<p>Come along</p>");
-      expect(r.html).not.toMatch(/script|onclick|style="color:red"/);
-      expect(r.unsubscribeUrl).toMatch(new RegExp(`^${SITE}/unsubscribe/`));
-      expect(r.html).toContain(r.unsubscribeUrl!);
-      const token = r.unsubscribeUrl!.split("/unsubscribe/")[1];
-      expect(r.oneClickUrl).toBe(`${SITE}/api/unsubscribe/${token}`);
-      expect(await verifyUnsubscribeToken(token, mailer.unsubscribeSecret)).toEqual({ valid: true, userId: ids[i] });
-    }
-    expect(new Set(send.recipients.map((r) => r.unsubscribeUrl)).size).toBe(3);
-
+    expect(sends).toEqual([]);
     expect(state.inserted).toHaveLength(1);
     const row = state.inserted[0];
+    expect(result).toEqual({ id: row.id, total: 3, memberCount: 3 });
     expect(row).toMatchObject({
       sent_by_user_id: "u-super",
       subject: "Meeting Thursday",
@@ -544,9 +592,16 @@ describe("sendBroadcastCore", () => {
       audience_type: "all",
       audience_filter: null,
       member_ids: null,
-      recipient_count: 3,
+      recipient_count: 0,
       failed_emails: [],
-      status: "sent",
+      status: "sending",
+      next_index: 0,
+      total_recipients: 3,
+      pending_recipients: [
+        { userId: "u1", email: "one@example.com" },
+        { userId: "u2", email: "two@example.com" },
+        { userId: "u3", email: "three@example.com" },
+      ],
     });
     expect(state.audits).toEqual([
       {
@@ -556,158 +611,309 @@ describe("sendBroadcastCore", () => {
         action: "insert",
         details: { subject: "Meeting Thursday", audience: "All members", planned_count: 3, status: "sending" },
       },
-      {
-        actorUserId: "u-super",
-        tableName: "broadcast_emails",
-        rowId: row.id,
-        action: "update",
-        details: {
-          subject: "Meeting Thursday",
-          recipient_count: 3,
-          failed_count: 0,
-          failed_emails: [],
-          audience: "All members",
-        },
-      },
     ]);
-    expect(state.draft).toBeNull();
-    expect(state.removed).toEqual([]);
-  });
-
-  it("marks the row failed when nothing was accepted, lists the failures, and keeps the draft", async () => {
-    const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT });
-    const { openMailer } = fakeMailer((emails) => ({ sent: [], failed: emails }));
-    const result = await sendBroadcastCore(gateFor(store).gate, SEND, openMailer);
-    expect(result).toEqual({
-      sent: 0,
-      failed: ["one@example.com", "two@example.com", "three@example.com"],
-      memberCount: 3,
-    });
-    expect(state.inserted[0]).toMatchObject({
-      status: "failed",
-      recipient_count: 0,
-      failed_emails: ["one@example.com", "two@example.com", "three@example.com"],
-    });
-    expect(state.audits[1].details).toMatchObject({
-      recipient_count: 0,
-      failed_count: 3,
-      failed_emails: ["one@example.com", "two@example.com", "three@example.com"],
-    });
     expect(state.draft).toEqual(DRAFT_WITH_ATTACHMENT);
-  });
-
-  it("partial failure is still 'sent' and clears the draft", async () => {
-    const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT });
-    const { openMailer } = fakeMailer((emails) => ({ sent: emails.slice(1), failed: emails.slice(0, 1) }));
-    const result = await sendBroadcastCore(gateFor(store).gate, SEND, openMailer);
-    expect(result.sent).toBe(2);
-    expect(state.inserted[0]).toMatchObject({ status: "sent", recipient_count: 2, failed_emails: ["one@example.com"] });
-    expect(state.audits[1].details).toMatchObject({ failed_count: 1, failed_emails: ["one@example.com"] });
-    expect(state.draft).toBeNull();
   });
 
   it("refuses an attachment that isn't in the draft or isn't under draft/", async () => {
     const { store } = memoryStore({ draft: { ...DRAFT_WITH_ATTACHMENT, attachments: [{ ...ATTACHMENT, path: "other/a.pdf" }] } });
-    const { openMailer, sends } = fakeMailer();
+    const { openMailer } = fakeMailer();
     await expect(
-      sendBroadcastCore(gateFor(store).gate, { ...SEND, attachments: [{ path: "other/a.pdf" }] }, openMailer),
+      startBroadcastCore(gateFor(store).gate, { ...SEND, attachments: [{ path: "other/a.pdf" }] }, openMailer),
     ).rejects.toThrow("That attachment isn't in the draft anymore.");
     await expect(
-      sendBroadcastCore(gateFor(store).gate, { ...SEND, attachments: [{ path: ATTACHMENT.path }] }, openMailer),
+      startBroadcastCore(gateFor(store).gate, { ...SEND, attachments: [{ path: ATTACHMENT.path }] }, openMailer),
     ).rejects.toThrow("That attachment isn't in the draft anymore.");
-    expect(sends).toEqual([]);
   });
 
-  it("writes the 'sending' row and its audit row before the first email goes out", async () => {
-    const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT });
-    let seen: { rows: BroadcastInsertRow[]; audits: number } | null = null;
-    const { openMailer } = fakeMailer(undefined, () => {
-      seen = { rows: state.inserted.map((r) => ({ ...r })), audits: state.audits.length };
-    });
-    await sendBroadcastCore(gateFor(store).gate, SEND, openMailer);
-    expect(seen!.rows).toHaveLength(1);
-    expect(seen!.rows[0]).toMatchObject({ status: "sending", recipient_count: 0, failed_emails: [], subject: "Meeting Thursday" });
-    expect(seen!.audits).toBe(1);
-    expect(state.updates.at(-1)).toEqual({
-      id: seen!.rows[0].id,
-      patch: { status: "sent", recipient_count: 3, failed_emails: [] },
-    });
-  });
-
-  it("refuses while another send started in the last 15 minutes is still 'sending'", async () => {
+  it("refuses while another broadcast is 'sending' and was moved on in the last 15 minutes", async () => {
     const recent = new Date(Date.now() - 5 * 60_000).toISOString();
-    const { store, calls } = memoryStore({ broadcasts: [{ ...SENDING_ROW, sent_at: recent }] });
-    const { openMailer, sends } = fakeMailer();
-    await expect(sendBroadcastCore(gateFor(store).gate, SEND, openMailer)).rejects.toThrow(
+    const { store, calls } = memoryStore({ broadcasts: [jobRow(30, { updated_at: recent })] });
+    await expect(startBroadcastCore(gateFor(store).gate, SEND, fakeMailer().openMailer)).rejects.toThrow(
       "A broadcast is still sending. Wait a few minutes and check Recent broadcasts.",
     );
-    expect(sends).toEqual([]);
     expect(calls).not.toContain("insertBroadcast");
+    expect(calls).not.toContain("audit");
   });
 
-  it("allows a send when the only 'sending' row is older than 15 minutes (interrupted)", async () => {
+  it("allows a start when the only 'sending' row hasn't moved for 15 minutes (interrupted)", async () => {
     const old = new Date(Date.now() - BROADCAST_SENDING_STALE_MS - 60_000).toISOString();
-    const { store } = memoryStore({ broadcasts: [{ ...SENDING_ROW, sent_at: old }] });
-    const { openMailer, sends } = fakeMailer();
-    const result = await sendBroadcastCore(gateFor(store).gate, SEND, openMailer);
-    expect(result.sent).toBe(3);
-    expect(sends).toHaveLength(1);
+    const { store, state } = memoryStore({ broadcasts: [jobRow(30, { sent_at: old, updated_at: old })] });
+    const result = await startBroadcastCore(gateFor(store).gate, SEND, fakeMailer().openMailer);
+    expect(result.total).toBe(3);
+    expect(state.inserted).toHaveLength(1);
   });
 
-  it("a failed 'sending' row insert refuses before anything is sent", async () => {
+  it("a failed row insert refuses with nothing audited and the draft kept", async () => {
     const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT, failInsert: true });
-    const { openMailer, sends } = fakeMailer();
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    await expect(sendBroadcastCore(gateFor(store).gate, SEND, openMailer)).rejects.toThrow(
+    await expect(startBroadcastCore(gateFor(store).gate, SEND, fakeMailer().openMailer)).rejects.toThrow(
       "Couldn't start the send. Nothing was sent.",
     );
-    expect(sends).toEqual([]);
     expect(state.audits).toEqual([]);
     expect(state.draft).toEqual(DRAFT_WITH_ATTACHMENT);
     error.mockRestore();
   });
 
-  it("an attachment that can't be signed refuses before anything is written or sent", async () => {
+  it("an attachment that can't be signed refuses before the row is written", async () => {
     const { store, calls } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT, failSign: true });
-    const { openMailer, sends } = fakeMailer();
     await expect(
-      sendBroadcastCore(gateFor(store).gate, { ...SEND, attachments: [{ path: ATTACHMENT.path }] }, openMailer),
+      startBroadcastCore(gateFor(store).gate, { ...SEND, attachments: [{ path: ATTACHMENT.path }] }, fakeMailer().openMailer),
     ).rejects.toThrow("Couldn't read an attachment. Remove it and attach it again.");
-    expect(sends).toEqual([]);
     expect(calls).not.toContain("insertBroadcast");
   });
 
-  it("signs each attachment once per send, not per recipient", async () => {
-    const { store, calls } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT });
-    const { openMailer } = fakeMailer();
-    await sendBroadcastCore(gateFor(store).gate, { ...SEND, attachments: [{ path: ATTACHMENT.path }] }, openMailer);
-    expect(calls.filter((c) => c === "signAttachmentUrl")).toHaveLength(1);
+  it("refuses when email isn't set up, before the row is written", async () => {
+    const { store, calls } = memoryStore();
+    const openMailer = async (): Promise<BroadcastMailer> => {
+      throw new Error("Email isn't set up on this site. Nothing was sent.");
+    };
+    await expect(startBroadcastCore(gateFor(store).gate, SEND, openMailer)).rejects.toThrow(
+      "Email isn't set up on this site. Nothing was sent.",
+    );
+    expect(calls).not.toContain("insertBroadcast");
+  });
+});
+
+describe("continueBroadcastCore", () => {
+  it(`sends exactly the next ${BROADCAST_BATCH_SIZE} people, each with their own unsubscribe link, and moves next_index on`, async () => {
+    const { store, state } = memoryStore({ broadcasts: [jobRow(25, { attachments: [ATTACHMENT] })] });
+    const { mailer, sends, openMailer } = fakeMailer();
+    const gate = gateFor(store).gate;
+
+    const first = await continueBroadcastCore(gate, { id: SENDING_ROW_ID }, openMailer);
+    expect(first).toEqual({ done: false, sentSoFar: 10, failedSoFar: 0, total: 25, failed: [] });
+    expect(sends).toHaveLength(1);
+    expect(sends[0].recipients.map((r) => r.email)).toEqual(Array.from({ length: 10 }, (_v, i) => `p${i}@example.com`));
+    expect(sends[0].subject).toBe("Batch news");
+    expect(sends[0].replyTo).toBe("boss@example.com");
+    expect(sends[0].attachments).toEqual([
+      { filename: "agenda.pdf", path: `https://storage.example/signed/${ATTACHMENT.path}?token=t` },
+    ]);
+    for (const [i, r] of sends[0].recipients.entries()) {
+      expect(r.html).toContain("<p>News</p>");
+      expect(r.html).toContain(r.unsubscribeUrl!);
+      const token = r.unsubscribeUrl!.split("/unsubscribe/")[1];
+      expect(r.oneClickUrl).toBe(`${SITE}/api/unsubscribe/${token}`);
+      expect(await verifyUnsubscribeToken(token, mailer.unsubscribeSecret)).toEqual({ valid: true, userId: `u${i}` });
+    }
+    expect(state.broadcasts[0]).toMatchObject({ status: "sending", next_index: 10, recipient_count: 10 });
+    expect(state.updates).toEqual([
+      { id: SENDING_ROW_ID, from: 0, patch: { next_index: 10, recipient_count: 10, failed_emails: [] } },
+    ]);
+    expect(state.audits).toEqual([]);
+
+    const second = await continueBroadcastCore(gate, { id: SENDING_ROW_ID }, openMailer);
+    expect(second.done).toBe(false);
+    expect(sends[1].recipients.map((r) => r.email)).toEqual(Array.from({ length: 10 }, (_v, i) => `p${i + 10}@example.com`));
+    expect(state.broadcasts[0].next_index).toBe(20);
   });
 
-  it("progress updates the row's count and failures while still 'sending'", async () => {
-    const { store, state } = memoryStore();
-    const { openMailer } = fakeMailer(undefined, async (p) => {
-      await p.onProgress?.(["one@example.com"], ["two@example.com"]);
-    });
-    await sendBroadcastCore(gateFor(store).gate, SEND, openMailer);
-    expect(state.updates[0]).toEqual({
-      id: state.inserted[0].id,
-      patch: { recipient_count: 1, failed_emails: ["two@example.com"] },
-    });
-    expect(state.updates).toHaveLength(2);
-    expect(state.inserted[0].status).toBe("sent");
-  });
-
-  it("a failed final update after sending is logged, not thrown (the emails already went out)", async () => {
-    const { store, state } = memoryStore({ failUpdate: true });
-    const { openMailer } = fakeMailer();
-    const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    const result = await sendBroadcastCore(gateFor(store).gate, SEND, openMailer);
-    expect(result.sent).toBe(3);
-    expect(error).toHaveBeenCalled();
-    expect(state.audits.map((a) => a.action)).toEqual(["insert", "update"]);
+  it("the last batch sets 'sent', writes the second audit row and clears the draft", async () => {
+    const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT, broadcasts: [jobRow(25)] });
+    const { sends, openMailer } = fakeMailer();
+    const responses = await finish(gateFor(store).gate, SENDING_ROW_ID, openMailer);
+    expect(responses.map((r) => [r.done, r.sentSoFar])).toEqual([
+      [false, 10],
+      [false, 20],
+      [true, 25],
+    ]);
+    expect(sends.map((s) => s.recipients.length)).toEqual([10, 10, 5]);
+    expect(state.broadcasts[0]).toMatchObject({ status: "sent", next_index: 25, recipient_count: 25, failed_emails: [] });
+    expect(state.updates.at(-1)!.patch).toEqual({ next_index: 25, recipient_count: 25, failed_emails: [], status: "sent" });
+    expect(state.audits).toEqual([
+      {
+        actorUserId: "u-super",
+        tableName: "broadcast_emails",
+        rowId: SENDING_ROW_ID,
+        action: "update",
+        details: { subject: "Batch news", recipient_count: 25, failed_count: 0, failed_emails: [], audience: "All members" },
+      },
+    ]);
     expect(state.draft).toBeNull();
+  });
+
+  it("start then continue: the whole send end to end (3 people, one batch)", async () => {
+    const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT });
+    const { sends, openMailer } = fakeMailer();
+    const gate = gateFor(store).gate;
+    const { id, total } = await startBroadcastCore(gate, { ...SEND, attachments: [{ path: ATTACHMENT.path }] }, openMailer);
+    expect(sends).toEqual([]);
+    const result = await continueBroadcastCore(gate, { id }, openMailer);
+    expect(result).toEqual({ done: true, sentSoFar: 3, failedSoFar: 0, total, failed: [] });
+    expect(sends[0].recipients.map((r) => r.email)).toEqual(["one@example.com", "two@example.com", "three@example.com"]);
+    expect(state.audits.map((a) => a.action)).toEqual(["insert", "update"]);
+    expect(state.broadcasts[0].status).toBe("sent");
+    expect(state.draft).toBeNull();
+  });
+
+  it("a finished row sends nothing and just reports its totals (safe to call again)", async () => {
+    const { store, state, calls } = memoryStore({
+      broadcasts: [jobRow(25, { status: "sent", next_index: 25, recipient_count: 24, failed_emails: ["p3@example.com"] })],
+    });
+    const { sends, openMailer } = fakeMailer();
+    const result = await continueBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID }, openMailer);
+    expect(result).toEqual({ done: true, sentSoFar: 24, failedSoFar: 1, total: 25, failed: ["p3@example.com"] });
+    expect(sends).toEqual([]);
+    expect(calls).toEqual(["getBroadcast"]);
+    expect(state.audits).toEqual([]);
+  });
+
+  it("all refused: status 'failed', the audit lists every address, and the draft stays", async () => {
+    const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT, broadcasts: [jobRow(12)] });
+    const { openMailer } = fakeMailer((emails) => ({ sent: [], failed: emails }));
+    const responses = await finish(gateFor(store).gate, SENDING_ROW_ID, openMailer);
+    const all = Array.from({ length: 12 }, (_v, i) => `p${i}@example.com`);
+    expect(responses.at(-1)).toEqual({ done: true, sentSoFar: 0, failedSoFar: 12, total: 12, failed: all });
+    expect(state.broadcasts[0]).toMatchObject({ status: "failed", recipient_count: 0, failed_emails: all });
+    expect(state.audits[0].details).toMatchObject({ recipient_count: 0, failed_count: 12, failed_emails: all });
+    expect(state.draft).toEqual(DRAFT_WITH_ATTACHMENT);
+  });
+
+  it("refusals add up across batches; a partly refused send is still 'sent' and clears the draft", async () => {
+    const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT, broadcasts: [jobRow(15)] });
+    const refused = new Set(["p2@example.com", "p12@example.com"]);
+    const { openMailer } = fakeMailer((emails) => ({
+      sent: emails.filter((e) => !refused.has(e)),
+      failed: emails.filter((e) => refused.has(e)),
+    }));
+    const responses = await finish(gateFor(store).gate, SENDING_ROW_ID, openMailer);
+    expect(responses.map((r) => [r.sentSoFar, r.failedSoFar])).toEqual([
+      [9, 1],
+      [13, 2],
+    ]);
+    expect(responses[1].failed).toEqual(["p2@example.com", "p12@example.com"]);
+    expect(state.broadcasts[0]).toMatchObject({ status: "sent", recipient_count: 13, failed_emails: ["p2@example.com", "p12@example.com"] });
+    expect(state.draft).toBeNull();
+  });
+
+  it("Finish sending isn't blocked by the guard: a fresh 'sending' row blocks a new start but can still be continued", async () => {
+    const { store, state, calls } = memoryStore({ broadcasts: [jobRow(5)] });
+    const { sends, openMailer } = fakeMailer();
+    const gate = gateFor(store).gate;
+    await expect(startBroadcastCore(gate, SEND, openMailer)).rejects.toThrow(
+      "A broadcast is still sending. Wait a few minutes and check Recent broadcasts.",
+    );
+    calls.length = 0;
+    const result = await continueBroadcastCore(gate, { id: SENDING_ROW_ID }, openMailer);
+    expect(result.done).toBe(true);
+    expect(sends).toHaveLength(1);
+    expect(calls).not.toContain("hasSendingSince");
+    expect(state.broadcasts[0].status).toBe("sent");
+  });
+
+  it("an interrupted row (untouched for 15 minutes) picks up where it stopped", async () => {
+    const old = new Date(Date.now() - BROADCAST_SENDING_STALE_MS - 60_000).toISOString();
+    const { store, state } = memoryStore({
+      broadcasts: [jobRow(14, { updated_at: old, next_index: 10, recipient_count: 9, failed_emails: ["p4@example.com"] })],
+    });
+    const { sends, openMailer } = fakeMailer();
+    const result = await continueBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID }, openMailer);
+    expect(sends[0].recipients.map((r) => r.email)).toEqual(["p10@example.com", "p11@example.com", "p12@example.com", "p13@example.com"]);
+    expect(result).toEqual({ done: true, sentSoFar: 13, failedSoFar: 1, total: 14, failed: ["p4@example.com"] });
+    expect(state.broadcasts[0].status).toBe("sent");
+  });
+
+  it("if the batch can't be recorded after sending, it says we lost contact (never 'try again')", async () => {
+    const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT, broadcasts: [jobRow(25)], failUpdate: true });
+    const { sends, openMailer } = fakeMailer();
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    await expect(continueBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID }, openMailer)).rejects.toThrow(LOST_CONTACT);
+    expect(LOST_CONTACT).toBe(LOST_CONTACT_MESSAGE);
+    expect(sends).toHaveLength(1);
+    expect(error).toHaveBeenCalled();
+    expect(state.audits).toEqual([]);
+    expect(state.draft).toEqual(DRAFT_WITH_ATTACHMENT);
     error.mockRestore();
+  });
+
+  it("if another tab already moved the row on, the batch isn't counted twice", async () => {
+    const { store, state } = memoryStore({ broadcasts: [jobRow(25)] });
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { openMailer } = fakeMailer(undefined, () => {
+      state.broadcasts[0].next_index = 10; // the other tab's update lands first
+    });
+    await expect(continueBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID }, openMailer)).rejects.toThrow(LOST_CONTACT);
+    expect(state.updates).toEqual([]);
+    expect(state.broadcasts[0].recipient_count).toBe(0);
+    error.mockRestore();
+  });
+
+  it("refuses an unknown or malformed id before sending", async () => {
+    const { store } = memoryStore({ broadcasts: [jobRow(5)] });
+    const { sends, openMailer } = fakeMailer();
+    const gate = gateFor(store).gate;
+    await expect(continueBroadcastCore(gate, { id: "not-a-uuid" }, openMailer)).rejects.toThrow("That broadcast wasn't found.");
+    await expect(
+      continueBroadcastCore(gate, { id: "5e000000-0000-4000-8000-0000000000ff" }, openMailer),
+    ).rejects.toThrow("That broadcast wasn't found.");
+    expect(sends).toEqual([]);
+  });
+
+  it("an attachment that can't be signed stops the batch before anything goes out", async () => {
+    const { store, state } = memoryStore({ broadcasts: [jobRow(5, { attachments: [ATTACHMENT] })], failSign: true });
+    const { sends, openMailer } = fakeMailer();
+    await expect(continueBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID }, openMailer)).rejects.toThrow(
+      "Couldn't read an attachment. Remove it and attach it again.",
+    );
+    expect(sends).toEqual([]);
+    expect(state.broadcasts[0].next_index).toBe(0);
+  });
+
+  describe("subrequest budget (Workers Free plan: 50 per request)", () => {
+    const FIVE: BroadcastAttachment[] = Array.from({ length: 5 }, (_v, i) => ({
+      ...ATTACHMENT,
+      path: `draft/f${i}/file${i}.pdf`,
+      filename: `file${i}.pdf`,
+    }));
+
+    async function oneContinue(row: StoredBroadcast, audience: Partial<StoredBroadcast> = {}) {
+      const { store, state, calls } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT, broadcasts: [{ ...row, ...audience }] });
+      for (const a of FIVE) state.objects.set(a.path, new Uint8Array(1));
+      const requests: string[] = [];
+      const fetchImpl = (async (url: string) => {
+        requests.push(String(url));
+        return new Response("{}", { status: 200 });
+      }) as unknown as typeof fetch;
+      const mailer: BroadcastMailer = {
+        siteUrl: SITE,
+        unsubscribeSecret: SECRET,
+        sendEmails: (p) => sendBroadcastEmails({ ...p, apiKey: "k", from: "x <hello@example.com>", fetchImpl, sleep: async () => {} }),
+      };
+      const result = await continueBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID }, async () => mailer);
+      return { result, requests, calls };
+    }
+
+    it("a middle batch with 5 attachments: 10 mail requests and 7 store calls", async () => {
+      const { result, requests, calls } = await oneContinue(jobRow(40, { attachments: FIVE }));
+      expect(result.done).toBe(false);
+      expect(requests).toHaveLength(BROADCAST_BATCH_SIZE);
+      expect(requests.length).toBeLessThanOrEqual(10);
+      expect(calls).toEqual([
+        "getBroadcast",
+        ...Array(5).fill("signAttachmentUrl"),
+        "advanceBroadcast",
+      ]);
+    });
+
+    it("the last batch (category audience) adds at most 3 store calls: label, audit, draft", async () => {
+      const { result, requests, calls } = await oneContinue(jobRow(10, { attachments: FIVE }), {
+        audience_type: "type_or_category",
+        audience_filter: { member_type: null, category_id: CAT },
+      });
+      expect(result.done).toBe(true);
+      expect(requests).toHaveLength(10);
+      expect(calls).toEqual([
+        "getBroadcast",
+        ...Array(5).fill("signAttachmentUrl"),
+        "advanceBroadcast",
+        "listCategories",
+        "audit",
+        "clearDraft",
+      ]);
+      // Plus 2-3 for the super admin check: well under 50 even if every email is retried once after a 429.
+      expect(2 * requests.length + calls.length + 3).toBeLessThanOrEqual(50);
+    });
   });
 });
 

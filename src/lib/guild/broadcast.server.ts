@@ -1,7 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
-import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import {
+  getSupabaseServerClientForRequest,
+  getSupabaseServiceRoleClient,
+} from "@/lib/supabase/server";
 import { requireSuperAdmin } from "@/lib/auth/super-admin";
 import { resolveEmailSiteUrl } from "@/lib/email/build-email-content";
 import { sendBroadcastEmails } from "@/lib/guild/broadcast-send";
@@ -12,22 +15,27 @@ import {
   BROADCAST_ATTACHMENT_URL_SECONDS,
   BROADCAST_FROM,
   collectUserEmails,
+  continueBroadcastCore,
   COULDNT_START,
+  LOST_CONTACT,
   loadBroadcastPage,
   previewBroadcastAudienceCore,
   removeBroadcastAttachmentCore,
   saveBroadcastDraftCore,
-  sendBroadcastCore,
   sendBroadcastTestCore,
+  startBroadcastCore,
   type BroadcastAttachment,
   type BroadcastAttachmentRef,
   type BroadcastAudiencePreview,
+  type BroadcastContinueResult,
   type BroadcastDraftRow,
   type BroadcastGate,
+  type BroadcastJobRow,
   type BroadcastMailer,
   type BroadcastPage,
   type BroadcastRecentRow,
   type BroadcastSendRequest,
+  type BroadcastStartResult,
   type BroadcastStore,
 } from "@/lib/guild/broadcast-core";
 
@@ -41,9 +49,12 @@ import {
  */
 
 const BUCKET = "broadcast-attachments";
-const DRAFT_COLUMNS = "audience_type, audience_filter, member_ids, subject, body_html, attachments, updated_at";
+const DRAFT_COLUMNS =
+  "audience_type, audience_filter, member_ids, subject, body_html, attachments, updated_at";
 const RECENT_COLUMNS =
-  "id, sent_at, subject, audience_type, audience_filter, member_ids, recipient_count, status, failed_emails";
+  "id, sent_at, subject, audience_type, audience_filter, member_ids, recipient_count, status, failed_emails, updated_at, next_index, total_recipients";
+const JOB_COLUMNS =
+  "id, subject, body_html, attachments, audience_type, audience_filter, member_ids, recipient_count, failed_emails, status, pending_recipients, next_index";
 
 /** Logs Supabase's own error for us, and gives the screen plain words instead. */
 function fail(friendly: string, original: unknown): never {
@@ -63,7 +74,11 @@ function chunks<T>(items: T[], size: number): T[][] {
 function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
   return {
     async getDraft() {
-      const { data, error } = await service.from("broadcast_draft").select(DRAFT_COLUMNS).eq("id", true).maybeSingle();
+      const { data, error } = await service
+        .from("broadcast_draft")
+        .select(DRAFT_COLUMNS)
+        .eq("id", true)
+        .maybeSingle();
       if (error) fail("Couldn't load the draft. Try again.", error);
       return (data as BroadcastDraftRow | null) ?? null;
     },
@@ -107,8 +122,15 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
         .select("id, business_name, member_type, status")
         .in("status", ["published", "draft"]);
       if (error) fail(AUDIENCE, error);
-      const members = (data ?? []) as { id: string; business_name: string; member_type: string; status: string }[];
-      const { data: links, error: linkError } = await service.from("member_categories").select("member_id, category_id");
+      const members = (data ?? []) as {
+        id: string;
+        business_name: string;
+        member_type: string;
+        status: string;
+      }[];
+      const { data: links, error: linkError } = await service
+        .from("member_categories")
+        .select("member_id, category_id");
       if (linkError) fail(AUDIENCE, linkError);
       const byMember = new Map<string, string[]>();
       for (const link of (links ?? []) as { member_id: string; category_id: string }[]) {
@@ -134,7 +156,14 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
           .in("member_id", ids)
           .order("created_at", { ascending: true });
         if (error) fail(AUDIENCE, error);
-        rows.push(...((data ?? []) as { member_id: string; user_id: string; role: string | null; created_at: string }[]));
+        rows.push(
+          ...((data ?? []) as {
+            member_id: string;
+            user_id: string;
+            role: string | null;
+            created_at: string;
+          }[]),
+        );
       }
       return rows;
     },
@@ -155,7 +184,9 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
     },
 
     async uploadAttachment(path, bytes, contentType) {
-      const { error } = await service.storage.from(BUCKET).upload(path, bytes, { contentType, upsert: false });
+      const { error } = await service.storage
+        .from(BUCKET)
+        .upload(path, bytes, { contentType, upsert: false });
       if (error) fail("Couldn't upload that file. Try again.", error);
     },
 
@@ -168,7 +199,8 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
       const { data, error } = await service.storage
         .from(BUCKET)
         .createSignedUrl(path, BROADCAST_ATTACHMENT_URL_SECONDS);
-      if (error || !data?.signedUrl) fail("Couldn't read an attachment. Remove it and attach it again.", error);
+      if (error || !data?.signedUrl)
+        fail("Couldn't read an attachment. Remove it and attach it again.", error);
       return data.signedUrl;
     },
 
@@ -177,7 +209,7 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
         .from("broadcast_emails")
         .select("id")
         .eq("status", "sending")
-        .gte("sent_at", sinceIso)
+        .gte("updated_at", sinceIso)
         .limit(1);
       if (error) fail(COULDNT_START, error);
       return (data ?? []).length > 0;
@@ -188,9 +220,27 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
       if (error) fail(COULDNT_START, error);
     },
 
-    async updateBroadcast(id, patch) {
-      const { error } = await service.from("broadcast_emails").update(patch).eq("id", id);
-      if (error) fail("Couldn't update the broadcast record.", error);
+    async getBroadcast(id) {
+      const { data, error } = await service
+        .from("broadcast_emails")
+        .select(JOB_COLUMNS)
+        .eq("id", id)
+        .maybeSingle();
+      if (error) fail("Couldn't load that broadcast. Try again.", error);
+      return (data as BroadcastJobRow | null) ?? null;
+    },
+
+    // Conditional on the row still being at fromIndex, so a batch is counted once.
+    async advanceBroadcast(id, fromIndex, patch) {
+      const { data, error } = await service
+        .from("broadcast_emails")
+        .update({ ...patch, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .eq("status", "sending")
+        .eq("next_index", fromIndex)
+        .select("id");
+      if (error) fail(LOST_CONTACT, error);
+      return (data ?? []).length > 0;
     },
 
     async audit(entry) {
@@ -234,7 +284,8 @@ async function openMailer(): Promise<BroadcastMailer> {
     HOURS_CONFIRM_SECRET?: string;
   };
   if (!apiKey) fail("Email isn't set up on this site. Nothing was sent.", "missing RESEND_API_KEY");
-  if (!secret) fail("Email isn't set up on this site. Nothing was sent.", "missing HOURS_CONFIRM_SECRET");
+  if (!secret)
+    fail("Email isn't set up on this site. Nothing was sent.", "missing HOURS_CONFIRM_SECRET");
   return {
     siteUrl: resolveEmailSiteUrl(currentRequestUrl()),
     unsubscribeSecret: secret,
@@ -243,7 +294,14 @@ async function openMailer(): Promise<BroadcastMailer> {
 }
 
 export type BroadcastDraftInput = BroadcastSendRequest;
-export type { BroadcastAttachment, BroadcastAttachmentRef, BroadcastAudiencePreview, BroadcastPage };
+export type {
+  BroadcastAttachment,
+  BroadcastAttachmentRef,
+  BroadcastAudiencePreview,
+  BroadcastContinueResult,
+  BroadcastPage,
+  BroadcastStartResult,
+};
 
 export const getBroadcastPage = createServerFn({ method: "GET" }).handler(
   async (): Promise<BroadcastPage> => loadBroadcastPage(await gateForRequest()),
@@ -252,12 +310,15 @@ export const getBroadcastPage = createServerFn({ method: "GET" }).handler(
 export const previewBroadcastAudience = createServerFn({ method: "POST" })
   .inputValidator((data: { audience: BroadcastAudience }) => ({ audience: data?.audience }))
   .handler(
-    async ({ data }): Promise<BroadcastAudiencePreview> => previewBroadcastAudienceCore(await gateForRequest(), data),
+    async ({ data }): Promise<BroadcastAudiencePreview> =>
+      previewBroadcastAudienceCore(await gateForRequest(), data),
   );
 
 export const saveBroadcastDraft = createServerFn({ method: "POST" })
   .inputValidator((data: BroadcastSendRequest) => data)
-  .handler(async ({ data }): Promise<{ ok: true }> => saveBroadcastDraftCore(await gateForRequest(), data));
+  .handler(
+    async ({ data }): Promise<{ ok: true }> => saveBroadcastDraftCore(await gateForRequest(), data),
+  );
 
 export const uploadBroadcastAttachment = createServerFn({ method: "POST" })
   .inputValidator((data: FormData) => data)
@@ -276,16 +337,31 @@ export const uploadBroadcastAttachment = createServerFn({ method: "POST" })
 
 export const removeBroadcastAttachment = createServerFn({ method: "POST" })
   .inputValidator((data: { path: string }) => ({ path: data?.path }))
-  .handler(async ({ data }): Promise<{ ok: true }> => removeBroadcastAttachmentCore(await gateForRequest(), data));
+  .handler(
+    async ({ data }): Promise<{ ok: true }> =>
+      removeBroadcastAttachmentCore(await gateForRequest(), data),
+  );
 
 export const sendBroadcastTest = createServerFn({ method: "POST" })
   .inputValidator((data: Omit<BroadcastSendRequest, "audience">) => data)
-  .handler(async ({ data }): Promise<{ sentTo: string }> =>
-    sendBroadcastTestCore(await gateForRequest(), data, openMailer),
+  .handler(
+    async ({ data }): Promise<{ sentTo: string }> =>
+      sendBroadcastTestCore(await gateForRequest(), data, openMailer),
   );
 
-export const sendBroadcast = createServerFn({ method: "POST" })
+// Sending is split across requests (Workers Free plan: 50 subrequests per
+// request): start writes the record and sends nothing; the screen then calls
+// continue, 10 people at a time, until it says done.
+export const startBroadcast = createServerFn({ method: "POST" })
   .inputValidator((data: BroadcastSendRequest) => data)
-  .handler(async ({ data }): Promise<{ sent: number; failed: string[]; memberCount: number }> =>
-    sendBroadcastCore(await gateForRequest(), data, openMailer),
+  .handler(
+    async ({ data }): Promise<BroadcastStartResult> =>
+      startBroadcastCore(await gateForRequest(), data, openMailer),
+  );
+
+export const continueBroadcast = createServerFn({ method: "POST" })
+  .inputValidator((data: { id: string }) => ({ id: data?.id }))
+  .handler(
+    async ({ data }): Promise<BroadcastContinueResult> =>
+      continueBroadcastCore(await gateForRequest(), data, openMailer),
   );
