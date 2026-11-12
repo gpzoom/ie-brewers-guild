@@ -1,9 +1,11 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "@tanstack/react-router";
 import {
   cancelPortalInvite,
+  changePortalAccess,
   handOffLocation,
   invitePortalPerson,
+  leavePortalProfile,
   removePortalPerson,
   resendPortalInvite,
   takeBackLocation,
@@ -44,15 +46,17 @@ const ROLE_LABEL: Record<PortalRole, string> = {
 
 const ROLE_HELP: Record<InviteRole, string> = {
   co_owner:
-    "Everything the owner can do, including People and calendars. Only you can add or remove co-owners.",
+    "Everything the owner can do, including People and calendars. They get the Guild's emails too. Only you can add or remove co-owners.",
+  editor: "Everything on the profile except People and calendars. They can publish all changes.",
   media_events: "Photos and Events. They can publish photo changes, nothing else.",
-  editor: "Everything on the profile except People. They can publish all changes.",
 };
 
 const sectionLabelClass =
   "font-sans text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-muted";
 const rowButtonClass =
   "inline-flex h-11 shrink-0 items-center justify-center rounded-[9px] px-3 text-[13px] font-medium text-ink-muted transition-colors hover:bg-canvas-2 hover:text-ink disabled:opacity-60";
+const dialogCancelClass =
+  "h-[46px] rounded-[9px] border-[#D3CBBD] bg-transparent px-[19px] text-[14px] font-medium text-ink hover:bg-canvas-2";
 const primaryClass =
   "inline-flex h-[46px] items-center justify-center rounded-[9px] bg-brand px-6 text-[14px] font-semibold text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[#DED7CB] disabled:text-[#8C8275]";
 
@@ -72,6 +76,35 @@ function RolePill({ label }: { label: string }) {
   );
 }
 
+/** One 44px radio row, as in BusinessModeDialog. */
+function RadioRow({
+  name,
+  value,
+  checked,
+  onChange,
+  children,
+}: {
+  name: string;
+  value: string;
+  checked: boolean;
+  onChange: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-[9px] px-2 text-[14px] text-ink hover:bg-canvas-2">
+      <input
+        type="radio"
+        name={name}
+        value={value}
+        checked={checked}
+        onChange={onChange}
+        className="h-4 w-4 accent-brand"
+      />
+      <span className="min-w-0 break-words">{children}</span>
+    </label>
+  );
+}
+
 /**
  * The owner's People section (docs/member-profiles.md, "The People
  * section"; Roles map in docs/design/onboarding/Roles.dc.html): everyone on
@@ -87,8 +120,20 @@ function RolePill({ label }: { label: string }) {
  * the business manager sees a "Hand off this location" card, and after a
  * hand-off a "{city} is handed off" card with a confirmed "Take back this
  * location". A hand-off invite (role owner) reads "Location manager".
+ *
+ * Co-owners (spec 2026-11-12) open People too. The invite picker offers
+ * only view.inviteRoles (Co-owner for the owner alone); Change access,
+ * Remove, Resend and Cancel invite show only where the viewer may use
+ * them; and a co-owner can leave from their own row, after which the
+ * portal sends them to another business or to "no access".
  */
-export function PeopleSection({ people, invites, business }: PeopleView) {
+export function PeopleSection({
+  people,
+  invites,
+  business,
+  inviteRoles,
+  memberName,
+}: PeopleView & { memberName: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<InviteRole>("media_events");
@@ -97,6 +142,9 @@ export function PeopleSection({ people, invites, business }: PeopleView) {
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [removing, setRemoving] = useState<PersonView | null>(null);
+  const [changing, setChanging] = useState<PersonView | null>(null);
+  const [newRole, setNewRole] = useState<InviteRole | null>(null);
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const [handOffEmail, setHandOffEmail] = useState("");
   const [handingOff, setHandingOff] = useState(false);
   const [takingBack, setTakingBack] = useState(false);
@@ -113,6 +161,27 @@ export function PeopleSection({ people, invites, business }: PeopleView) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong — try again.");
     } finally {
+      setBusyId(null);
+    }
+  }
+
+  function openChangeAccess(person: PersonView) {
+    setNewRole(null);
+    setChanging(person);
+  }
+
+  async function onLeave() {
+    setConfirmLeave(false);
+    setBusyId("leave");
+    setError(null);
+    setNotice(null);
+    try {
+      await leavePortalProfile();
+      // A full load, so nothing cached from this profile survives; /portal
+      // lands them on another business or on "no access".
+      await router.navigate({ to: "/portal", search: {}, reloadDocument: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't leave — try again.");
       setBusyId(null);
     }
   }
@@ -168,7 +237,7 @@ export function PeopleSection({ people, invites, business }: PeopleView) {
         <p className="text-pretty text-[13px] text-ink-muted">
           {business
             ? `Who can edit ${business.name} · ${business.city}.`
-            : "Who can edit this profile. Only you, the owner, see this page. To change someone's access, remove them and invite them again."}
+            : "Who can edit this profile. Only the owner and co-owners see this page."}
         </p>
       </header>
 
@@ -189,8 +258,28 @@ export function PeopleSection({ people, invites, business }: PeopleView) {
                 </span>
                 {business && <span className="text-[12px] text-ink-muted">{person.label}</span>}
               </span>
-              <span className="flex items-center gap-1.5">
+              <span className="flex flex-wrap items-center gap-1.5">
                 {!business && <RolePill label={ROLE_LABEL[person.role]} />}
+                {person.canChangeAccess && (
+                  <button
+                    type="button"
+                    disabled={busyId !== null}
+                    onClick={() => openChangeAccess(person)}
+                    className={rowButtonClass}
+                  >
+                    {busyId === `access-${person.userId}` ? "Changing…" : "Change access"}
+                  </button>
+                )}
+                {person.canLeave && (
+                  <button
+                    type="button"
+                    disabled={busyId !== null}
+                    onClick={() => setConfirmLeave(true)}
+                    className={rowButtonClass}
+                  >
+                    {busyId === "leave" ? "Leaving…" : "Leave this profile"}
+                  </button>
+                )}
                 {person.canRemove && (
                   <button
                     type="button"
@@ -221,34 +310,40 @@ export function PeopleSection({ people, invites, business }: PeopleView) {
               </span>
               <span className="flex flex-wrap items-center gap-1.5">
                 <RolePill label={INVITE_PILL[invite.role]} />
-                <button
-                  type="button"
-                  disabled={busyId !== null}
-                  onClick={() =>
-                    run(invite.id, async () => {
-                      const result = await resendPortalInvite({ data: { inviteId: invite.id } });
-                      return result.emailSent
-                        ? `Invite sent again to ${result.email}.`
-                        : `Invite renewed for ${result.email}, but the email didn't go out. Try again.`;
-                    })
-                  }
-                  className={rowButtonClass}
-                >
-                  {busyId === invite.id ? "Working…" : "Resend"}
-                </button>
-                <button
-                  type="button"
-                  disabled={busyId !== null}
-                  onClick={() =>
-                    run(invite.id, async () => {
-                      await cancelPortalInvite({ data: { inviteId: invite.id } });
-                      return `Canceled the invite to ${invite.email}.`;
-                    })
-                  }
-                  className={rowButtonClass}
-                >
-                  Cancel invite
-                </button>
+                {invite.canManage && (
+                  <>
+                    <button
+                      type="button"
+                      disabled={busyId !== null}
+                      onClick={() =>
+                        run(invite.id, async () => {
+                          const result = await resendPortalInvite({
+                            data: { inviteId: invite.id },
+                          });
+                          return result.emailSent
+                            ? `Invite sent again to ${result.email}.`
+                            : `Invite renewed for ${result.email}, but the email didn't go out. Try again.`;
+                        })
+                      }
+                      className={rowButtonClass}
+                    >
+                      {busyId === invite.id ? "Working…" : "Resend"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busyId !== null}
+                      onClick={() =>
+                        run(invite.id, async () => {
+                          await cancelPortalInvite({ data: { inviteId: invite.id } });
+                          return `Canceled the invite to ${invite.email}.`;
+                        })
+                      }
+                      className={rowButtonClass}
+                    >
+                      Cancel invite
+                    </button>
+                  </>
+                )}
               </span>
             </li>
           ))}
@@ -345,7 +440,7 @@ export function PeopleSection({ people, invites, business }: PeopleView) {
         </div>
         <fieldset className="m-0 flex flex-col gap-2.5 border-0 p-0">
           <legend className="mb-2 p-0 text-[13px] font-medium text-ink">Access</legend>
-          {(["media_events", "editor"] as const).map((value) => {
+          {inviteRoles.map((value) => {
             const checked = role === value;
             return (
               <label
@@ -367,9 +462,7 @@ export function PeopleSection({ people, invites, business }: PeopleView) {
                   className="mt-0.5 h-[18px] w-[18px] shrink-0 cursor-pointer accent-ink"
                 />
                 <span className="flex flex-col gap-0.5">
-                  <span className="text-[14px] font-semibold text-ink">
-                    {value === "media_events" ? "Photos & events" : "Full editor"}
-                  </span>
+                  <span className="text-[14px] font-semibold text-ink">{ROLE_LABEL[value]}</span>
                   <span className="text-[12px] text-ink-muted">{ROLE_HELP[value]}</span>
                 </span>
               </label>
@@ -407,9 +500,7 @@ export function PeopleSection({ people, invites, business }: PeopleView) {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="h-[46px] rounded-[9px] border-[#D3CBBD] bg-transparent px-[19px] text-[14px] font-medium text-ink hover:bg-canvas-2">
-                Cancel
-              </AlertDialogCancel>
+              <AlertDialogCancel className={dialogCancelClass}>Cancel</AlertDialogCancel>
               <button
                 type="button"
                 onClick={() => {
@@ -440,9 +531,7 @@ export function PeopleSection({ people, invites, business }: PeopleView) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="h-[46px] rounded-[9px] border-[#D3CBBD] bg-transparent px-[19px] text-[14px] font-medium text-ink hover:bg-canvas-2">
-              Keep them
-            </AlertDialogCancel>
+            <AlertDialogCancel className={dialogCancelClass}>Keep them</AlertDialogCancel>
             <button
               type="button"
               onClick={() => {
@@ -457,6 +546,76 @@ export function PeopleSection({ people, invites, business }: PeopleView) {
               className="inline-flex h-[46px] items-center justify-center rounded-[9px] bg-danger px-6 text-[14px] font-semibold text-white"
             >
               Remove
+            </button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={changing !== null} onOpenChange={(next) => !next && setChanging(null)}>
+        <AlertDialogContent className="rounded-[18px] border-0 bg-canvas p-[30px] sm:rounded-[18px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-[25px] font-bold leading-[1.1] text-ink">
+              Change access for {changing?.email ?? "this person"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[14px] leading-[1.5] text-ink-muted">
+              {changing ? `Now: ${ROLE_LABEL[changing.role]}. ` : ""}The change applies right away.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <fieldset className="m-0 flex flex-col gap-1 border-0 p-0">
+            <legend className="mb-1 p-0 text-[13px] font-medium text-ink">New access</legend>
+            {changing?.accessOptions.map((value) => (
+              <RadioRow
+                key={value}
+                name="change_access_role"
+                value={value}
+                checked={newRole === value}
+                onChange={() => setNewRole(value)}
+              >
+                {ROLE_LABEL[value]}
+              </RadioRow>
+            ))}
+          </fieldset>
+          <AlertDialogFooter>
+            <AlertDialogCancel className={dialogCancelClass}>Cancel</AlertDialogCancel>
+            <button
+              type="button"
+              disabled={newRole === null}
+              onClick={() => {
+                const target = changing;
+                const role = newRole;
+                setChanging(null);
+                if (!target || !role) return;
+                void run(`access-${target.userId}`, async () => {
+                  await changePortalAccess({ data: { userId: target.userId, role } });
+                  return `Changed access for ${target.email ?? "them"} to ${ROLE_LABEL[role]}.`;
+                });
+              }}
+              className={primaryClass}
+            >
+              Change access
+            </button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmLeave} onOpenChange={setConfirmLeave}>
+        <AlertDialogContent className="rounded-[18px] border-0 bg-canvas p-[30px] sm:rounded-[18px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-[25px] font-bold leading-[1.1] text-ink">
+              Leave {memberName}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[14px] leading-[1.5] text-ink-muted">
+              You'll lose access right away. The owner can invite you again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className={dialogCancelClass}>Stay</AlertDialogCancel>
+            <button
+              type="button"
+              onClick={() => void onLeave()}
+              className="inline-flex h-[46px] items-center justify-center rounded-[9px] bg-danger px-6 text-[14px] font-semibold text-white"
+            >
+              Leave
             </button>
           </AlertDialogFooter>
         </AlertDialogContent>

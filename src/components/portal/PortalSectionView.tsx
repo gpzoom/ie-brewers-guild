@@ -232,6 +232,7 @@ export function PortalSectionView({
           invites={data.invites}
           business={data.business}
           inviteRoles={data.inviteRoles}
+          memberName={shell.memberName}
         />
       );
   }

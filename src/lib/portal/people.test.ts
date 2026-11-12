@@ -66,13 +66,23 @@ function memoryStore(seed: {
       invite.updatedAt = NOW.toISOString();
       if (patch.cancelledAt) invite.cancelledAt = patch.cancelledAt;
     },
-    async deleteMemberUser(_memberId, userId) {
-      const index = users.findIndex((u) => u.userId === userId);
+    // Like the Supabase store: the write only lands while the row still has
+    // the role that was read, and reports whether it did.
+    async deleteMemberUser(_memberId, userId, expectedRole) {
+      const index = users.findIndex(
+        (u) => u.userId === userId && u.role === expectedRole && u.role !== "owner",
+      );
+      if (index === -1) return false;
       users.splice(index, 1);
+      return true;
     },
-    async updateMemberUserRole(_memberId, userId, role) {
-      const user = users.find((u) => u.userId === userId);
-      if (user && user.role !== "owner") user.role = role;
+    async updateMemberUserRole(_memberId, userId, role, expectedRole) {
+      const user = users.find(
+        (u) => u.userId === userId && u.role === expectedRole && u.role !== "owner",
+      );
+      if (!user) return false;
+      user.role = role;
+      return true;
     },
   };
   return { store, users, invites };
@@ -771,5 +781,137 @@ describe("peopleBusinessCopy (BZ4)", () => {
     expect(peopleBusinessCopy({ ...business, locationManagerEmail: null }).handedOffBody).toBe(
       "They manage Riverside. You still have access.",
     );
+  });
+});
+
+describe("access that changed since it was read", () => {
+  const RACE = "That person's access just changed. Refresh and try again.";
+  const CO = {
+    userId: "u-co",
+    role: "co_owner" as const,
+    createdAt: "2026-09-02T00:00:00Z",
+    email: "co@brewery.com",
+  };
+  // A store whose reads still show `stale` while the database already holds `users`.
+  function staleStore(
+    stale: MemberUserRecord[],
+    users: Parameters<typeof memoryStore>[0]["users"],
+  ) {
+    const memory = memoryStore({ users });
+    const store: PeopleStore = { ...memory.store, listMemberUsers: async () => stale };
+    return { store, users: memory.users };
+  }
+  const asRecord = ({ userId, role, createdAt }: MemberUserRecord) => ({ userId, role, createdAt });
+
+  it("removePerson writes nothing when the person was just made a co-owner", async () => {
+    // A co-owner read them as a Full editor; the owner promoted them a moment ago.
+    const { store, users } = staleStore(
+      [asRecord(OWNER), asRecord(CO), asRecord(EDITOR)],
+      [OWNER, CO, { ...EDITOR, role: "co_owner" }],
+    );
+    await expect(
+      removePerson(store, {
+        memberId: MEMBER,
+        userId: "u-editor",
+        actor: { userId: "u-co", role: "co_owner", isBusinessManager: false },
+      }),
+    ).rejects.toThrow(RACE);
+    expect(users.find((u) => u.userId === "u-editor")?.role).toBe("co_owner");
+  });
+
+  it("changeAccess writes nothing when the person was just made a co-owner", async () => {
+    const { store, users } = staleStore(
+      [asRecord(OWNER), asRecord(CO), asRecord(EDITOR)],
+      [OWNER, CO, { ...EDITOR, role: "co_owner" }],
+    );
+    await expect(
+      changeAccess(store, {
+        memberId: MEMBER,
+        userId: "u-editor",
+        role: "media_events",
+        actor: { userId: "u-co", role: "co_owner", isBusinessManager: false },
+      }),
+    ).rejects.toThrow(RACE);
+    expect(users.find((u) => u.userId === "u-editor")?.role).toBe("co_owner");
+  });
+
+  it("leaveProfile writes nothing when their access just changed", async () => {
+    const { store, users } = staleStore(
+      [asRecord(OWNER), asRecord(CO)],
+      [OWNER, { ...CO, role: "editor" }],
+    );
+    await expect(
+      leaveProfile(store, {
+        memberId: MEMBER,
+        actor: { userId: "u-co", role: "co_owner", isBusinessManager: false },
+      }),
+    ).rejects.toThrow(RACE);
+    expect(users).toHaveLength(2);
+  });
+
+  it("removePerson reports the role it removed", async () => {
+    const { store } = memoryStore({ users: [OWNER, EDITOR] });
+    await expect(
+      removePerson(store, { memberId: MEMBER, userId: "u-editor", actor: AS_OWNER }),
+    ).resolves.toEqual({ role: "editor" });
+  });
+});
+
+describe("a pending hand-off (open invite with role owner)", () => {
+  const HAND_OFF_FORBIDDEN = "Only the owner or the business manager can change a hand-off.";
+  const handOff = (): StoredInvite => ({
+    id: "h1",
+    memberId: MEMBER,
+    email: "new@x.com",
+    role: "owner",
+    expiresAt: "2026-10-01T00:00:00Z",
+    createdAt: "2026-09-13T00:00:00Z",
+    updatedAt: "2026-09-13T00:00:00Z",
+    cancelledAt: null,
+  });
+
+  it("a co-owner can't resend or cancel it", async () => {
+    const { store, invites } = memoryStore({ users: [OWNER], invites: [handOff()] });
+    const asCo = actorFor("u-co", "co_owner");
+    await expect(
+      resendInvite(store, { memberId: MEMBER, inviteId: "h1", actor: asCo, now: NOW }),
+    ).rejects.toThrow(HAND_OFF_FORBIDDEN);
+    await expect(
+      cancelInvite(store, { memberId: MEMBER, inviteId: "h1", actor: asCo, now: NOW }),
+    ).rejects.toThrow(HAND_OFF_FORBIDDEN);
+    expect(invites[0]).toMatchObject({ cancelledAt: null, expiresAt: "2026-10-01T00:00:00Z" });
+  });
+
+  it("the owner resends it and the business manager cancels it", async () => {
+    const { store, invites } = memoryStore({ users: [OWNER], invites: [handOff()] });
+    await expect(
+      resendInvite(store, { memberId: MEMBER, inviteId: "h1", actor: AS_OWNER, now: NOW }),
+    ).resolves.toEqual({ email: "new@x.com", role: "owner" });
+    await expect(
+      cancelInvite(store, {
+        memberId: MEMBER,
+        inviteId: "h1",
+        actor: actorFor("u-boss", "editor", true),
+        now: NOW,
+      }),
+    ).resolves.toEqual({ email: "new@x.com", role: "owner" });
+    expect(invites[0].cancelledAt).toBe(NOW.toISOString());
+  });
+
+  it("loadPeople offers Resend and Cancel invite only to whoever may use them", async () => {
+    const coInvite: StoredInvite = { ...handOff(), id: "c1", email: "co@x.com", role: "co_owner" };
+    const edInvite: StoredInvite = { ...handOff(), id: "e1", email: "ed@x.com", role: "editor" };
+    const { store } = memoryStore({ users: [OWNER], invites: [handOff(), coInvite, edInvite] });
+    const manage = async (actor: PeopleActor) =>
+      Object.fromEntries(
+        (await loadPeople(store, MEMBER, actor, NOW)).invites.map((i) => [i.id, i.canManage]),
+      );
+    expect(await manage(AS_OWNER)).toEqual({ h1: true, c1: true, e1: true });
+    expect(await manage(actorFor("u-co", "co_owner"))).toEqual({ h1: false, c1: false, e1: true });
+    expect(await manage(actorFor("u-boss", "editor", true))).toEqual({
+      h1: true,
+      c1: false,
+      e1: true,
+    });
   });
 });

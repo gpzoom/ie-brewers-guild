@@ -7,7 +7,9 @@ import { requirePortalMember, type PortalMember } from "@/lib/portal/portal-sess
 import { supabasePeopleStore } from "@/lib/portal/people-store.server";
 import {
   cancelInvite,
+  changeAccess,
   invitePerson,
+  leaveProfile,
   removePerson,
   resendInvite,
   type InviteRole,
@@ -16,31 +18,38 @@ import {
 } from "@/lib/portal/people";
 import { sendTransactionalEmail } from "@/lib/email/send";
 import { ORG_NAME } from "@/lib/email/build-email-content";
-import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
+import { recordPeopleAudit } from "@/lib/guild/audit-log.server";
+import { isOwnerLevel } from "@/lib/portal/portal-destination";
 
 /**
  * The People section's actions (docs/member-profiles.md, "The People
- * section" and "Enforcement": "People actions are owner-only, checked in
- * the Worker"). Every call resolves the member from the SESSION and checks
- * the caller is its owner -- or a Guild admin editing as them, who acts
- * with owner rights -- before the service-role client is touched. The
+ * section" and "Enforcement": "People actions are checked in the Worker").
+ * Every call resolves the member from the SESSION and checks the caller is
+ * its owner, a co-owner or the business manager -- a Guild admin editing
+ * as them acts with owner rights -- before the service-role client is
+ * touched. people.ts then applies the finer rules (only the owner touches
+ * co-owners; only the owner or business manager touches a hand-off). The
  * browser only ever sends an email, a role, or the id of an invite or
  * person, and each of those is looked up within this member only.
  *
- * A Guild admin's actions while editing as the member are audit-logged
- * against them (spec, "Enforcement"); these writes use the service key,
- * so nothing in SQL would record them otherwise.
+ * Every People change is audit-logged with recordPeopleAudit, whoever
+ * makes it, against the real signed-in user (for a Guild admin editing as
+ * them, the admin's own id); these writes use the service key, so nothing
+ * in SQL would record them otherwise.
  */
 
 async function requirePeopleAccess(): Promise<PortalMember> {
   const member = await requirePortalMember();
-  if (member.role !== "owner" && !member.isBusinessManager) {
-    throw new Error("Only the profile's owner or the business manager can manage people.");
+  if (!isOwnerLevel(member.role) && !member.isBusinessManager) {
+    throw new Error(
+      "Only the profile's owner, a co-owner or the business manager can manage people.",
+    );
   }
   return member;
 }
 
-function peopleActor(member: PortalMember): PeopleActor {
+/** Who is acting on People: the signed-in user (a Guild admin editing as them acts as "owner"). */
+export function actorFor(member: PortalMember): PeopleActor {
   return { userId: member.userId, role: member.role, isBusinessManager: member.isBusinessManager };
 }
 
@@ -109,13 +118,15 @@ export const invitePortalPerson = createServerFn({ method: "POST" })
       email: data.email,
       role: data.role,
       invitedByUserId: member.userId,
-      actor: peopleActor(member),
+      actor: actorFor(member),
     });
-    await recordAuditLogIfImpersonating({
+    await recordPeopleAudit({
+      actorUserId: member.userId,
       memberId: member.memberId,
       tableName: "member_invites",
       rowId: invite.inviteId,
       action: invite.refreshed ? "update" : "insert",
+      details: { kind: "invite", email: invite.email, role: invite.role },
     });
     const emailSent = await emailInvite(member, invite);
     return { email: invite.email, refreshed: invite.refreshed, emailSent };
@@ -128,13 +139,16 @@ export const resendPortalInvite = createServerFn({ method: "POST" })
     const invite = await resendInvite(await peopleStore(), {
       memberId: member.memberId,
       inviteId: data.inviteId,
-      actor: peopleActor(member),
+      actor: actorFor(member),
     });
-    await recordAuditLogIfImpersonating({
+    // resendInvite found the invite by this id, so it's a real invite id.
+    await recordPeopleAudit({
+      actorUserId: member.userId,
       memberId: member.memberId,
       tableName: "member_invites",
-      rowId: typeof data.inviteId === "string" ? data.inviteId : null,
+      rowId: data.inviteId,
       action: "update",
+      details: { kind: "resend", email: invite.email, role: invite.role },
     });
     const emailSent = await emailInvite(member, invite);
     return { email: invite.email, emailSent };
@@ -144,16 +158,19 @@ export const cancelPortalInvite = createServerFn({ method: "POST" })
   .inputValidator((data: { inviteId: string }) => ({ inviteId: data?.inviteId }))
   .handler(async ({ data }) => {
     const member = await requirePeopleAccess();
-    await cancelInvite(await peopleStore(), {
+    const invite = await cancelInvite(await peopleStore(), {
       memberId: member.memberId,
       inviteId: data.inviteId,
-      actor: peopleActor(member),
+      actor: actorFor(member),
     });
-    await recordAuditLogIfImpersonating({
+    // cancelInvite found the invite by this id, so it's a real invite id.
+    await recordPeopleAudit({
+      actorUserId: member.userId,
       memberId: member.memberId,
       tableName: "member_invites",
-      rowId: typeof data.inviteId === "string" ? data.inviteId : null,
+      rowId: data.inviteId,
       action: "update",
+      details: { kind: "cancel", email: invite.email, role: invite.role },
     });
     return { ok: true as const };
   });
@@ -162,24 +179,75 @@ export const removePortalPerson = createServerFn({ method: "POST" })
   .inputValidator((data: { userId: string }) => ({ userId: data?.userId }))
   .handler(async ({ data }) => {
     const member = await requirePeopleAccess();
-    await removePerson(await peopleStore(), {
+    const store = await peopleStore();
+    const removed = await removePerson(store, {
       memberId: member.memberId,
       userId: data.userId,
-      actor: peopleActor(member),
+      actor: actorFor(member),
     });
-    await recordAuditLogIfImpersonating({
+    // removePerson matched this id to a member_users row, so it's a real user id.
+    await recordPeopleAudit({
+      actorUserId: member.userId,
       memberId: member.memberId,
       tableName: "member_users",
-      rowId: typeof data.userId === "string" ? data.userId : null,
+      rowId: data.userId,
       action: "delete",
+      details: { kind: "remove", email: await store.userEmail(data.userId), role: removed.role },
     });
     return { ok: true as const };
   });
 
+export const changePortalAccess = createServerFn({ method: "POST" })
+  .inputValidator((data: { userId: string; role: InviteRole }) => ({
+    userId: data?.userId,
+    role: data?.role,
+  }))
+  .handler(async ({ data }) => {
+    const member = await requirePeopleAccess();
+    const store = await peopleStore();
+    const change = await changeAccess(store, {
+      memberId: member.memberId,
+      userId: data.userId,
+      role: data.role,
+      actor: actorFor(member),
+    });
+    // changeAccess matched this id to a member_users row, so it's a real user id.
+    await recordPeopleAudit({
+      actorUserId: member.userId,
+      memberId: member.memberId,
+      tableName: "member_users",
+      rowId: data.userId,
+      action: "update",
+      details: {
+        kind: "change_access",
+        email: await store.userEmail(data.userId),
+        fromRole: change.fromRole,
+        toRole: change.toRole,
+      },
+    });
+    return { ok: true as const };
+  });
+
+/** The signed-in person leaves this profile; the browser then goes to /portal. */
+export const leavePortalProfile = createServerFn({ method: "POST" }).handler(async () => {
+  const member = await requirePeopleAccess();
+  const store = await peopleStore();
+  const left = await leaveProfile(store, { memberId: member.memberId, actor: actorFor(member) });
+  await recordPeopleAudit({
+    actorUserId: member.userId,
+    memberId: member.memberId,
+    tableName: "member_users",
+    rowId: member.userId,
+    action: "delete",
+    details: { kind: "leave", email: await store.userEmail(member.userId), role: left.role },
+  });
+  return { ok: true as const };
+});
+
 // handOffLocation and takeBackLocation run on the caller's own session, so the
 // SQL checks the right person. Both are audited in SQL (_business_audit),
 // including for a Guild admin editing as them, so they don't call
-// recordAuditLogIfImpersonating.
+// recordPeopleAudit.
 export const handOffLocation = createServerFn({ method: "POST" })
   .inputValidator((data: { email: string }) => ({ email: data?.email }))
   .handler(async ({ data }) => {

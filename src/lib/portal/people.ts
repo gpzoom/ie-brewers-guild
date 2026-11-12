@@ -29,7 +29,10 @@ import type { PortalRole } from "@/lib/portal/portal-destination";
  *   business manager is an editor.
  * - A hand-off is an open invite with role "owner", written only by the SQL
  *   function hand_off_location; invitePerson never creates one and refuses
- *   an address that has one waiting.
+ *   an address that has one waiting. Only the owner or the business manager
+ *   may resend or cancel it.
+ * - Remove, change access and leave write only while the person still has
+ *   the role just read, so a change made in between can't be overridden.
  */
 
 export type InviteRole = "co_owner" | "editor" | "media_events";
@@ -63,6 +66,8 @@ export type PeopleActor = { userId: string; role: PortalRole; isBusinessManager:
 
 const CO_OWNER_FORBIDDEN = "Only the owner can add or change co-owners.";
 const OWNER_UNTOUCHABLE = "The owner can't be removed. To change the owner, contact the Guild.";
+const ACCESS_JUST_CHANGED = "That person's access just changed. Refresh and try again.";
+const HAND_OFF_FORBIDDEN = "Only the owner or the business manager can change a hand-off.";
 
 /**
  * Only the owner -- including a Guild admin editing as them, whose portal
@@ -80,6 +85,24 @@ export function inviteRolesFor(actor: PeopleActor): InviteRole[] {
 
 function assertMayTouchRole(actor: PeopleActor, role: OpenInviteRole | PortalRole) {
   if (role === "co_owner" && !canManageCoOwners(actor)) throw new Error(CO_OWNER_FORBIDDEN);
+}
+
+/**
+ * Who may resend or cancel this open invite: a co-owner invite is the
+ * owner's call, and a pending hand-off (role owner) is the owner's or the
+ * business manager's -- never a co-owner's.
+ */
+function assertMayTouchInvite(actor: PeopleActor, invite: InviteRecord) {
+  if (invite.role === "owner" && actor.role !== "owner" && !actor.isBusinessManager) {
+    throw new Error(HAND_OFF_FORBIDDEN);
+  }
+  assertMayTouchRole(actor, invite.role);
+}
+
+/** The same rule as assertMayTouchInvite, for showing Resend and Cancel invite. */
+function mayTouchInvite(actor: PeopleActor, role: OpenInviteRole): boolean {
+  if (role === "owner") return actor.role === "owner" || actor.isBusinessManager;
+  return role !== "co_owner" || canManageCoOwners(actor);
 }
 
 /** Open invites may also be a hand-off (owner), made by the business manager in SQL. */
@@ -158,9 +181,21 @@ export interface PeopleStore {
     expiresAt: string;
   }): Promise<InviteRecord>;
   updateInvite(memberId: string, inviteId: string, patch: InvitePatch): Promise<void>;
-  deleteMemberUser(memberId: string, userId: string): Promise<void>;
-  /** Never touches the owner's row. */
-  updateMemberUserRole(memberId: string, userId: string, role: InviteRole): Promise<void>;
+  /**
+   * Never touches the owner's row, and only deletes while the row still has
+   * `expectedRole` (the role just read). Returns whether a row was deleted.
+   */
+  deleteMemberUser(memberId: string, userId: string, expectedRole: PortalRole): Promise<boolean>;
+  /**
+   * Never touches the owner's row, and only updates while the row still has
+   * `expectedRole` (the role just read). Returns whether a row was updated.
+   */
+  updateMemberUserRole(
+    memberId: string,
+    userId: string,
+    role: InviteRole,
+    expectedRole: PortalRole,
+  ): Promise<boolean>;
 }
 
 // Deliberately simple, the same bar as member-email.server.ts: sign-in
@@ -201,6 +236,8 @@ export type InviteView = {
   role: OpenInviteRole;
   expiresAt: string;
   expired: boolean;
+  /** The viewer may resend and cancel it. */
+  canManage: boolean;
 };
 
 export type PeopleView = {
@@ -315,6 +352,7 @@ export async function loadPeople(
         role: invite.role,
         expiresAt: invite.expiresAt,
         expired: new Date(invite.expiresAt).getTime() <= now.getTime(),
+        canManage: mayTouchInvite(viewer, invite.role),
       })),
   };
 }
@@ -389,29 +427,31 @@ export async function resendInvite(
   input: { memberId: string; inviteId: unknown; actor: PeopleActor; now?: Date },
 ): Promise<{ email: string; role: OpenInviteRole }> {
   const invite = await findOpenInvite(store, input.memberId, input.inviteId);
-  assertMayTouchRole(input.actor, invite.role);
+  assertMayTouchInvite(input.actor, invite);
   const now = input.now ?? new Date();
   assertCooledDown(invite, now);
   await store.updateInvite(input.memberId, invite.id, { expiresAt: inviteExpiry(now) });
   return { email: invite.email, role: invite.role };
 }
 
+/** Cancels an open invite. Returns who it was for, for the audit log. */
 export async function cancelInvite(
   store: PeopleStore,
   input: { memberId: string; inviteId: unknown; actor: PeopleActor; now?: Date },
-): Promise<void> {
+): Promise<{ email: string; role: OpenInviteRole }> {
   const invite = await findOpenInvite(store, input.memberId, input.inviteId);
-  assertMayTouchRole(input.actor, invite.role);
+  assertMayTouchInvite(input.actor, invite);
   await store.updateInvite(input.memberId, invite.id, {
     cancelledAt: (input.now ?? new Date()).toISOString(),
   });
+  return { email: invite.email, role: invite.role };
 }
 
-/** Ends someone's access (on their next request). Never the owner. */
+/** Ends someone's access (on their next request). Never the owner. Returns the role they had. */
 export async function removePerson(
   store: PeopleStore,
   input: { memberId: string; userId: unknown; actor: PeopleActor },
-): Promise<void> {
+): Promise<{ role: PortalRole }> {
   const users = await store.listMemberUsers(input.memberId);
   const target = users.find((user) => user.userId === input.userId);
   if (!target) throw new Error("That person doesn't have access anymore.");
@@ -423,7 +463,12 @@ export async function removePerson(
   }
   if (target.role === "owner") throw new Error(OWNER_UNTOUCHABLE);
   assertMayTouchRole(input.actor, target.role);
-  await store.deleteMemberUser(input.memberId, target.userId);
+  // Scoped to the role just checked: if the owner made them a co-owner in
+  // the meantime, a co-owner's remove must not land.
+  if (!(await store.deleteMemberUser(input.memberId, target.userId, target.role))) {
+    throw new Error(ACCESS_JUST_CHANGED);
+  }
+  return { role: target.role };
 }
 
 /** Changes someone's level without remove-and-reinvite. Never the owner or the business manager. */
@@ -445,7 +490,9 @@ export async function changeAccess(
   assertMayTouchRole(input.actor, target.role);
   assertMayTouchRole(input.actor, role);
   if (target.role === role) throw new Error("They already have that access.");
-  await store.updateMemberUserRole(input.memberId, target.userId, role);
+  if (!(await store.updateMemberUserRole(input.memberId, target.userId, role, target.role))) {
+    throw new Error(ACCESS_JUST_CHANGED);
+  }
   return { fromRole: target.role, toRole: role };
 }
 
@@ -464,6 +511,8 @@ export async function leaveProfile(
   if (self.role === "owner") {
     throw new Error("The owner can't leave the profile. To change the owner, contact the Guild.");
   }
-  await store.deleteMemberUser(input.memberId, self.userId);
+  if (!(await store.deleteMemberUser(input.memberId, self.userId, self.role))) {
+    throw new Error(ACCESS_JUST_CHANGED);
+  }
   return { role: self.role };
 }
