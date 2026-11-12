@@ -5,6 +5,7 @@ import {
   confirmTitle,
   formatAttachmentSize,
   formFromAudience,
+  isSendRefusal,
   normalizeLinkUrl,
   recentAudienceLine,
   searchMembers,
@@ -94,5 +95,19 @@ describe("normalizeLinkUrl", () => {
     expect(normalizeLinkUrl("javascript:alert(1)")).toBeNull();
     expect(normalizeLinkUrl("ftp://example.com")).toBeNull();
     expect(normalizeLinkUrl("just words")).toBeNull();
+  });
+});
+
+describe("isSendRefusal", () => {
+  it("knows the server's before-sending refusals", () => {
+    expect(isSendRefusal("Add a subject.")).toBe(true);
+    expect(isSendRefusal("Write a message.")).toBe(true);
+    expect(isSendRefusal("No one to send to.")).toBe(true);
+    expect(isSendRefusal("Only the super admin can send a broadcast email.")).toBe(true);
+  });
+  it("treats anything else as possibly sent", () => {
+    expect(isSendRefusal("Failed to fetch")).toBe(false);
+    expect(isSendRefusal("NetworkError when attempting to fetch resource.")).toBe(false);
+    expect(isSendRefusal("")).toBe(false);
   });
 });

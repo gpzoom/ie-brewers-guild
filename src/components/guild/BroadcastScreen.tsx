@@ -38,6 +38,8 @@ import {
   searchMembers,
   sendButtonLabel,
   successTitle,
+  isSendRefusal,
+  LOST_CONTACT_MESSAGE,
   type AudienceMemberType,
   type AudienceTab,
 } from "@/components/guild/broadcast-screen-helpers";
@@ -114,6 +116,13 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
   const busyRef = useRef<Busy | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [result, setResult] = useState<SendResult | null>(null);
+  const [lostContact, setLostContact] = useState(false);
+  const successHeadingRef = useRef<HTMLParagraphElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (result) successHeadingRef.current?.focus();
+  }, [result]);
 
   const [preview, setPreview] = useState<BroadcastAudiencePreview | null>(null);
   const [counting, setCounting] = useState(true);
@@ -175,6 +184,7 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
   }
 
   const locked = result !== null;
+  const messageMissing = subject.trim() === "" || bodyHtml.trim() === "";
   const peopleCount = preview?.peopleCount ?? 0;
   const message = {
     audience,
@@ -199,19 +209,41 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
     });
   }
 
+  /**
+   * Send stays "busy" (so disabled) until the refreshed page data is in:
+   * Recent broadcasts must show what happened before another send is
+   * possible. Any failure that isn't a known before-sending refusal may
+   * have come after the emails went out, so it gets the lost-contact alert,
+   * never a "try again".
+   */
   async function onSendNow() {
-    const sent = await run("send", () => sendBroadcast({ data: message }));
-    setConfirmOpen(false);
-    if (!sent) return;
-    if (sent.sent === 0) {
-      toast.error(
-        "Nothing was sent: no address accepted the email. Your message is still here, so you can try again.",
-      );
-    } else {
-      setResult(sent);
+    if (busyRef.current) return;
+    busyRef.current = "send";
+    setBusyState("send");
+    setLostContact(false);
+    try {
+      let sent: SendResult | null = null;
+      try {
+        sent = await sendBroadcast({ data: message });
+      } catch (err) {
+        const text = err instanceof Error ? err.message : "";
+        if (isSendRefusal(text)) toast.error(text);
+        else setLostContact(true);
+      }
+      setConfirmOpen(false);
+      if (sent && sent.sent === 0) {
+        toast.error(
+          "Nothing was sent: no address accepted the email. Your message is still here, so you can try again.",
+        );
+      } else if (sent) {
+        setResult(sent);
+      }
+      // Recent broadcasts gets the new row; on success the draft is cleared too.
+      await router.invalidate().catch(() => {});
+    } finally {
+      busyRef.current = null;
+      setBusyState(null);
     }
-    // Recent broadcasts gets the new row; on success the draft is cleared too.
-    await router.invalidate();
   }
 
   function onSendAnother() {
@@ -280,15 +312,14 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
           <h2 id="broadcast-to" className={sectionLabelClass}>
             To
           </h2>
-          <div role="tablist" aria-label="Audience" className="flex flex-wrap gap-2">
+          <div role="group" aria-label="Who gets this email" className="flex flex-wrap gap-2">
             {TABS.map((t) => {
               const selected = tab === t.value;
               return (
                 <button
                   key={t.value}
                   type="button"
-                  role="tab"
-                  aria-selected={selected}
+                  aria-pressed={selected}
                   onClick={() => setTab(t.value)}
                   className={`inline-flex h-11 items-center rounded-[9px] border px-[15px] text-[13px] transition-colors md:h-10 ${
                     selected
@@ -348,7 +379,10 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
                         <button
                           type="button"
                           aria-label={`Remove ${name}`}
-                          onClick={() => setMemberIds((ids) => ids.filter((x) => x !== id))}
+                          onClick={() => {
+                            setMemberIds((ids) => ids.filter((x) => x !== id));
+                            searchRef.current?.focus();
+                          }}
                           className={chipRemoveClass}
                         >
                           ✕
@@ -361,6 +395,7 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
               <label className="flex flex-col gap-1.5">
                 <span className={fieldLabelClass}>Find a member</span>
                 <input
+                  ref={searchRef}
                   type="search"
                   autoComplete="off"
                   placeholder="Type a business name"
@@ -382,7 +417,11 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
                     <li key={m.id} className="border-b border-[#F0EBE3] last:border-b-0">
                       <button
                         type="button"
-                        onClick={() => setMemberIds((ids) => [...ids, m.id])}
+                        aria-label={`Add ${m.business_name}`}
+                        onClick={() => {
+                          setMemberIds((ids) => [...ids, m.id]);
+                          searchRef.current?.focus();
+                        }}
                         className="flex min-h-11 w-full items-center justify-between gap-3 px-3.5 text-left text-[14px] text-ink hover:bg-canvas"
                       >
                         <span className="min-w-0 break-words">{m.business_name}</span>
@@ -561,14 +600,46 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
           <span aria-hidden="true" className="hidden flex-1 sm:block" />
           <button
             type="button"
-            disabled={busy !== null || counting || peopleCount === 0 || previewError !== null}
+            disabled={
+              busy !== null ||
+              counting ||
+              peopleCount === 0 ||
+              previewError !== null ||
+              messageMissing
+            }
+            aria-describedby={messageMissing ? "broadcast-send-hint" : undefined}
             onClick={() => setConfirmOpen(true)}
             className={accentButtonClass}
           >
             {sendButtonLabel(peopleCount, busy === "send")}
           </button>
         </div>
+        {messageMissing && !locked && (
+          <p
+            id="broadcast-send-hint"
+            className="-mt-3 max-w-[820px] text-[12px] text-ink-subtle sm:text-right"
+          >
+            Add a subject and a message first.
+          </p>
+        )}
       </fieldset>
+
+      {lostContact && (
+        <div
+          role="alert"
+          className="flex max-w-[820px] items-start gap-3 rounded-[13px] border-2 border-danger bg-white px-4 py-4 md:px-[22px]"
+        >
+          <p className="min-w-0 flex-1 text-[14px] font-medium text-ink">{LOST_CONTACT_MESSAGE}</p>
+          <button
+            type="button"
+            aria-label="Dismiss"
+            onClick={() => setLostContact(false)}
+            className={chipRemoveClass}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {result && (
         <div
@@ -591,7 +662,11 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
               </svg>
             </div>
             <div className="flex min-w-0 flex-col gap-0.5">
-              <p className="text-[15px] font-semibold text-ink">
+              <p
+                ref={successHeadingRef}
+                tabIndex={-1}
+                className="text-[15px] font-semibold text-ink outline-none"
+              >
                 {successTitle(result.sent, result.memberCount)}
               </p>
               <p className="text-[13px] text-[#3A332C]">
@@ -665,6 +740,11 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
             <AlertDialogDescription className="text-[13px] leading-[1.55] text-[#564E45]">
               {confirmDescription(label)}
             </AlertDialogDescription>
+            {busy === "send" && (
+              <p role="status" className="text-[13px] font-medium text-ink">
+                This can take a minute or two. Keep this page open.
+              </p>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-2">
             <button

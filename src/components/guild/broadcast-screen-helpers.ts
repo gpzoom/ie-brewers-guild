@@ -129,3 +129,29 @@ export function normalizeLinkUrl(input: string): string | null {
   if (/^[^\s/]+\.[^\s/]+\S*$/.test(url)) return `https://${url}`;
   return null;
 }
+
+/**
+ * Refusals the server gives BEFORE any email goes out (broadcast-core.ts
+ * validation and setup checks). Anything else from Send -- a dropped
+ * connection, a sleeping tab, a timeout -- may have happened after the
+ * emails went out, so the screen treats it as "lost contact".
+ */
+const SEND_REFUSALS = [
+  "Add a subject.",
+  "Write a message.",
+  "No one to send to.",
+  "Choose who gets this email.",
+  "The subject can be 200 characters at most.",
+  "That attachment isn't in the draft anymore.",
+  "Email isn't set up on this site. Nothing was sent.",
+  "Couldn't read an attachment. Remove it and attach it again.",
+  "Couldn't look up who gets this email. Try again.",
+  "Couldn't load the draft. Try again.",
+];
+
+export const LOST_CONTACT_MESSAGE =
+  "We lost contact while sending. Check Recent broadcasts and the Audit log before sending again.";
+
+export function isSendRefusal(message: string): boolean {
+  return SEND_REFUSALS.includes(message) || message.startsWith("Only the super admin can");
+}
