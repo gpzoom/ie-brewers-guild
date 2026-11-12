@@ -1,4 +1,4 @@
-import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
+import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { readImpersonationState, touchImpersonationActivity } from "@/lib/guild/impersonation.server";
 import { shouldRecordAudit } from "@/lib/guild/impersonation-token";
 
@@ -78,5 +78,46 @@ export async function recordAuditLogIfImpersonating(params: {
       "recordAuditLogIfImpersonating: failed to write audit_log row (guild-admin-without-active-cookie path)",
       error,
     );
+  }
+}
+
+export type PeopleAuditKind = "invite" | "resend" | "cancel" | "remove" | "change_access" | "leave";
+
+export type PeopleAuditDetails = {
+  kind: PeopleAuditKind;
+  email: string | null;
+  role?: string;
+  fromRole?: string;
+  toRole?: string;
+};
+
+/**
+ * Logs one People change (invite, resend, cancel, remove, change access,
+ * leave), whoever makes it. Uses the service-role client because non-admins
+ * can't insert into audit_log through RLS. Like the wrapper above, a logging
+ * failure is reported but never thrown, so it can't undo the People change.
+ * `rowId` must be a uuid or null.
+ */
+export async function recordPeopleAudit(params: {
+  actorUserId: string;
+  memberId: string;
+  tableName: "member_invites" | "member_users";
+  rowId: string | null;
+  action: AuditableAction;
+  details: PeopleAuditDetails;
+}): Promise<void> {
+  try {
+    const admin = await getSupabaseServiceRoleClient();
+    const { error } = await admin.from("audit_log").insert({
+      actor_user_id: params.actorUserId,
+      member_id: params.memberId,
+      table_name: params.tableName,
+      row_id: params.rowId,
+      action: params.action,
+      details: params.details,
+    });
+    if (error) console.error("recordPeopleAudit: failed to write audit_log row", error);
+  } catch (err) {
+    console.error("recordPeopleAudit: failed to write audit_log row", err);
   }
 }

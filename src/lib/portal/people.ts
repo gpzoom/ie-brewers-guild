@@ -213,7 +213,7 @@ export type PeopleView = {
 
 const ROLE_ORDER: Record<PortalRole, number> = { owner: 0, co_owner: 1, editor: 2, media_events: 3 };
 
-const PLAIN_LABEL: Record<PortalRole, string> = {
+export const PLAIN_LABEL: Record<PortalRole, string> = {
   owner: "Owner",
   co_owner: "Co-owner",
   editor: "Full editor",

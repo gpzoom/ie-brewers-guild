@@ -5,6 +5,8 @@
  * otherwise be lost); this turns that into a short sentence.
  */
 
+import { PLAIN_LABEL } from "@/lib/portal/people";
+
 export type AuditEntryInput = {
   tableName: string;
   action: string;
@@ -14,6 +16,34 @@ export type AuditEntryInput = {
 function detail(details: AuditEntryInput["details"], key: string): string | null {
   const value = details?.[key];
   return typeof value === "string" && value.trim() !== "" ? value : null;
+}
+
+function roleLabel(role: string | null): string {
+  if (!role) return "someone";
+  return (PLAIN_LABEL as Record<string, string>)[role] ?? role;
+}
+
+/** The People-screen sentence for a row that carries `details.kind`, or null for old rows. */
+function describePeopleChange(details: AuditEntryInput["details"]): string | null {
+  const kind = detail(details, "kind");
+  if (!kind) return null;
+  const who = detail(details, "email") ?? "someone";
+  switch (kind) {
+    case "invite":
+      return `Invited ${who} as ${roleLabel(detail(details, "role"))}`;
+    case "resend":
+      return `Resent the invite to ${who}`;
+    case "cancel":
+      return `Canceled the invite to ${who}`;
+    case "remove":
+      return `Removed ${who} (${roleLabel(detail(details, "role"))})`;
+    case "change_access":
+      return `Changed ${who} from ${roleLabel(detail(details, "fromRole"))} to ${roleLabel(detail(details, "toRole"))}`;
+    case "leave":
+      return `${who} left the profile`;
+    default:
+      return null;
+  }
 }
 
 const VERB: Record<string, string> = { insert: "Added", update: "Changed", delete: "Deleted" };
@@ -40,9 +70,11 @@ export function describeAuditEntry(entry: AuditEntryInput): string {
     case "upload_tokens":
       return action === "insert" ? "Made a creator upload link" : "Changed a creator upload link";
     case "member_invites":
-      return action === "insert" ? "Invited someone to the profile" : "Changed a profile invite";
+      return describePeopleChange(details) ??
+        (action === "insert" ? "Invited someone to the profile" : "Changed a profile invite");
     case "member_users":
-      return action === "delete" ? "Removed someone's access to the profile" : "Changed someone's access";
+      return describePeopleChange(details) ??
+        (action === "delete" ? "Removed someone's access to the profile" : "Changed someone's access");
     case "support_requests":
       return "Asked the Guild for a type change";
     case "auth.users":
