@@ -532,7 +532,7 @@ Decided with the owner on 25 September 2026. The screen map is snapshotted in [`
 
 ### Who uses it
 
-The member's own profile admin, meaning the owner or an editor in `member_users`. There are four roles: owner, co-owner, full editor, and Photos & events editor (see People and permissions). A Guild admin reaches the same screens only through **Edit as them**, and every impersonation rule above still applies.
+The member's own profile admin, meaning anyone with a role in `member_users`. There are four roles: owner, co-owner, full editor, and Photos & events editor (see People and permissions). A Guild admin reaches the same screens only through **Edit as them**, and every impersonation rule above still applies.
 
 ### Getting in
 
@@ -692,7 +692,7 @@ On `members`:
 
 `member_drafts`: `member_id uuid primary key` (fk members), `data jsonb not null` (keyed by section), `dirty_sections text[] not null default '{}'`, `media_updated_by_user_id` (who last changed photos, for the owner's notice), `updated_at`, `updated_by_user_id` (the real actor when impersonating). RLS: select only where `member_users` links the caller, plus Guild admins while impersonating. No direct client writes: writes go through `save_member_draft_section` and `publish_member_draft`. Never public.
 
-`member_users.role`: the check becomes `in (owner, editor, media_events)`.
+`member_users.role`: the check becomes `in (owner, co_owner, editor, media_events)`.
 
 `member_invites`: `member_id`, `email text not null`, `role text not null` (check in `editor`, `media_events`), `invited_by_user_id`, `expires_at timestamptz not null` (default now() + 14 days), `accepted_at`, `accepted_user_id`, `cancelled_at`. Unique on (member_id, lower(email)) where not accepted and not cancelled. RLS: no client access; the Worker reads and writes it.
 
