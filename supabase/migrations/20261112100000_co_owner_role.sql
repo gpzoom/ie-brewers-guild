@@ -248,3 +248,36 @@ revoke all on function public.take_back_location(uuid) from public, anon;
 revoke all on function public.accept_location_handoff(uuid, uuid) from public, anon, authenticated;
 grant execute on function public.take_back_location(uuid) to authenticated;
 grant execute on function public.accept_location_handoff(uuid, uuid) to service_role;
+
+-- From 20261018110000_business_mode_switching.sql. A business manager is
+-- never a co-owner of a location: a co_owner link becomes owner where the
+-- location has no other owner, else editor (like media_events).
+create or replace function public._link_manager_to_location(p_member_id uuid, p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_role text;
+  v_other_owner boolean;
+begin
+  select role into v_role from public.member_users where member_id = p_member_id and user_id = p_user_id;
+  v_other_owner := exists (
+    select 1 from public.member_users
+    where member_id = p_member_id and role = 'owner' and user_id <> p_user_id
+  );
+  if v_role is null then
+    insert into public.member_users (member_id, user_id, role)
+    values (p_member_id, p_user_id, case when v_other_owner then 'editor' else 'owner' end);
+    perform public._business_audit(p_member_id, 'member_users', p_member_id, 'insert');
+  elsif v_role <> 'owner' and not v_other_owner then
+    update public.member_users set role = 'owner' where member_id = p_member_id and user_id = p_user_id;
+    perform public._business_audit(p_member_id, 'member_users', p_member_id, 'update');
+  elsif v_role in ('media_events', 'co_owner') then
+    update public.member_users set role = 'editor' where member_id = p_member_id and user_id = p_user_id;
+    perform public._business_audit(p_member_id, 'member_users', p_member_id, 'update');
+  end if;
+end;
+$$;
+revoke all on function public._link_manager_to_location(uuid, uuid) from public, anon, authenticated;

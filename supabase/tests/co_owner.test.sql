@@ -6,7 +6,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(18);
+insert into _tap (line) select plan(21);
 
 -- f0..07: co-owner of m1 (owned by f0..01, full editor f0..02).
 insert into auth.users (id, email, aud, role) values
@@ -117,6 +117,34 @@ reset role;
 insert into _tap (line) select is(
   (select role from public.member_users where member_id = 'f1000000-0000-4000-8000-000000000102'
      and user_id = 'f0000000-0000-4000-8000-000000000007'), 'editor', 'take-back: the co-owner is now a full editor');
+
+-- A co-owner made business manager: never stays co-owner. Where the
+-- location has another owner they become its editor; otherwise its owner.
+insert into public.members (id, slug, member_type, business_name, city, status) values
+  ('f1000000-0000-4000-8000-000000000301', 'pgtap-co-m-a', 'producer', 'PgTap CoMgr', 'Ontario', 'draft'),
+  ('f1000000-0000-4000-8000-000000000302', 'pgtap-co-m-b', 'producer', 'PgTap CoMgr', 'Chino', 'draft');
+create temp table _biz2 on commit drop as
+  select business_id as id from public.members where id = 'f1000000-0000-4000-8000-000000000301';
+grant select on _biz2 to public;
+insert into public.member_users (member_id, user_id, role) values
+  ('f1000000-0000-4000-8000-000000000301', 'f0000000-0000-4000-8000-000000000005', 'owner'),
+  ('f1000000-0000-4000-8000-000000000301', 'f0000000-0000-4000-8000-000000000007', 'co_owner'),
+  ('f1000000-0000-4000-8000-000000000302', 'f0000000-0000-4000-8000-000000000007', 'co_owner');
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000004","role":"authenticated"}';
+insert into _tap (line) select lives_ok(
+  $q$ select public.set_business_mode((select id from _biz2), 'one_manager',
+       'f1000000-0000-4000-8000-000000000301', 'f0000000-0000-4000-8000-000000000007') $q$,
+  'manager link: a co-owner is made business manager');
+reset role;
+insert into _tap (line) select is(
+  (select role from public.member_users where member_id = 'f1000000-0000-4000-8000-000000000301'
+     and user_id = 'f0000000-0000-4000-8000-000000000007'), 'editor',
+  'manager link: co-owner of a location with another owner becomes its editor');
+insert into _tap (line) select is(
+  (select role from public.member_users where member_id = 'f1000000-0000-4000-8000-000000000302'
+     and user_id = 'f0000000-0000-4000-8000-000000000007'), 'owner',
+  'manager link: co-owner of a location with no other owner becomes its owner');
 
 insert into _tap (line) select * from finish();
 select line as tap from _tap order by n;
