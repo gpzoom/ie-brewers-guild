@@ -1,41 +1,85 @@
 import { ORG_SHORT_NAME } from "@/lib/email/build-email-content";
 
-const KEEP_TAGS = new Set(["p", "br", "strong", "b", "em", "i", "u", "ul", "ol", "li"]);
+const KEEP_TAGS = new Set(["p", "strong", "b", "em", "i", "u", "ul", "ol", "li"]);
 
-// A tag, tolerating ">" inside quoted attribute values.
-const TAG_RE = /<(\/?)([a-zA-Z][\w:-]*)((?:"[^"]*"|'[^']*'|[^>"'])*)>/g;
+// A tag at the current position (sticky), tolerating ">" inside quoted
+// attribute values. An unterminated quote or missing ">" does not match.
+const TAG_AT = /<(\/?)([a-zA-Z][\w:-]*)((?:"[^"]*"|'[^']*'|[^>"'])*)>/y;
 
 function safeHref(attrs: string): string | null {
   const m = /(?:^|\s)href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(attrs);
   if (!m) return null;
   const value = (m[1] ?? m[2] ?? m[3] ?? "").trim();
   if (!/^(https?:|mailto:)/i.test(value)) return null;
-  return value.replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  return value.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function escapeText(s: string): string {
+  return s.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 /**
  * Reduces pasted/typed HTML to p, br, strong, b, em, i, u, ul, ol, li and
  * links (http, https, mailto only). Other tags are unwrapped (text kept);
- * script, style and iframe are dropped with their contents. No DOM needed.
+ * script, style and iframe are dropped with their contents. Single-pass
+ * tokenizer, no DOM: every "<" either starts a recognized tag or is escaped,
+ * so text can never form a tag. Output is balanced.
  */
 export function sanitizeBroadcastHtml(html: string): string {
-  let s = html
+  const src = html
     .replace(/<!--[\s\S]*?(-->|$)/g, "")
+    .replace(/<[!?][^>]*>?/g, "")
     .replace(/<(script|style|iframe)\b[\s\S]*?(<\/\1\s*>|$)/gi, "");
 
-  const aStack: boolean[] = [];
-  s = s.replace(TAG_RE, (_all, slash: string, rawName: string, attrs: string) => {
-    const name = rawName.toLowerCase();
-    if (KEEP_TAGS.has(name)) return slash ? `</${name}>` : `<${name}>`;
-    if (name === "a") {
-      if (slash) return aStack.pop() ? "</a>" : "";
-      const href = safeHref(attrs);
-      aStack.push(href !== null);
-      return href !== null ? `<a href="${href}">` : "";
+  let out = "";
+  const stack: { name: string; emit: boolean }[] = [];
+  let i = 0;
+  while (i < src.length) {
+    const lt = src.indexOf("<", i);
+    if (lt === -1) {
+      out += escapeText(src.slice(i));
+      break;
     }
-    return "";
-  });
-  return s;
+    out += escapeText(src.slice(i, lt));
+    TAG_AT.lastIndex = lt;
+    const m = TAG_AT.exec(src);
+    if (!m) {
+      out += "&lt;";
+      i = lt + 1;
+      continue;
+    }
+    i = lt + m[0].length;
+    const slash = m[1] === "/";
+    const name = m[2].toLowerCase();
+    if (name === "br") {
+      if (!slash) out += "<br>";
+      continue;
+    }
+    const isA = name === "a";
+    if (!isA && !KEEP_TAGS.has(name)) continue;
+    if (!slash) {
+      if (isA) {
+        const href = safeHref(m[3]);
+        stack.push({ name, emit: href !== null });
+        if (href !== null) out += `<a href="${href}">`;
+      } else {
+        stack.push({ name, emit: true });
+        out += `<${name}>`;
+      }
+      continue;
+    }
+    const idx = stack.map((e) => e.name).lastIndexOf(name);
+    if (idx === -1) continue; // stray closing tag
+    while (stack.length > idx) {
+      const e = stack.pop()!;
+      if (e.emit) out += `</${e.name}>`;
+    }
+  }
+  while (stack.length) {
+    const e = stack.pop()!;
+    if (e.emit) out += `</${e.name}>`;
+  }
+  return out;
 }
 
 function decodeEntities(s: string): string {

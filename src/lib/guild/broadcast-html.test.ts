@@ -23,6 +23,35 @@ describe("sanitizeBroadcastHtml", () => {
   });
 });
 
+describe("sanitizeBroadcastHtml hardening", () => {
+  const inputs = [
+    "<img src=x onerror=alert(1) \">",
+    "<img src=x onerror=alert(1) '>",
+    "<img src=x onerror=alert(1)",
+  ];
+  for (const input of inputs) {
+    it(`never emits a live tag for ${input}`, () => {
+      const out = sanitizeBroadcastHtml(input);
+      expect(out).not.toContain("<img");
+      expect(out).not.toMatch(/<[^>]*onerror/);
+      expect(out).not.toMatch(/<(?!\/?(p|br|strong|b|em|i|u|a|ul|ol|li)[ >])/);
+    });
+  }
+  it("escapes a lone > and <", () => {
+    expect(sanitizeBroadcastHtml("a > b < c")).toBe("a &gt; b &lt; c");
+  });
+  it("closes tags left open", () => {
+    expect(sanitizeBroadcastHtml('<a href="https://x.y">open')).toBe('<a href="https://x.y">open</a>');
+    expect(sanitizeBroadcastHtml("<ul><li>x")).toBe("<ul><li>x</li></ul>");
+  });
+  it("drops stray closing tags", () => {
+    expect(sanitizeBroadcastHtml("</ul>text")).toBe("text");
+  });
+  it("a dropped link's closing tag does not close an outer kept tag", () => {
+    expect(sanitizeBroadcastHtml('<b><a href="javascript:x">y</a>z</b>')).toBe("<b>yz</b>");
+  });
+});
+
 describe("htmlToText", () => {
   it("renders links and list items", () => {
     const t = htmlToText('<p>Hi <a href="https://a.b">site</a></p><ul><li>one</li><li>two</li></ul>');
