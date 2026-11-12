@@ -87,7 +87,13 @@ export type BroadcastAuditEntry = {
   tableName: "broadcast_emails";
   rowId: string;
   action: "insert";
-  details: { subject: string; recipient_count: number; failed_count: number; audience: string };
+  details: {
+    subject: string;
+    recipient_count: number;
+    failed_count: number;
+    failed_emails: string[];
+    audience: string;
+  };
 };
 
 export interface BroadcastStore {
@@ -538,12 +544,22 @@ export async function sendBroadcastCore(
     tableName: "broadcast_emails",
     rowId,
     action: "insert",
-    details: { subject, recipient_count: result.sent.length, failed_count: result.failed.length, audience: label },
+    details: {
+      subject,
+      recipient_count: result.sent.length,
+      failed_count: result.failed.length,
+      failed_emails: result.failed,
+      audience: label,
+    },
   });
-  try {
-    await store.clearDraft();
-  } catch (err) {
-    console.error("Broadcast: couldn't clear the draft", err);
+  // Nothing accepted (bad key, Resend down): keep the draft so the composed
+  // message isn't lost and can be sent again.
+  if (result.sent.length > 0) {
+    try {
+      await store.clearDraft();
+    } catch (err) {
+      console.error("Broadcast: couldn't clear the draft", err);
+    }
   }
   return { sent: result.sent.length, failed: result.failed, memberCount };
 }

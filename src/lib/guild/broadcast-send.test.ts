@@ -58,6 +58,59 @@ describe("sendBroadcastEmails", () => {
     expect(b.headers).toEqual({ "List-Unsubscribe": "<https://site/u/abc>", "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" });
   });
 
+  it("each of two recipients' bodies parses to the full object with attachments, and response bodies are read", async () => {
+    const responses: Response[] = [];
+    const s = setup(() => {
+      const res = ok();
+      responses.push(res);
+      return res;
+    });
+    const attachments = [
+      { filename: "f.pdf", content: "QUJD" },
+      { filename: "g\"h.png", content: "REVG" },
+    ];
+    await sendBroadcastEmails({
+      ...base,
+      recipients: [recipient("a@x.com", "https://site/u/a"), recipient("b@x.com")],
+      attachments,
+      fetchImpl: s.fetchImpl,
+      sleep: s.sleep,
+    });
+    expect(body(s.calls[0])).toEqual({
+      from: base.from,
+      to: ["a@x.com"],
+      subject: "News",
+      html: "<p>Hi a@x.com</p>",
+      text: "Hi a@x.com",
+      reply_to: "admin@example.com",
+      headers: { "List-Unsubscribe": "<https://site/u/a>", "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+      attachments,
+    });
+    expect(body(s.calls[1])).toEqual({
+      from: base.from,
+      to: ["b@x.com"],
+      subject: "News",
+      html: "<p>Hi b@x.com</p>",
+      text: "Hi b@x.com",
+      reply_to: "admin@example.com",
+      attachments,
+    });
+    expect(responses.every((r) => r.bodyUsed)).toBe(true);
+  });
+
+  it("logs a refused address with the response text, never the API key", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const s = setup(() => new Response(`{"message":"invalid ${"x".repeat(300)}"}`, { status: 422 }));
+    await sendBroadcastEmails({ ...base, recipients: [recipient("a@x.com")], attachments: [], fetchImpl: s.fetchImpl, sleep: s.sleep });
+    const logged = error.mock.calls.map((c) => c.join(" ")).join("\n");
+    expect(logged).toContain("a@x.com");
+    expect(logged).toContain("422");
+    expect(logged).toContain('{"message":"invalid');
+    expect(logged).not.toContain("x".repeat(250));
+    expect(logged).not.toContain("re_key");
+    error.mockRestore();
+  });
+
   it("sleeps gapMs between requests only", async () => {
     const s = setup(ok);
     await sendBroadcastEmails({ ...base, recipients: [recipient("a@x.com"), recipient("b@x.com"), recipient("c@x.com")], attachments: [], fetchImpl: s.fetchImpl, sleep: s.sleep });

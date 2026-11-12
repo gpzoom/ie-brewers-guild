@@ -28,7 +28,11 @@ export async function sendBroadcastEmails(p: {
   const sent: string[] = [];
   const failed: string[] = [];
 
-  const post = async (r: BroadcastRecipient): Promise<Response> => {
+  // Attachments can be ~13 MB of base64: serialize them once per call and
+  // splice the JSON into each recipient's body, instead of per recipient.
+  const attachmentsJson = p.attachments.length > 0 ? JSON.stringify(p.attachments) : null;
+
+  const post = async (r: BroadcastRecipient): Promise<{ ok: boolean; status: number; text: string }> => {
     const body: Record<string, unknown> = {
       from: p.from,
       to: [r.email],
@@ -37,15 +41,19 @@ export async function sendBroadcastEmails(p: {
       text: r.text,
       reply_to: p.replyTo,
     };
-    if (p.attachments.length > 0) body.attachments = p.attachments;
     if (r.oneClickUrl) {
       body.headers = { "List-Unsubscribe": `<${r.oneClickUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" };
     }
-    return fetchImpl(RESEND_URL, {
+    let json = JSON.stringify(body);
+    if (attachmentsJson) json = `${json.slice(0, -1)},"attachments":${attachmentsJson}}`;
+    const res = await fetchImpl(RESEND_URL, {
       method: "POST",
       headers: { Authorization: `Bearer ${p.apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: json,
     });
+    // Always read the body so the Worker doesn't hold an unread response.
+    const text = await res.text().catch(() => "");
+    return { ok: res.ok, status: res.status, text };
   };
 
   for (let i = 0; i < p.recipients.length; i++) {
@@ -57,8 +65,14 @@ export async function sendBroadcastEmails(p: {
         await sleep(1000);
         res = await post(r);
       }
-      (res.ok ? sent : failed).push(r.email);
-    } catch {
+      if (res.ok) {
+        sent.push(r.email);
+      } else {
+        console.error(`Broadcast: Resend refused ${r.email} (${res.status}): ${res.text.slice(0, 200)}`);
+        failed.push(r.email);
+      }
+    } catch (err) {
+      console.error(`Broadcast: couldn't send to ${r.email}`, err instanceof Error ? err.message : err);
       failed.push(r.email);
     }
   }

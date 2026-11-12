@@ -441,15 +441,21 @@ describe("sendBroadcastCore", () => {
         tableName: "broadcast_emails",
         rowId: row.id,
         action: "insert",
-        details: { subject: "Meeting Thursday", recipient_count: 3, failed_count: 0, audience: "All members" },
+        details: {
+          subject: "Meeting Thursday",
+          recipient_count: 3,
+          failed_count: 0,
+          failed_emails: [],
+          audience: "All members",
+        },
       },
     ]);
     expect(state.draft).toBeNull();
     expect(state.removed).toEqual([]);
   });
 
-  it("marks the row failed when nothing was accepted, and lists the failures", async () => {
-    const { store, state } = memoryStore();
+  it("marks the row failed when nothing was accepted, lists the failures, and keeps the draft", async () => {
+    const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT });
     const { openMailer } = fakeMailer((emails) => ({ sent: [], failed: emails }));
     const result = await sendBroadcastCore(gateFor(store).gate, SEND, openMailer);
     expect(result).toEqual({
@@ -462,15 +468,22 @@ describe("sendBroadcastCore", () => {
       recipient_count: 0,
       failed_emails: ["one@example.com", "two@example.com", "three@example.com"],
     });
-    expect(state.audits[0].details).toMatchObject({ recipient_count: 0, failed_count: 3 });
+    expect(state.audits[0].details).toMatchObject({
+      recipient_count: 0,
+      failed_count: 3,
+      failed_emails: ["one@example.com", "two@example.com", "three@example.com"],
+    });
+    expect(state.draft).toEqual(DRAFT_WITH_ATTACHMENT);
   });
 
-  it("partial failure is still 'sent'", async () => {
-    const { store, state } = memoryStore();
+  it("partial failure is still 'sent' and clears the draft", async () => {
+    const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT });
     const { openMailer } = fakeMailer((emails) => ({ sent: emails.slice(1), failed: emails.slice(0, 1) }));
     const result = await sendBroadcastCore(gateFor(store).gate, SEND, openMailer);
     expect(result.sent).toBe(2);
     expect(state.inserted[0]).toMatchObject({ status: "sent", recipient_count: 2, failed_emails: ["one@example.com"] });
+    expect(state.audits[0].details).toMatchObject({ failed_count: 1, failed_emails: ["one@example.com"] });
+    expect(state.draft).toBeNull();
   });
 
   it("refuses an attachment that isn't in the draft or isn't under draft/", async () => {

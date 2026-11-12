@@ -41,6 +41,15 @@ const DRAFT_COLUMNS = "audience_type, audience_filter, member_ids, subject, body
 const RECENT_COLUMNS =
   "id, sent_at, subject, audience_type, audience_filter, member_ids, recipient_count, status, failed_emails";
 
+/** Logs Supabase's own error for us, and gives the screen plain words instead. */
+function fail(friendly: string, original: unknown): never {
+  console.error(`Broadcast: ${friendly}`, original);
+  throw new Error(friendly);
+}
+
+const LOAD = "Couldn't load the broadcast screen. Try again.";
+const AUDIENCE = "Couldn't look up who gets this email. Try again.";
+
 function chunks<T>(items: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
@@ -51,7 +60,7 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
   return {
     async getDraft() {
       const { data, error } = await service.from("broadcast_draft").select(DRAFT_COLUMNS).eq("id", true).maybeSingle();
-      if (error) throw new Error(error.message);
+      if (error) fail("Couldn't load the draft. Try again.", error);
       return (data as BroadcastDraftRow | null) ?? null;
     },
 
@@ -70,12 +79,12 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
         },
         { onConflict: "id" },
       );
-      if (error) throw new Error("Couldn't save the draft. Try again.");
+      if (error) fail("Couldn't save the draft. Try again.", error);
     },
 
     async clearDraft() {
       const { error } = await service.from("broadcast_draft").delete().eq("id", true);
-      if (error) throw new Error(error.message);
+      if (error) fail("Couldn't clear the draft.", error);
     },
 
     async listRecent(limit) {
@@ -84,7 +93,7 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
         .select(RECENT_COLUMNS)
         .order("sent_at", { ascending: false })
         .limit(limit);
-      if (error) throw new Error(error.message);
+      if (error) fail(LOAD, error);
       return (data ?? []) as BroadcastRecentRow[];
     },
 
@@ -93,10 +102,10 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
         .from("members")
         .select("id, business_name, member_type, status")
         .in("status", ["published", "draft"]);
-      if (error) throw new Error(error.message);
+      if (error) fail(AUDIENCE, error);
       const members = (data ?? []) as { id: string; business_name: string; member_type: string; status: string }[];
       const { data: links, error: linkError } = await service.from("member_categories").select("member_id, category_id");
-      if (linkError) throw new Error(linkError.message);
+      if (linkError) fail(AUDIENCE, linkError);
       const byMember = new Map<string, string[]>();
       for (const link of (links ?? []) as { member_id: string; category_id: string }[]) {
         const list = byMember.get(link.member_id) ?? [];
@@ -108,7 +117,7 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
 
     async listCategories() {
       const { data, error } = await service.from("categories").select("id, name");
-      if (error) throw new Error(error.message);
+      if (error) fail(LOAD, error);
       return (data ?? []) as { id: string; name: string }[];
     },
 
@@ -120,7 +129,7 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
           .select("member_id, user_id, role, created_at")
           .in("member_id", ids)
           .order("created_at", { ascending: true });
-        if (error) throw new Error(error.message);
+        if (error) fail(AUDIENCE, error);
         rows.push(...((data ?? []) as { member_id: string; user_id: string; role: string | null; created_at: string }[]));
       }
       return rows;
@@ -141,29 +150,29 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
 
     async unsubscribedUserIds() {
       const { data, error } = await service.from("broadcast_unsubscribes").select("user_id");
-      if (error) throw new Error(error.message);
+      if (error) fail(AUDIENCE, error);
       return new Set(((data ?? []) as { user_id: string }[]).map((r) => r.user_id));
     },
 
     async uploadAttachment(path, bytes, contentType) {
       const { error } = await service.storage.from(BUCKET).upload(path, bytes, { contentType, upsert: false });
-      if (error) throw new Error("Couldn't upload the file. Try again.");
+      if (error) fail("Couldn't upload that file. Try again.", error);
     },
 
     async removeAttachment(path) {
       const { error } = await service.storage.from(BUCKET).remove([path]);
-      if (error) throw new Error("Couldn't remove the file. Try again.");
+      if (error) fail("Couldn't remove that file. Try again.", error);
     },
 
     async downloadAttachment(path) {
       const { data, error } = await service.storage.from(BUCKET).download(path);
-      if (error || !data) throw new Error("Couldn't read an attachment. Remove it and attach it again.");
+      if (error || !data) fail("Couldn't read an attachment. Remove it and attach it again.", error);
       return new Uint8Array(await data.arrayBuffer());
     },
 
     async insertBroadcast(row) {
       const { error } = await service.from("broadcast_emails").insert(row);
-      if (error) throw new Error(error.message);
+      if (error) fail("Couldn't save the broadcast record.", error);
     },
 
     async audit(entry) {
@@ -206,8 +215,8 @@ async function openMailer(): Promise<BroadcastMailer> {
     RESEND_API_KEY?: string;
     HOURS_CONFIRM_SECRET?: string;
   };
-  if (!apiKey) throw new Error("Missing RESEND_API_KEY in the Worker environment.");
-  if (!secret) throw new Error("Missing HOURS_CONFIRM_SECRET in the Worker environment.");
+  if (!apiKey) fail("Email isn't set up on this site. Nothing was sent.", "missing RESEND_API_KEY");
+  if (!secret) fail("Email isn't set up on this site. Nothing was sent.", "missing HOURS_CONFIRM_SECRET");
   return {
     siteUrl: resolveEmailSiteUrl(currentRequestUrl()),
     unsubscribeSecret: secret,
