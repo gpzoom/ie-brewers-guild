@@ -4,7 +4,7 @@ import {
   getSupabaseServiceRoleClient,
 } from "@/lib/supabase/server";
 import { withSuperAdmin } from "@/lib/auth/super-admin";
-import { describeAuditEntry } from "@/lib/guild/audit-log-view";
+import { describeAuditEntry, isEditingAs } from "@/lib/guild/audit-log-view";
 
 /**
  * The super admin's Audit log (docs/member-profiles.md, "Super admin"):
@@ -15,8 +15,9 @@ import { describeAuditEntry } from "@/lib/guild/audit-log-view";
  *
  * "[person], editing as [member]": a row about a member written by someone
  * who isn't linked to that member (a Guild admin or the super admin using
- * Edit as them). A member's own logged actions -- confirming their type --
- * read as theirs.
+ * Edit as them). People rows record `impersonating` themselves, so a
+ * co-owner who later left still reads as themselves (isEditingAs). A
+ * member's own logged actions -- confirming their type -- read as theirs.
  */
 
 export type AuditFilter = {
@@ -132,7 +133,10 @@ export const getAuditLog = createServerFn({ method: "GET" })
         actorEmail: emails.get(row.actor_user_id) ?? null,
         memberId: row.member_id,
         memberName: row.member_id ? (memberName.get(row.member_id) ?? null) : null,
-        editingAs: row.member_id !== null && !linked.has(`${row.actor_user_id}:${row.member_id}`),
+        editingAs: isEditingAs(
+          { memberId: row.member_id, actorUserId: row.actor_user_id, details: row.details },
+          linked.has(`${row.actor_user_id}:${row.member_id}`),
+        ),
         description: describeAuditEntry({
           tableName: row.table_name,
           action: row.action,

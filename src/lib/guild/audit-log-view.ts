@@ -46,6 +46,21 @@ function describePeopleChange(details: AuditEntryInput["details"]): string | nul
   }
 }
 
+/**
+ * Whether a row reads "[person], editing as [member]" (a Guild admin using
+ * Edit as them). People rows store `details.impersonating`; older rows fall
+ * back to whether the actor is (still) linked to the member.
+ */
+export function isEditingAs(
+  row: { memberId: string | null; actorUserId: string; details: Record<string, unknown> | null },
+  actorIsLinked: boolean,
+): boolean {
+  if (row.memberId === null) return false;
+  const flag = row.details?.impersonating;
+  if (typeof flag === "boolean") return flag;
+  return !actorIsLinked;
+}
+
 const VERB: Record<string, string> = { insert: "Added", update: "Changed", delete: "Deleted" };
 
 export function describeAuditEntry(entry: AuditEntryInput): string {

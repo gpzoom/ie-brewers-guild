@@ -121,6 +121,7 @@ export const invitePortalPerson = createServerFn({ method: "POST" })
       actor: actorFor(member),
     });
     await recordPeopleAudit({
+      impersonating: member.isImpersonating,
       actorUserId: member.userId,
       memberId: member.memberId,
       tableName: "member_invites",
@@ -143,6 +144,7 @@ export const resendPortalInvite = createServerFn({ method: "POST" })
     });
     // resendInvite found the invite by this id, so it's a real invite id.
     await recordPeopleAudit({
+      impersonating: member.isImpersonating,
       actorUserId: member.userId,
       memberId: member.memberId,
       tableName: "member_invites",
@@ -165,6 +167,7 @@ export const cancelPortalInvite = createServerFn({ method: "POST" })
     });
     // cancelInvite found the invite by this id, so it's a real invite id.
     await recordPeopleAudit({
+      impersonating: member.isImpersonating,
       actorUserId: member.userId,
       memberId: member.memberId,
       tableName: "member_invites",
@@ -187,6 +190,7 @@ export const removePortalPerson = createServerFn({ method: "POST" })
     });
     // removePerson matched this id to a member_users row, so it's a real user id.
     await recordPeopleAudit({
+      impersonating: member.isImpersonating,
       actorUserId: member.userId,
       memberId: member.memberId,
       tableName: "member_users",
@@ -213,6 +217,7 @@ export const changePortalAccess = createServerFn({ method: "POST" })
     });
     // changeAccess matched this id to a member_users row, so it's a real user id.
     await recordPeopleAudit({
+      impersonating: member.isImpersonating,
       actorUserId: member.userId,
       memberId: member.memberId,
       tableName: "member_users",
@@ -234,6 +239,7 @@ export const leavePortalProfile = createServerFn({ method: "POST" }).handler(asy
   const store = await peopleStore();
   const left = await leaveProfile(store, { memberId: member.memberId, actor: actorFor(member) });
   await recordPeopleAudit({
+    impersonating: member.isImpersonating,
     actorUserId: member.userId,
     memberId: member.memberId,
     tableName: "member_users",

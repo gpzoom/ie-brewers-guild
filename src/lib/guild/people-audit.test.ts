@@ -20,6 +20,7 @@ const params = {
   rowId: null,
   action: "delete" as const,
   details: { kind: "remove" as const, email: "a@b.com", role: "editor" },
+  impersonating: false,
 };
 
 describe("recordPeopleAudit", () => {
@@ -34,8 +35,16 @@ describe("recordPeopleAudit", () => {
       table_name: "member_users",
       row_id: null,
       action: "delete",
-      details: params.details,
+      details: { ...params.details, impersonating: false },
     });
+  });
+
+  it("stores whether a Guild admin was editing as the member", async () => {
+    insert.mockResolvedValue({ error: null });
+    await recordPeopleAudit({ ...params, impersonating: true });
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({ details: { ...params.details, impersonating: true } }),
+    );
   });
 
   it("never throws when the insert fails", async () => {

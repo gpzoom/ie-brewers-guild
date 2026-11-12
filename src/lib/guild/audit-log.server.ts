@@ -96,7 +96,9 @@ export type PeopleAuditDetails = {
  * leave), whoever makes it. Uses the service-role client because non-admins
  * can't insert into audit_log through RLS. Like the wrapper above, a logging
  * failure is reported but never thrown, so it can't undo the People change.
- * `rowId` must be a uuid or null.
+ * `rowId` must be a uuid or null. `impersonating` (a Guild admin using Edit
+ * as them) is stored in `details`, so the Audit log can tell a Guild admin's
+ * change from the member's own people's -- even after a co-owner leaves.
  */
 export async function recordPeopleAudit(params: {
   actorUserId: string;
@@ -105,6 +107,7 @@ export async function recordPeopleAudit(params: {
   rowId: string | null;
   action: AuditableAction;
   details: PeopleAuditDetails;
+  impersonating: boolean;
 }): Promise<void> {
   try {
     const admin = await getSupabaseServiceRoleClient();
@@ -114,7 +117,7 @@ export async function recordPeopleAudit(params: {
       table_name: params.tableName,
       row_id: params.rowId,
       action: params.action,
-      details: params.details,
+      details: { ...params.details, impersonating: params.impersonating },
     });
     if (error) console.error("recordPeopleAudit: failed to write audit_log row", error);
   } catch (err) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeAuditEntry } from "@/lib/guild/audit-log-view";
+import { describeAuditEntry, isEditingAs } from "@/lib/guild/audit-log-view";
 
 describe("describeAuditEntry", () => {
   it("names a deleted member from details", () => {
@@ -78,5 +78,29 @@ describe("describeAuditEntry", () => {
     expect(describeAuditEntry({ tableName: "member_users", action: "delete", details: null })).toBe(
       "Removed someone's access to the profile",
     );
+  });
+});
+
+describe("isEditingAs", () => {
+  const base = { memberId: "m1", actorUserId: "u1" };
+
+  it("a leave row by someone no longer linked, not impersonating, is not 'editing as'", () => {
+    expect(
+      isEditingAs({ ...base, details: { kind: "leave", email: "a@b.co", impersonating: false } }, false),
+    ).toBe(false);
+  });
+
+  it("a People row written while impersonating is 'editing as', even if the actor is linked", () => {
+    expect(isEditingAs({ ...base, details: { kind: "invite", impersonating: true } }, true)).toBe(true);
+    expect(isEditingAs({ ...base, details: { kind: "invite", impersonating: true } }, false)).toBe(true);
+  });
+
+  it("falls back to the linked check for rows without the flag", () => {
+    expect(isEditingAs({ ...base, details: { kind: "remove" } }, false)).toBe(true);
+    expect(isEditingAs({ ...base, details: null }, true)).toBe(false);
+  });
+
+  it("a row with no member is never 'editing as'", () => {
+    expect(isEditingAs({ memberId: null, actorUserId: "u1", details: { impersonating: true } }, false)).toBe(false);
   });
 });
