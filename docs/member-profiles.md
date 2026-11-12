@@ -530,7 +530,7 @@ Decided with the owner on 25 September 2026. The screen map is snapshotted in [`
 
 ### Who uses it
 
-The member's own profile admin, meaning the owner or an editor in `member_users`. There are three roles: owner, full editor, and Photos & events editor (see People and permissions). A Guild admin reaches the same screens only through **Edit as them**, and every impersonation rule above still applies.
+The member's own profile admin, meaning the owner or an editor in `member_users`. There are four roles: owner, co-owner, full editor, and Photos & events editor (see People and permissions). A Guild admin reaches the same screens only through **Edit as them**, and every impersonation rule above still applies.
 
 ### Getting in
 
@@ -616,30 +616,32 @@ This supersedes the current behaviour, where edits to a published profile go liv
 
 ### People and permissions
 
-A member's profile can have three kinds of people. The role lives in `member_users.role`.
+A member's profile can have four kinds of people. The role lives in `member_users.role`.
 
-| Can they… | Owner (`owner`) | Full editor (`editor`) | Photos & events editor (`media_events`) |
-| --- | --- | --- | --- |
-| Go through the setup wizard | yes | yes, if setup isn't done | never |
-| Basics & hours, Links, Discount, Theme, Food (producers); the logo and cover on Logo, Photos & Cover | yes | yes | no, hidden |
-| Logo, Photos & Cover's gallery and slides: upload, crop, reorder, tap-through links, creator upload links, approve or reject creator uploads | yes | yes | yes (they see only these two parts of the page) |
-| Events: add, edit, hide, set Postponed / Rescheduled / Canceled, Refresh now | yes | yes | yes |
-| Connect or disconnect the Google / Apple calendar | yes | no | no |
-| Preview | whole draft | whole draft | live page plus their Photos draft |
-| Publish | everything | everything | Photos only |
-| Discard changes | everything | everything | Photos only |
-| Request a type change | yes | yes | no |
-| People: invite, resend, cancel invite, remove | yes | no | no |
+| Can they… | Owner (`owner`) | Co-owner (`co_owner`) | Full editor (`editor`) | Photos & events editor (`media_events`) |
+| --- | --- | --- | --- | --- |
+| Go through the setup wizard | yes | yes | yes, if setup isn't done | never |
+| Basics & hours, Links, Discount, Theme, Food (producers); the logo and cover on Logo, Photos & Cover | yes | yes | yes | no, hidden |
+| Logo, Photos & Cover's gallery and slides: upload, crop, reorder, tap-through links, creator upload links, approve or reject creator uploads | yes | yes | yes | yes (they see only these two parts of the page) |
+| Events: add, edit, hide, set Postponed / Rescheduled / Canceled, Refresh now | yes | yes | yes | yes |
+| Connect or disconnect the Google / Apple calendar | yes | yes | no | no |
+| Preview | whole draft | whole draft | whole draft | live page plus their Photos draft |
+| Publish | everything | everything | everything | Photos only |
+| Discard changes | everything | everything | everything | Photos only |
+| Request a type change | yes | yes | yes | no |
+| People: invite, resend, cancel invite, remove | yes | Full and Photos & events editors only, never a co-owner or the owner | no | no |
 
 - **Cover and logo are not part of Photos** for this purpose. They stay with the owner and full editors. Since the redesign (2 October 2026) they share one page, **Logo, Photos & Cover** (`/portal/logo-cover`; `/portal/photos` redirects there); a Photos & events editor opens it and sees only Gallery and Carousel.
-- Only the owner connects the calendar, so sync doesn't break when an editor leaves or used their own Google account.
+- Only the owner or a co-owner connects the calendar, so sync doesn't break when an editor leaves or used their own Google account.
 - A Photos & events editor never sees the wizard. If the member's setup isn't done yet, they still land on their two sections.
-- One owner per member. Changing who the owner is is a Guild admin job, from the roster. The owner can't remove themselves.
+- One owner per member, and any number of co-owners (owner's call, 12 November 2026). Changing who the owner is is a Guild admin job, from the roster. The owner can't remove themselves.
+- **A co-owner has the owner's rights on that one profile** (design `docs/superpowers/specs/2026-11-12-co-owner-design.md`): everything in the Owner column, including both calendars, "We have our own kitchen" and type-change requests, plus People. The exceptions: a co-owner can't invite, resend, cancel, remove or change a co-owner (or a pending Co-owner invite), can't remove or demote the owner, and can't hand off or take back a location. Only the owner (or a Guild admin editing as them) manages co-owners. A co-owner can **Leave this profile** from their own row on People, after confirming.
 - **Hiding a section in the UI is not the protection.** Every write is checked on the server against the caller's role (below).
+- **Co-owner enforcement.** `co_owner` is a `member_users.role` value. The database rules that gate owner-only actions (calendar connections, "We have our own kitchen", drafts and publishing) accept a co-owner too; every People write is checked in the Worker (`people.ts`) before the service key is used, and only the owner (a Guild admin editing as them has owner rights) may touch a co-owner or a pending Co-owner invite. Hand-off and take-back turn the location's co-owners into Full editors and cancel its pending Co-owner invites; the business manager of a handed-off location can never be a co-owner there. Guild emails that go to "the member" (`creator_upload_pending`, `hours_stale`) go to the owner and every co-owner, one separate email each; business-manager editor rows never get them. The Guild roster shows each member's co-owners under the detail line.
 
 #### The People section
 
-A portal section only the owner sees. It lists everyone on the member with their role, plus pending invites. To invite, the owner enters an email address and picks **Photos & events** or **Full editor**. The invitee gets an email with a Member Portal sign-in link. When they sign in with that address, the invite is accepted and a `member_users` row is created with the invited role. Invites expire after 14 days and can be resent (at most once every 5 minutes per invite) or cancelled. Removing someone deletes their `member_users` row and ends their access on their next request. Changing someone's role is remove-and-reinvite, for now. The Guild admin can do all of this from the roster too.
+A portal section only the owner and co-owners see. It lists everyone on the member with their role, plus pending invites. To invite, they enter an email address and pick **Photos & events** or **Full editor**; the owner (and a Guild admin editing as them) also sees **Co-owner**: "Everything the owner can do, including People and calendars. Only you can add or remove co-owners." The invitee gets an email with a Member Portal sign-in link. When they sign in with that address, the invite is accepted and a `member_users` row is created with the invited role. Invites expire after 14 days and can be resent (at most once every 5 minutes per invite) or cancelled. Removing someone deletes their `member_users` row and ends their access on their next request. **Change access** next to a person moves them between Photos & events, Full editor and Co-owner without removing and re-inviting; only the owner can move someone to or from Co-owner. Every change on People (invite, resend, cancel, remove, change access, leave) is audit-logged with the real signed-in user as actor, whoever makes it. The Guild admin can do all of this from the roster too.
 
 Invites go through the same server path the Guild admin's create-member invite already uses, not a client-side Supabase call.
 
