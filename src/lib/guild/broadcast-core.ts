@@ -7,7 +7,12 @@ import {
   type BroadcastAudience,
 } from "@/lib/guild/broadcast-audience";
 import { checkAttachmentAdd } from "@/lib/guild/broadcast-attachments";
-import { buildBroadcastEmail, htmlToText, sanitizeBroadcastHtml } from "@/lib/guild/broadcast-html";
+import {
+  broadcastEmailBuilder,
+  buildBroadcastEmail,
+  htmlToText,
+  sanitizeBroadcastHtml,
+} from "@/lib/guild/broadcast-html";
 import type { BroadcastRecipient, OutgoingAttachment } from "@/lib/guild/broadcast-send";
 import { signUnsubscribeToken } from "@/lib/email/unsubscribe-token";
 
@@ -51,6 +56,12 @@ export const STILL_SENDING =
 export const COULDNT_START = "Couldn't start the send. Nothing was sent.";
 export const AUDIENCE_LOOKUP_FAILED = "Couldn't look up who gets this email. Try again.";
 export const BROADCAST_NOT_FOUND = "That broadcast wasn't found.";
+/** The sanitized body's limit (bytes): every email carries it, 10 per request. */
+export const BROADCAST_BODY_MAX_BYTES = 100 * 1024;
+export const BODY_TOO_LONG = "That message is too long. Shorten it or attach a file instead.";
+export const ATTACHMENT_MISSING =
+  "An attachment for this broadcast is missing, so it can't be finished. Use Mark as stopped.";
+export const STILL_GOING = "That broadcast is still sending. Wait a few minutes and check again.";
 /** Same words as the screen's LOST_CONTACT_MESSAGE (broadcast-screen-helpers.ts). */
 export const LOST_CONTACT =
   "We lost contact while sending. Check Recent broadcasts and the Audit log before sending again.";
@@ -106,6 +117,9 @@ export type BroadcastInsertRow = AudienceColumns & {
 /** What a batch needs from the broadcast_emails row. */
 export type BroadcastJobRow = AudienceColumns & {
   id: string;
+  created_at: string;
+  updated_at: string;
+  total_recipients: number;
   subject: string;
   body_html: string;
   attachments: BroadcastAttachment[];
@@ -122,6 +136,8 @@ export type BroadcastProgressPatch = {
   recipient_count: number;
   failed_emails: string[];
   status?: "sent" | "failed";
+  /** Emptied when the send ends: the list is only needed while sending. */
+  pending_recipients?: [];
 };
 
 export type BroadcastRecentRow = {
@@ -160,13 +176,33 @@ export type BroadcastAuditEntry = {
         audience: string;
       };
     }
+  | {
+      /** An interrupted send the super admin gave up on (Mark as stopped). */
+      action: "update";
+      details: {
+        stopped: true;
+        subject: string;
+        recipient_count: number;
+        failed_count: number;
+        stopped_after: number;
+        planned_count: number;
+      };
+    }
 );
 
 export interface BroadcastStore {
   getDraft(): Promise<BroadcastDraftRow | null>;
   /** Upserts the single draft row. */
   saveDraft(row: BroadcastDraftRow, userId: string): Promise<void>;
-  clearDraft(): Promise<void>;
+  /**
+   * Deletes the draft only if it wasn't saved after savedBy (a newer draft,
+   * written while a send was paused, is kept).
+   */
+  clearDraftIfSavedBy(savedBy: string): Promise<void>;
+  /** Does any broadcast_emails row (sending or sent) list this attachment path? */
+  attachmentInUse(path: string): Promise<boolean>;
+  /** Which of these users have unsubscribed (one query per batch). */
+  unsubscribedAmong(userIds: string[]): Promise<Set<string>>;
   /** Newest first. */
   listRecent(limit: number): Promise<BroadcastRecentRow[]>;
   /** Every member with its category ids (the core keeps the active ones). */
@@ -239,6 +275,8 @@ export type BroadcastRecentView = {
 export type BroadcastStartResult = { id: string; total: number; memberCount: number };
 export type BroadcastContinueResult = {
   done: boolean;
+  /** People tried or skipped so far (next_index): the progress bar. */
+  processed: number;
   sentSoFar: number;
   failedSoFar: number;
   total: number;
@@ -484,6 +522,8 @@ function validateMessage(input: { subject: unknown; bodyHtml: unknown }) {
   if (!subject) throw new Error("Add a subject.");
   const bodyHtml = parseBody(input.bodyHtml);
   if (bodyIsEmpty(bodyHtml)) throw new Error("Write a message.");
+  if (new TextEncoder().encode(bodyHtml).length > BROADCAST_BODY_MAX_BYTES)
+    throw new Error(BODY_TOO_LONG);
   return { subject, bodyHtml };
 }
 
@@ -602,8 +642,7 @@ export async function removeBroadcastAttachmentCore(
 ): Promise<{ ok: true }> {
   const { actor, store } = await gated(gate, "remove a broadcast attachment");
   const current = await store.getDraft();
-  // Only a file still in the draft: a sent broadcast's files (also under
-  // draft/) are referenced by its row and must stay.
+  // Only a file still in the draft.
   const [attachment] = pickDraftAttachments([{ path: input?.path }], current);
   // Draft first: if the file delete then fails, it only orphans a file,
   // never leaves the draft pointing at a file that's gone.
@@ -611,6 +650,17 @@ export async function removeBroadcastAttachmentCore(
     { ...current!, attachments: current!.attachments.filter((a) => a.path !== attachment.path) },
     actor.userId,
   );
+  // A broadcast row (a paused send, or a sent one) using the same file keeps
+  // it: deleting it would make a paused send impossible to finish. When we
+  // can't tell, keep the file (an unused file is harmless).
+  let inUse: boolean;
+  try {
+    inUse = await store.attachmentInUse(attachment.path);
+  } catch (err) {
+    console.error("Broadcast: couldn't check whether a broadcast uses the file; kept it", err);
+    inUse = true;
+  }
+  if (inUse) return { ok: true };
   try {
     await store.removeAttachment(attachment.path);
   } catch (err) {
@@ -645,23 +695,31 @@ export async function sendBroadcastTestCore(
   return { sentTo: to };
 }
 
-/** Each person's own copy: their unsubscribe links (signed locally, no subrequest) in the footer and headers. */
+/**
+ * Each person's own copy: the email is built once per batch and only their
+ * footer (unsubscribe links, signed locally, no subrequest) is added. The
+ * idempotency key (broadcast id + their place in the list) lets Resend drop
+ * a repeat if a batch is sent again after a lost connection.
+ */
 async function personalize(
-  people: BroadcastPendingRecipient[],
+  people: { person: BroadcastPendingRecipient; index: number }[],
+  broadcastId: string,
   bodyHtml: string,
   mailer: BroadcastMailer,
 ): Promise<BroadcastRecipient[]> {
+  const build = broadcastEmailBuilder(bodyHtml);
   return Promise.all(
-    people.map(async (r) => {
-      const token = await signUnsubscribeToken(r.userId, mailer.unsubscribeSecret);
+    people.map(async ({ person, index }) => {
+      const token = await signUnsubscribeToken(person.userId, mailer.unsubscribeSecret);
       const unsubscribeUrl = `${mailer.siteUrl}/unsubscribe/${token}`;
-      const { html, text } = buildBroadcastEmail({ bodyHtml, unsubscribeUrl });
+      const { html, text } = build(unsubscribeUrl);
       return {
-        email: r.email,
+        email: person.email,
         html,
         text,
         unsubscribeUrl,
         oneClickUrl: `${mailer.siteUrl}/api/unsubscribe/${token}`,
+        idempotencyKey: `bc-${broadcastId}-${index}`,
       };
     }),
   );
@@ -754,11 +812,12 @@ export async function startBroadcastCore(
  * Subrequests per call (Workers Free plan limit: 50), at most:
  *   gate: auth getUser + profiles select ............. 2 (3 with a token refresh)
  *   load the row ...................................... 1
+ *   unsubscribes among this batch ..................... 1
  *   sign attachment URLs (5 files at most) ............ 5
  *   Resend, one per person ........................... 10 (20 if every one is retried after a 429)
  *   record progress ................................... 1
  *   last batch only: categories (label), audit, draft . 3
- *   total ............................................ 22 (33 worst case)
+ *   total ............................................ 23 (34 worst case)
  * Nothing per person touches Supabase: unsubscribe tokens are signed locally.
  */
 export async function continueBroadcastCore(
@@ -774,12 +833,13 @@ export async function continueBroadcastCore(
   if (!row) throw new Error(BROADCAST_NOT_FOUND);
 
   const pending = Array.isArray(row.pending_recipients) ? row.pending_recipients : [];
-  const total = pending.length;
+  const total = row.total_recipients;
   const previousFailed = row.failed_emails ?? [];
   if (row.status !== "sending") {
     // Already finished (a repeated call, or another tab): nothing to send.
     return {
       done: true,
+      processed: row.next_index,
       sentSoFar: row.recipient_count,
       failedSoFar: previousFailed.length,
       total,
@@ -788,26 +848,40 @@ export async function continueBroadcastCore(
   }
 
   const from = row.next_index;
-  const batch = pending.slice(from, from + BROADCAST_BATCH_SIZE);
+  const batch = pending
+    .slice(from, from + BROADCAST_BATCH_SIZE)
+    .map((person, i) => ({ person, index: from + i }));
   let result: { sent: string[]; failed: string[] } = { sent: [], failed: [] };
   if (batch.length > 0) {
-    const outgoing = await signAttachments(
-      store,
-      Array.isArray(row.attachments) ? row.attachments : [],
-    );
-    const mailer = await openMailer();
-    result = await mailer.sendEmails({
-      replyTo,
-      subject: row.subject,
-      recipients: await personalize(batch, row.body_html, mailer),
-      attachments: outgoing,
-    });
+    // Someone who unsubscribed after the send started is skipped (counted
+    // neither sent nor failed).
+    const unsubscribed = await store.unsubscribedAmong(batch.map((b) => b.person.userId));
+    const toSend = batch.filter((b) => !unsubscribed.has(b.person.userId));
+    if (toSend.length > 0) {
+      let outgoing: OutgoingAttachment[];
+      try {
+        outgoing = await signAttachments(
+          store,
+          Array.isArray(row.attachments) ? row.attachments : [],
+        );
+      } catch (err) {
+        console.error("Broadcast: an attachment of a started send can't be read", id, err);
+        throw new Error(ATTACHMENT_MISSING);
+      }
+      const mailer = await openMailer();
+      result = await mailer.sendEmails({
+        replyTo,
+        subject: row.subject,
+        recipients: await personalize(toSend, id, row.body_html, mailer),
+        attachments: outgoing,
+      });
+    }
   }
 
   const nextIndex = from + batch.length;
   const sentSoFar = row.recipient_count + result.sent.length;
   const failed = [...previousFailed, ...result.failed];
-  const done = nextIndex >= total;
+  const done = nextIndex >= pending.length;
   const status = done ? (sentSoFar > 0 ? ("sent" as const) : ("failed" as const)) : undefined;
 
   // This batch's emails already went out: if the record can't be updated,
@@ -818,7 +892,7 @@ export async function continueBroadcastCore(
       next_index: nextIndex,
       recipient_count: sentSoFar,
       failed_emails: failed,
-      ...(status ? { status } : {}),
+      ...(status ? { status, pending_recipients: [] as [] } : {}),
     });
   } catch (err) {
     console.error("Broadcast: couldn't record a batch that was sent", id, from, err);
@@ -849,14 +923,60 @@ export async function continueBroadcastCore(
       },
     });
     // Nothing accepted (bad key, Resend down): keep the draft so the composed
-    // message isn't lost and can be sent again.
+    // message isn't lost and can be sent again. A draft saved after this
+    // send started is a new message, so it stays too.
     if (sentSoFar > 0) {
       try {
-        await store.clearDraft();
+        await store.clearDraftIfSavedBy(row.created_at);
       } catch (err) {
         console.error("Broadcast: couldn't clear the draft", err);
       }
     }
   }
-  return { done, sentSoFar, failedSoFar: failed.length, total, failed };
+  return { done, processed: nextIndex, sentSoFar, failedSoFar: failed.length, total, failed };
+}
+
+/**
+ * Mark as stopped: an interrupted send (a 'sending' row no batch has moved
+ * for 15 minutes) the super admin gives up on. It becomes 'failed' and can't
+ * be finished any more; the draft is left alone.
+ */
+export async function stopBroadcastCore(
+  gate: BroadcastGate,
+  input: { id: unknown },
+): Promise<{ ok: true }> {
+  const { actor, store } = await gated(gate, "stop a broadcast");
+  const id = typeof input?.id === "string" && UUID.test(input.id) ? input.id : null;
+  if (!id) throw new Error(BROADCAST_NOT_FOUND);
+  const row = await store.getBroadcast(id);
+  if (!row) throw new Error(BROADCAST_NOT_FOUND);
+  if (row.status !== "sending") return { ok: true };
+  if (Date.now() - Date.parse(row.updated_at) <= BROADCAST_SENDING_STALE_MS) {
+    throw new Error(STILL_GOING);
+  }
+  const failed = row.failed_emails ?? [];
+  const stopped = await store.advanceBroadcast(id, row.next_index, {
+    next_index: row.next_index,
+    recipient_count: row.recipient_count,
+    failed_emails: failed,
+    status: "failed",
+    pending_recipients: [],
+  });
+  // It moved on meanwhile (a Finish sending in another tab): leave it be.
+  if (!stopped) throw new Error(STILL_GOING);
+  await store.audit({
+    actorUserId: actor.userId,
+    tableName: "broadcast_emails",
+    rowId: id,
+    action: "update",
+    details: {
+      stopped: true,
+      subject: row.subject,
+      recipient_count: row.recipient_count,
+      failed_count: failed.length,
+      stopped_after: row.next_index,
+      planned_count: row.total_recipients,
+    },
+  });
+  return { ok: true };
 }

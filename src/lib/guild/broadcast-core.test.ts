@@ -6,6 +6,7 @@ import {
   collectUserEmails,
   continueBroadcastCore,
   LOST_CONTACT,
+  stopBroadcastCore,
   loadBroadcastPage,
   previewBroadcastAudienceCore,
   removeBroadcastAttachmentCore,
@@ -69,6 +70,7 @@ const ATTACHMENT: BroadcastAttachment = {
 type StoredBroadcast = Omit<BroadcastInsertRow, "status"> & {
   status: "sending" | "sent" | "failed";
   sent_at: string;
+  created_at: string;
   updated_at: string;
 };
 
@@ -80,6 +82,7 @@ function memoryStore(
     failUpdate?: boolean;
     failSign?: boolean;
     failRemove?: boolean;
+    failInUse?: boolean;
     broadcasts?: StoredBroadcast[];
   } = {},
 ) {
@@ -92,6 +95,7 @@ function memoryStore(
     audits: [] as BroadcastAuditEntry[],
     objects: new Map<string, Uint8Array>([[ATTACHMENT.path, new TextEncoder().encode("hello")]]),
     removed: [] as string[],
+    unsubscribed: new Set(seed.unsubscribed ?? []),
   };
   const track = <T extends (...args: never[]) => unknown>(name: string, fn: T): T =>
     ((...args: Parameters<T>) => {
@@ -103,9 +107,16 @@ function memoryStore(
     saveDraft: track("saveDraft", async (row: BroadcastDraftRow) => {
       state.draft = row;
     }),
-    clearDraft: track("clearDraft", async () => {
-      state.draft = null;
+    clearDraftIfSavedBy: track("clearDraftIfSavedBy", async (savedBy: string) => {
+      if (!state.draft?.updated_at || state.draft.updated_at <= savedBy) state.draft = null;
     }),
+    attachmentInUse: track("attachmentInUse", async (path: string) => {
+      if (seed.failInUse) throw new Error("db down");
+      return state.broadcasts.some((b) => b.attachments.some((a) => a.path === path));
+    }),
+    unsubscribedAmong: track("unsubscribedAmong", async (ids: string[]) =>
+      new Set(ids.filter((id) => state.unsubscribed.has(id))),
+    ),
     listRecent: track("listRecent", async () => [
       {
         id: "b-old",
@@ -142,7 +153,7 @@ function memoryStore(
       USER_ROWS.filter((r) => ids.includes(r.member_id)),
     ),
     emailsFor: track("emailsFor", async (ids: string[]) => new Map(ids.map((id) => [id, EMAILS[id] ?? null]))),
-    unsubscribedUserIds: track("unsubscribedUserIds", async () => new Set(seed.unsubscribed ?? [])),
+    unsubscribedUserIds: track("unsubscribedUserIds", async () => new Set(state.unsubscribed)),
     uploadAttachment: track("uploadAttachment", async (path: string, bytes: Uint8Array) => {
       state.objects.set(path, bytes);
     }),
@@ -164,7 +175,7 @@ function memoryStore(
       if (seed.failInsert) throw new Error("db down");
       state.inserted.push(structuredClone(row));
       const now = new Date().toISOString();
-      state.broadcasts.push({ ...structuredClone(row), sent_at: now, updated_at: now });
+      state.broadcasts.push({ ...structuredClone(row), sent_at: now, created_at: now, updated_at: now });
     }),
     getBroadcast: track("getBroadcast", async (id: string) => {
       const row = state.broadcasts.find((b) => b.id === id);
@@ -244,6 +255,7 @@ const SENDING_ROW: StoredBroadcast = {
   next_index: 0,
   total_recipients: 0,
   sent_at: "",
+  created_at: "",
   updated_at: "",
 };
 
@@ -264,6 +276,7 @@ describe("super admin gate", () => {
     ["test", (g) => sendBroadcastTestCore(g, SEND, fakeMailer().openMailer)],
     ["start", (g) => startBroadcastCore(g, SEND, fakeMailer().openMailer)],
     ["continue", (g) => continueBroadcastCore(g, { id: SENDING_ROW_ID }, fakeMailer().openMailer)],
+    ["stop", (g) => stopBroadcastCore(g, { id: SENDING_ROW_ID })],
   ];
   for (const [name, run] of actions) {
     it(`refuses a non-super-admin before any store call (${name})`, async () => {
@@ -516,6 +529,26 @@ describe("removeBroadcastAttachmentCore", () => {
     error.mockRestore();
   });
 
+  it("keeps the file when a broadcast row (a paused send) uses it: only the draft drops it", async () => {
+    const { store, state } = memoryStore({
+      draft: DRAFT_WITH_ATTACHMENT,
+      broadcasts: [jobRow(30, { attachments: [ATTACHMENT], next_index: 10 })],
+    });
+    await removeBroadcastAttachmentCore(gateFor(store).gate, { path: ATTACHMENT.path });
+    expect(state.draft?.attachments).toEqual([]);
+    expect(state.removed).toEqual([]);
+    expect(state.objects.has(ATTACHMENT.path)).toBe(true);
+  });
+
+  it("keeps the file when it can't tell whether a broadcast uses it", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT, failInUse: true });
+    await removeBroadcastAttachmentCore(gateFor(store).gate, { path: ATTACHMENT.path });
+    expect(state.draft?.attachments).toEqual([]);
+    expect(state.removed).toEqual([]);
+    error.mockRestore();
+  });
+
   it("refuses paths outside draft/ or not in the draft (a sent broadcast's file stays)", async () => {
     const { store, state } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT });
     await expect(removeBroadcastAttachmentCore(gateFor(store).gate, { path: "../x" })).rejects.toThrow(
@@ -538,6 +571,7 @@ function jobRow(n: number, over: Partial<StoredBroadcast> = {}): StoredBroadcast
     pending_recipients: Array.from({ length: n }, (_v, i) => ({ userId: `u${i}`, email: `p${i}@example.com` })),
     total_recipients: n,
     sent_at: now,
+    created_at: now,
     updated_at: now,
     ...over,
   };
@@ -569,6 +603,23 @@ describe("startBroadcastCore", () => {
     expect(sends).toEqual([]);
     expect(calls).not.toContain("insertBroadcast");
     expect(calls).not.toContain("audit");
+  });
+
+  it("refuses a message over 100 KB (after sanitizing) before anything is written", async () => {
+    const { store, calls } = memoryStore();
+    const big = `<p>${"x".repeat(100 * 1024)}</p>`;
+    await expect(
+      startBroadcastCore(gateFor(store).gate, { ...SEND, bodyHtml: big }, fakeMailer().openMailer),
+    ).rejects.toThrow("That message is too long. Shorten it or attach a file instead.");
+    await expect(
+      sendBroadcastTestCore(gateFor(store).gate, { ...SEND, bodyHtml: big }, fakeMailer().openMailer),
+    ).rejects.toThrow("That message is too long. Shorten it or attach a file instead.");
+    expect(calls).not.toContain("insertBroadcast");
+    // Just under the limit is fine.
+    const ok = `<p>${"x".repeat(100 * 1024 - 7)}</p>`;
+    await expect(
+      startBroadcastCore(gateFor(store).gate, { ...SEND, bodyHtml: ok }, fakeMailer().openMailer),
+    ).resolves.toMatchObject({ total: 3 });
   });
 
   it("sends nothing: writes the 'sending' row with the recipient list and its audit row, and keeps the draft", async () => {
@@ -682,7 +733,7 @@ describe("continueBroadcastCore", () => {
     const gate = gateFor(store).gate;
 
     const first = await continueBroadcastCore(gate, { id: SENDING_ROW_ID }, openMailer);
-    expect(first).toEqual({ done: false, sentSoFar: 10, failedSoFar: 0, total: 25, failed: [] });
+    expect(first).toEqual({ done: false, processed: 10, sentSoFar: 10, failedSoFar: 0, total: 25, failed: [] });
     expect(sends).toHaveLength(1);
     expect(sends[0].recipients.map((r) => r.email)).toEqual(Array.from({ length: 10 }, (_v, i) => `p${i}@example.com`));
     expect(sends[0].subject).toBe("Batch news");
@@ -720,7 +771,16 @@ describe("continueBroadcastCore", () => {
     ]);
     expect(sends.map((s) => s.recipients.length)).toEqual([10, 10, 5]);
     expect(state.broadcasts[0]).toMatchObject({ status: "sent", next_index: 25, recipient_count: 25, failed_emails: [] });
-    expect(state.updates.at(-1)!.patch).toEqual({ next_index: 25, recipient_count: 25, failed_emails: [], status: "sent" });
+    // The list is only needed while sending: emptied with the final status.
+    expect(state.updates.at(-1)!.patch).toEqual({
+      next_index: 25,
+      recipient_count: 25,
+      failed_emails: [],
+      status: "sent",
+      pending_recipients: [],
+    });
+    expect(state.broadcasts[0].pending_recipients).toEqual([]);
+    expect(state.broadcasts[0].total_recipients).toBe(25);
     expect(state.audits).toEqual([
       {
         actorUserId: "u-super",
@@ -740,7 +800,7 @@ describe("continueBroadcastCore", () => {
     const { id, total } = await startBroadcastCore(gate, { ...SEND, attachments: [{ path: ATTACHMENT.path }] }, openMailer);
     expect(sends).toEqual([]);
     const result = await continueBroadcastCore(gate, { id }, openMailer);
-    expect(result).toEqual({ done: true, sentSoFar: 3, failedSoFar: 0, total, failed: [] });
+    expect(result).toEqual({ done: true, processed: 3, sentSoFar: 3, failedSoFar: 0, total, failed: [] });
     expect(sends[0].recipients.map((r) => r.email)).toEqual(["one@example.com", "two@example.com", "three@example.com"]);
     expect(state.audits.map((a) => a.action)).toEqual(["insert", "update"]);
     expect(state.broadcasts[0].status).toBe("sent");
@@ -749,11 +809,27 @@ describe("continueBroadcastCore", () => {
 
   it("a finished row sends nothing and just reports its totals (safe to call again)", async () => {
     const { store, state, calls } = memoryStore({
-      broadcasts: [jobRow(25, { status: "sent", next_index: 25, recipient_count: 24, failed_emails: ["p3@example.com"] })],
+      // A finished row's list was emptied: the total comes from total_recipients.
+      broadcasts: [
+        jobRow(25, {
+          status: "sent",
+          next_index: 25,
+          recipient_count: 24,
+          failed_emails: ["p3@example.com"],
+          pending_recipients: [],
+        }),
+      ],
     });
     const { sends, openMailer } = fakeMailer();
     const result = await continueBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID }, openMailer);
-    expect(result).toEqual({ done: true, sentSoFar: 24, failedSoFar: 1, total: 25, failed: ["p3@example.com"] });
+    expect(result).toEqual({
+      done: true,
+      processed: 25,
+      sentSoFar: 24,
+      failedSoFar: 1,
+      total: 25,
+      failed: ["p3@example.com"],
+    });
     expect(sends).toEqual([]);
     expect(calls).toEqual(["getBroadcast"]);
     expect(state.audits).toEqual([]);
@@ -764,7 +840,7 @@ describe("continueBroadcastCore", () => {
     const { openMailer } = fakeMailer((emails) => ({ sent: [], failed: emails }));
     const responses = await finish(gateFor(store).gate, SENDING_ROW_ID, openMailer);
     const all = Array.from({ length: 12 }, (_v, i) => `p${i}@example.com`);
-    expect(responses.at(-1)).toEqual({ done: true, sentSoFar: 0, failedSoFar: 12, total: 12, failed: all });
+    expect(responses.at(-1)).toEqual({ done: true, processed: 12, sentSoFar: 0, failedSoFar: 12, total: 12, failed: all });
     expect(state.broadcasts[0]).toMatchObject({ status: "failed", recipient_count: 0, failed_emails: all });
     expect(state.audits[0].details).toMatchObject({ recipient_count: 0, failed_count: 12, failed_emails: all });
     expect(state.draft).toEqual(DRAFT_WITH_ATTACHMENT);
@@ -810,7 +886,14 @@ describe("continueBroadcastCore", () => {
     const { sends, openMailer } = fakeMailer();
     const result = await continueBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID }, openMailer);
     expect(sends[0].recipients.map((r) => r.email)).toEqual(["p10@example.com", "p11@example.com", "p12@example.com", "p13@example.com"]);
-    expect(result).toEqual({ done: true, sentSoFar: 13, failedSoFar: 1, total: 14, failed: ["p4@example.com"] });
+    expect(result).toEqual({
+      done: true,
+      processed: 14,
+      sentSoFar: 13,
+      failedSoFar: 1,
+      total: 14,
+      failed: ["p4@example.com"],
+    });
     expect(state.broadcasts[0].status).toBe("sent");
   });
 
@@ -850,14 +933,118 @@ describe("continueBroadcastCore", () => {
     expect(sends).toEqual([]);
   });
 
-  it("an attachment that can't be signed stops the batch before anything goes out", async () => {
+  it("a missing attachment stops the batch before anything goes out, and says to mark it stopped", async () => {
     const { store, state } = memoryStore({ broadcasts: [jobRow(5, { attachments: [ATTACHMENT] })], failSign: true });
     const { sends, openMailer } = fakeMailer();
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
     await expect(continueBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID }, openMailer)).rejects.toThrow(
-      "Couldn't read an attachment. Remove it and attach it again.",
+      "An attachment for this broadcast is missing, so it can't be finished. Use Mark as stopped.",
     );
+    error.mockRestore();
     expect(sends).toEqual([]);
     expect(state.broadcasts[0].next_index).toBe(0);
+  });
+
+  it("skips people who unsubscribed after the send started (neither sent nor failed) but moves past them", async () => {
+    const { store, state } = memoryStore({ broadcasts: [jobRow(5)] });
+    const { sends, openMailer } = fakeMailer();
+    state.unsubscribed.add("u1");
+    state.unsubscribed.add("u3");
+    const result = await continueBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID }, openMailer);
+    expect(sends[0].recipients.map((r) => r.email)).toEqual(["p0@example.com", "p2@example.com", "p4@example.com"]);
+    expect(result).toEqual({ done: true, processed: 5, sentSoFar: 3, failedSoFar: 0, total: 5, failed: [] });
+    expect(state.broadcasts[0]).toMatchObject({ status: "sent", next_index: 5, recipient_count: 3, failed_emails: [] });
+  });
+
+  it("a batch where everyone unsubscribed sends nothing and still moves on", async () => {
+    const { store, state } = memoryStore({ broadcasts: [jobRow(12)] });
+    const { sends, openMailer } = fakeMailer();
+    for (let i = 0; i < 10; i++) state.unsubscribed.add(`u${i}`);
+    const result = await continueBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID }, openMailer);
+    expect(sends).toEqual([]);
+    expect(result).toMatchObject({ done: false, processed: 10, sentSoFar: 0, failedSoFar: 0 });
+    expect(state.broadcasts[0].next_index).toBe(10);
+  });
+
+  it("finishing keeps a draft saved after the send started (a new message), but clears an older one", async () => {
+    const newer: BroadcastDraftRow = { ...DRAFT_WITH_ATTACHMENT, subject: "Next one", updated_at: new Date(Date.now() + 60_000).toISOString() };
+    const a = memoryStore({ draft: newer, broadcasts: [jobRow(3)] });
+    await continueBroadcastCore(gateFor(a.store).gate, { id: SENDING_ROW_ID }, fakeMailer().openMailer);
+    expect(a.state.broadcasts[0].status).toBe("sent");
+    expect(a.state.draft).toEqual(newer);
+
+    const b = memoryStore({ draft: DRAFT_WITH_ATTACHMENT, broadcasts: [jobRow(3)] });
+    await continueBroadcastCore(gateFor(b.store).gate, { id: SENDING_ROW_ID }, fakeMailer().openMailer);
+    expect(b.state.draft).toBeNull();
+  });
+
+  it("sends each person's copy with the same body and their own footer", async () => {
+    const { store } = memoryStore({ broadcasts: [jobRow(2, { body_html: "<p>Shared <b>body</b></p>" })] });
+    const { sends, openMailer } = fakeMailer();
+    await continueBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID }, openMailer);
+    const [a, b] = sends[0].recipients;
+    expect(a.text.startsWith("Shared body")).toBe(true);
+    expect(a.text.split("\n--\n")[0]).toBe(b.text.split("\n--\n")[0]);
+    expect(a.text).toContain(a.unsubscribeUrl!);
+    expect(b.text).toContain(b.unsubscribeUrl!);
+    expect(a.unsubscribeUrl).not.toBe(b.unsubscribeUrl);
+  });
+
+  describe("stopBroadcastCore (Mark as stopped)", () => {
+    const old = () => new Date(Date.now() - BROADCAST_SENDING_STALE_MS - 60_000).toISOString();
+
+    it("marks an interrupted send failed, empties its list, audits it and leaves the draft", async () => {
+      const { store, state } = memoryStore({
+        draft: DRAFT_WITH_ATTACHMENT,
+        broadcasts: [jobRow(30, { updated_at: old(), next_index: 20, recipient_count: 19, failed_emails: ["p5@example.com"] })],
+      });
+      await expect(stopBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID })).resolves.toEqual({ ok: true });
+      expect(state.broadcasts[0]).toMatchObject({
+        status: "failed",
+        next_index: 20,
+        recipient_count: 19,
+        total_recipients: 30,
+        pending_recipients: [],
+      });
+      expect(state.audits).toEqual([
+        {
+          actorUserId: "u-super",
+          tableName: "broadcast_emails",
+          rowId: SENDING_ROW_ID,
+          action: "update",
+          details: {
+            stopped: true,
+            subject: "Batch news",
+            recipient_count: 19,
+            failed_count: 1,
+            stopped_after: 20,
+            planned_count: 30,
+          },
+        },
+      ]);
+      expect(state.draft).toEqual(DRAFT_WITH_ATTACHMENT);
+      // And it can't be continued any more.
+      const { sends, openMailer } = fakeMailer();
+      await expect(continueBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID }, openMailer)).resolves.toMatchObject({ done: true });
+      expect(sends).toEqual([]);
+    });
+
+    it("refuses a send that's still going (moved in the last 15 minutes)", async () => {
+      const { store, state } = memoryStore({ broadcasts: [jobRow(30, { next_index: 10 })] });
+      await expect(stopBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID })).rejects.toThrow(
+        "That broadcast is still sending. Wait a few minutes and check again.",
+      );
+      expect(state.broadcasts[0].status).toBe("sending");
+      expect(state.audits).toEqual([]);
+    });
+
+    it("does nothing for a finished broadcast, and refuses an unknown id", async () => {
+      const { store, state } = memoryStore({ broadcasts: [jobRow(3, { status: "sent", updated_at: old() })] });
+      await expect(stopBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID })).resolves.toEqual({ ok: true });
+      expect(state.broadcasts[0].status).toBe("sent");
+      expect(state.audits).toEqual([]);
+      await expect(stopBroadcastCore(gateFor(store).gate, { id: "nope" })).rejects.toThrow("That broadcast wasn't found.");
+    });
   });
 
   describe("subrequest budget (Workers Free plan: 50 per request)", () => {
@@ -871,8 +1058,10 @@ describe("continueBroadcastCore", () => {
       const { store, state, calls } = memoryStore({ draft: DRAFT_WITH_ATTACHMENT, broadcasts: [{ ...row, ...audience }] });
       for (const a of FIVE) state.objects.set(a.path, new Uint8Array(1));
       const requests: string[] = [];
-      const fetchImpl = (async (url: string) => {
+      const keys: string[] = [];
+      const fetchImpl = (async (url: string, init: RequestInit) => {
         requests.push(String(url));
+        keys.push((init.headers as Record<string, string>)["Idempotency-Key"]);
         return new Response("{}", { status: 200 });
       }) as unknown as typeof fetch;
       const mailer: BroadcastMailer = {
@@ -881,16 +1070,20 @@ describe("continueBroadcastCore", () => {
         sendEmails: (p) => sendBroadcastEmails({ ...p, apiKey: "k", from: "x <hello@example.com>", fetchImpl, sleep: async () => {} }),
       };
       const result = await continueBroadcastCore(gateFor(store).gate, { id: SENDING_ROW_ID }, async () => mailer);
-      return { result, requests, calls };
+      return { result, requests, calls, keys };
     }
 
-    it("a middle batch with 5 attachments: 10 mail requests and 7 store calls", async () => {
-      const { result, requests, calls } = await oneContinue(jobRow(40, { attachments: FIVE }));
+    it("a middle batch with 5 attachments: 10 mail requests (each with its idempotency key) and 8 store calls", async () => {
+      const { result, requests, calls, keys } = await oneContinue(
+        jobRow(40, { attachments: FIVE, next_index: 20, recipient_count: 20 }),
+      );
       expect(result.done).toBe(false);
       expect(requests).toHaveLength(BROADCAST_BATCH_SIZE);
       expect(requests.length).toBeLessThanOrEqual(10);
+      expect(keys).toEqual(Array.from({ length: 10 }, (_v, i) => `bc-${SENDING_ROW_ID}-${20 + i}`));
       expect(calls).toEqual([
         "getBroadcast",
+        "unsubscribedAmong",
         ...Array(5).fill("signAttachmentUrl"),
         "advanceBroadcast",
       ]);
@@ -905,11 +1098,12 @@ describe("continueBroadcastCore", () => {
       expect(requests).toHaveLength(10);
       expect(calls).toEqual([
         "getBroadcast",
+        "unsubscribedAmong",
         ...Array(5).fill("signAttachmentUrl"),
         "advanceBroadcast",
         "listCategories",
         "audit",
-        "clearDraft",
+        "clearDraftIfSavedBy",
       ]);
       // Plus 2-3 for the super admin check: well under 50 even if every email is retried once after a 429.
       expect(2 * requests.length + calls.length + 3).toBeLessThanOrEqual(50);
@@ -946,8 +1140,10 @@ describe("sendBroadcastTestCore", () => {
   it("carries no List-Unsubscribe headers on the wire", async () => {
     const { store } = memoryStore();
     const bodies: Record<string, unknown>[] = [];
-    const fetchImpl = (async (_url: string, init: { body: string }) => {
+    const wireHeaders: Record<string, string>[] = [];
+    const fetchImpl = (async (_url: string, init: { body: string; headers: Record<string, string> }) => {
       bodies.push(JSON.parse(init.body));
+      wireHeaders.push(init.headers);
       return new Response("{}", { status: 200 });
     }) as unknown as typeof fetch;
     const mailer: BroadcastMailer = {
@@ -959,6 +1155,7 @@ describe("sendBroadcastTestCore", () => {
     await sendBroadcastTestCore(gateFor(store).gate, SEND, async () => mailer);
     expect(bodies).toHaveLength(1);
     expect(bodies[0].headers).toBeUndefined();
+    expect(wireHeaders[0]["Idempotency-Key"]).toBeUndefined();
   });
 
   it("throws when the test email isn't accepted", async () => {

@@ -11,6 +11,7 @@ import {
   normalizeLinkUrl,
   progressText,
   recentAudienceLine,
+  sendingTimeText,
   searchMembers,
   sendButtonLabel,
   successTitle,
@@ -35,6 +36,45 @@ describe("broadcast screen helpers", () => {
     expect(finishedTitle(37)).toBe("Finished sending. Sent to 37 people in all.");
     expect(finishConfirmTitle(19)).toBe("Finish sending to 19 people?");
     expect(finishConfirmTitle(1)).toBe("Finish sending to 1 person?");
+  });
+
+  it("says roughly how long sending takes (80 people a minute, at least 1 minute)", () => {
+    const tail = "Keep this page open — if it's interrupted, you can finish later from Recent broadcasts.";
+    expect(sendingTimeText(1)).toBe(`Sending takes about 1 minute for 1 person. ${tail}`);
+    expect(sendingTimeText(80)).toBe(`Sending takes about 1 minute for 80 people. ${tail}`);
+    expect(sendingTimeText(81)).toBe(`Sending takes about 2 minutes for 81 people. ${tail}`);
+    expect(sendingTimeText(300)).toBe(`Sending takes about 4 minutes for 300 people. ${tail}`);
+  });
+
+  it("knows the batching refusals", () => {
+    expect(isSendRefusal("That message is too long. Shorten it or attach a file instead.")).toBe(true);
+    expect(
+      isSendRefusal("An attachment for this broadcast is missing, so it can't be finished. Use Mark as stopped."),
+    ).toBe(true);
+    expect(isSendRefusal("That broadcast wasn't found.")).toBe(true);
+  });
+
+  it("labels a broadcast marked as stopped partway", () => {
+    expect(
+      recentAudienceLine({
+        audienceLabel: "All members",
+        recipient_count: 19,
+        status: "failed",
+        failedCount: 1,
+        processedCount: 20,
+        totalCount: 30,
+      }),
+    ).toBe("All members · 19 people · stopped after 20 of 30");
+    expect(
+      recentAudienceLine({
+        audienceLabel: "All members",
+        recipient_count: 0,
+        status: "failed",
+        failedCount: 3,
+        processedCount: 3,
+        totalCount: 3,
+      }),
+    ).toBe("All members · 0 people · failed");
   });
 
   it("words the progress line while batches go out", () => {

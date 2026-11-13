@@ -153,4 +153,31 @@ describe("sendBroadcastEmails", () => {
     const r = await sendBroadcastEmails({ ...base, recipients: [recipient("a@x.com"), recipient("b@x.com")], attachments: [], fetchImpl: s.fetchImpl, sleep: s.sleep });
     expect(r).toEqual({ sent: ["b@x.com"], failed: ["a@x.com"] });
   });
+
+  it("sends the Idempotency-Key header only when the recipient has one", async () => {
+    const s = setup(ok);
+    await sendBroadcastEmails({
+      ...base,
+      recipients: [{ ...recipient("a@x.com"), idempotencyKey: "bc-1-0" }, recipient("b@x.com")],
+      attachments: [],
+      fetchImpl: s.fetchImpl,
+      sleep: s.sleep,
+    });
+    expect((s.calls[0].init.headers as Record<string, string>)["Idempotency-Key"]).toBe("bc-1-0");
+    expect((s.calls[1].init.headers as Record<string, string>)["Idempotency-Key"]).toBeUndefined();
+  });
+
+  it("counts a 409 on an idempotency key as sent (Resend already has that email), but not without a key", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const s = setup(() => new Response('{"name":"invalid_idempotent_request"}', { status: 409 }));
+    const r = await sendBroadcastEmails({
+      ...base,
+      recipients: [{ ...recipient("a@x.com"), idempotencyKey: "bc-1-0" }, recipient("b@x.com")],
+      attachments: [],
+      fetchImpl: s.fetchImpl,
+      sleep: s.sleep,
+    });
+    expect(r).toEqual({ sent: ["a@x.com"], failed: ["b@x.com"] });
+    error.mockRestore();
+  });
 });

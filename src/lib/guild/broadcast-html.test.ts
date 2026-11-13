@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBroadcastEmail, htmlToText, sanitizeBroadcastHtml } from "./broadcast-html";
+import { broadcastEmailBuilder, buildBroadcastEmail, htmlToText, sanitizeBroadcastHtml } from "./broadcast-html";
 
 describe("sanitizeBroadcastHtml", () => {
   it("sanitizes pasted office html", () => {
@@ -73,5 +73,17 @@ describe("buildBroadcastEmail", () => {
     const r = buildBroadcastEmail({ bodyHtml: "<p>Hello</p>", unsubscribeUrl: "" });
     expect(r.html).not.toContain("Unsubscribe");
     expect(r.text).not.toContain("Unsubscribe");
+  });
+});
+
+describe("broadcastEmailBuilder", () => {
+  it("builds the body once and gives each person the same email with their own footer", () => {
+    const body = "<p>Hello <b>all</b></p><ul><li>one</li></ul>";
+    const build = broadcastEmailBuilder(body);
+    for (const url of ["https://x.y/u/1", "https://x.y/u/2", ""]) {
+      expect(build(url)).toEqual(buildBroadcastEmail({ bodyHtml: body, unsubscribeUrl: url }));
+    }
+    const a = build("https://x.y/u/1");
+    expect(a.text).toBe(`${htmlToText(body)}\n\n--\nYou're getting this because you're on a member profile with the ISC Brewers Guild. Unsubscribe from Guild broadcasts: https://x.y/u/1`);
   });
 });

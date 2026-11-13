@@ -48,6 +48,18 @@ export function finishedTitle(sent: number): string {
   return `Finished sending. Sent to ${peopleText(sent)} in all.`;
 }
 
+/**
+ * The dialog's line while sending: about 80 people a minute (10 per request,
+ * paced for Resend).
+ */
+export function sendingTimeText(total: number): string {
+  const minutes = Math.max(1, Math.ceil(total / 80));
+  return `Sending takes about ${minutes} ${minutes === 1 ? "minute" : "minutes"} for ${peopleText(total)}. Keep this page open — if it's interrupted, you can finish later from Recent broadcasts.`;
+}
+
+export const INTERRUPTED_SEND_NOTE =
+  "An earlier send was interrupted. Use Finish sending in Recent broadcasts instead.";
+
 /** The dialog's progress line while batches go out. */
 export function progressText(done: number, total: number): string {
   return `Sent ${done} of ${total}…`;
@@ -75,6 +87,10 @@ export function recentAudienceLine(row: {
   const base = `${row.audienceLabel} · ${peopleText(row.recipient_count)}`;
   switch (row.status) {
     case "failed":
+      // Marked as stopped before everyone was tried.
+      if ((row.processedCount ?? 0) < (row.totalCount ?? 0)) {
+        return `${base} · stopped after ${row.processedCount ?? 0} of ${row.totalCount}`;
+      }
       return `${base} · failed`;
     case "sending":
       return `${base} · sending…`;
@@ -180,6 +196,9 @@ const SEND_REFUSALS = [
   "A broadcast is still sending. Wait a few minutes and check Recent broadcasts.",
   "Couldn't start the send. Nothing was sent.",
   "That broadcast wasn't found.",
+  "That message is too long. Shorten it or attach a file instead.",
+  "An attachment for this broadcast is missing, so it can't be finished. Use Mark as stopped.",
+  "That broadcast is still sending. Wait a few minutes and check again.",
 ];
 
 export const LOST_CONTACT_MESSAGE =

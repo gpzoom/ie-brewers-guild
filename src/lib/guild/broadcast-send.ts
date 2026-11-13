@@ -10,6 +10,11 @@ export type BroadcastRecipient = {
   text: string;
   unsubscribeUrl: string | null;
   oneClickUrl: string | null;
+  /**
+   * Resend's Idempotency-Key (kept 24 hours): a repeat with the same key
+   * isn't sent again. Real broadcasts only; test sends have none.
+   */
+  idempotencyKey?: string;
 };
 
 const RESEND_URL = "https://api.resend.com/emails";
@@ -47,7 +52,11 @@ export async function sendBroadcastEmails(p: {
     if (p.attachments.length > 0) body.attachments = p.attachments;
     const res = await fetchImpl(RESEND_URL, {
       method: "POST",
-      headers: { Authorization: `Bearer ${p.apiKey}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${p.apiKey}`,
+        "Content-Type": "application/json",
+        ...(r.idempotencyKey ? { "Idempotency-Key": r.idempotencyKey } : {}),
+      },
       body: JSON.stringify(body),
     });
     // Always read the body so the Worker doesn't hold an unread response.
@@ -64,7 +73,11 @@ export async function sendBroadcastEmails(p: {
         await sleep(1000);
         res = await post(r);
       }
-      if (res.ok) {
+      // 409 with an idempotency key: Resend already has a request with this
+      // key (concurrent_idempotent_requests, or invalid_idempotent_request
+      // because a resent batch carries fresh attachment links): this person's
+      // email was already sent or is being sent, so it counts as sent.
+      if (res.ok || (res.status === 409 && r.idempotencyKey)) {
         sent.push(r.email);
       } else {
         console.error(`Broadcast: Resend refused ${r.email} (${res.status}): ${res.text.slice(0, 200)}`);

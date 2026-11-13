@@ -8,6 +8,7 @@ import {
   saveBroadcastDraft,
   sendBroadcastTest,
   startBroadcast,
+  stopBroadcast,
   uploadBroadcastAttachment,
   type BroadcastAttachment,
   type BroadcastAudiencePreview,
@@ -35,6 +36,7 @@ import {
   finishedTitle,
   formatAttachmentSize,
   formFromAudience,
+  INTERRUPTED_SEND_NOTE,
   MEMBER_TYPE_CHOICES,
   membersText,
   peopleText,
@@ -42,6 +44,7 @@ import {
   recentAudienceLine,
   searchMembers,
   sendButtonLabel,
+  sendingTimeText,
   successTitle,
   isSendRefusal,
   LOST_CONTACT_MESSAGE,
@@ -64,7 +67,7 @@ const chipClass =
 const chipRemoveClass =
   "flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[13px] text-ink-subtle hover:text-ink disabled:opacity-50 md:h-7 md:w-7";
 
-type Busy = "save" | "test" | "send" | "upload" | "remove";
+type Busy = "save" | "test" | "send" | "upload" | "remove" | "stop";
 /** memberCount is null after Finish sending (the screen didn't start that send). */
 type SendResult = { sent: number; failed: string[]; memberCount: number | null };
 /** A started broadcast to pick up where it stopped (Finish sending). */
@@ -131,6 +134,8 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
   // Set while the dialog is confirming Finish sending instead of a new send.
   const [finishTarget, setFinishTarget] = useState<FinishTarget | null>(null);
   const [progress, setProgressState] = useState<Progress | null>(null);
+  // How many people this send (or the rest of a finished one) goes to: the time estimate.
+  const [sendingCount, setSendingCount] = useState(0);
   const progressRef = useRef<Progress | null>(null);
   const successHeadingRef = useRef<HTMLParagraphElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -138,6 +143,17 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
   useEffect(() => {
     if (result) successHeadingRef.current?.focus();
   }, [result]);
+
+  // Closing or reloading the tab mid-send stops the batches: ask first.
+  useEffect(() => {
+    if (busy !== "send") return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [busy]);
 
   const [preview, setPreview] = useState<BroadcastAudiencePreview | null>(null);
   const [counting, setCounting] = useState(true);
@@ -240,7 +256,7 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
     const maxCalls = Math.ceil(Math.max(start.total - start.done, 0) / 10) + 3;
     for (let call = 0; call < maxCalls; call++) {
       const r = await continueBroadcast({ data: { id } });
-      setProgress({ done: r.sentSoFar + r.failedSoFar, total: r.total });
+      setProgress({ done: r.processed, total: r.total });
       if (r.done) return r;
     }
     throw new Error("The send didn't finish.");
@@ -261,6 +277,7 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
     setLostContact(false);
     setResumeTarget(null);
     const resuming = finishTarget;
+    setSendingCount(resuming ? Math.max(resuming.total - resuming.processed, 0) : peopleCount);
     try {
       let target: FinishTarget;
       let memberCount: number | null = null;
@@ -271,6 +288,7 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
           const started = await startBroadcast({ data: message });
           target = { id: started.id, subject: subject.trim(), processed: 0, total: started.total };
           memberCount = started.memberCount;
+          setSendingCount(started.total);
         } catch (err) {
           const text = err instanceof Error ? err.message : "";
           if (isSendRefusal(text)) toast.error(text);
@@ -311,6 +329,22 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
       busyRef.current = null;
       setBusyState(null);
     }
+  }
+
+  function onMarkStopped(id: string) {
+    if (busyRef.current) return;
+    if (
+      !window.confirm(
+        "Mark this broadcast as stopped? It can't be finished after this. People who already got it keep it.",
+      )
+    ) {
+      return;
+    }
+    void run("stop", async () => {
+      await stopBroadcast({ data: { id } });
+      toast.success("Marked as stopped.");
+      await router.invalidate().catch(() => {});
+    });
   }
 
   function onFinishSending(target: FinishTarget) {
@@ -809,22 +843,33 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
                     {recentAudienceLine(row)}
                   </span>
                   {row.canResume && (
-                    <button
-                      type="button"
-                      disabled={busy !== null}
-                      aria-label={`Finish sending ${row.subject}`}
-                      onClick={() =>
-                        onFinishSending({
-                          id: row.id,
-                          subject: row.subject,
-                          processed: row.processedCount,
-                          total: row.totalCount,
-                        })
-                      }
-                      className="inline-flex h-11 shrink-0 items-center justify-center self-start rounded-[9px] border border-canvas-border bg-white px-[15px] text-[13px] font-medium text-ink hover:bg-canvas-2 disabled:opacity-50 md:h-10 md:self-auto"
-                    >
-                      Finish sending
-                    </button>
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={busy !== null}
+                        aria-label={`Finish sending ${row.subject}`}
+                        onClick={() =>
+                          onFinishSending({
+                            id: row.id,
+                            subject: row.subject,
+                            processed: row.processedCount,
+                            total: row.totalCount,
+                          })
+                        }
+                        className="inline-flex h-11 shrink-0 items-center justify-center self-start rounded-[9px] border border-canvas-border bg-white px-[15px] text-[13px] font-medium text-ink hover:bg-canvas-2 disabled:opacity-50 md:h-10 md:self-auto"
+                      >
+                        Finish sending
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy !== null}
+                        aria-label={`Mark ${row.subject} as stopped`}
+                        onClick={() => onMarkStopped(row.id)}
+                        className="inline-flex h-11 shrink-0 items-center justify-center rounded-[9px] border border-canvas-border bg-white px-[15px] text-[13px] font-medium text-ink hover:bg-canvas-2 disabled:opacity-50 md:h-10"
+                      >
+                        {busy === "stop" ? "Stopping…" : "Mark as stopped"}
+                      </button>
+                    </div>
                   )}
                 </li>
               ))}
@@ -854,10 +899,15 @@ export function BroadcastScreen({ page }: { page: BroadcastPage }) {
                 ? `“${finishTarget.subject}” picks up where it stopped: people who already got it won't get it again. This can't be undone.`
                 : confirmDescription(label)}
             </AlertDialogDescription>
+            {!finishTarget && page.recent.some((r) => r.canResume) && (
+              <p className="rounded-[9px] bg-[#FBF1EC] px-3 py-2 text-[13px] text-ink">
+                {INTERRUPTED_SEND_NOTE}
+              </p>
+            )}
             {busy === "send" && (
               <div className="flex flex-col gap-2 pt-1">
                 <p role="status" className="text-[13px] font-medium text-ink">
-                  This can take a minute or two. Keep this page open.
+                  {sendingTimeText(sendingCount)}
                   {progress && (
                     <span className="mt-1 block font-normal text-[#3A332C]">
                       {progressText(progress.done, progress.total)}

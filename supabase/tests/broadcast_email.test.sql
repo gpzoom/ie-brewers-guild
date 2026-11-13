@@ -7,7 +7,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(71);
+insert into _tap (line) select plan(72);
 
 insert into auth.users (id, email, aud, role) values
   ('f0000000-0000-4000-8000-000000000007', 'pgtap-super@example.test', 'authenticated', 'authenticated');
@@ -67,6 +67,13 @@ insert into _tap (line) select lives_ok(
       values ('f0000000-0000-4000-8000-000000000007', 's', 'b', 'all', 0, 'sending',
         '[{"userId":"f0000000-0000-4000-8000-000000000001","email":"a@example.test"}]', 0, 1) $q$,
   'broadcast_emails: a started send stores its recipient list');
+-- The Worker's "is this file used by a broadcast?" check (attachments @> [{path}]).
+insert into public.broadcast_emails (sent_by_user_id, subject, body_html, audience_type, recipient_count, attachments)
+values ('f0000000-0000-4000-8000-000000000007', 'with file', 'b', 'all', 0,
+  '[{"path":"draft/pgtap-used/a.pdf","filename":"a.pdf","size_bytes":5,"content_type":"application/pdf"}]');
+insert into _tap (line) select is(
+  (select count(*)::int from public.broadcast_emails where attachments @> '[{"path":"draft/pgtap-used/a.pdf"}]'::jsonb),
+  1, 'broadcast_emails: a row is found by one of its attachment paths');
 insert into _tap (line) select is(
   (select confdeltype::text from pg_constraint c
     join pg_attribute a on a.attrelid = c.conrelid and a.attnum = any (c.conkey)

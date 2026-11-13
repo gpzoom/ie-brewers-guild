@@ -24,6 +24,7 @@ import {
   saveBroadcastDraftCore,
   sendBroadcastTestCore,
   startBroadcastCore,
+  stopBroadcastCore,
   type BroadcastAttachment,
   type BroadcastAttachmentRef,
   type BroadcastAudiencePreview,
@@ -54,7 +55,7 @@ const DRAFT_COLUMNS =
 const RECENT_COLUMNS =
   "id, sent_at, subject, audience_type, audience_filter, member_ids, recipient_count, status, failed_emails, updated_at, next_index, total_recipients";
 const JOB_COLUMNS =
-  "id, subject, body_html, attachments, audience_type, audience_filter, member_ids, recipient_count, failed_emails, status, pending_recipients, next_index";
+  "id, created_at, updated_at, subject, body_html, attachments, audience_type, audience_filter, member_ids, recipient_count, failed_emails, status, pending_recipients, next_index, total_recipients";
 
 /** Logs Supabase's own error for us, and gives the screen plain words instead. */
 function fail(friendly: string, original: unknown): never {
@@ -101,9 +102,32 @@ function supabaseBroadcastStore(service: SupabaseClient): BroadcastStore {
       if (error) fail("Couldn't save the draft. Try again.", error);
     },
 
-    async clearDraft() {
-      const { error } = await service.from("broadcast_draft").delete().eq("id", true);
+    async clearDraftIfSavedBy(savedBy) {
+      const { error } = await service
+        .from("broadcast_draft")
+        .delete()
+        .eq("id", true)
+        .lte("updated_at", savedBy);
       if (error) fail("Couldn't clear the draft.", error);
+    },
+
+    async attachmentInUse(path) {
+      const { data, error } = await service
+        .from("broadcast_emails")
+        .select("id")
+        .contains("attachments", [{ path }])
+        .limit(1);
+      if (error) fail("Couldn't check that file. Try again.", error);
+      return (data ?? []).length > 0;
+    },
+
+    async unsubscribedAmong(userIds) {
+      const { data, error } = await service
+        .from("broadcast_unsubscribes")
+        .select("user_id")
+        .in("user_id", userIds);
+      if (error) fail(LOST_CONTACT, error);
+      return new Set(((data ?? []) as { user_id: string }[]).map((r) => r.user_id));
     },
 
     async listRecent(limit) {
@@ -364,4 +388,11 @@ export const continueBroadcast = createServerFn({ method: "POST" })
   .handler(
     async ({ data }): Promise<BroadcastContinueResult> =>
       continueBroadcastCore(await gateForRequest(), data, openMailer),
+  );
+
+// Mark as stopped: give up on an interrupted send (it can't be finished after this).
+export const stopBroadcast = createServerFn({ method: "POST" })
+  .inputValidator((data: { id: string }) => ({ id: data?.id }))
+  .handler(
+    async ({ data }): Promise<{ ok: true }> => stopBroadcastCore(await gateForRequest(), data),
   );
