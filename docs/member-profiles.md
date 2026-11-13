@@ -396,6 +396,7 @@ Decided with the owner on 27 September 2026. The site's creator gets a **super a
 | **Delete category**: the confirmation says how many members use it, since deleting removes it from all of them | Add, rename and reorder only |
 | **Settings** (`/guild/settings`, new): how often members' calendars re-sync automatically, the homepage carousel's dwell time, the homepage hero image | Menu item hidden |
 | **Help messages** (`/guild/help`, new): the Help button's bug reports and feature requests, with a **bell** in the top bar counting the waiting ones (see Help button) | Menu item and bell hidden |
+| **Broadcast email** (`/guild/broadcast`, new): compose one email to members, filtered by audience, with attachments | Menu item hidden |
 
 Everything else in the Guild admin stays with Guild admins: inquiries; the roster (search, create, invite, view, Edit as them); approve, decline and suspend; dues; changing member type; member requests; categories add, rename and reorder; and Applications when it's built.
 
@@ -421,7 +422,7 @@ This changes three earlier rules:
 
 #### Menus
 
-- The Guild sidebar gains a second group, **Super admin**, with Brand & theme (moved out of the Guild group), Guild admins, Audit log, Help messages (with the waiting count) and Settings. Only the super admin sees it; `/guild/brand`, `/guild/admins`, `/guild/audit`, `/guild/help` and `/guild/settings` send anyone else to the roster.
+- The Guild sidebar gains a second group, **Super admin**, with Brand & theme (moved out of the Guild group), Guild admins, Broadcast email, Audit log, Help messages (with the waiting count) and Settings. Only the super admin sees it; `/guild/brand`, `/guild/admins`, `/guild/broadcast`, `/guild/audit`, `/guild/help` and `/guild/settings` send anyone else to the roster.
 - The super admin's top bar has a **bell** that opens Help messages, with a number when any are waiting (no number when none are; "99+" past 99).
 - A Guild admin's roster menu has no **Delete member…** and no Trail switch; Categories has no **Delete** (the page says only the super admin can delete one). While a Guild admin edits as a member, the sign-in email shows read-only ("Only the super admin can change it"), in `/admin` and in `/portal`.
 
@@ -434,6 +435,55 @@ Added 27 September 2026. One screen of site-wide settings (artboard Z):
 - **Homepage hero image** (added 28 September 2026) — shows the current image, **Upload an image** / **Replace image** (JPEG or PNG, up to 10 MB, a landscape photo at least 2000 pixels wide recommended; location data is stripped), and **Use the built-in image**. It goes live on the homepage straight away; the replaced file is deleted.
 - How it works: the Worker's cron still fires every 15 minutes. Each tick reads the setting from `site_settings` and syncs every calendar only when that much time has passed since the last run (two minutes of slack, so "every 15 minutes" doesn't slip to 30). It records the run with a conditional update, so when staging and production (same database) fire on the same tick only one of them syncs.
 - `site_settings` (new): exactly one row (`id boolean primary key default true check (id)`); `calendar_sync_interval_minutes` (one of 0, 15, 30, 60, 180, 360, 720, 1440; default 15), `calendar_sync_last_run_at`, `carousel_dwell_seconds` (4, 6, 8, 10 or 15; default 6), `hero_image_path` (a file in `site-images/hero/`, or null for the built-in image), `updated_at`, `updated_by_user_id`. Only the super admin can read or update it; nobody can insert or delete through the API. The screen's server functions check for the super admin first and write through the session client, so the table's policy checks again.
+
+#### Broadcast email screen
+
+Added 12 November 2026. One screen (`/guild/broadcast`, artboard AA) for sending a single email to members — a composer, not a template system.
+
+- **Audience:** All members (the default), by member type or category, or a hand-picked list via search-and-add. The screen shows a live count of members and of people (every owner and co-owner on file for the matched members — business-manager editor rows never get a Guild broadcast, the same rule as the owner-facing emails in People and permissions > Enforcement).
+- **Composer:** subject line, a rich-text body (bold, italic, underline, link, bulleted and numbered lists), and file attachments. Each recipient gets one email with their own unsubscribe link added automatically, as required for bulk mail.
+- **Save draft** keeps the composer's state without sending. **Send test to yourself** sends one copy to the super admin's own address, unchanged, with no recipients and no audit row. **Send** is the only irreversible action on the screen and asks for confirmation (recipient count and audience) first.
+- **Recent broadcasts** lists what's been sent, newest first: date, subject, and audience with its final people count. There's no "edit and resend" — a new send is a new broadcast.
+- Sent from `hello@iscbrewersguild.org` as "ISC Brewers Guild"; replies go to the sending super admin's own address.
+
+Decisions settled with the site owner, 12 November 2026:
+
+1. **Who counts as a member:** active members only, `status in ('published', 'draft')`. Applicants, declined and suspended members are never included.
+2. **Unsubscribe:** each recipient's email carries their own signed link (and the one-click `List-Unsubscribe` / `List-Unsubscribe-Post` headers Gmail and Yahoo expect from bulk senders). The link opens a public page, "You won't get Guild broadcast emails anymore", with a **Subscribe again** button. The choice is stored per person (per auth user), so one co-owner unsubscribing doesn't affect the other, and it stops only broadcasts: invites, sign-in links, hours reminders and every other site email still arrive. The screen's count says how many people are skipped as unsubscribed.
+3. **Save draft:** one draft, kept in the database (the super admin works from two computers), including its audience, subject, body and attachments. Sending clears it.
+4. **From:** "ISC Brewers Guild <hello@iscbrewersguild.org>" (the root domain is verified in Resend); `reply_to` is the sending super admin's own address. hello@ needs no inbox.
+5. **Attachments:** at most 5 files and 10 MB in total; PDF, JPEG, PNG, GIF, WebP, Word (.doc, .docx) and Excel (.xls, .xlsx) only.
+6. **Failures:** only addresses Resend refuses at send time are known. The confirmation and the audit row list them ("Any address that couldn't be sent to is listed there"); later bounces (Resend webhooks) are out of scope for now.
+7. **Sending:** one email per person, paced under Resend's default rate limit (2 requests a second), 10 people per request (see As built: batched sending); the Send button shows "Sending…" until it finishes. `status = 'failed'` only when no email was accepted.
+8. **Rich text:** a small, well-known editor library in the browser; the Worker sanitizes `body_html` to the allowed tags (p, br, strong/b, em/i, u, a with http(s)/mailto href, ul, ol, li) before saving or sending.
+9. **Member Guide:** no change (super-admin-only screen).
+
+As built (13 November 2026):
+
+- One person gets one email even when they own or co-own several matched members (deduped by user and by email address).
+- Unsubscribe links are signed with the existing `HOURS_CONFIRM_SECRET` (payload prefix `unsubscribe:`), so no new Worker secret is needed. The page is `/unsubscribe/<token>`; the one-click endpoint is `/api/unsubscribe/<token>`. Opening the link changes nothing until the person presses the button, so mail scanners can't unsubscribe anyone.
+- The draft is cleared only when at least one email was accepted; if every address fails, the draft stays.
+- Recent broadcasts shows the latest 20.
+- If the connection drops mid-send, the screen refreshes and says "We lost contact while sending. Check Recent broadcasts and the Audit log before sending again." rather than offering a retry.
+- **Batched sending (12 November 2026):** built while the site was on the Cloudflare Workers Free plan (about 50 subrequests per request). The site moved to **Workers Paid** on 13 November 2026, but batching stays on purpose: Resend's rate limit sets the speed either way, at most 10 emails are ever in flight, a dropped connection can be resumed with **Finish sending** without duplicates, and the screen shows progress. Sending is split into batches of **10 people per request**, driven by the screen:
+  1. **Start** (`startBroadcast`) validates, works out who gets it, and writes the `broadcast_emails` row with status `sending`, the full recipient list (`pending_recipients`, in order) and `next_index = 0`, plus the first audit row. It sends nothing and doesn't clear the draft. If that row can't be written, nothing is sent ("Couldn't start the send. Nothing was sent.").
+  2. **Continue** (`continueBroadcast`) sends to the next 10 people from `next_index`, then moves `next_index`, the sent count, the refused addresses and `updated_at` on. The screen calls it again and again, showing "Sent X of N…" and a progress bar in the confirm dialog, until it says done. The last batch sets `sent` (or `failed` when no one was accepted), writes the second audit row with the result, and clears the draft only if at least one email was accepted. Calling it on a finished broadcast sends nothing. A continue request makes at most about 23 subrequests (34 if every email is retried once after a rate limit): the super admin check, loading the row, the batch's unsubscribe check, up to 5 signed attachment links, 10 Resend calls, one update, and on the last batch the audit row and draft clear. Unsubscribe links are signed in the Worker, with no lookup per person.
+- **Batching review (12 November 2026):**
+  - Each batch checks the unsubscribe list for its people (one query), so someone who unsubscribes after a send started is skipped: not sent, not counted as failed.
+  - Each email carries Resend's `Idempotency-Key` (`bc-<broadcast id>-<place in the list>`; Resend keeps keys 24 hours). If a batch is sent again after a lost connection, Resend doesn't send those emails twice; its 409 answer for a repeated key counts as sent. Test sends carry no key.
+  - Finishing a send clears the draft only if the draft wasn't saved after the send started (a new message written meanwhile is kept). The recipient list (`pending_recipients`) is emptied when a send ends; totals come from `total_recipients`.
+  - **Mark as stopped** (next to Finish sending on an interrupted row) gives up on it: it becomes `failed`, shows "stopped after N of M", and an audit row (`update`, `details.stopped = true`) records it. If an attachment of an interrupted send has gone missing, Finish sending says "An attachment for this broadcast is missing, so it can't be finished. Use Mark as stopped."
+  - When an interrupted send exists, the Send confirmation says "An earlier send was interrupted. Use Finish sending in Recent broadcasts instead." (sending is still allowed).
+  - While sending, the dialog says "Sending takes about N minutes for M people. Keep this page open — if it's interrupted, you can finish later from Recent broadcasts." (about 80 people a minute), and the browser asks before the tab is closed.
+  - The message is built once per batch and only each person's footer is added. A message over 100 KB (after cleanup) is refused: "That message is too long. Shorten it or attach a file instead."
+- **Interrupted sends and Finish sending:** a `sending` row that no batch has moved on for 15 minutes (`updated_at`) was cut off (the page was closed, the connection dropped). Recent broadcasts shows it as "interrupted after N of M" with a **Finish sending** button, which asks for confirmation and picks up at `next_index`, so people who already got it don't get it twice (the batch that was in flight when the connection dropped is protected by Resend's idempotency keys for 24 hours). A fresh `sending` row shows "sending…". If the screen itself loses contact mid-send, it refreshes, says "We lost contact while sending. Check Recent broadcasts and the Audit log before sending again." and offers Finish sending right there for the same broadcast. A sent one with refused addresses shows "N failed".
+- Double-submit guard on the server: Start is refused while another broadcast is still `sending` and was moved on in the last 15 minutes ("A broadcast is still sending. Wait a few minutes and check Recent broadcasts."). Finish sending continues an existing broadcast, so the guard doesn't apply to it. Each batch's update only applies if the row is still at the `next_index` it started from, so two tabs can't count the same batch twice.
+- Attachments aren't loaded into the Worker: each file gets a one-hour signed Storage link (once at the start, to check it can be read, then once per batch), and Resend fetches it from there (its remote-attachment `path`). If a link can't be made, Send refuses before anything goes out.
+- Recipient addresses come from paging the sign-in accounts 1000 at a time (one call per 1000 people, not one per person), to stay within the Worker's request limits.
+- Removing an attachment saves the draft first and then deletes the file, so a failed delete only leaves an unused file behind. If any broadcast (a paused send or a sent one) uses the same file, it's only dropped from the draft and the file stays, so a paused send can still be finished.
+- Opening the one-click address (`/api/unsubscribe/<token>`) in a browser redirects to the read-only `/unsubscribe/<token>` page; only a one-click POST or the page's button changes anything.
+
+**Planned:** the site owner plans to manage broadcasts through Zeffy (zeffy.com) via its API later (noted 12 November 2026). Before extending this screen, check whether that move has happened.
 
 #### Enforcement
 
@@ -449,6 +499,7 @@ Added 27 September 2026. One screen of site-wide settings (artboard Z):
   - `categories`: split the current "guild admins can manage" policy. Guild admins keep insert and update; delete becomes super admin only. Deleting goes through `delete_category(id)`, a security definer function that checks for the super admin, takes the category out of every member's draft (otherwise that member's next publish would fail) and deletes it, in one transaction. `category_usage(id)` counts the members using it, live or in a draft, for the delete confirmation.
   - `audit_log` select: super admin only. Guild admins still insert their own rows. A new `details jsonb` column keeps names that would otherwise be lost: a deleted member's business name, the address on a Guild admin invite, grant or removal.
   - `guild_admin_invites` (new): `email` (lower-case), `invited_by_user_id`, `expires_at` (default 14 days), `accepted_at`, `accepted_user_id`, `cancelled_at`; one open invite per address. No client access at all; the Worker reads and writes it with the service key.
+  - `broadcast_emails` (new): written by the Worker with the service key (status `sending` before the first email and through every batch, then `sent` or `failed`); no other client access at all. Select is super admin only, same as `audit_log`. Every send is also written to the audit log, with the subject and final recipient count in `details`.
 - Server functions that run with the service key bypass these policies, so each one checks for the super admin (the real signed-in person, never the member being impersonated) before doing anything: delete member (including the storage wipe), change sign-in email, save brand settings, delete category, set Trail eligible, the Guild admins list, invite, resend, cancel and remove, and the audit log reader. Unit tests call each one as an ordinary Guild admin and check it's refused before anything is read or written; database tests (`supabase/tests/super_admin.test.sql`) check the same refusals straight through the database.
 - A super admin editing as a member is still subject to every impersonation rule except the email one: the band that can't be dismissed, the 30-minute idle timeout, and every write logged against the real person.
 
@@ -1034,11 +1085,11 @@ Nothing in the current build writes visitor data of any kind.
 - `media_assets`: public select only when `review_status = 'approved'` **and** the asset is referenced by a published slide, logo or cover. Members see all of their own rows including pending.
 - `upload_tokens` and `calendar_connections`: no public select at all. The creator upload route reads tokens with the service key inside a Worker.
 - `profiles`: each person reads their own row; Guild admins read all. No client writes at all (see Super admin > Enforcement).
-- Super admin only: `members` delete, `brand_settings` writes, `categories` delete, `audit_log` reads, the `members.trail_eligible` column. `guild_admin_invites` and `member_invites` have no client access.
+- Super admin only: `members` delete, `brand_settings` writes, `categories` delete, `audit_log` reads, `broadcast_emails` reads, the `members.trail_eligible` column. `guild_admin_invites`, `member_invites` and `broadcast_emails` writes have no client access at all.
 
 ### Storage buckets
 
-`member-media` private, served through a Worker that applies the crop and resize. `member-logos` may be public since logos are published anyway. Strip EXIF on ingest for both. `site-images` (28 September 2026) is public and holds the homepage hero (`hero/…`); only the super admin can add, replace or delete files in it; JPEG or PNG, up to 10 MB.
+`member-media` private, served through a Worker that applies the crop and resize. `member-logos` may be public since logos are published anyway. Strip EXIF on ingest for both. `site-images` (28 September 2026) is public and holds the homepage hero (`hero/…`); only the super admin can add, replace or delete files in it; JPEG or PNG, up to 10 MB. `broadcast-attachments` (new, 12 November 2026) is private. The Worker uploads and deletes its files with the service key after the super-admin check; the only client policy is select, for the super admin. At send time the Worker makes a one-hour signed link per file and Resend fetches the file from it, so nothing in the bucket is ever public.
 
 ### inquiries
 
@@ -1055,6 +1106,36 @@ Public contact form submissions, captured by the Worker so the row lands even if
 No IP or honeypot columns; rejection happens before a row is written.
 
 RLS: no public select at all. Inserts go through the Worker with the service key, never a client-side Supabase call. Select and update are restricted to `is_guild_admin`.
+
+### broadcast\_emails
+
+Added 12 November 2026. One row per super-admin broadcast send (see Super admin > Broadcast email screen).
+
+- `id`, `created_at` -- the standard convention
+- `sent_by_user_id uuid not null`, fk `auth.users` -- always the super admin; there's only one, but the column is written explicitly rather than assumed
+- `subject text not null`, `body_html text not null`
+- `attachments jsonb not null default '[]'` -- an array of `{path, filename, size_bytes, content_type}`, files held in the `broadcast-attachments` storage bucket
+- `audience_type text not null`, check in `(all, type_or_category, members)`
+- `audience_filter jsonb` -- the member type and/or category id, when `audience_type = 'type_or_category'`
+- `member_ids uuid[]` -- the hand-picked list, when `audience_type = 'members'`
+- `recipient_count integer not null` -- people, not members; one row per matched member's owner and every co-owner (as built: the number of people Resend accepted; 0 when the row is first written, updated after every batch of 10 while sending)
+- `failed_emails text[] not null default '{}'` -- addresses Resend refused at send time (decision 6); also listed in the audit row's `details`
+- `status text not null default 'sent'`, check in `(sending, sent, failed)` -- `sending` from just before the first email until the last batch; a `sending` row whose `updated_at` is more than 15 minutes old was cut off and the screen shows it as interrupted, with Finish sending
+- `sent_at timestamptz not null default now()` -- when the send started
+- `pending_recipients jsonb not null default '[]'` -- everyone it goes to, resolved when the send starts, in order: an array of `{userId, email}` (added for batched sending); emptied when the send ends or is marked as stopped
+- `next_index integer not null default 0` -- how many of `pending_recipients` have been tried (sent or refused); the next batch starts here, and so does Finish sending
+- `total_recipients integer not null default 0` -- the length of `pending_recipients`, so Recent broadcasts can say "interrupted after N of M" without loading the whole list
+- `updated_at timestamptz not null default now()` -- moved on by every batch; a `sending` row untouched for 15 minutes was interrupted
+
+RLS: no public select at all. The Worker inserts the row with the service key before the first email and updates it after each batch; nothing else writes it. Select is super admin only, same as `audit_log`. `sent_by_user_id` has no on-delete action, the same restriction as `audit_log.actor_user_id`.
+
+### broadcast\_draft
+
+The super admin's one saved draft (decision 3 above). One row at most (`id boolean primary key default true check (id)`), `audience_type`, `audience_filter`, `member_ids`, `subject`, `body_html`, `attachments` (same shapes as `broadcast_emails`), `updated_at`, `updated_by_user_id` (on delete set null). RLS: no client access; read and written by the Worker with the service key after the super-admin check.
+
+### broadcast\_unsubscribes
+
+One row per person who unsubscribed from broadcasts (decision 2 above): `user_id uuid primary key` fk `auth.users` on delete cascade, `created_at`. Written and deleted only by the Worker (the public unsubscribe page verifies the signed link first). Select is super admin only.
 
 ## Computing "open now"
 

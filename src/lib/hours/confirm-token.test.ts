@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { signHoursConfirmToken, verifyHoursConfirmToken } from "./confirm-token";
+import { signUnsubscribeToken } from "../email/unsubscribe-token";
 
 const SECRET = "test-secret-value";
 const MEMBER_ID = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
@@ -26,6 +27,14 @@ describe("signHoursConfirmToken / verifyHoursConfirmToken", () => {
     const token = await signHoursConfirmToken(MEMBER_ID, SECRET, now);
     const later = new Date("2026-03-01T00:00:00Z"); // more than 30 days later
     expect(await verifyHoursConfirmToken(token, SECRET, later)).toEqual({ valid: false, reason: "This link has expired." });
+  });
+
+  it("rejects an unsubscribe token signed with the same secret (unsubscribe:<uuid> payload)", async () => {
+    // Both tokens share HOURS_CONFIRM_SECRET; the payload shapes must keep
+    // a broadcast unsubscribe link from ever confirming a member's hours.
+    const token = await signUnsubscribeToken(MEMBER_ID, SECRET);
+    const result = await verifyHoursConfirmToken(token, SECRET);
+    expect(result.valid).toBe(false);
   });
 
   it("rejects a malformed token", async () => {
