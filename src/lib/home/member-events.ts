@@ -177,6 +177,18 @@ export function selectCarouselEvents(
   return result;
 }
 
+/**
+ * Whether a shared night (a card with an `alternate`) shows the guest's
+ * version at carousel position `pos`: it switches every full pass, and
+ * `offset` is the visit's random start. Going back from the first slide is
+ * the previous pass.
+ */
+export function showsAlternate(pos: number, count: number, offset: 0 | 1): boolean {
+  if (count < 1) return false;
+  const pass = Math.floor(pos / count);
+  return (((pass + offset) % 2) + 2) % 2 === 1;
+}
+
 /** The big date on a calendar page, in the member's own time zone. */
 export function calendarPageDate(
   iso: string,

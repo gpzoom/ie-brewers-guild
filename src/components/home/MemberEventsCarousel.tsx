@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Clock, MapPin, Pause, Play } from "lucide-react";
-import { calendarPageDate, type GuildEvent, type HomeEventCard } from "@/lib/home/member-events";
+import { calendarPageDate, showsAlternate, type GuildEvent, type HomeEventCard } from "@/lib/home/member-events";
 import { formatTimeRange } from "@/components/profile/EventsModule";
 import { linkifyText } from "@/lib/text/linkify";
 
@@ -289,7 +289,12 @@ export function MemberEventsCarousel({
     ...cards.map((card) => ({ kind: "member" as const, card })),
   ];
   const count = slides.length;
-  const [index, setIndex] = useState(0);
+  // An unbounded position, so the carousel knows which pass it's on.
+  const [pos, setPos] = useState(0);
+  const index = count > 0 ? ((pos % count) + count) % count : 0;
+  // The server renders the taproom version; the browser picks a random
+  // start, unless the first page on screen is a shared night (no swap in view).
+  const [offset, setOffset] = useState<0 | 1>(0);
   const [userPaused, setUserPaused] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -301,22 +306,33 @@ export function MemberEventsCarousel({
 
   const slidesRef = useRef(slides);
   slidesRef.current = slides;
-  const go = useCallback(
-    (next: number) => {
-      if (count < 2) return;
-      const target = ((next % count) + count) % count;
-      if (target === index) return;
-      setLeaving({ slide: slidesRef.current[index], id: Date.now() });
-      setIndex(target);
+  const displayed = useCallback(
+    (slide: Slide, at: number): Slide =>
+      slide.kind === "member" && slide.card.alternate && showsAlternate(at, count, offset)
+        ? { kind: "member", card: slide.card.alternate }
+        : slide,
+    [count, offset],
+  );
+  const goBy = useCallback(
+    (delta: number) => {
+      if (count < 2 || delta === 0) return;
+      setLeaving({ slide: displayed(slidesRef.current[index], pos), id: Date.now() });
+      setPos(pos + delta);
     },
-    [count, index],
+    [count, index, pos, displayed],
   );
 
   useEffect(() => {
+    const first = slidesRef.current[0];
+    if (first?.kind === "member" && first.card.alternate) return;
+    setOffset(Math.random() < 0.5 ? 0 : 1);
+  }, []);
+
+  useEffect(() => {
     if (!running) return;
-    const timer = window.setTimeout(() => go(index + 1), dwellSeconds * 1000);
+    const timer = window.setTimeout(() => goBy(1), dwellSeconds * 1000);
     return () => window.clearTimeout(timer);
-  }, [running, index, dwellSeconds, go]);
+  }, [running, pos, dwellSeconds, goBy]);
 
   if (count === 0) {
     return (
@@ -331,16 +347,16 @@ export function MemberEventsCarousel({
     );
   }
 
-  const current = slides[Math.min(index, count - 1)];
-  const upNext = count > 1 ? [1, 2, 3].filter((k) => k < count).map((k) => (index + k) % count) : [];
+  const current = displayed(slides[index], pos);
+  const upNext = count > 1 ? [1, 2, 3].filter((k) => k < count) : [];
 
   function onKeyDown(event: KeyboardEvent) {
     if (event.key === "ArrowRight") {
       event.preventDefault();
-      go(index + 1);
+      goBy(1);
     } else if (event.key === "ArrowLeft") {
       event.preventDefault();
-      go(index - 1);
+      goBy(-1);
     }
   }
   function onPointerDown(event: PointerEvent) {
@@ -350,7 +366,7 @@ export function MemberEventsCarousel({
     if (pointerStart.current === null) return;
     const dx = event.clientX - pointerStart.current;
     pointerStart.current = null;
-    if (Math.abs(dx) > 40) go(dx < 0 ? index + 1 : index - 1);
+    if (Math.abs(dx) > 40) goBy(dx < 0 ? 1 : -1);
   }
 
   const stage = (
@@ -415,7 +431,7 @@ export function MemberEventsCarousel({
         {count > 1 && (
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2.5">
-              <button type="button" aria-label="Previous event" className={controlClass} onClick={() => go(index - 1)}>
+              <button type="button" aria-label="Previous event" className={controlClass} onClick={() => goBy(-1)}>
                 <ChevronLeft aria-hidden="true" className="h-5 w-5" />
               </button>
               <button
@@ -433,7 +449,7 @@ export function MemberEventsCarousel({
                   <Play aria-hidden="true" className="h-4 w-4" />
                 )}
               </button>
-              <button type="button" aria-label="Next event" className={controlClass} onClick={() => go(index + 1)}>
+              <button type="button" aria-label="Next event" className={controlClass} onClick={() => goBy(1)}>
                 <ChevronRight aria-hidden="true" className="h-5 w-5" />
               </button>
               <span className="ml-1.5 text-[13px] text-muted-foreground">
@@ -462,15 +478,15 @@ export function MemberEventsCarousel({
             <div className="pb-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
               Up next
             </div>
-            {upNext.map((i) => {
-              const slide = slides[i];
+            {upNext.map((k) => {
+              const slide = displayed(slides[(index + k) % count], pos + k);
               const title = slide.kind === "guild" ? slide.event.title : slide.card.title;
               const who = slide.kind === "guild" ? "ISC Brewers Guild" : slide.card.member.businessName;
               return (
                 <button
                   key={slideKey(slide)}
                   type="button"
-                  onClick={() => go(i)}
+                  onClick={() => goBy(k)}
                   className="flex min-h-14 items-center gap-3.5 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <UpNextDate slide={slide} />
