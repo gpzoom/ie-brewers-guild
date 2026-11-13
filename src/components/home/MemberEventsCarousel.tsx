@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Clock, MapPin, Pause, Play } from "lucide-react";
-import { calendarPageDate, showsAlternate, type GuildEvent, type HomeEventCard } from "@/lib/home/member-events";
+import { calendarPageDate, carouselFrame, type GuildEvent, type HomeEventCard } from "@/lib/home/member-events";
 import { formatTimeRange } from "@/components/profile/EventsModule";
 import { linkifyText } from "@/lib/text/linkify";
 
@@ -25,6 +25,11 @@ type Slide = { kind: "guild"; event: GuildEvent } | { kind: "member"; card: Home
 const PAPER = "#FBF8F2";
 const INK = "#241F1A";
 const INK_MUTED = "#6B6156";
+
+/** A shared night's other version: the guest's own card. */
+function alternateOf(slide: Slide): Slide | undefined {
+  return slide.kind === "member" && slide.card.alternate ? { kind: "member", card: slide.card.alternate } : undefined;
+}
 
 function slideKey(slide: Slide): string {
   return slide.kind === "guild" ? `guild:${slide.event.slug}` : slide.card.id;
@@ -279,10 +284,13 @@ export function MemberEventsCarousel({
   cards,
   guildEvent,
   dwellSeconds,
+  startOffset,
 }: {
   cards: HomeEventCard[];
   guildEvent: GuildEvent | null;
   dwellSeconds: number;
+  /** A shared night's first version this visit, picked by the server so the browser renders the same. */
+  startOffset: 0 | 1;
 }) {
   const slides: Slide[] = [
     ...(guildEvent ? [{ kind: "guild" as const, event: guildEvent }] : []),
@@ -292,9 +300,6 @@ export function MemberEventsCarousel({
   // An unbounded position, so the carousel knows which pass it's on.
   const [pos, setPos] = useState(0);
   const index = count > 0 ? ((pos % count) + count) % count : 0;
-  // The server renders the taproom version; the browser picks a random
-  // start, unless the first page on screen is a shared night (no swap in view).
-  const [offset, setOffset] = useState<0 | 1>(0);
   const [userPaused, setUserPaused] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -306,27 +311,17 @@ export function MemberEventsCarousel({
 
   const slidesRef = useRef(slides);
   slidesRef.current = slides;
-  const displayed = useCallback(
-    (slide: Slide, at: number): Slide =>
-      slide.kind === "member" && slide.card.alternate && showsAlternate(at, count, offset)
-        ? { kind: "member", card: slide.card.alternate }
-        : slide,
-    [count, offset],
-  );
+  const frame = count > 0 ? carouselFrame(slides, pos, startOffset, alternateOf) : null;
+  const shownRef = useRef(frame?.current);
+  shownRef.current = frame?.current;
   const goBy = useCallback(
     (delta: number) => {
-      if (count < 2 || delta === 0) return;
-      setLeaving({ slide: displayed(slidesRef.current[index], pos), id: Date.now() });
+      if (count < 2 || delta === 0 || !shownRef.current) return;
+      setLeaving({ slide: shownRef.current, id: Date.now() });
       setPos(pos + delta);
     },
-    [count, index, pos, displayed],
+    [count, pos],
   );
-
-  useEffect(() => {
-    const first = slidesRef.current[0];
-    if (first?.kind === "member" && first.card.alternate) return;
-    setOffset(Math.random() < 0.5 ? 0 : 1);
-  }, []);
 
   useEffect(() => {
     if (!running) return;
@@ -347,8 +342,8 @@ export function MemberEventsCarousel({
     );
   }
 
-  const current = displayed(slides[index], pos);
-  const upNext = count > 1 ? [1, 2, 3].filter((k) => k < count) : [];
+  const current = frame!.current;
+  const upNext = frame!.upNext;
 
   function onKeyDown(event: KeyboardEvent) {
     if (event.key === "ArrowRight") {
@@ -478,8 +473,7 @@ export function MemberEventsCarousel({
             <div className="pb-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
               Up next
             </div>
-            {upNext.map((k) => {
-              const slide = displayed(slides[(index + k) % count], pos + k);
+            {upNext.map(({ slide, k }) => {
               const title = slide.kind === "guild" ? slide.event.title : slide.card.title;
               const who = slide.kind === "guild" ? "ISC Brewers Guild" : slide.card.member.businessName;
               return (

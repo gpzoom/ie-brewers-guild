@@ -189,6 +189,27 @@ export function showsAlternate(pos: number, count: number, offset: 0 | 1): boole
   return (((pass + offset) % 2) + 2) % 2 === 1;
 }
 
+/**
+ * The carousel at position `pos`: the slide on stage and the next three
+ * (each with how far ahead it is), each in the version its own pass shows.
+ * `alternateOf` gives a shared night's other version.
+ */
+export function carouselFrame<S>(
+  slides: S[],
+  pos: number,
+  offset: 0 | 1,
+  alternateOf: (slide: S) => S | undefined,
+): { current: S; upNext: Array<{ slide: S; k: number }> } {
+  const count = slides.length;
+  const at = (p: number): S => {
+    const slide = slides[((p % count) + count) % count];
+    const alt = alternateOf(slide);
+    return alt !== undefined && showsAlternate(p, count, offset) ? alt : slide;
+  };
+  const ks = count > 1 ? [1, 2, 3].filter((k) => k < count) : [];
+  return { current: at(pos), upNext: ks.map((k) => ({ slide: at(pos + k), k })) };
+}
+
 /** The big date on a calendar page, in the member's own time zone. */
 export function calendarPageDate(
   iso: string,

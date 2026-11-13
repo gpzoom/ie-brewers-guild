@@ -26,6 +26,8 @@ export type HomepageData = {
   cards: HomeEventCard[];
   guildEvent: GuildEvent | null;
   dwellSeconds: CarouselDwellSeconds;
+  /** Which version of a shared taproom night shows first this visit. */
+  startOffset: 0 | 1;
   /** The uploaded hero image, or null for the built-in one. */
   heroImageUrl: string | null;
   /** Settings > Homepage spotlight; it shows only if there's content too. */
@@ -168,6 +170,9 @@ export const getHomepageData = createServerFn({ method: "GET" }).handler(
       }),
       loadSettings(),
     ]);
-    return { cards, guildEvent: nextGuildEvent(guildEvents, now), ...settings };
+    // Which version of a shared night shows first this visit (2026-11-13
+    // alternation spec). Picked here so the browser renders the same.
+    const startOffset: 0 | 1 = Math.random() < 0.5 ? 0 : 1;
+    return { cards, guildEvent: nextGuildEvent(guildEvents, now), startOffset, ...settings };
   },
 );
