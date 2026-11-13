@@ -12,6 +12,9 @@ import { getZonedNow } from "@/lib/hours/open-now";
  * - Round-robin (owner, 2026-09-28): each member's soonest event first, then
  *   everyone's second, and so on, so a taproom with weekly trivia can't fill
  *   the carousel. Within a round, soonest first. At most 24 pages.
+ * - A Guild guest's stop at a taproom that the taproom also lists, starting
+ *   within an hour of it, is one spot: the taproom's card, carrying the
+ *   guest's own card as `alternate` (owner, 2026-11-13).
  */
 
 export const CAROUSEL_WINDOW_DAYS = 14;
@@ -19,6 +22,8 @@ export const CAROUSEL_MAX_CARDS = 24;
 /** An event with no end time is treated as running this long. */
 const DEFAULT_DURATION_MS = 2 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
+/** A guest's stop and the taproom's own event this close in start time are the same night. */
+const PAIR_WINDOW_MS = 60 * 60 * 1000;
 
 export type HomeEventMember = {
   id: string;
@@ -66,6 +71,12 @@ export type HomeEventCard = {
    * taprooms, artboard GV4): the card is the taproom's, naming the guest.
    */
   guest?: { name: string; tag: string };
+  /**
+   * The same night listed by both the taproom and a Guild guest
+   * (docs/superpowers/specs/2026-11-13-carousel-shared-event-alternation-design.md):
+   * the guest's own card, which the carousel shows on every other pass.
+   */
+  alternate?: HomeEventCard;
 };
 
 /** A shown link from a Mobile member's stop to the taproom it's at, by event id. */
@@ -105,6 +116,7 @@ export function selectCarouselEvents(
   const max = options.max ?? CAROUSEL_MAX_CARDS;
 
   const byMember = new Map<string, HomeEventCard[]>();
+  const linkedStops: Array<{ card: HomeEventCard; row: HomeEventInputRow; hostId: string }> = [];
   for (const row of rows) {
     if ((row.kind ?? "event") !== "event") continue;
     if (row.is_hidden) continue;
@@ -123,6 +135,33 @@ export function selectCarouselEvents(
     const list = byMember.get(member.id) ?? [];
     list.push(card);
     byMember.set(member.id, list);
+    if (host && link) linkedStops.push({ card, row, hostId: host.id });
+  }
+
+  // The same night listed by both: closest start times pair first, each
+  // event at most once. The stop's separate card drops out.
+  const linkedCards = new Set(linkedStops.map((s) => s.card));
+  const candidates: Array<{ stop: (typeof linkedStops)[number]; own: HomeEventCard; diff: number }> = [];
+  for (const stop of linkedStops) {
+    for (const own of byMember.get(stop.hostId) ?? []) {
+      if (linkedCards.has(own)) continue;
+      const diff = Math.abs(Date.parse(stop.card.startsAt) - Date.parse(own.startsAt));
+      if (diff <= PAIR_WINDOW_MS) candidates.push({ stop, own, diff });
+    }
+  }
+  candidates.sort(
+    (a, b) => a.diff - b.diff || Date.parse(a.own.startsAt) - Date.parse(b.own.startsAt) || a.own.id.localeCompare(b.own.id),
+  );
+  const used = new Set<HomeEventCard>();
+  for (const { stop, own } of candidates) {
+    if (used.has(stop.card) || used.has(own)) continue;
+    const guestMember = members.get(stop.row.member_id);
+    if (!guestMember) continue;
+    own.alternate = toCard(stop.row, guestMember);
+    used.add(stop.card);
+    used.add(own);
+    const list = byMember.get(stop.hostId)!;
+    list.splice(list.indexOf(stop.card), 1);
   }
 
   const queues = [...byMember.values()].map((list) =>

@@ -163,9 +163,74 @@ describe("Guild members at taprooms on the homepage", () => {
   });
   it("the host counts for the one-per-member rotation", () => {
     const stop = row("truck", days(1), { title: null });
-    const own = row("a", hours(25));
+    const own = row("a", days(3));
     const other = row("b", days(2));
     const ids = selectCarouselEvents([stop, own, other], withTruck, now, {}, new Map([[stop.id, { hostMemberId: "a", guest }]])).map((c) => c.id);
     expect(ids).toEqual([stop.id, other.id, own.id]);
+  });
+});
+
+describe("a night both the taproom and the guest list alternates in one spot", () => {
+  const withTruck = new Map([...members, ["truck", member("truck")]]);
+  const guest = { name: "Sample Taco Truck", tag: "FOOD TRUCK" };
+  const link = (stopId: string) => new Map([[stopId, { hostMemberId: "a", guest }]]);
+
+  it("is one spot: the taproom's card with the guest's own card as its alternate", () => {
+    const stop = row("truck", days(1), { title: "Trivia Night", venue_name: "A" });
+    const own = row("a", hours(24.5), { title: "Tuesday Trivia" });
+    const cards = selectCarouselEvents([stop, own], withTruck, now, {}, link(stop.id));
+    expect(cards).toHaveLength(1);
+    expect(cards[0].id).toBe(own.id);
+    expect(cards[0].member.id).toBe("a");
+    expect(cards[0].alternate?.id).toBe(stop.id);
+    expect(cards[0].alternate?.member.id).toBe("truck");
+    expect(cards[0].alternate?.title).toBe("Trivia Night");
+    expect(cards[0].alternate?.venue).toBe("A");
+    expect(cards[0].alternate?.guest).toBeUndefined();
+  });
+  it("pairs at exactly 60 minutes apart, not at 61", () => {
+    const stop = row("truck", days(1));
+    const at60 = row("a", hours(25));
+    expect(selectCarouselEvents([stop, at60], withTruck, now, {}, link(stop.id))).toHaveLength(1);
+    const stop2 = row("truck", days(1));
+    const at61 = row("a", new Date(Date.parse(days(1)) + 61 * 60_000).toISOString());
+    const cards = selectCarouselEvents([stop2, at61], withTruck, now, {}, link(stop2.id));
+    expect(cards).toHaveLength(2);
+    expect(cards.every((c) => !c.alternate)).toBe(true);
+  });
+  it("no pair without a shown link, or when the taproom's event is canceled, hidden or food", () => {
+    const stop = row("truck", days(1));
+    expect(selectCarouselEvents([stop, row("a", days(1))], withTruck, now).some((c) => c.alternate)).toBe(false);
+    for (const extra of [{ overlay_status: "canceled" }, { is_hidden: true }, { kind: "food" }]) {
+      const s = row("truck", days(1));
+      const cards = selectCarouselEvents([s, row("a", days(1), extra)], withTruck, now, {}, link(s.id));
+      expect(cards.map((c) => c.id)).toEqual([s.id]);
+      expect(cards[0].guest).toEqual(guest);
+    }
+  });
+  it("each event pairs at most once, with the closest start winning", () => {
+    const early = row("truck", hours(24));
+    const late = row("truck2", hours(24.5));
+    const own = row("a", hours(24.4));
+    const hosts = new Map([
+      [early.id, { hostMemberId: "a", guest }],
+      [late.id, { hostMemberId: "a", guest }],
+    ]);
+    const cards = selectCarouselEvents([early, late, own], new Map([...withTruck, ["truck2", member("truck2")]]), now, {}, hosts);
+    expect(cards.find((c) => c.id === own.id)?.alternate?.id).toBe(late.id);
+    expect(cards.find((c) => c.id === early.id)?.guest).toEqual(guest);
+    expect(cards.find((c) => c.id === late.id)).toBeUndefined();
+  });
+  it("a rescheduled event pairs on its new time", () => {
+    const stop = row("truck", days(1));
+    const own = row("a", days(5), { overlay_status: "rescheduled", overlay_starts_at: hours(24.5) });
+    expect(selectCarouselEvents([stop, own], withTruck, now, {}, link(stop.id))[0].alternate?.id).toBe(stop.id);
+  });
+  it("takes the host's turn, not the guest's", () => {
+    const stop = row("truck", days(1));
+    const own = row("a", hours(24.5));
+    const truckOwn = row("truck", days(2), { venue_name: "Elsewhere" });
+    const ids = selectCarouselEvents([stop, own, truckOwn], withTruck, now, {}, link(stop.id)).map((c) => c.id);
+    expect(ids).toEqual([own.id, truckOwn.id]);
   });
 });
