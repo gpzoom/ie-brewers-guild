@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fakeSupabase, opsOf } from "@/lib/events/fake-supabase.test-helper";
 import { loadProblemInputs } from "./problems-load";
 
@@ -74,8 +74,11 @@ const tables = {
     },
   ],
   special_hours: [{ member_id: "mars", date: "2026-11-26", note: "Thanksgiving" }],
-  events: [event],
-  event_hosts: [{ event_id: "e1", host_member_id: "mars", status: "shown" }],
+  // As PostgREST returns it: the one-to-one link embedded as an object or null.
+  events: [
+    { ...event, event_hosts: { event_id: "e1", host_member_id: "mars" } },
+    { ...event, id: "e2", event_hosts: null },
+  ],
   calendar_connections: [
     {
       id: "c1",
@@ -109,12 +112,42 @@ describe("loadProblemInputs", () => {
     expect(String(or![1][0])).toMatch(/starts_at\.gte\..*starts_at\.lt\./);
   });
 
-  it("reads the links of those events, whatever their status", async () => {
+  it("reads the links embedded in the events read, whatever their status, never by a list of ids", async () => {
     const { client, calls } = fakeSupabase(tables);
     await loadProblemInputs(client, NOW);
-    const ops = opsOf(calls, "event_hosts");
-    expect(ops).toContainEqual(["in", ["event_id", ["e1"]]]);
-    expect(ops.some(([op, args]) => op === "eq" && args[0] === "status")).toBe(false);
+    const select = opsOf(calls, "events").find(([op]) => op === "select");
+    expect(String(select![1][0])).toContain("event_hosts(event_id, host_member_id)");
+    expect(String(select![1][0])).not.toMatch(/event_hosts\([^)]*status/);
+    expect(calls.some((c) => c.table === "event_hosts")).toBe(false);
+  });
+
+  it("also takes an embedded link given as an array", async () => {
+    const { client } = fakeSupabase({
+      ...tables,
+      events: [{ ...event, event_hosts: [{ event_id: "e1", host_member_id: "shop" }] }],
+    });
+    const out = await loadProblemInputs(client, NOW);
+    expect(out.links).toEqual([{ event_id: "e1", host_member_id: "shop" }]);
+  });
+
+  it("warns when the events read hits the 1000-row cap", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const many = Array.from({ length: 1000 }, (_, n) => ({
+        ...event,
+        id: `e${n}`,
+        event_hosts: null,
+      }));
+      const { client } = fakeSupabase({ ...tables, events: many });
+      await loadProblemInputs(client, NOW);
+      expect(warn).toHaveBeenCalledTimes(1);
+      warn.mockClear();
+      const { client: small } = fakeSupabase({ ...tables, events: many.slice(1) });
+      await loadProblemInputs(small, NOW);
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it("reads only open problem rows", async () => {
@@ -140,18 +173,17 @@ describe("loadProblemInputs", () => {
     });
     expect(out.members.get("draft")?.published).toBe(false);
     expect(out.members.get("truck")?.type).toBe("mobile");
-    expect(out.events).toEqual([event]);
+    expect(out.events).toEqual([event, { ...event, id: "e2" }]);
     expect(out.links).toEqual([{ event_id: "e1", host_member_id: "mars" }]);
     expect(out.connections).toEqual(tables.calendar_connections);
     expect(out.openRows.map((r) => r.id)).toEqual(["n1"]);
     expect(out.utcOpenRows.map((r) => r.id)).toEqual(["n2"]);
   });
 
-  it("skips the special-hours and link reads when there is nothing to read", async () => {
+  it("skips the special-hours read when no member can be closed", async () => {
     const { client, calls } = fakeSupabase({ ...tables, members: [], events: [] });
     const out = await loadProblemInputs(client, NOW);
     expect(calls.some((c) => c.table === "special_hours")).toBe(false);
-    expect(calls.some((c) => c.table === "event_hosts")).toBe(false);
     expect(out.closedDays).toEqual([]);
     expect(out.links).toEqual([]);
   });

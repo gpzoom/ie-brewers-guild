@@ -5,6 +5,8 @@ import { CLOSED_DAY_CONFLICT, type ClosedDayInputs, type ClosedMember } from "./
 import { UTC_CALENDAR, type UtcConnection } from "./utc-calendar";
 
 const DAY_MS = 24 * 3600 * 1000;
+/** PostgREST's default row cap: a read this long may have been cut short. */
+const ROW_CAP = 1000;
 const EVENT_COLUMNS =
   "id, member_id, title, venue_name, address, city, starts_at, ends_at, all_day, overlay_status, overlay_starts_at, is_hidden";
 
@@ -56,7 +58,13 @@ export async function loadProblemInputs(db: SupabaseClient, now: Date): Promise<
           .gte("date", utcDate(now.getTime() - DAY_MS))
           .lte("date", utcDate(now.getTime() + (GUEST_LINK_DAYS + 1) * DAY_MS))
       : Promise.resolve({ data: [], error: null }),
-    db.from("events").select(EVENT_COLUMNS).eq("kind", "event").or(upcomingStopsFilter(now)),
+    // The links come embedded (event_hosts.event_id is events' primary key,
+    // so each is one object or null): no list of event ids in the URL.
+    db
+      .from("events")
+      .select(`${EVENT_COLUMNS}, event_hosts(event_id, host_member_id)`)
+      .eq("kind", "event")
+      .or(upcomingStopsFilter(now)),
     db
       .from("calendar_connections")
       .select("id, member_id, purpose, feed_time_zone, feed_has_timed_events"),
@@ -69,12 +77,22 @@ export async function loadProblemInputs(db: SupabaseClient, now: Date): Promise<
   ]);
   for (const r of [hoursRes, eventsRes, connRes, openRes]) if (r.error) throw r.error;
 
-  const events = (eventsRes.data ?? []) as GuestStop[];
-  const ids = events.map((e) => e.id);
-  const { data: linkRows, error: lErr } = ids.length
-    ? await db.from("event_hosts").select("event_id, host_member_id").in("event_id", ids)
-    : { data: [], error: null };
-  if (lErr) throw lErr;
+  type Link = { event_id: string; host_member_id: string };
+  type EventWithLink = GuestStop & { event_hosts?: Link | Link[] | null };
+  const eventRows = (eventsRes.data ?? []) as EventWithLink[];
+  if (eventRows.length >= ROW_CAP) {
+    console.warn(
+      `loadProblemInputs: ${eventRows.length} events read -- the list may be cut short, so some problems could resolve wrongly`,
+    );
+  }
+  const events: GuestStop[] = [];
+  const links: Link[] = [];
+  for (const { event_hosts: embedded, ...e } of eventRows) {
+    events.push(e);
+    for (const l of [embedded ?? []].flat()) {
+      links.push({ event_id: l.event_id, host_member_id: l.host_member_id });
+    }
+  }
 
   const openRows = (openRes.data ?? []) as MemberNotificationRow[];
   return {
@@ -83,10 +101,7 @@ export async function loadProblemInputs(db: SupabaseClient, now: Date): Promise<
     ).map((h) => ({ member_id: h.member_id, date: h.date, note: h.note ?? null })),
     members,
     events,
-    links: ((linkRows ?? []) as Array<{ event_id: string; host_member_id: string }>).map((l) => ({
-      event_id: l.event_id,
-      host_member_id: l.host_member_id,
-    })),
+    links,
     openRows: openRows.filter((r) => r.type === CLOSED_DAY_CONFLICT),
     connections: (connRes.data ?? []) as UtcConnection[],
     utcOpenRows: openRows.filter((r) => r.type === UTC_CALENDAR),
