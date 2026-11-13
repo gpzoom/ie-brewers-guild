@@ -21,7 +21,7 @@ function setup(responder: (call: Call, n: number) => Response | Promise<Response
   return { calls, sleeps, fetchImpl, sleep };
 }
 
-const base = { apiKey: "re_key", from: "ISC Brewers Guild <hello@iscbrewersguild.org>", replyTo: "admin@example.com", subject: "News" };
+const base = { apiKey: "re_key", from: "ISC Brewers Guild <hello@mail.iscbrewersguild.org>", replyTo: "admin@example.com", subject: "News" };
 const ok = () => new Response("{}", { status: 200 });
 const body = (c: Call) => JSON.parse(String(c.init.body));
 

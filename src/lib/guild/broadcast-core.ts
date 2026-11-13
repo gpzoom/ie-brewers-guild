@@ -31,7 +31,7 @@ import { signUnsubscribeToken } from "@/lib/email/unsubscribe-token";
  * client's.
  */
 
-export const BROADCAST_FROM = "ISC Brewers Guild <hello@iscbrewersguild.org>";
+export const BROADCAST_FROM = "ISC Brewers Guild <hello@mail.iscbrewersguild.org>";
 export const BROADCAST_SUBJECT_MAX = 200;
 export const BROADCAST_RECENT_LIMIT = 20;
 /**

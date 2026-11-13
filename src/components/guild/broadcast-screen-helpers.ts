@@ -10,7 +10,7 @@ import type { BroadcastAudience } from "@/lib/guild/broadcast-audience";
 export type AudienceTab = "all" | "type_or_category" | "members";
 export type AudienceMemberType = "" | "producer" | "mobile" | "allied";
 
-export const BROADCAST_FROM_LABEL = "ISC Brewers Guild <hello@iscbrewersguild.org>";
+export const BROADCAST_FROM_LABEL = "ISC Brewers Guild <hello@mail.iscbrewersguild.org>";
 
 export const MEMBER_TYPE_CHOICES: { value: AudienceMemberType; label: string }[] = [
   { value: "", label: "Any type" },

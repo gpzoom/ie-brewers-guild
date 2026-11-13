@@ -444,14 +444,14 @@ Added 12 November 2026. One screen (`/guild/broadcast`, artboard AA) for sending
 - **Composer:** subject line, a rich-text body (bold, italic, underline, link, bulleted and numbered lists), and file attachments. Each recipient gets one email with their own unsubscribe link added automatically, as required for bulk mail.
 - **Save draft** keeps the composer's state without sending. **Send test to yourself** sends one copy to the super admin's own address, unchanged, with no recipients and no audit row. **Send** is the only irreversible action on the screen and asks for confirmation (recipient count and audience) first.
 - **Recent broadcasts** lists what's been sent, newest first: date, subject, and audience with its final people count. There's no "edit and resend" — a new send is a new broadcast.
-- Sent from `hello@iscbrewersguild.org` as "ISC Brewers Guild"; replies go to the sending super admin's own address.
+- Sent from `hello@mail.iscbrewersguild.org` as "ISC Brewers Guild"; replies go to the sending super admin's own address.
 
 Decisions settled with the site owner, 12 November 2026:
 
 1. **Who counts as a member:** active members only, `status in ('published', 'draft')`. Applicants, declined and suspended members are never included.
 2. **Unsubscribe:** each recipient's email carries their own signed link (and the one-click `List-Unsubscribe` / `List-Unsubscribe-Post` headers Gmail and Yahoo expect from bulk senders). The link opens a public page, "You won't get Guild broadcast emails anymore", with a **Subscribe again** button. The choice is stored per person (per auth user), so one co-owner unsubscribing doesn't affect the other, and it stops only broadcasts: invites, sign-in links, hours reminders and every other site email still arrive. The screen's count says how many people are skipped as unsubscribed.
 3. **Save draft:** one draft, kept in the database (the super admin works from two computers), including its audience, subject, body and attachments. Sending clears it.
-4. **From:** "ISC Brewers Guild <hello@iscbrewersguild.org>" (the root domain is verified in Resend); `reply_to` is the sending super admin's own address. hello@ needs no inbox.
+4. **From:** "ISC Brewers Guild <hello@mail.iscbrewersguild.org>" (changed 13 November 2026 from `hello@iscbrewersguild.org`: the site's Resend API key may only send from the `mail.` subdomain, which every other site email already uses); `reply_to` is the sending super admin's own address. hello@ needs no inbox.
 5. **Attachments:** at most 5 files and 10 MB in total; PDF, JPEG, PNG, GIF, WebP, Word (.doc, .docx) and Excel (.xls, .xlsx) only.
 6. **Failures:** only addresses Resend refuses at send time are known. The confirmation and the audit row list them ("Any address that couldn't be sent to is listed there"); later bounces (Resend webhooks) are out of scope for now.
 7. **Sending:** one email per person, paced under Resend's default rate limit (2 requests a second), 10 people per request (see As built: batched sending); the Send button shows "Sending…" until it finishes. `status = 'failed'` only when no email was accepted.
