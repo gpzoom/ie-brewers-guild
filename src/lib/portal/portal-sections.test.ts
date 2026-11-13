@@ -13,6 +13,7 @@ import {
 describe("portalSectionsFor", () => {
   it("gives the owner every section, with Discount only for Affiliate Members", () => {
     expect(portalSectionsFor({ role: "owner", memberType: "producer" })).toEqual([
+      "notifications",
       "basics",
       "logo-cover",
       "events",
@@ -41,8 +42,9 @@ describe("portalSectionsFor", () => {
     expect(sections).toContain("basics");
   });
 
-  it("gives a Photos & events editor their two sections plus Jobs", () => {
+  it("gives a Photos & events editor their two sections plus Jobs (after Notifications)", () => {
     expect(portalSectionsFor({ role: "media_events", memberType: "allied" })).toEqual([
+      "notifications",
       "logo-cover",
       "events",
       "jobs",
@@ -52,7 +54,7 @@ describe("portalSectionsFor", () => {
   it("logo, photos and cover are one section, which a Photos & events editor can open", () => {
     expect(PORTAL_SECTION_LABELS["logo-cover"]).toEqual({ label: "Logo, Photos & Cover", short: "Photos" });
     expect(isPortalSection("photos")).toBe(false);
-    expect(portalSectionsFor({ role: "media_events", memberType: "producer" })).toEqual(["logo-cover", "events", "jobs"]);
+    expect(portalSectionsFor({ role: "media_events", memberType: "producer" })).toEqual(["notifications", "logo-cover", "events", "jobs"]);
     expect(firstPortalSection("media_events")).toBe("logo-cover");
   });
 });

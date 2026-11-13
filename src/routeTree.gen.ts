@@ -47,6 +47,7 @@ import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminPreviewRouteImport } from './routes/admin_.preview'
 import { Route as AdminThemeRouteImport } from './routes/admin.theme'
+import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminLinksRouteImport } from './routes/admin.links'
 import { Route as AdminJobsRouteImport } from './routes/admin.jobs'
@@ -253,6 +254,11 @@ const AdminThemeRoute = AdminThemeRouteImport.update({
   path: '/theme',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMediaRoute = AdminMediaRouteImport.update({
   id: '/media',
   path: '/media',
@@ -352,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/admin/jobs': typeof AdminJobsRoute
   '/admin/links': typeof AdminLinksRoute
   '/admin/media': typeof AdminMediaRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/theme': typeof AdminThemeRoute
   '/admin/preview': typeof AdminPreviewRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -405,6 +412,7 @@ export interface FileRoutesByTo {
   '/admin/jobs': typeof AdminJobsRoute
   '/admin/links': typeof AdminLinksRoute
   '/admin/media': typeof AdminMediaRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/theme': typeof AdminThemeRoute
   '/admin/preview': typeof AdminPreviewRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -459,6 +467,7 @@ export interface FileRoutesById {
   '/admin/jobs': typeof AdminJobsRoute
   '/admin/links': typeof AdminLinksRoute
   '/admin/media': typeof AdminMediaRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/theme': typeof AdminThemeRoute
   '/admin_/preview': typeof AdminPreviewRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -516,6 +525,7 @@ export interface FileRouteTypes {
     | '/admin/jobs'
     | '/admin/links'
     | '/admin/media'
+    | '/admin/notifications'
     | '/admin/theme'
     | '/admin/preview'
     | '/auth/callback'
@@ -569,6 +579,7 @@ export interface FileRouteTypes {
     | '/admin/jobs'
     | '/admin/links'
     | '/admin/media'
+    | '/admin/notifications'
     | '/admin/theme'
     | '/admin/preview'
     | '/auth/callback'
@@ -622,6 +633,7 @@ export interface FileRouteTypes {
     | '/admin/jobs'
     | '/admin/links'
     | '/admin/media'
+    | '/admin/notifications'
     | '/admin/theme'
     | '/admin_/preview'
     | '/auth/callback'
@@ -956,6 +968,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminThemeRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/notifications': {
+      id: '/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AdminNotificationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/media': {
       id: '/admin/media'
       path: '/media'
@@ -1073,6 +1092,7 @@ interface AdminRouteChildren {
   AdminJobsRoute: typeof AdminJobsRoute
   AdminLinksRoute: typeof AdminLinksRoute
   AdminMediaRoute: typeof AdminMediaRoute
+  AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminThemeRoute: typeof AdminThemeRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -1086,6 +1106,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminJobsRoute: AdminJobsRoute,
   AdminLinksRoute: AdminLinksRoute,
   AdminMediaRoute: AdminMediaRoute,
+  AdminNotificationsRoute: AdminNotificationsRoute,
   AdminThemeRoute: AdminThemeRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

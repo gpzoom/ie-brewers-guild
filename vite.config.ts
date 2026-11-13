@@ -495,6 +495,12 @@ export default defineConfig(async ({ command, mode }) => {
             // /admin/events screen's loader for a producer's food calendar
             // (session client; RLS limits it to the member's editors).
             "src/lib/events/food-calendar.server.ts",
+            // notifications/portal.server.ts: the portal's and /admin's
+            // Notifications area (getNotificationSummary,
+            // listMemberNotifications, markNotificationRead,
+            // conflictEventIds), called from the layouts, routes and
+            // NotificationsView. Session client only; RLS decides who reads.
+            "src/lib/notifications/portal.server.ts",
           ],
           specifiers: ["server-only"],
         },

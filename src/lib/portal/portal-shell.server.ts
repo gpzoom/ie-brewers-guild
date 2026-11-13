@@ -30,6 +30,12 @@ import { supabasePeopleStore } from "@/lib/portal/people-store.server";
 import { loadPeople } from "@/lib/portal/people";
 import { actorFor } from "@/lib/portal/portal-people.server";
 import { loadSharedLook, type SharedLook } from "@/lib/portal/shared-look";
+import {
+  loadConflictEventIds,
+  loadMemberNotifications,
+  loadNotificationSummary,
+} from "@/lib/notifications/portal.server";
+import type { NotificationSummary } from "@/lib/notifications/portal-view";
 
 /**
  * The portal's server side (plan phase 5): /portal/[section] once setup is
@@ -55,6 +61,8 @@ export type PortalShell = PortalMemberShell & {
    * most of them.
    */
   emptySections: SectionCompleteness[] | null;
+  /** The Notifications menu count and the banner on every portal screen. */
+  notifications: NotificationSummary;
 };
 
 /**
@@ -70,7 +78,7 @@ export const getPortalShell = createServerFn({ method: "GET" }).handler(
     }
     const supabase = await getSupabaseServerClientForRequest();
     const service = await getSupabaseServiceRoleClient();
-    const [shell, publishGate, completeness, sharedLook] = await Promise.all([
+    const [shell, publishGate, completeness, sharedLook, notifications] = await Promise.all([
       loadMemberShell(supabase, member),
       loadPublishGateData(supabase, member.memberId),
       member.role === "media_events"
@@ -82,6 +90,7 @@ export const getPortalShell = createServerFn({ method: "GET" }).handler(
         userId: member.userId,
         isGuildAdmin: member.isImpersonating,
       }),
+      loadNotificationSummary(supabase, member.memberId),
     ]);
     return {
       ...shell,
@@ -90,6 +99,7 @@ export const getPortalShell = createServerFn({ method: "GET" }).handler(
       switcher: member.switcher,
       canSwitchBusiness: member.canSwitchBusiness,
       sharedLook,
+      notifications,
       emptySections: completeness
         ? emptySections(completeness.draft.data, {
             memberType: shell.memberType,
@@ -117,10 +127,14 @@ type Loaded<T extends (...args: never[]) => Promise<unknown>> = Awaited<ReturnTy
 
 /** What one portal section's editors start from. */
 export type PortalSectionData =
+  | ({ section: "notifications" } & Loaded<typeof loadMemberNotifications>)
   | ({ section: "basics" } & Loaded<typeof loadBasicsSection>)
   | ({ section: "links" | "theme" } & Loaded<typeof loadDraftSection>)
   | ({ section: "logo-cover" } & Loaded<typeof loadLogoPhotosCoverSection>)
-  | ({ section: "events" } & Loaded<typeof loadEventsSection>)
+  | ({ section: "events" } & Loaded<typeof loadEventsSection> & {
+      /** Events hidden from the public by an open closed-day conflict (the Events page's pill). */
+      conflictEventIds: string[];
+    })
   | ({ section: "food" } & Loaded<typeof loadFoodSection>)
   | ({ section: "jobs" } & Loaded<typeof loadJobsSection>)
   | ({ section: "discount" } & Loaded<typeof loadDiscountSection>)
@@ -151,6 +165,8 @@ export const getPortalSectionData = createServerFn({ method: "GET" })
     }
 
     switch (data.section) {
+      case "notifications":
+        return { section: "notifications", ...(await loadMemberNotifications(supabase, id)) };
       case "basics":
         return {
           section: "basics",
@@ -161,8 +177,17 @@ export const getPortalSectionData = createServerFn({ method: "GET" })
         return { section: data.section, ...(await loadDraftSection(supabase, id)) };
       case "logo-cover":
         return { section: "logo-cover", ...(await loadLogoPhotosCoverSection(supabase, id)) };
-      case "events":
-        return { section: "events", ...(await loadEventsSection(supabase, id)) };
+      case "events": {
+        const schedule = await loadEventsSection(supabase, id);
+        return {
+          section: "events",
+          ...schedule,
+          conflictEventIds: await loadConflictEventIds(
+            supabase,
+            schedule.events.map((e) => e.id),
+          ),
+        };
+      }
       case "food":
         return { section: "food", ...(await loadFoodSection(supabase, id)) };
       case "jobs":

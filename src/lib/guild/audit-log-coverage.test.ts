@@ -36,6 +36,8 @@ const MEMBER_MUTATION_FILES = [
   // Type-change requests. (The portal's People actions log every change
   // with recordPeopleAudit instead; see below.)
   "src/lib/portal/type-change.server.ts",
+  // Marking a notification message read.
+  "src/lib/notifications/portal.server.ts",
 ];
 
 describe("audit-log coverage", () => {

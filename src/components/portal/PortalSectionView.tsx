@@ -18,6 +18,7 @@ import { canConnectCalendar } from "@/components/portal/setup/SectionSteps";
 import { FinishProfileCard } from "@/components/portal/FinishProfileCard";
 import { RequestTypeChange } from "@/components/portal/RequestTypeChange";
 import { PeopleSection } from "@/components/portal/PeopleSection";
+import { NotificationsView } from "@/components/portal/NotificationsView";
 
 /**
  * One portal section (/portal/$section), from its loaded data. Each is the
@@ -69,6 +70,9 @@ export function PortalSectionView({
   );
 
   switch (data.section) {
+    case "notifications":
+      return <NotificationsView initial={data.groups} surface="portal" />;
+
     case "basics": {
       const basics = data.draft.data.basics;
       return (
@@ -154,6 +158,7 @@ export function PortalSectionView({
             memberId={shell.memberId}
             initialEvents={data.events}
             memberTimezone={data.memberTimezone}
+            conflictEventIds={data.conflictEventIds}
           />
           {/* Guild Mobile members at taprooms (artboard GV1): producers only. */}
           {shell.memberType === "producer" && (

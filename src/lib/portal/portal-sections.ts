@@ -8,6 +8,7 @@ import type { CompletenessStep } from "@/lib/portal/section-completeness";
  * tests share one definition of who sees what:
  *
  *   section      owner  co_owner  editor  media_events
+ *   notifications yes   yes       yes     yes       (first in the menu; never the landing page)
  *   basics       yes    yes       yes     --
  *   logo-cover   yes    yes       yes     yes       (Logo, Photos & Cover; a Photos & events
  *                                                   editor sees its Gallery and Carousel only)
@@ -25,6 +26,7 @@ import type { CompletenessStep } from "@/lib/portal/section-completeness";
  */
 
 export const PORTAL_SECTIONS = [
+  "notifications",
   "basics",
   "logo-cover",
   "events",
@@ -43,6 +45,7 @@ export function isPortalSection(value: unknown): value is PortalSection {
 
 /** Sidebar label, and the shorter one for the phone tab strip. */
 export const PORTAL_SECTION_LABELS: Record<PortalSection, { label: string; short: string }> = {
+  notifications: { label: "Notifications", short: "Alerts" },
   basics: { label: "Basics & hours", short: "Basics" },
   "logo-cover": { label: "Logo, Photos & Cover", short: "Photos" },
   events: { label: "Events", short: "Events" },
@@ -55,7 +58,8 @@ export const PORTAL_SECTION_LABELS: Record<PortalSection, { label: string; short
 };
 
 // Jobs: "either editor role" can post (docs/member-profiles.md, "Jobs board").
-const MEDIA_EVENTS_SECTIONS: readonly PortalSection[] = ["logo-cover", "events", "jobs"];
+// Notifications: everyone who can change events is told (spec 2026-11-13).
+const MEDIA_EVENTS_SECTIONS: readonly PortalSection[] = ["notifications", "logo-cover", "events", "jobs"];
 
 /** Whether this viewer may open the section at all. */
 export function canOpenPortalSection(

@@ -222,11 +222,15 @@ export function EventsEditor({
   memberId,
   initialEvents,
   memberTimezone,
+  conflictEventIds = [],
 }: {
   memberId: string;
   initialEvents: EventRow[];
   memberTimezone: string;
+  /** Events on a day marked closed (an open closed-day conflict): hidden from the public. */
+  conflictEventIds?: readonly string[];
 }) {
+  const conflicts = new Set(conflictEventIds);
   const [events, setEvents] = useState(initialEvents);
   // New events from the page's loader (after Refresh now reloads it)
   // replace the list; edits are saved as they're made, so nothing is lost.
@@ -470,6 +474,11 @@ export function EventsEditor({
                 {event.is_hidden && (
                   <span className="rounded-full border border-canvas-border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
                     Hidden
+                  </span>
+                )}
+                {conflicts.has(event.id) && (
+                  <span className="rounded-full bg-[#FDF3DC] px-2 py-0.5 text-[11px] font-semibold text-[#5C4210]">
+                    ⚠ Closed day: hidden from the public
                   </span>
                 )}
               </div>

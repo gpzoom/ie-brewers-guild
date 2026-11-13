@@ -10,6 +10,8 @@ import {
   type MemberEditingValue,
 } from "@/components/admin/MemberEditingContext";
 import { sidebarItemClass } from "@/components/shell/AppChrome";
+import { NotificationsBanner } from "@/components/portal/NotificationsBanner";
+import { notificationCount } from "@/lib/notifications/portal-view";
 
 /**
  * The portal's layout (plan phase 5; docs/member-profiles.md, "Routes":
@@ -80,6 +82,7 @@ function PortalLayoutInner() {
     label: PORTAL_SECTION_LABELS[section].label,
     short: PORTAL_SECTION_LABELS[section].short,
     match: [`/portal/${section}`],
+    badge: section === "notifications" ? notificationCount(shell.notifications) : undefined,
   }));
   return (
     <AdminShell
@@ -94,6 +97,12 @@ function PortalLayoutInner() {
       navItems={navItems}
       topBarLabel="ISC Brewers Guild · Member Portal"
       locationSwitcher={shell.switcher}
+      banner={
+        <NotificationsBanner
+          text={shell.notifications.bannerText}
+          href="/portal/notifications"
+        />
+      }
       sidebarExtra={
         shell.canSwitchBusiness ? (
           <Link to="/portal" search={{ switch: true }} className={sidebarItemClass(false)}>

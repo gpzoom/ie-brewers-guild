@@ -27,9 +27,13 @@ export type ShellNavItem = {
   short: string;
   /** Paths that light this item (the item's own path and anything under it). */
   match: readonly string[];
+  /** A count shown after the label ("Notifications (3)"); nothing when 0 or absent. */
+  badge?: number;
 };
 
 const NAV_ITEMS: readonly ShellNavItem[] = [
+  // Notifications (spec 2026-11-13): first, so Edit as them shows it too.
+  { to: "/admin/notifications", label: "Notifications", short: "Alerts", match: ["/admin/notifications"] },
   { to: "/admin/basics", label: "Basics & hours", short: "Basics", match: ["/admin/basics", "/admin/hours"] },
   { to: "/admin/media", label: "Logo, Photos & Cover", short: "Photos", match: ["/admin/media"] },
   { to: "/admin/theme", label: "Theme", short: "Theme", match: ["/admin/theme"] },
@@ -116,6 +120,7 @@ export function AdminShell({
   topBarLabel = "ISC Brewers Guild · Member admin",
   sidebarExtra,
   locationSwitcher = null,
+  banner,
   children,
 }: {
   memberId: string;
@@ -136,6 +141,8 @@ export function AdminShell({
   sidebarExtra?: ReactNode;
   /** A one-manager business's location menu (artboard BZ2); replaces the '[Name] Profile' heading. */
   locationSwitcher?: LocationSwitcherData | null;
+  /** Shown above the screen's content on every screen (the Notifications banner). */
+  banner?: ReactNode;
   children: ReactNode;
 }) {
   const router = useRouter();
@@ -226,6 +233,7 @@ export function AdminShell({
           )}
           {navItems.map((item) => {
             const active = isActivePath(pathname, item.match);
+            const count = item.badge && item.badge > 0 ? ` (${item.badge})` : "";
             return (
               <Link
                 key={item.to}
@@ -233,8 +241,14 @@ export function AdminShell({
                 aria-current={active ? "page" : undefined}
                 className={sidebarItemClass(active)}
               >
-                <span className="md:hidden">{item.short}</span>
-                <span className="hidden md:inline">{item.label}</span>
+                <span className="md:hidden">
+                  {item.short}
+                  {count}
+                </span>
+                <span className="hidden md:inline">
+                  {item.label}
+                  {count}
+                </span>
               </Link>
             );
           })}
@@ -251,6 +265,7 @@ export function AdminShell({
           Publish bar.
         */}
         <div className="min-w-0 flex-1 px-4 pb-56 pt-5 md:px-9 md:py-[30px]" data-member-id={memberId}>
+          {banner}
           {children}
         </div>
       </div>

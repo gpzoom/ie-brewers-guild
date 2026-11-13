@@ -7,6 +7,9 @@ import { getMemberDisplayName } from "@/lib/guild/impersonation.server";
 import { AdminShell, adminNavItemsFor } from "@/components/admin/AdminShell";
 import { PublishGateDialog } from "@/components/admin/PublishGateDialog";
 import { canInvitePeople } from "@/components/admin/CameraRollHint";
+import { NotificationsBanner } from "@/components/portal/NotificationsBanner";
+import { getNotificationSummary } from "@/lib/notifications/portal.server";
+import { notificationCount } from "@/lib/notifications/portal-view";
 import { DraftStatusProvider, useDraftStatus } from "@/components/admin/DraftStatusContext";
 import {
   ADMIN_EDITING_PATHS,
@@ -38,12 +41,14 @@ export const Route = createFileRoute("/admin")({
     // their saves to it (DraftStatusContext), which re-runs just this loader.
     // The location menu (artboard BZ2) comes with the session (a manager's
     // own business; a Guild admin editing as a member never gets it).
-    const [publishGateData, memberName, draftStatus] = await Promise.all([
+    // The Notifications count and banner (spec 2026-11-13), so Edit as them shows them too.
+    const [publishGateData, memberName, draftStatus, notifications] = await Promise.all([
       getPublishGateData({ data: { memberId: context.memberId } }),
       getMemberDisplayName({ data: { memberId: context.memberId } }),
       getDraftStatus({ data: { memberId: context.memberId } }),
+      getNotificationSummary({ data: { surface: "admin" } }),
     ]);
-    return { publishGateData, memberName, draftStatus };
+    return { publishGateData, memberName, draftStatus, notifications };
   },
   head: () => ({ meta: [{ title: "Member admin — Inland Southern California Brewers Guild" }] }),
   component: AdminLayout,
@@ -83,7 +88,7 @@ function AdminLayout() {
 
 function AdminLayoutInner() {
   const { memberId, isImpersonating, locationSwitcher } = Route.useRouteContext();
-  const { publishGateData, memberName, draftStatus } = Route.useLoaderData();
+  const { publishGateData, memberName, draftStatus, notifications } = Route.useLoaderData();
   const epoch = useDraftStatus()?.epoch ?? 0;
   const isPublished = publishGateData.status === "published";
   return (
@@ -98,8 +103,11 @@ function AdminLayoutInner() {
       publishSlot={<PublishGateDialog memberId={memberId} initial={publishGateData} />}
       navItems={adminNavItemsFor(publishGateData.memberType, {
         people: canInvitePeople(draftStatus.role, isImpersonating),
-      })}
+      }).map((item) =>
+        item.to === "/admin/notifications" ? { ...item, badge: notificationCount(notifications) } : item,
+      )}
       locationSwitcher={locationSwitcher}
+      banner={<NotificationsBanner text={notifications.bannerText} href="/admin/notifications" />}
     >
       {/* Remounted after a discard so every editor starts again from the reloaded draft. */}
       <Fragment key={`${memberId}:${epoch}`}>

@@ -6,6 +6,7 @@ import { EventsEditor } from "@/components/admin/EventsEditor";
 import { CalendarConnectionPanel } from "@/components/admin/CalendarConnectionPanel";
 import { SameMemberGuard } from "@/components/admin/SameMemberGuard";
 import { GuestStopsBox } from "@/components/admin/GuestStopsBox";
+import { conflictEventIds } from "@/lib/notifications/portal.server";
 
 export const Route = createFileRoute("/admin/events")({
   // Never reuse a previous visit's data: every member shares these URLs, so a
@@ -18,10 +19,11 @@ export const Route = createFileRoute("/admin/events")({
     // needs to display/edit event times in the member's OWN business
     // timezone rather than whatever timezone the viewing browser happens
     // to be set to (see EventsEditor.tsx's TZDate usage).
-    const [events, member, calendarConnection] = await Promise.all([
+    const [events, member, calendarConnection, conflicts] = await Promise.all([
       listEvents({ data: { memberId: context.memberId } }),
       getMemberBasics({ data: { memberId: context.memberId } }),
       getCalendarConnection({ data: { memberId: context.memberId } }),
+      conflictEventIds({ data: { memberId: context.memberId } }),
     ]);
     return {
       dataMemberId: member.id,
@@ -29,6 +31,7 @@ export const Route = createFileRoute("/admin/events")({
       memberTimezone: member.timezone,
       memberType: member.member_type,
       calendarConnection,
+      conflictEventIds: conflicts,
     };
   },
   component: EventsRoute,
@@ -52,7 +55,8 @@ function InfoIcon() {
 
 /** Artboard M (AdminEvents): heading, calendar connection, upcoming list, note. */
 function EventsRoute() {
-  const { dataMemberId, events, memberTimezone, memberType, calendarConnection } = Route.useLoaderData();
+  const { dataMemberId, events, memberTimezone, memberType, calendarConnection, conflictEventIds } =
+    Route.useLoaderData();
   const { memberId } = Route.useRouteContext();
   return (
     <SameMemberGuard memberId={memberId} dataMemberId={dataMemberId}>
@@ -66,7 +70,12 @@ function EventsRoute() {
       </div>
 
       <CalendarConnectionPanel memberId={memberId} initialConnection={calendarConnection} />
-      <EventsEditor memberId={memberId} initialEvents={events} memberTimezone={memberTimezone} />
+      <EventsEditor
+        memberId={memberId}
+        initialEvents={events}
+        memberTimezone={memberTimezone}
+        conflictEventIds={conflictEventIds}
+      />
       {/* Guild Mobile members at taprooms (artboard GV1): producers only. */}
       {memberType === "producer" && <GuestStopsBox memberId={memberId} timezone={memberTimezone} />}
 
