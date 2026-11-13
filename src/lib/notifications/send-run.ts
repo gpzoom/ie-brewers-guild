@@ -7,7 +7,41 @@ import type { NoticeContext } from "./types";
 /** A row as claim_member_notification_emails returns it. */
 export type ClaimedNotification = MemberNotificationRow & { send_kind: "notice" | "reminder" };
 
-export type SentMark = { id: string; sendKind: "notice" | "reminder" };
+/**
+ * alsoReminder: a notice sent when its problem is already inside the
+ * reminder window counts as the reminder too, so no separate "Reminder"
+ * email follows on the next run.
+ */
+export type SentMark = { id: string; sendKind: "notice" | "reminder"; alsoReminder?: true };
+
+const DEFAULT_TZ = "America/Los_Angeles";
+
+/** YYYY-MM-DD for `now` in the given time zone. */
+function todayIn(timezone: string, now: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: timezone,
+  }).format(now);
+}
+
+/** YYYY-MM-DD minus whole days. */
+function minusDays(date: string, days: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d - days)).toISOString().slice(0, 10);
+}
+
+/** Is this notice for a problem whose reminder window has already opened? */
+export function noticeInReminderWindow(
+  row: Pick<ClaimedNotification, "send_kind" | "kind" | "due_date" | "reminder_days">,
+  timezone: string,
+  now: Date,
+): boolean {
+  if (row.send_kind !== "notice" || row.kind !== "problem") return false;
+  if (row.reminder_days == null || !row.due_date) return false;
+  return todayIn(timezone, now) >= minusDays(row.due_date, row.reminder_days);
+}
 
 /**
  * One 15-minute send of member notification emails (spec, "Emails"), with
@@ -71,9 +105,15 @@ export async function runNotificationSend(d: SendDeps): Promise<void> {
     byMember.set(row.member_id, [...(byMember.get(row.member_id) ?? []), row]);
 
   for (const [memberId, rows] of byMember) {
-    const marks: SentMark[] = rows.map((r) => ({ id: r.id, sendKind: r.send_kind }));
+    let marks: SentMark[] = [];
     try {
       const member = await d.loadMember(memberId);
+      const tz = member?.timezone || DEFAULT_TZ;
+      marks = rows.map((r) =>
+        noticeInReminderWindow(r, tz, d.now)
+          ? { id: r.id, sendKind: r.send_kind, alsoReminder: true }
+          : { id: r.id, sendKind: r.send_kind },
+      );
       const roles = new Set(rows.flatMap((r) => r.recipient_roles));
       const addresses = new Set<string>();
       for (const role of roles)

@@ -334,4 +334,89 @@ describe("runNotificationSend", () => {
     expect(err).toHaveBeenCalled();
     vi.restoreAllMocks();
   });
+
+  describe("a notice already inside the reminder window counts as the reminder", () => {
+    const conflict = (o: Partial<ClaimedNotification>) =>
+      c({
+        type: "closed_day_conflict",
+        dedupe_key: "cd:1",
+        details: {
+          role: "own",
+          event_id: "e1",
+          other_member_id: null,
+          closed_date: "2026-11-15",
+          closed_note: null,
+        },
+        event_id: "e1",
+        reminder_days: 3,
+        ...o,
+      });
+
+    it("(a) a conflict 2 days out: marks the notice and the reminder", async () => {
+      const d = deps({ claim: async () => [conflict({ id: "a", due_date: "2026-11-15" })] });
+      await runNotificationSend(d);
+      expect(d.sent).toHaveLength(1);
+      expect(d.marked).toEqual([[[{ id: "a", sendKind: "notice", alsoReminder: true }], null]]);
+    });
+
+    it("(b) a conflict 10 days out: marks only the notice", async () => {
+      const d = deps({ claim: async () => [conflict({ id: "b", due_date: "2026-11-23" })] });
+      await runNotificationSend(d);
+      expect(d.marked).toEqual([[[{ id: "b", sendKind: "notice" }], null]]);
+      expect(d.marked[0][0][0]).not.toHaveProperty("alsoReminder");
+    });
+
+    it("(c) reminder_days null (UTC calendar) never marks a reminder", async () => {
+      const d = deps({
+        claim: async () => [c({ id: "u", due_date: "2026-11-14", reminder_days: null })],
+      });
+      await runNotificationSend(d);
+      expect(d.marked[0][0][0]).not.toHaveProperty("alsoReminder");
+    });
+
+    it("the window starts exactly due_date - reminder_days", async () => {
+      const d = deps({ claim: async () => [conflict({ id: "e", due_date: "2026-11-16" })] });
+      await runNotificationSend(d);
+      expect(d.marked).toEqual([[[{ id: "e", sendKind: "notice", alsoReminder: true }], null]]);
+      const later = deps({ claim: async () => [conflict({ id: "f", due_date: "2026-11-17" })] });
+      await runNotificationSend(later);
+      expect(later.marked).toEqual([[[{ id: "f", sendKind: "notice" }], null]]);
+    });
+
+    it("uses the member's time zone for today", async () => {
+      // 05:00 UTC Nov 14 is still Nov 13 in Los Angeles; window opens Nov 14.
+      const now = new Date("2026-11-14T05:00:00Z");
+      const la = deps({ now, claim: async () => [conflict({ id: "g", due_date: "2026-11-17" })] });
+      await runNotificationSend(la);
+      expect(la.marked).toEqual([[[{ id: "g", sendKind: "notice" }], null]]);
+      const utcMember = deps({
+        now,
+        claim: async () => [conflict({ id: "h", due_date: "2026-11-17" })],
+        loadMember: async (id) => ({
+          name: `${id} co`,
+          timezone: "UTC",
+          recipientsByRole: people(id),
+        }),
+      });
+      await runNotificationSend(utcMember);
+      expect(utcMember.marked).toEqual([
+        [[{ id: "h", sendKind: "notice", alsoReminder: true }], null],
+      ]);
+    });
+
+    it("a reminder or a message is never flagged", async () => {
+      const d = deps({
+        claim: async () => [
+          conflict({
+            id: "r",
+            due_date: "2026-11-15",
+            notice_sent_at: "2026-11-01T00:00:00Z",
+            send_kind: "reminder",
+          }),
+        ],
+      });
+      await runNotificationSend(d);
+      expect(d.marked).toEqual([[[{ id: "r", sendKind: "reminder" }], null]]);
+    });
+  });
 });

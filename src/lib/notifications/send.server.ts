@@ -134,7 +134,11 @@ export async function sendMemberNotifications(): Promise<void> {
       send: (email) => sendRawEmail(email),
       async markSent(rows, lastError) {
         const at = new Date().toISOString();
-        const notices = rows.filter((r) => r.sendKind === "notice").map((r) => r.id);
+        // A notice already inside its reminder window counts as the reminder.
+        const notices = rows
+          .filter((r) => r.sendKind === "notice" && !r.alsoReminder)
+          .map((r) => r.id);
+        const both = rows.filter((r) => r.sendKind === "notice" && r.alsoReminder).map((r) => r.id);
         const reminders = rows.filter((r) => r.sendKind === "reminder").map((r) => r.id);
         if (notices.length) {
           // Notice and reminder share one attempts counter: reset it so the
@@ -143,6 +147,19 @@ export async function sendMemberNotifications(): Promise<void> {
             .from("member_notifications")
             .update({ notice_sent_at: at, attempts: 0, claimed_at: null, last_error: lastError })
             .in("id", notices);
+          if (error) throw error;
+        }
+        if (both.length) {
+          const { error } = await db
+            .from("member_notifications")
+            .update({
+              notice_sent_at: at,
+              reminder_sent_at: at,
+              attempts: 0,
+              claimed_at: null,
+              last_error: lastError,
+            })
+            .in("id", both);
           if (error) throw error;
         }
         if (reminders.length) {
