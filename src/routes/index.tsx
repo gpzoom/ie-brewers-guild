@@ -23,7 +23,7 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const { cards, guildEvent, dwellSeconds, heroImageUrl, spotlightEnabled } = Route.useLoaderData();
+  const { cards, guildEvent, dwellSeconds, startOffset, heroImageUrl, spotlightEnabled } = Route.useLoaderData();
   return (
     <>
       {/* Half its old height (owner, 2026-09-28); the image is the one the
@@ -49,7 +49,7 @@ function HomePage() {
 
       {/* Replaces the three placeholder pillars and the Featured Event section. */}
       <section id="coming-up" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-16 md:px-6 md:py-20">
-        <MemberEventsCarousel cards={cards} guildEvent={guildEvent} dwellSeconds={dwellSeconds} />
+        <MemberEventsCarousel cards={cards} guildEvent={guildEvent} dwellSeconds={dwellSeconds} startOffset={startOffset} />
       </section>
     </>
   );
