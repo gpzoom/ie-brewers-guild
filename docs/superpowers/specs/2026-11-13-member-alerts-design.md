@@ -70,7 +70,7 @@ This mirrors how the visit emails already split the work (`claim_guest_stop_noti
 ### When the check runs
 
 - Every 15 minutes, after the calendar refresh and the guest-stop relink, in the same cron.
-- Right after a member saves **Special hours**, saves or changes an **event**, or after a calendar **sync**, for that member and the members they share events with (like guest-stop relinking today).
+- Right after a member **publishes** changes (Special hours go live only when published), saves or changes an **event**, or after a calendar **sync**, for that member and the members they share events with (like guest-stop relinking today).
 
 ## Approaches
 
