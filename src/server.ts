@@ -97,11 +97,14 @@ export default {
       const { refreshMemberProblems } = await import("./lib/notifications/problems.server");
       // Part 2: then send the taprooms' emails about Guild members' visits.
       const { sendGuestStopNotices } = await import("./lib/events/guest-stop-notices.server");
+      // Member notifications: then email new alerts, messages and reminders.
+      const { sendMemberNotifications } = await import("./lib/notifications/send.server");
       ctx.waitUntil(
         refreshAllIcsConnections()
           .finally(() => relinkGuestStops())
           .finally(() => refreshMemberProblems())
-          .finally(() => sendGuestStopNotices()),
+          .finally(() => sendGuestStopNotices())
+          .finally(() => sendMemberNotifications()),
       );
       // Members page v2: map positions for mobile members' upcoming stops.
       const { geocodeUpcomingMobileStops } = await import("./lib/events/stop-geocode-cron.server");
