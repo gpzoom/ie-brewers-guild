@@ -95,6 +95,8 @@ export default {
       const { relinkGuestStops } = await import("./lib/events/guest-links.server");
       // Member notifications: open and resolve closed-day conflicts and UTC calendars.
       const { refreshMemberProblems } = await import("./lib/notifications/problems.server");
+      // Member notifications: once at launch, tell the Guild what was found quietly.
+      const { maybeSendLaunchSummary } = await import("./lib/notifications/guild-summary.server");
       // Part 2: then send the taprooms' emails about Guild members' visits.
       const { sendGuestStopNotices } = await import("./lib/events/guest-stop-notices.server");
       // Member notifications: then email new alerts, messages and reminders.
@@ -103,6 +105,7 @@ export default {
         refreshAllIcsConnections()
           .finally(() => relinkGuestStops())
           .finally(() => refreshMemberProblems())
+          .finally(() => maybeSendLaunchSummary())
           .finally(() => sendGuestStopNotices())
           .finally(() => sendMemberNotifications()),
       );
@@ -112,6 +115,12 @@ export default {
     } else if (controller.cron === "0 13 * * *") {
       const { sendHoursStaleNotices } = await import("./lib/hours/hours-stale-cron.server");
       ctx.waitUntil(sendHoursStaleNotices());
+      // Mondays (Pacific): the weekly member alerts count for the Guild.
+      const { isMondayPacific } = await import("./lib/notifications/guild-summary");
+      if (isMondayPacific(new Date())) {
+        const { sendWeeklyGuildSummary } = await import("./lib/notifications/guild-summary.server");
+        ctx.waitUntil(sendWeeklyGuildSummary());
+      }
     }
   },
 };
