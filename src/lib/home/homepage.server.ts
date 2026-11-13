@@ -21,6 +21,7 @@ import { getMemberThemeHex, type MemberThemeName } from "@/lib/theme/member-them
 import { logoBackgroundColor } from "@/lib/members/logo-background";
 import { guildEvents } from "@/data/site";
 import { loadGuestInfo } from "@/lib/events/guest-info";
+import { loadHiddenEventIds, withoutHidden } from "@/lib/notifications/hidden-events";
 
 export type HomepageData = {
   cards: HomeEventCard[];
@@ -62,7 +63,10 @@ async function loadCards(now: Date): Promise<HomeEventCard[]> {
       `and(starts_at.gte.${from},starts_at.lt.${to}),and(overlay_starts_at.gte.${from},overlay_starts_at.lt.${to})`,
     );
   if (error) throw new Error(error.message);
-  const rows = (eventRows ?? []) as HomeEventInputRow[];
+  const allRows = (eventRows ?? []) as HomeEventInputRow[];
+  // Events with an open closed-day conflict stay off the public site until fixed.
+  const hiddenIds = await loadHiddenEventIds(supabase, allRows.map((row) => row.id));
+  const rows = withoutHidden(allRows, hiddenIds);
   if (rows.length === 0) return [];
 
   // Guild Mobile members at taprooms: a stop with a shown link is the

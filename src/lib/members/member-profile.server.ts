@@ -17,6 +17,7 @@ import {
 import { loadMemberDraftBundle } from "@/lib/drafts/drafts.server";
 import { loadGuestEventsForHost, loadShownHostsForGuest } from "@/lib/events/guest-info";
 import { attachHosts } from "@/lib/events/guest-display";
+import { loadHiddenEventIds, withoutHidden } from "@/lib/notifications/hidden-events";
 import { DRAFT_SECTIONS, isFullEditor, type DraftSection } from "@/lib/drafts/sections";
 import type {
   CarouselSlideRow,
@@ -175,6 +176,17 @@ async function assembleProfile(args: {
       : Promise.resolve(new Map<string, { name: string; slug: string }>()),
   ]);
 
+  // Events with an open closed-day conflict stay off the public profile (and
+  // its preview, which shows what the public sees) until fixed.
+  const ownEvents = (eventsResult.data ?? []) as EventRow[];
+  const hiddenIds = await loadHiddenEventIds(supabase, [
+    ...ownEvents.map((e) => e.id),
+    ...guestEvents.map((e) => e.id),
+    ...taproomHosts.keys(),
+  ]);
+  const visibleGuestEvents = withoutHidden(guestEvents, hiddenIds);
+  const visibleTaproomHosts = new Map([...taproomHosts].filter(([eventId]) => !hiddenIds.has(eventId)));
+
   const assets = (assetsResult.data ?? []) as MediaAssetRow[];
   for (const extra of args.extraAssets ?? []) {
     if (assetIds.includes(extra.id) && !assets.some((a) => a.id === extra.id)) assets.push(extra);
@@ -215,7 +227,7 @@ async function assembleProfile(args: {
   return buildProfileObject({
     rows,
     assets,
-    events: attachHosts((eventsResult.data ?? []) as EventRow[], taproomHosts),
+    events: attachHosts(withoutHidden(ownEvents, hiddenIds), visibleTaproomHosts),
     categories: (categoriesResult.data ?? []) as CategoryRow[],
     logoPublicUrl,
     directoryEntries: toEntries(directoryResult.data),
@@ -224,7 +236,7 @@ async function assembleProfile(args: {
     crossLinkLogoUrl,
     crossLinkLogoBackground,
     hasFoodCalendar: foodCalendarResult.data === true,
-    guestEvents,
+    guestEvents: visibleGuestEvents,
     siteOrigin: args.siteOrigin,
     now: args.now,
     flags: args.flags,

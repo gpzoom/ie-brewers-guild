@@ -4,6 +4,7 @@ import { loadDirectory } from "@/lib/members/directory.server";
 import { buildV2, type V2Card, type V2Pin } from "@/lib/members/members-v2";
 import { STOP_EVENT_COLUMNS, type StopEvent } from "@/lib/members/mobile-stops";
 import type { MobileCategory } from "@/lib/members/mobile-category";
+import { loadHiddenEventIds, withoutHidden } from "@/lib/notifications/hidden-events";
 
 /**
  * Everything the Members page (/members) shows, read with the ANON client (the public view;
@@ -42,7 +43,9 @@ export const getMembersV2Data = createServerFn({ method: "GET" }).handler(
         list.push({ name: category.name, slug: category.slug, sort_order: category.sort_order });
         categoriesByMemberId.set(link.member_id, list);
       }
-      for (const e of (events.data ?? []) as unknown as StopEvent[]) {
+      const allStops = (events.data ?? []) as unknown as StopEvent[];
+      const hiddenIds = await loadHiddenEventIds(supabase, allStops.map((e) => e.id));
+      for (const e of withoutHidden(allStops, hiddenIds)) {
         const list = stopsByMemberId.get(e.member_id) ?? [];
         list.push(e);
         stopsByMemberId.set(e.member_id, list);
