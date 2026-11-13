@@ -106,7 +106,6 @@ export default {
         refreshAllIcsConnections()
           .finally(() => relinkGuestStops())
           .finally(() => refreshMemberProblems().then((ok) => runLaunchSummaryIf(ok, maybeSendLaunchSummary)))
-          .finally(() => maybeSendLaunchSummary())
           .finally(() => sendGuestStopNotices())
           .finally(() => sendMemberNotifications()),
       );

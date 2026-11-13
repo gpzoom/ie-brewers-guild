@@ -6,6 +6,7 @@ export async function runLaunchSummaryIf(
   run: () => Promise<void>,
 ): Promise<void> {
   if (refreshed) await run();
+  else console.warn("launch summary skipped: the member problem check did not complete");
 }
 
 export type LaunchRunDeps = {
@@ -25,7 +26,8 @@ export type LaunchRunDeps = {
  * - nothing to do once sent, or once member emails are on;
  * - no quiet open problems yet: claim nothing (it re-checks every run);
  * - claim first (atomic), so overlapping runs can't both send; a failed
- *   send gives the claim back so the next run retries.
+ *   send gives the claim back so the next run retries. Tradeoff, accepted:
+ *   a Worker that dies between the claim and the send leaves it marked sent.
  */
 export async function runLaunchSummary(d: LaunchRunDeps): Promise<void> {
   const s = await d.loadSettings();
