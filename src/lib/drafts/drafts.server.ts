@@ -23,6 +23,7 @@ import {
 } from "@/lib/drafts/sections";
 import { validateDraftPatch } from "@/lib/drafts/validate-patch";
 import { geocodeMemberAfterPublish, readAddressSnapshot } from "@/lib/geo/geocode.server";
+import { refreshMemberProblems } from "@/lib/notifications/problems.server";
 import { loadLookAssets, type LookIds } from "@/lib/media/shared-look-assets";
 import type { MediaAssetRow, MemberStatus, MemberType } from "@/lib/supabase/types";
 
@@ -257,6 +258,9 @@ export const publishDraft = createServerFn({ method: "POST" })
     // Best-effort (never throws): map coordinates for a new/changed street
     // address, written server-side for this member only.
     await geocodeMemberAfterPublish(data.memberId, addressBefore);
+    // Member notifications: special hours (closed days) only go live on
+    // publish, so re-check closed-day conflicts (never throws).
+    await refreshMemberProblems();
     const parsed = result as {
       status: MemberStatus;
       published_at: string;

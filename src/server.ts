@@ -93,11 +93,14 @@ export default {
       // Guild Mobile members at taprooms: relink every Mobile member's upcoming
       // stops once the calendars are refreshed.
       const { relinkGuestStops } = await import("./lib/events/guest-links.server");
+      // Member notifications: open and resolve closed-day conflicts and UTC calendars.
+      const { refreshMemberProblems } = await import("./lib/notifications/problems.server");
       // Part 2: then send the taprooms' emails about Guild members' visits.
       const { sendGuestStopNotices } = await import("./lib/events/guest-stop-notices.server");
       ctx.waitUntil(
         refreshAllIcsConnections()
           .finally(() => relinkGuestStops())
+          .finally(() => refreshMemberProblems())
           .finally(() => sendGuestStopNotices()),
       );
       // Members page v2: map positions for mobile members' upcoming stops.
