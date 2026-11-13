@@ -151,6 +151,21 @@ export function normalizeStreet(value: string | null | undefined): string {
     .join(" ");
 }
 
+/**
+ * The street in a full address. Google often puts the place's name first
+ * ("Left Coast Brewing Co. - Tasting Room, …, 980 N Haven Ave Ste 100,
+ * Ontario, …"), so it's the first comma part that starts with a house
+ * number, normalized as normalizeStreet does. A name like "3rd Strike Beer
+ * Co" isn't a house number.
+ */
+export function addressStreet(address: string | null | undefined): string {
+  for (const part of (address ?? "").split(",")) {
+    const street = normalizeStreet(part);
+    if (/^\d+ /.test(street)) return street;
+  }
+  return "";
+}
+
 function clean(value: string | null | undefined): string {
   return (value ?? "").trim();
 }
@@ -181,7 +196,7 @@ export function matchHost<T extends { name: string; city: string; street: string
   // The address Google gives ("3750 Main St, Riverside, ...") or a venue
   // that is just a street ("3750 Main Street", a picked address), against
   // the taproom's street, however each spells St/Street, N/North, etc.
-  const places = [normalizeStreet(e.address), normalizeStreet(e.venue_name)].filter(Boolean);
+  const places = [addressStreet(e.address), normalizeStreet(e.venue_name)].filter(Boolean);
   const byStreet = places.length
     ? hosts.filter((h) => {
         const street = normalizeStreet(h.street);
