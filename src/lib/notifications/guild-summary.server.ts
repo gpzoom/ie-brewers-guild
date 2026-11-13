@@ -9,6 +9,7 @@ import {
   countWeek,
   type LaunchNames,
 } from "./guild-summary";
+import { runLaunchSummary } from "./launch-run";
 import "./registry";
 
 const ROW_CAP = 5000;
@@ -72,8 +73,10 @@ export async function sendWeeklyGuildSummary(): Promise<void> {
 /**
  * Once, at launch: tell the Guild admins about the open conflicts found
  * quietly (members were not emailed). Live site only; runs while emails are
- * still off and launch_summary_sent_at is empty, then sets it. No quiet open
- * problems: sets it without sending. Never throws.
+ * still off and launch_summary_sent_at is empty. It claims
+ * launch_summary_sent_at first (atomic), sends, and gives the claim back if
+ * the send fails. With no quiet open problems it does nothing and checks
+ * again next run. Rules in launch-run.ts. Never throws.
  */
 export async function maybeSendLaunchSummary(): Promise<void> {
   try {
@@ -81,63 +84,74 @@ export async function maybeSendLaunchSummary(): Promise<void> {
     const role = siteRole((env as { SITE_ORIGIN?: string }).SITE_ORIGIN);
     if (!role || role.staging) return;
     const db = await getSupabaseServiceRoleClient();
-    const { data: s, error: serr } = await db
-      .from("member_notification_settings")
-      .select("emails_enabled, launch_summary_sent_at")
-      .maybeSingle();
-    if (serr) throw serr;
-    const settings = s as { emails_enabled: boolean; launch_summary_sent_at: string | null } | null;
-    if (!settings || settings.emails_enabled || settings.launch_summary_sent_at) return;
-
-    const { data, error } = await db
-      .from("member_notifications")
-      .select("*")
-      .eq("kind", "problem")
-      .eq("quiet", true)
-      .eq("status", "open")
-      .limit(ROW_CAP);
-    if (error) throw error;
-    const rows = (data ?? []) as MemberNotificationRow[];
-
-    if (rows.length > 0) {
-      const to = await adminEmails(db);
-      if (to.length === 0) {
-        console.error("maybeSendLaunchSummary: no Guild admin email found; will retry");
-        return;
-      }
-      const names: LaunchNames = { members: {}, events: {} };
-      const memberIds = [...new Set(rows.map((r) => r.member_id))];
-      const eventIds = [...new Set(rows.map((r) => r.event_id).filter((x): x is string => !!x))];
-      if (memberIds.length) {
-        const { data: m, error: merr } = await db
-          .from("members")
-          .select("id, business_name")
-          .in("id", memberIds);
-        if (merr) throw merr;
-        for (const x of (m ?? []) as Array<{ id: string; business_name: string }>) {
-          names.members[x.id] = x.business_name;
+    await runLaunchSummary({
+      async loadSettings() {
+        const { data, error } = await db
+          .from("member_notification_settings")
+          .select("emails_enabled, launch_summary_sent_at")
+          .maybeSingle();
+        if (error) throw error;
+        return data as { emails_enabled: boolean; launch_summary_sent_at: string | null } | null;
+      },
+      async loadQuietOpen() {
+        const { data, error } = await db
+          .from("member_notifications")
+          .select("*")
+          .eq("kind", "problem")
+          .eq("quiet", true)
+          .eq("status", "open")
+          .limit(ROW_CAP);
+        if (error) throw error;
+        return (data ?? []) as MemberNotificationRow[];
+      },
+      async claim() {
+        const { data, error } = await db
+          .from("member_notification_settings")
+          .update({ launch_summary_sent_at: new Date().toISOString() })
+          .eq("singleton", true)
+          .eq("emails_enabled", false)
+          .is("launch_summary_sent_at", null)
+          .select("singleton");
+        if (error) throw error;
+        return (data ?? []).length > 0;
+      },
+      async release() {
+        const { error } = await db
+          .from("member_notification_settings")
+          .update({ launch_summary_sent_at: null })
+          .eq("singleton", true);
+        if (error) console.error("maybeSendLaunchSummary: could not release the claim", error);
+      },
+      async send(rows) {
+        const to = await adminEmails(db);
+        if (to.length === 0) throw new Error("no Guild admin email found");
+        const names: LaunchNames = { members: {}, events: {} };
+        const memberIds = [...new Set(rows.map((r) => r.member_id))];
+        const eventIds = [...new Set(rows.map((r) => r.event_id).filter((x): x is string => !!x))];
+        if (memberIds.length) {
+          const { data: m, error: merr } = await db
+            .from("members")
+            .select("id, business_name")
+            .in("id", memberIds);
+          if (merr) throw merr;
+          for (const x of (m ?? []) as Array<{ id: string; business_name: string }>) {
+            names.members[x.id] = x.business_name;
+          }
         }
-      }
-      if (eventIds.length) {
-        const { data: ev, error: eerr } = await db
-          .from("events")
-          .select("id, title, venue_name")
-          .in("id", eventIds);
-        if (eerr) throw eerr;
-        for (const x of (ev ?? []) as Array<{ id: string; title: string | null; venue_name: string | null }>) {
-          const label = x.title ?? x.venue_name;
-          if (label) names.events[x.id] = label;
+        if (eventIds.length) {
+          const { data: ev, error: eerr } = await db
+            .from("events")
+            .select("id, title, venue_name")
+            .in("id", eventIds);
+          if (eerr) throw eerr;
+          for (const x of (ev ?? []) as Array<{ id: string; title: string | null; venue_name: string | null }>) {
+            const label = x.title ?? x.venue_name;
+            if (label) names.events[x.id] = label;
+          }
         }
-      }
-      await sendRawEmail({ to, ...buildLaunchSummaryEmail(rows, names, role.origin, false) });
-    }
-
-    const { error: uerr } = await db
-      .from("member_notification_settings")
-      .update({ launch_summary_sent_at: new Date().toISOString() })
-      .eq("singleton", true)
-      .is("launch_summary_sent_at", null);
-    if (uerr) throw uerr;
+        await sendRawEmail({ to, ...buildLaunchSummaryEmail(rows, names, role.origin, false) });
+      },
+    });
   } catch (err) {
     console.error("maybeSendLaunchSummary failed", err);
   }

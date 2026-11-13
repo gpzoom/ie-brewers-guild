@@ -97,6 +97,7 @@ export default {
       const { refreshMemberProblems } = await import("./lib/notifications/problems.server");
       // Member notifications: once at launch, tell the Guild what was found quietly.
       const { maybeSendLaunchSummary } = await import("./lib/notifications/guild-summary.server");
+      const { runLaunchSummaryIf } = await import("./lib/notifications/launch-run");
       // Part 2: then send the taprooms' emails about Guild members' visits.
       const { sendGuestStopNotices } = await import("./lib/events/guest-stop-notices.server");
       // Member notifications: then email new alerts, messages and reminders.
@@ -104,7 +105,7 @@ export default {
       ctx.waitUntil(
         refreshAllIcsConnections()
           .finally(() => relinkGuestStops())
-          .finally(() => refreshMemberProblems())
+          .finally(() => refreshMemberProblems().then((ok) => runLaunchSummaryIf(ok, maybeSendLaunchSummary)))
           .finally(() => maybeSendLaunchSummary())
           .finally(() => sendGuestStopNotices())
           .finally(() => sendMemberNotifications()),

@@ -12,8 +12,9 @@ import { loadProblemInputs } from "./problems-load";
  * call. Always a full check -- the data is small. Run by the 15-minute cron
  * and after every save that can change the answer. Service role. Never
  * throws -- a save or sync that succeeded must not fail because of it.
+ * Returns true only when the load and apply completed.
  */
-export async function refreshMemberProblems(): Promise<void> {
+export async function refreshMemberProblems(): Promise<boolean> {
   try {
     const { env } = await import("cloudflare:workers");
     const vars = env as { SITE_ORIGIN?: string };
@@ -22,7 +23,7 @@ export async function refreshMemberProblems(): Promise<void> {
       console.error(
         `refreshMemberProblems: unknown SITE_ORIGIN (${vars.SITE_ORIGIN ?? "not set"}) -- checking nothing`,
       );
-      return;
+      return false;
     }
 
     const db = await getSupabaseServiceRoleClient();
@@ -42,14 +43,16 @@ export async function refreshMemberProblems(): Promise<void> {
     );
     const opens = [...closed.opens, ...utc.opens];
     const resolveIds = [...closed.resolveIds, ...utc.resolveIds];
-    if (opens.length === 0 && resolveIds.length === 0) return;
+    if (opens.length === 0 && resolveIds.length === 0) return true;
 
     const { error } = await db.rpc("apply_member_problems", {
       p_opens: opens,
       p_resolve_ids: resolveIds,
     });
     if (error) throw error;
+    return true;
   } catch (err) {
     console.error("refreshMemberProblems failed", err);
+    return false;
   }
 }
