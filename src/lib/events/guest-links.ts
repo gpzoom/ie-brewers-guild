@@ -42,11 +42,11 @@ export function upcomingStopsFilter(now: Date): string {
 
 
 /** A rescheduled stop counts by its new start time (the same rule as stopStart in mobile-stops). */
-function startOf(s: GuestStop): number {
+export function startOf(s: GuestStop): number {
   return new Date(s.overlay_status === "rescheduled" && s.overlay_starts_at ? s.overlay_starts_at : s.starts_at).getTime();
 }
 
-function inWindow(s: GuestStop, now: Date): boolean {
+export function inWindow(s: GuestStop, now: Date): boolean {
   const start = startOf(s);
   const end = s.all_day
     ? start + DAY_MS
@@ -88,7 +88,7 @@ export type NoticeWrite = {
   old_ends_at: string | null;
 };
 
-function isLive(s: GuestStop): boolean {
+export function isLive(s: GuestStop): boolean {
   return !s.is_hidden && s.overlay_status !== "canceled" && s.overlay_status !== "postponed";
 }
 
