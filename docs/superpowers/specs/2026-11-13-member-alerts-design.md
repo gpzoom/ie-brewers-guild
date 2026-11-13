@@ -1,4 +1,4 @@
-# Member alerts: closed-day conflicts and UTC calendars
+# Member notifications: a general system, starting with closed-day conflicts and UTC calendars
 
 **Approved in conversation:** owner, 13 November 2026. Marked *(owner)* where the owner decided; everything else is a proposal the owner accepted, or a builder's call (last section).
 
@@ -79,28 +79,60 @@ How it's built *(owner chose A)*:
 - **A. A stored record of alerts, kept current by the check (chosen).** One table holds every alert with its status. The check (a pure decision function plus a thin server wrapper, the same shape as guest-stop linking) adds, keeps or resolves rows. Public pages skip events with an open conflict. One answer to "is there a conflict?" drives hiding, emails, reminders, the Guild page and the weekly counts, and history comes for free. Cost: a change arriving by calendar sync takes up to 15 minutes to show, as calendar changes already do.
 - **B. Work out conflicts on every page load.** Instant hiding, but a second code path for emails and history that must agree with the first, and extra work on every page view. Rejected: two definitions of a conflict is the bug the owner wants to avoid.
 
+## A general notifications system *(owner: plenty of hooks for the future)*
+
+Closed-day conflicts and UTC calendars are the **first two types** of a general member notification system. Planned later types include a **job inquiry** ("someone asked about your opening", which needs an inquiry form the Jobs board doesn't have yet) and **marketplace** offers and inquiries. Adding a type must not need a new table, a new sender or a new portal screen.
+
+**Two kinds:**
+- **Problems** clear themselves when the cause is gone: **Open** or **Resolved**. Closed-day conflicts and UTC calendars are problems.
+- **Messages** tell the member something happened: **Unread** or **Read**. A job inquiry would be a message. Read state is per member for now (anyone on the team reading it marks it read); per-person read state can come later.
+
+**The type registry:** one code file listing every type. Each entry defines:
+- kind (problem or message);
+- recipients, as member roles (for example everyone who can change events, or everyone who can post jobs);
+- portal wording and email wording;
+- email timing: right away, batched per run, with a reminder rule, or none;
+- the button (for example **Edit in Events**, **Open in Jobs**);
+- `guildSees`;
+- whether it counts in the weekly Guild summary;
+- for problems, the self-clearing rule.
+
+**Hooks for future features:**
+- **`notify(memberId, type, details)`**: one call a feature makes where the thing happens (for example when an inquiry form is submitted). Messages are created this way.
+- Problems are created and cleared by their **check**: a pure decision function per problem type, run by the 15-minute cron and after the relevant saves.
+- **Type-specific details** are stored with each notification (`details` JSON), so a future job id or marketplace listing needs no new columns.
+- An **after-send hook** per type, for a feature that needs to react once its email has gone.
+- Room for **per-person email preferences** later ("don't email me about job inquiries"): the sender asks the registry and, later, a preferences table, before choosing recipients.
+
+Everything shared works for every type: the Notifications area, the banner and count, the email pipeline (live/staging split, quiet mode, pause switch, one email per member per run), the 30-day history and the Guild page.
+
 ## Data
 
-**`member_alerts`**: one row per alert **per member told**. A shared conflict is two rows, one for each member, linked by the event and date.
+**`member_notifications`**: one row per notification **per member told**. A shared conflict is two rows, one for each member, linked by the event and date.
 
 | column | |
 |---|---|
 | `id` | |
-| `kind` | `closed_day_conflict` or `utc_calendar` |
+| `type` | a registry type: `closed_day_conflict`, `utc_calendar` now; more later |
+| `kind` | `problem` or `message` |
 | `member_id` | the member this row tells |
-| `role` | for a conflict: `own`, `host` (the closed taproom, about a guest's stop) or `guest` (the guest, about their stop at a closed taproom) |
-| `event_id` | the conflicting event (conflicts only) |
-| `other_member_id` | the other member, for a shared conflict |
-| `closed_date` | the closed day (conflicts only) |
-| `calendar_connection_id` | the feed (UTC alerts only) |
-| `status` | `open` or `resolved` |
-| `detected_at`, `resolved_at` | |
+| `dedupe_key` | what makes a problem the same problem (for a conflict: type, member, event and date; for UTC: type, member and connection) |
+| `details` | type-specific facts as JSON. For a conflict: `role` (`own`, `host` or `guest`), `event_id`, `other_member_id`, `closed_date`. For UTC: `calendar_connection_id` and which calendar (events or food). |
+| `event_id` | also as a column, because public hiding looks it up (conflicts only) |
+| `status` | problems: `open` or `resolved`; messages: `unread` or `read` |
+| `created_at`, `resolved_at`, `read_at` | |
 | `quiet` | never emailed (see "Launch") |
 | `notice_sent_at`, `reminder_sent_at` | email bookkeeping |
 
-One open row per (kind, member, event, date) or (kind, member, connection). If the same problem comes back after resolving, it's a new row (it was fixed, then broke again).
+Only one **open** problem per `dedupe_key`. If a problem comes back after resolving, it's a new row (it was fixed, then broke again).
 
-**Who can read it:** the member's owner, co-owners, full editors and Photos & events editors read their own member's rows; Guild admins read all; the service role writes. Visitors can't read alerts, but public pages need "which events are hidden": a narrow, public, read-only way to get the event ids with an open conflict (builder's call how).
+**Who can read it:**
+- the member's people read their own member's rows, filtered by each type's recipient roles;
+- Guild admins read all;
+- the service role writes;
+- a member's people can mark messages read.
+
+Visitors can't read notifications, but public pages need to know which events are hidden: a narrow, public, read-only way to get the event ids with an open closed-day conflict (builder's call how).
 
 ## The member portal: Notifications
 
@@ -113,12 +145,17 @@ One open row per (kind, member, event, date) or (kind, member, connection). If t
   - the other member, if shared;
   - what to do, with buttons: **Edit in Events**; for the closed member, **Check Special hours** (on Basics & hours); for a guest, "contact the taproom";
   - **Open** or **Resolved**. Resolved alerts stay listed for **30 days**.
-- The list is built to carry more alert types later.
+- The list shows every type: problems (Open, Resolved) and messages (Unread, Read), with each type's wording and button from the registry.
 
 ## The Guild
 
-- A **Member alerts** page in the Guild admin area (next to Roster and Inquiries) *(owner: the Guild sees open conflicts)*. It lists every open alert across members (who, date, event, how long open), with a link that opens **Edit as them** on that member's Events page. Resolved alerts stay for 30 days.
-- A count on the Guild admin home ("3 open member alerts").
+- A **Member alerts** page in the Guild admin area (next to Roster and Inquiries). It lists notifications across all members:
+  - for problems: who, the date, the event, and how long it's been open;
+  - for messages: who, what, and when;
+  - a link that opens **Edit as them** on the right screen;
+  - resolved and read items for 30 days.
+- **The Guild sees every type for now** *(owner)*, messages included: every type's `guildSees` is on. Trimming later means switching a type's `guildSees` off, with no other change.
+- A count on the Guild admin home ("3 open member alerts", counting open problems).
 - **Weekly summary email** *(owner)*: the number of conflicts **found** and **resolved** that week, plus how many are still open, with a link to Member alerts. It goes out **Monday morning** to the people on the Guild Admins page, and weeks with nothing to report are skipped. A shared conflict counts as one conflict, not two.
 
 ## Emails
@@ -147,6 +184,7 @@ Before launch, a **dry run against the live data** (read only) lists every alert
 
 ## Testing
 
+- **Registry and hooks:** a test type defined only in a test proves a new type works end to end through `notify()`, the portal list and the sender, with no other change.
 - **Unit tests (pure decision function):**
   - own and shared conflicts, by date in the member's time zone;
   - rescheduled, canceled, hidden and all-day events;
