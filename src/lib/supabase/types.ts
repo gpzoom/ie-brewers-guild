@@ -334,6 +334,44 @@ export type CalendarConnectionRow = {
   last_synced_at: string | null;
   last_sync_error: string | null;
   sync_status: "ok" | "failing" | "disconnected";
+  /** The calendar's time zone from the last sync (member notifications, UTC check). */
+  feed_time_zone: string | null;
+  /** Whether the last sync saw any timed (not all-day) events. */
+  feed_has_timed_events: boolean | null;
+};
+
+export type MemberNotificationKind = "problem" | "message";
+
+export type MemberNotificationRow = {
+  id: string;
+  type: string;
+  kind: MemberNotificationKind;
+  member_id: string;
+  dedupe_key: string | null;
+  details: Record<string, unknown>;
+  event_id: string | null;
+  due_date: string | null;
+  recipient_roles: MemberRole[];
+  email_mode: "batched" | "none";
+  reminder_days: number | null;
+  status: "open" | "resolved" | "unread" | "read";
+  quiet: boolean;
+  created_at: string;
+  resolved_at: string | null;
+  read_at: string | null;
+  notice_sent_at: string | null;
+  reminder_sent_at: string | null;
+  claimed_at: string | null;
+  attempts: number;
+  last_error: string | null;
+};
+
+export type MemberNotificationSettingsRow = {
+  singleton: true;
+  emails_enabled: boolean;
+  paused: boolean;
+  launch_summary_sent_at: string | null;
+  updated_at: string;
 };
 
 export type UploadTokenRow = {

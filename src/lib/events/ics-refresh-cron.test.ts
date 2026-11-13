@@ -48,6 +48,8 @@ function makeConnections(count: number): CalendarConnectionRow[] {
     last_synced_at: null,
     last_sync_error: null,
     sync_status: "ok" as const,
+    feed_time_zone: null,
+    feed_has_timed_events: null,
   }));
 }
 

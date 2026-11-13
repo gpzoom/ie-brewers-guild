@@ -221,6 +221,8 @@ export function CalendarConnectionPanel({
         last_synced_at: prev?.last_synced_at ?? null,
         last_sync_error: null,
         sync_status: "ok",
+        feed_time_zone: null,
+        feed_has_timed_events: null,
       }));
     } catch (err) {
       setError(
