@@ -32,6 +32,7 @@ const MEMBER_MUTATION_FILES = [
   "src/lib/media/review-tray.server.ts",
   "src/lib/events/events.server.ts",
   "src/lib/events/calendar-connection.server.ts",
+  "src/lib/jobs/jobs.server.ts",
   // Type-change requests. (The portal's People actions log every change
   // with recordPeopleAudit instead; see below.)
   "src/lib/portal/type-change.server.ts",

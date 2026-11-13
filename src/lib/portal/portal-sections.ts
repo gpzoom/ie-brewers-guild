@@ -14,6 +14,7 @@ import type { CompletenessStep } from "@/lib/portal/section-completeness";
  *   events       yes    yes       yes     yes
  *   food         yes    yes       yes     --        (Producers only: the food truck calendar)
  *   links        yes    yes       yes     --
+ *   jobs         yes    yes       yes     yes       (every member type: the Jobs board)
  *   discount     yes    yes       yes     --        (Affiliate Members only)
  *   theme        yes    yes       yes     --
  *   people       yes    yes       --      --        (also the business manager on a handed-off location)
@@ -29,6 +30,7 @@ export const PORTAL_SECTIONS = [
   "events",
   "food",
   "links",
+  "jobs",
   "discount",
   "theme",
   "people",
@@ -46,12 +48,14 @@ export const PORTAL_SECTION_LABELS: Record<PortalSection, { label: string; short
   events: { label: "Events", short: "Events" },
   food: { label: "Food", short: "Food" },
   links: { label: "Links & contact", short: "Links" },
+  jobs: { label: "Jobs", short: "Jobs" },
   discount: { label: "Discount & supplies", short: "Discount" },
   theme: { label: "Theme", short: "Theme" },
   people: { label: "People", short: "People" },
 };
 
-const MEDIA_EVENTS_SECTIONS: readonly PortalSection[] = ["logo-cover", "events"];
+// Jobs: "either editor role" can post (docs/member-profiles.md, "Jobs board").
+const MEDIA_EVENTS_SECTIONS: readonly PortalSection[] = ["logo-cover", "events", "jobs"];
 
 /** Whether this viewer may open the section at all. */
 export function canOpenPortalSection(
