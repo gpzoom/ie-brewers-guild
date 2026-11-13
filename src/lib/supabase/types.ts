@@ -179,6 +179,24 @@ export type SpecialHoursRow = {
 
 export type EventOverlayStatus = "postponed" | "rescheduled" | "canceled";
 
+/** Jobs board (20261114100000_job_postings.sql). */
+export type EmploymentType = "full_time" | "part_time" | "seasonal" | "internship" | "contract";
+
+export type JobPostingRow = {
+  id: string;
+  created_at: string;
+  member_id: string;
+  title: string;
+  employment_type: EmploymentType;
+  location_text: string | null;
+  description: string;
+  /** An email address or a URL; the client picks the button label from it. */
+  how_to_apply: string;
+  status: "open" | "filled";
+  posted_at: string;
+  expires_at: string;
+};
+
 export type EventRow = {
   id: string;
   member_id: string;

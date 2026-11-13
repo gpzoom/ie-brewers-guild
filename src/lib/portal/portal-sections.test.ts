@@ -18,6 +18,7 @@ describe("portalSectionsFor", () => {
       "events",
       "food",
       "links",
+      "jobs",
       "theme",
       "people",
     ]);
@@ -40,18 +41,32 @@ describe("portalSectionsFor", () => {
     expect(sections).toContain("basics");
   });
 
-  it("gives a Photos & events editor only their two sections", () => {
+  it("gives a Photos & events editor their two sections plus Jobs", () => {
     expect(portalSectionsFor({ role: "media_events", memberType: "allied" })).toEqual([
       "logo-cover",
       "events",
+      "jobs",
     ]);
   });
 
   it("logo, photos and cover are one section, which a Photos & events editor can open", () => {
     expect(PORTAL_SECTION_LABELS["logo-cover"]).toEqual({ label: "Logo, Photos & Cover", short: "Photos" });
     expect(isPortalSection("photos")).toBe(false);
-    expect(portalSectionsFor({ role: "media_events", memberType: "producer" })).toEqual(["logo-cover", "events"]);
+    expect(portalSectionsFor({ role: "media_events", memberType: "producer" })).toEqual(["logo-cover", "events", "jobs"]);
     expect(firstPortalSection("media_events")).toBe("logo-cover");
+  });
+});
+
+describe("Jobs section", () => {
+  it("opens for every member type and every role, between Links and Discount", () => {
+    for (const memberType of ["producer", "mobile", "allied"] as const) {
+      for (const role of ["owner", "co_owner", "editor", "media_events"] as const) {
+        expect(canOpenPortalSection("jobs", { role, memberType })).toBe(true);
+      }
+    }
+    const sections = portalSectionsFor({ role: "owner", memberType: "allied" });
+    expect(sections.indexOf("jobs")).toBe(sections.indexOf("links") + 1);
+    expect(sections.indexOf("discount")).toBe(sections.indexOf("jobs") + 1);
   });
 });
 

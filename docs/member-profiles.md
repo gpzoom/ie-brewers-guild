@@ -290,6 +290,8 @@ Added 12 November 2026 (artboards CC1, CC2). A public page at `/jobs`, linked fr
 - **Fields:** job title, employment type (one of Full-time, Part-time, Seasonal, Internship, Contract), location (free text — a city, or "Remote"), a plain-text description, and how to apply (an email address or a URL). No rich text; this is meant to be quick to post.
 - A posting stays listed for **60 days** from when it's posted, or until the member marks it **Filled**, whichever comes first. **Repost** on an expired listing resets both `posted_at` and `expires_at` rather than creating a new row, so its history (and any future edit log) stays with the one posting.
 - The owner, a co-owner, and either editor role can post, edit and close a job — the same access as Links & contact, not narrowed to the owner the way People is.
+- **Where it lives (built 12 November 2026):** the portal's **Jobs** section (`/portal/jobs`, between Links & contact and Discount & supplies, and open to a Photos & events editor too) and `/admin/jobs` (just before Discount), the same `JobsEditor` on both. An open posting has **Edit** and **Mark filled**; a filled or expired one has **Repost** and a delete button (Delete is also inside Edit). A Guild admin's writes through Edit as them are audited, like events.
+- **Dates are the database's:** a trigger (`job_postings_set_dates`) sets `posted_at` and `expires_at` on insert, and any update touching either one is a Repost: both reset to now and now + 60 days. The browser can't choose its own expiry.
 
 ### Data model addition
 
