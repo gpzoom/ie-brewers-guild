@@ -271,6 +271,32 @@ Spec `docs/superpowers/specs/2026-10-07-guild-members-at-taprooms-part-2-design.
 - **Staging vs the live site:** each Worker knows which it is from `SITE_ORIGIN` (in `wrangler.jsonc` / `wrangler.staging.jsonc`). The live site sends for every taproom except the **Sample** test members; staging sends only theirs, to the test inbox (boblelle77+iscadmin@gmail.com).
 - **Secret:** `GUEST_STOP_LINK_SECRET` (both Workers, Cloudflare → Settings → Variables and Secrets) signs the button links. Without it nothing is sent.
 
+## Jobs board
+
+Added 12 November 2026 (artboards CC1, CC2). A public page at `/jobs`, linked from the main nav as **JOBS**, listing job openings any member has posted. The Guild isn't a party to hiring — postings and applications are between the applicant and the member, the same way Affiliate Member discounts work.
+
+### The public page
+
+- One flat list, newest first — no cards, no photos. Each row: the member's initials mark, the job title, the member's name and location, an employment-type pill, and how long ago it was posted.
+- **Filters:** a text search (title or member name) and five employment-type pills — All types (the default), Full-time, Part-time, Seasonal, Internship. No location filter yet, given how few members there are.
+- Clicking a row expands it in place: the full description, an **Apply** button, and when the posting closes. No separate detail page. The button reads "Apply by email" when `how_to_apply` looks like an email address, or "Apply →" for a link.
+- A posting drops off this page on its own once it's filled or past its `expires_at` — no "last chance" banner, the same quiet removal rule canceled events and expired invites follow elsewhere.
+- Empty state: "No open roles right now. Check back soon, or see our members directly."
+
+### Posting a job (member admin)
+
+- New sidebar item, **Jobs**, for every member type — not gated like Food (producers) or Discount & supplies (Affiliate Members). Sits between Links & contact and Discount & supplies (artboard CC1, `/admin/jobs`; Edit as them opens the same screen).
+- **Publishes immediately.** Posting, editing, marking a role filled and deleting all take effect the moment the member saves — no Guild admin review, and no run through the member's own draft/publish gate (unlike Basics, Media and Links, which stage in `member_drafts`). This matches how the Food calendar already works: "changes show on your page right away."
+- **Fields:** job title, employment type (one of Full-time, Part-time, Seasonal, Internship, Contract), location (free text — a city, or "Remote"), a plain-text description, and how to apply (an email address or a URL). No rich text; this is meant to be quick to post.
+- A posting stays listed for **60 days** from when it's posted, or until the member marks it **Filled**, whichever comes first. **Repost** on an expired listing resets both `posted_at` and `expires_at` rather than creating a new row, so its history (and any future edit log) stays with the one posting.
+- The owner, a co-owner, and either editor role can post, edit and close a job — the same access as Links & contact, not narrowed to the owner the way People is.
+
+### Data model addition
+
+`job_postings`: `id`, `created_at` -- the standard convention; `member_id uuid not null`, fk `members`; `title text not null`; `employment_type text not null`, check in `(full_time, part_time, seasonal, internship, contract)`; `location_text text`; `description text not null`; `how_to_apply text not null` -- an email address or a URL, read by the client to choose the button's label, never parsed server-side beyond that; `status text not null default 'open'`, check in `(open, filled)`; `posted_at timestamptz not null default now()`; `expires_at timestamptz not null default now() + interval '60 days'`.
+
+RLS: public select where `status = 'open'` and `expires_at > now()`, joined to a published member — a draft or suspended member's postings never show, even if not yet expired. Insert, update and delete only where a `member_users` row links the caller to `member_id`, the same rule `events` and the other member-content tables use. No Guild admin or super admin gate at all; this is ordinary member content, like Events or Links.
+
 ## Homepage
 
 Decided with the owner on 28 September 2026 (artboards A, A2, A3). The three placeholder pillars (Advocacy, Education, Events) and the Featured Event section are gone. In their place, right under the hero:
