@@ -291,3 +291,35 @@ describe("matchHost: street addresses written differently (Sample Brewing, 2026-
     expect(matchHost({ venue_name: null, address: "37500 Main St, Riverside, CA", city: null }, hosts)).toBeNull();
   });
 });
+
+describe("matchHost: Google puts the place's name before its street (Tipzy, 2026-11-13)", () => {
+  const hosts = [
+    { id: "lc-ont", name: "Left Coast Brewing Co.", slug: "lc-ont", city: "Ontario", street: "980 North Haven Avenue" },
+    { id: "lc-irv", name: "Left Coast Brewing Co.", slug: "lc-irv", city: "Irvine", street: "6652 Irvine Center Dr" },
+    { id: "met-ont", name: "Metabolic Brewing Co.", slug: "met-ont", city: "Ontario", street: "1609 S Grove Ave unit 109" },
+    { id: "met-chino", name: "Metabolic Brewing Co.", slug: "met-chino", city: "Chino", street: "5135 Edison Avenue ste 1" },
+    { id: "poplar", name: "Poplar Taproom", slug: "poplar", city: "Hesperia", street: "12221 Poplar St" },
+  ];
+  it("finds the street after one or more name parts", () => {
+    const leftCoast = {
+      venue_name: "Left Coast Brewing Co. - Tasting Room",
+      address: "Left Coast Brewing Co. - Tasting Room, Smokehouse & Distillery Ontario, 980 N Haven Ave Ste 100, Ontario, CA 91764, USA",
+      city: null,
+    };
+    expect(matchHost(leftCoast, hosts)?.id).toBe("lc-ont");
+    const metabolic = {
+      venue_name: "Metabolic Brewing Co. Alternative Craft",
+      address: "Metabolic Brewing Co. Alternative Craft, 1609 S Grove Ave Unit 109, Ontario, CA 91761, USA",
+      city: null,
+    };
+    expect(matchHost(metabolic, hosts)?.id).toBe("met-ont");
+  });
+  it("a name that starts with a number isn't taken for the street", () => {
+    const thirdStrike = { venue_name: "3rd Strike Beer Co", address: "3rd Strike Beer Co, 12221 Poplar St Ste 3, Hesperia, CA 92344, USA", city: null };
+    expect(matchHost(thirdStrike, hosts)?.id).toBe("poplar");
+  });
+  it("a place that isn't a Guild taproom stays unmatched", () => {
+    const legends = { venue_name: "Legends Taps & Craft Beer", address: "Legends Taps & Craft Beer, 4451 Ontario Mills Pkwy Ste F, Ontario, CA 91764, USA", city: null };
+    expect(matchHost(legends, hosts)).toBeNull();
+  });
+});
