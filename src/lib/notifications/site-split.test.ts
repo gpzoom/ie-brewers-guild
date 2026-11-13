@@ -79,8 +79,34 @@ describe("forSite", () => {
     ]);
   });
 
-  it("live keeps Sample-plus-real and drops Sample-only", () => {
-    expect(forSite({ opens, resolveRows: [] }, isSample, false).opens).toEqual([mixed, realOwn]);
+  it("live keeps real-only rows and drops Sample-only and Sample-plus-real", () => {
+    expect(forSite({ opens, resolveRows: [] }, isSample, false).opens).toEqual([realOwn]);
+  });
+
+  it("a Sample-plus-real open is never opened, on either site", () => {
+    const mixedOther = open("s1", "real");
+    for (const staging of [true, false]) {
+      expect(
+        forSite({ opens: [mixed, mixedOther], resolveRows: [] }, isSample, staging).opens,
+      ).toEqual([]);
+    }
+  });
+
+  it("an all-Sample open is kept on staging; an all-real open is kept on live", () => {
+    expect(forSite({ opens: [sampleOnly], resolveRows: [] }, isSample, true).opens).toEqual([
+      sampleOnly,
+    ]);
+    const realPair = open("real", "real2");
+    const isSampleWithReal2 = (id: string) => (id === "real2" ? false : isSample(id));
+    expect(
+      forSite({ opens: [realPair, realOwn], resolveRows: [] }, isSampleWithReal2, false).opens,
+    ).toEqual([realPair, realOwn]);
+  });
+
+  it("live still resolves a pre-existing Sample-plus-real row", () => {
+    const resolveRows = [row("m", "real", "s1")];
+    expect(forSite({ opens: [], resolveRows }, isSample, false).resolveIds).toEqual(["m"]);
+    expect(forSite({ opens: [], resolveRows }, isSample, true).resolveIds).toEqual([]);
   });
 
   it("splits resolves the same way", () => {

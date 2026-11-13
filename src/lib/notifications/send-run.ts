@@ -50,7 +50,8 @@ export function noticeInReminderWindow(
  * - one email per member per run, covering all of its claimed rows;
  * - to the people whose role is in any of those rows' recipient_roles
  *   (staging: the test inbox only);
- * - no one to send to: the rows are marked sent with "no recipient";
+ * - no one to send to (staging: only a missing member): the rows are marked
+ *   sent with "no recipient";
  * - a failed lookup or send marks that member's rows failed for the next run
  *   (the claim already counted the attempt, so retries are capped) and the
  *   other members still send;
@@ -118,7 +119,9 @@ export async function runNotificationSend(d: SendDeps): Promise<void> {
       const addresses = new Set<string>();
       for (const role of roles)
         for (const a of member?.recipientsByRole.get(role) ?? []) addresses.add(a);
-      if (!member || addresses.size === 0) {
+      // Staging always sends to the test inbox (Sample members often have no
+      // users), so only a missing member counts as "no recipient" there.
+      if (!member || (!d.role.staging && addresses.size === 0)) {
         await d.markSent(marks, "no recipient");
         continue;
       }

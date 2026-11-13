@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { fakeSupabase, opsOf } from "@/lib/events/fake-supabase.test-helper";
 import { loadProblemInputs } from "./problems-load";
 
@@ -130,24 +130,17 @@ describe("loadProblemInputs", () => {
     expect(out.links).toEqual([{ event_id: "e1", host_member_id: "shop" }]);
   });
 
-  it("warns when the events read hits the 1000-row cap", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    try {
-      const many = Array.from({ length: 1000 }, (_, n) => ({
-        ...event,
-        id: `e${n}`,
-        event_hosts: null,
-      }));
-      const { client } = fakeSupabase({ ...tables, events: many });
-      await loadProblemInputs(client, NOW);
-      expect(warn).toHaveBeenCalledTimes(1);
-      warn.mockClear();
-      const { client: small } = fakeSupabase({ ...tables, events: many.slice(1) });
-      await loadProblemInputs(small, NOW);
-      expect(warn).not.toHaveBeenCalled();
-    } finally {
-      warn.mockRestore();
-    }
+  it("fails closed when the events read hits the 1000-row cap (999 proceeds)", async () => {
+    const many = Array.from({ length: 1000 }, (_, n) => ({
+      ...event,
+      id: `e${n}`,
+      event_hosts: null,
+    }));
+    const { client } = fakeSupabase({ ...tables, events: many });
+    await expect(loadProblemInputs(client, NOW)).rejects.toThrow(/1000 events/);
+    const { client: small } = fakeSupabase({ ...tables, events: many.slice(1) });
+    const out = await loadProblemInputs(small, NOW);
+    expect(out.events).toHaveLength(999);
   });
 
   it("reads only open problem rows", async () => {

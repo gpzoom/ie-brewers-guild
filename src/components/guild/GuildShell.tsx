@@ -97,7 +97,7 @@ export function GuildShell({
 
   const inquiriesActive = isActivePath(pathname, "/guild/inquiries");
   const alertsActive = isActivePath(pathname, "/guild/alerts");
-  const membersActive =isActivePath(pathname, "/guild/roster");
+  const membersActive = isActivePath(pathname, "/guild/roster");
   const brandActive = isActivePath(pathname, "/guild/brand");
   const categoriesActive = isActivePath(pathname, "/guild/categories");
   const adminsActive = isActivePath(pathname, "/guild/admins");

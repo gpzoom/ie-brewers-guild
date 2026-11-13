@@ -80,9 +80,10 @@ export async function loadProblemInputs(db: SupabaseClient, now: Date): Promise<
   type Link = { event_id: string; host_member_id: string };
   type EventWithLink = GuestStop & { event_hosts?: Link | Link[] | null };
   const eventRows = (eventsRes.data ?? []) as EventWithLink[];
+  // Fail closed: a cut-short list would resolve and reopen rows wrongly.
   if (eventRows.length >= ROW_CAP) {
-    console.warn(
-      `loadProblemInputs: ${eventRows.length} events read -- the list may be cut short, so some problems could resolve wrongly`,
+    throw new Error(
+      `loadProblemInputs: ${eventRows.length} events read -- the list may be cut short, so nothing is checked`,
     );
   }
   const events: GuestStop[] = [];

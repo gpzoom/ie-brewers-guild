@@ -158,6 +158,31 @@ describe("runNotificationSend", () => {
     expect(d.marked).toEqual([[[{ id: "r1", sendKind: "notice" }], "no recipient"]]);
   });
 
+  it("staging sends to the test inbox even when the member has no addresses", async () => {
+    const d = deps({
+      role: { origin: "https://staging.test", staging: true },
+      loadMember: async () => ({
+        name: "Sample Brewery",
+        timezone: "America/Los_Angeles",
+        recipientsByRole: new Map(),
+      }),
+    });
+    await runNotificationSend(d);
+    expect(d.sent).toHaveLength(1);
+    expect(d.sent[0].to).toEqual([STAGING_GUILD_NOTIFICATION_EMAIL]);
+    expect(d.marked).toEqual([[[{ id: "r1", sendKind: "notice" }], null]]);
+  });
+
+  it("staging: a member that no longer exists still counts as no recipient", async () => {
+    const d = deps({
+      role: { origin: "https://staging.test", staging: true },
+      loadMember: async () => null,
+    });
+    await runNotificationSend(d);
+    expect(d.sent).toEqual([]);
+    expect(d.marked).toEqual([[[{ id: "r1", sendKind: "notice" }], "no recipient"]]);
+  });
+
   it("a member that no longer exists counts as no recipient", async () => {
     const d = deps({ loadMember: async () => null });
     await runNotificationSend(d);
