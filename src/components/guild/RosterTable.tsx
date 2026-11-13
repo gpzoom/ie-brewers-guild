@@ -25,7 +25,7 @@ import { PartOfDialog } from "@/components/guild/PartOfDialog";
 import { BusinessModeDialog } from "@/components/guild/BusinessModeDialog";
 import { inviteBusinessManager } from "@/lib/guild/businesses.server";
 import { inviteMember, resendInvite } from "@/lib/guild/invite-member.server";
-import { startImpersonation } from "@/lib/guild/impersonation.server";
+import { editAsThem } from "@/components/guild/edit-as-them";
 import { coOwnerLine, hasStaleHours, resolveDetailLine } from "@/lib/guild/roster-detail";
 import {
   approveMember,
@@ -439,11 +439,7 @@ export function RosterTable({
   async function handleEditAsThem(entry: RosterEntry) {
     setImpersonatingId(entry.member.id);
     try {
-      await startImpersonation({ data: { memberId: entry.member.id } });
-      // Mark every loaded page stale before opening the editor, so nothing
-      // loaded for a previously edited member can be shown for this one.
-      await router.invalidate();
-      await router.navigate({ to: "/admin/basics" });
+      await editAsThem(router, entry.member.id, "/admin/basics");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not start editing as this member.");
       setImpersonatingId(null);

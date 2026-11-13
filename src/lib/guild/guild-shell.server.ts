@@ -13,6 +13,8 @@ export type GuildShellSummary = {
    * admin (the table's select policy would show them nothing anyway).
    */
   waitingHelpCount: number | null;
+  /** Open member problems (all types) -- the "Member alerts" sidebar badge. */
+  openMemberAlerts: number | null;
 };
 
 /**
@@ -38,6 +40,7 @@ export const getGuildShellSummary = createServerFn({ method: "GET" }).handler(
       openInquiryCount: null,
       memberCount: null,
       waitingHelpCount: null,
+      openMemberAlerts: null,
     };
     if (!user) return empty;
 
@@ -49,7 +52,7 @@ export const getGuildShellSummary = createServerFn({ method: "GET" }).handler(
     if (!profile?.is_guild_admin) return empty;
     const isSuperAdmin = (profile as { is_super_admin?: boolean }).is_super_admin === true;
 
-    const [inquiries, members, help] = await Promise.all([
+    const [inquiries, members, help, alerts] = await Promise.all([
       supabase.from("inquiries").select("id", { count: "exact", head: true }).eq("status", "open"),
       supabase.from("members").select("id", { count: "exact", head: true }),
       isSuperAdmin
@@ -58,7 +61,13 @@ export const getGuildShellSummary = createServerFn({ method: "GET" }).handler(
             .select("id", { count: "exact", head: true })
             .eq("status", "waiting")
         : Promise.resolve(null),
+      supabase
+        .from("member_notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("kind", "problem")
+        .eq("status", "open"),
     ]);
+    if (alerts.error) console.error("getGuildShellSummary: Member alerts count failed", alerts.error);
     if (inquiries.error) console.error("getGuildShellSummary: inquiry count failed", inquiries.error);
     if (members.error) console.error("getGuildShellSummary: member count failed", members.error);
     if (help?.error) console.error("getGuildShellSummary: Help message count failed", help.error);
@@ -68,6 +77,7 @@ export const getGuildShellSummary = createServerFn({ method: "GET" }).handler(
       openInquiryCount: inquiries.error ? null : (inquiries.count ?? 0),
       memberCount: members.error ? null : (members.count ?? 0),
       waitingHelpCount: !help || help.error ? null : (help.count ?? 0),
+      openMemberAlerts: alerts.error ? null : (alerts.count ?? 0),
     };
   },
 );

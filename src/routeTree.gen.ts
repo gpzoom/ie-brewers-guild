@@ -42,6 +42,7 @@ import { Route as GuildCategoriesRouteImport } from './routes/guild.categories'
 import { Route as GuildBroadcastRouteImport } from './routes/guild.broadcast'
 import { Route as GuildBrandRouteImport } from './routes/guild.brand'
 import { Route as GuildAuditRouteImport } from './routes/guild.audit'
+import { Route as GuildAlertsRouteImport } from './routes/guild.alerts'
 import { Route as GuildAdminsRouteImport } from './routes/guild.admins'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
@@ -229,6 +230,11 @@ const GuildAuditRoute = GuildAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => GuildRoute,
 } as any)
+const GuildAlertsRoute = GuildAlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => GuildRoute,
+} as any)
 const GuildAdminsRoute = GuildAdminsRouteImport.update({
   id: '/admins',
   path: '/admins',
@@ -364,6 +370,7 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/guild/admins': typeof GuildAdminsRoute
+  '/guild/alerts': typeof GuildAlertsRoute
   '/guild/audit': typeof GuildAuditRoute
   '/guild/brand': typeof GuildBrandRoute
   '/guild/broadcast': typeof GuildBroadcastRoute
@@ -418,6 +425,7 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/guild/admins': typeof GuildAdminsRoute
+  '/guild/alerts': typeof GuildAlertsRoute
   '/guild/audit': typeof GuildAuditRoute
   '/guild/brand': typeof GuildBrandRoute
   '/guild/broadcast': typeof GuildBroadcastRoute
@@ -473,6 +481,7 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/guild/admins': typeof GuildAdminsRoute
+  '/guild/alerts': typeof GuildAlertsRoute
   '/guild/audit': typeof GuildAuditRoute
   '/guild/brand': typeof GuildBrandRoute
   '/guild/broadcast': typeof GuildBroadcastRoute
@@ -531,6 +540,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/auth/confirm'
     | '/guild/admins'
+    | '/guild/alerts'
     | '/guild/audit'
     | '/guild/brand'
     | '/guild/broadcast'
@@ -585,6 +595,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/auth/confirm'
     | '/guild/admins'
+    | '/guild/alerts'
     | '/guild/audit'
     | '/guild/brand'
     | '/guild/broadcast'
@@ -639,6 +650,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/auth/confirm'
     | '/guild/admins'
+    | '/guild/alerts'
     | '/guild/audit'
     | '/guild/brand'
     | '/guild/broadcast'
@@ -933,6 +945,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuildAuditRouteImport
       parentRoute: typeof GuildRoute
     }
+    '/guild/alerts': {
+      id: '/guild/alerts'
+      path: '/alerts'
+      fullPath: '/guild/alerts'
+      preLoaderRoute: typeof GuildAlertsRouteImport
+      parentRoute: typeof GuildRoute
+    }
     '/guild/admins': {
       id: '/guild/admins'
       path: '/admins'
@@ -1115,6 +1134,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface GuildRouteChildren {
   GuildAdminsRoute: typeof GuildAdminsRoute
+  GuildAlertsRoute: typeof GuildAlertsRoute
   GuildAuditRoute: typeof GuildAuditRoute
   GuildBrandRoute: typeof GuildBrandRoute
   GuildBroadcastRoute: typeof GuildBroadcastRoute
@@ -1128,6 +1148,7 @@ interface GuildRouteChildren {
 
 const GuildRouteChildren: GuildRouteChildren = {
   GuildAdminsRoute: GuildAdminsRoute,
+  GuildAlertsRoute: GuildAlertsRoute,
   GuildAuditRoute: GuildAuditRoute,
   GuildBrandRoute: GuildBrandRoute,
   GuildBroadcastRoute: GuildBroadcastRoute,

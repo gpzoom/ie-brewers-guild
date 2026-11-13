@@ -501,6 +501,10 @@ export default defineConfig(async ({ command, mode }) => {
             // conflictEventIds), called from the layouts, routes and
             // NotificationsView. Session client only; RLS decides who reads.
             "src/lib/notifications/portal.server.ts",
+            // guild/member-alerts.server.ts: the Guild's Member alerts list
+            // (getMemberAlerts), called from guild.alerts.tsx. Session client only;
+            // a Guild admin check first, then RLS.
+            "src/lib/guild/member-alerts.server.ts",
           ],
           specifiers: ["server-only"],
         },

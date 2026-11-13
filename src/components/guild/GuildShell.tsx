@@ -96,7 +96,8 @@ export function GuildShell({
   }
 
   const inquiriesActive = isActivePath(pathname, "/guild/inquiries");
-  const membersActive = isActivePath(pathname, "/guild/roster");
+  const alertsActive = isActivePath(pathname, "/guild/alerts");
+  const membersActive =isActivePath(pathname, "/guild/roster");
   const brandActive = isActivePath(pathname, "/guild/brand");
   const categoriesActive = isActivePath(pathname, "/guild/categories");
   const adminsActive = isActivePath(pathname, "/guild/admins");
@@ -140,6 +141,22 @@ export function GuildShell({
                 aria-label={`${summary.openInquiryCount} open`}
               >
                 {summary.openInquiryCount}
+              </span>
+            )}
+          </Link>
+
+          <Link
+            to="/guild/alerts"
+            aria-current={alertsActive ? "page" : undefined}
+            className={sidebarItemClass(alertsActive)}
+          >
+            Member alerts
+            {summary.openMemberAlerts !== null && summary.openMemberAlerts > 0 && (
+              <span
+                className="flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-brand px-1.5 text-[11px] font-semibold text-white"
+                aria-label={`${summary.openMemberAlerts} open`}
+              >
+                {summary.openMemberAlerts}
               </span>
             )}
           </Link>
