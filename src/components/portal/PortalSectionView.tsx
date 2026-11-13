@@ -11,6 +11,7 @@ import { LinksContactEditor } from "@/components/admin/LinksContactEditor";
 import { DiscountEditor } from "@/components/admin/DiscountEditor";
 import { SupplyCategoriesPicker } from "@/components/admin/SupplyCategoriesPicker";
 import { ThemePicker } from "@/components/admin/ThemePicker";
+import { JobsEditor } from "@/components/admin/JobsEditor";
 import { SaveNoteText } from "@/components/admin/SaveNote";
 import { InfoBox } from "@/components/admin/basics/ui";
 import { canConnectCalendar } from "@/components/portal/setup/SectionSteps";
@@ -49,8 +50,9 @@ function SaveNoteFooter() {
 function PhotosEventsNotice({ memberName }: { memberName: string }) {
   return (
     <InfoBox>
-      You can edit Photos and Events for <strong className="font-semibold">{memberName}</strong>.
-      Photo changes go live when you publish. Event changes show on the page right away.
+      You can edit Photos, Events and Jobs for{" "}
+      <strong className="font-semibold">{memberName}</strong>. Photo changes go live when you
+      publish. Event and job changes show right away.
     </InfoBox>
   );
 }
@@ -195,6 +197,9 @@ export function PortalSectionView({
         />
       );
     }
+
+    case "jobs":
+      return <JobsEditor memberId={shell.memberId} initialJobs={data.jobs} />;
 
     case "discount":
       return (

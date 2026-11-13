@@ -15,6 +15,7 @@ import {
   loadDraftSection,
   loadEventsSection,
   loadFoodSection,
+  loadJobsSection,
   loadLogoPhotosCoverSection,
   loadMemberShell,
   type PortalMemberShell,
@@ -121,6 +122,7 @@ export type PortalSectionData =
   | ({ section: "logo-cover" } & Loaded<typeof loadLogoPhotosCoverSection>)
   | ({ section: "events" } & Loaded<typeof loadEventsSection>)
   | ({ section: "food" } & Loaded<typeof loadFoodSection>)
+  | ({ section: "jobs" } & Loaded<typeof loadJobsSection>)
   | ({ section: "discount" } & Loaded<typeof loadDiscountSection>)
   | ({ section: "people" } & Loaded<typeof loadPeople>);
 
@@ -163,6 +165,8 @@ export const getPortalSectionData = createServerFn({ method: "GET" })
         return { section: "events", ...(await loadEventsSection(supabase, id)) };
       case "food":
         return { section: "food", ...(await loadFoodSection(supabase, id)) };
+      case "jobs":
+        return { section: "jobs", ...(await loadJobsSection(supabase, id)) };
       case "discount":
         return { section: "discount", ...(await loadDiscountSection(supabase, id)) };
       case "people": {

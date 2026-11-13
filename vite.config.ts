@@ -205,6 +205,9 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/hours/publish-gate.server.ts",
             "src/lib/events/events.server.ts",
             "src/lib/events/calendar-connection.server.ts",
+            // src/lib/jobs/jobs.server.ts -- createServerFns only, called
+            // from JobsEditor and the public /jobs route's loader.
+            "src/lib/jobs/jobs.server.ts",
             "src/lib/hours/confirm-token.server.ts",
             // src/lib/email/unsubscribe.server.ts -- both exports are createServerFns called from the unsubscribe page.
             "src/lib/email/unsubscribe.server.ts",

@@ -18,6 +18,7 @@ import type {
   CategoryRow,
   EventRow,
   HoursRow,
+  JobPostingRow,
   MediaAssetRow,
   MemberStatus,
   MemberType,
@@ -302,6 +303,16 @@ export async function loadFoodSection(supabase: SessionClient, memberId: string)
   return { food, memberTimezone: live.timezone };
 }
 
+/** Jobs: the member's own postings, every state, newest first (not drafted). */
+export async function loadJobsSection(supabase: SessionClient, memberId: string) {
+  const { data, error } = await supabase
+    .from("job_postings")
+    .select("*")
+    .eq("member_id", memberId)
+    .order("posted_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return { jobs: (data ?? []) as JobPostingRow[] };
+}
 
 /** Member discount & supplies: the draft's `discount` section plus the Guild's category list. */
 export async function loadDiscountSection(supabase: SessionClient, memberId: string) {

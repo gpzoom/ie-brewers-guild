@@ -35,6 +35,8 @@ const NAV_ITEMS: readonly ShellNavItem[] = [
   { to: "/admin/theme", label: "Theme", short: "Theme", match: ["/admin/theme"] },
   { to: "/admin/links", label: "Links & contact", short: "Links", match: ["/admin/links"] },
   { to: "/admin/events", label: "Events", short: "Events", match: ["/admin/events"] },
+  // Jobs board (artboard CC1): every member type, just before Discount.
+  { to: "/admin/jobs", label: "Jobs", short: "Jobs", match: ["/admin/jobs"] },
   { to: "/admin/discount", label: "Discount", short: "Discount", match: ["/admin/discount"] },
 ];
 
