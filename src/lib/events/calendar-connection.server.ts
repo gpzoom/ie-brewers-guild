@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { feedTimeZone } from "@/lib/notifications/utc-calendar";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { buildEventUpsertRows, parseIcsFeedForTag, staleSyncedEventIds } from "@/lib/events/ics-sync";
@@ -422,7 +423,13 @@ export async function syncOneIcsConnection(supabase: SupabaseClient, connection:
       if (deleteError) throw deleteError;
     }
 
-    await supabase.from("calendar_connections").update({ last_synced_at: new Date().toISOString(), last_sync_error: null, sync_status: "ok" }).eq("id", connection.id);
+    await supabase.from("calendar_connections").update({
+      last_synced_at: new Date().toISOString(),
+      last_sync_error: null,
+      sync_status: "ok",
+      feed_time_zone: feedTimeZone(icsText),
+      feed_has_timed_events: parsedEvents.some((e) => e.allDay === false),
+    }).eq("id", connection.id);
   } catch (err) {
     // Capped -- the ICS parser's own thrown messages (and some raw fetch
     // errors) can echo back attacker/misconfiguration-controlled feed
