@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import type { AuditFilter, AuditLogView } from "@/lib/guild/audit-log-view.server";
+import { formatWhen } from "@/components/guild/format-when";
 
 const fieldLabelClass = "text-[12px] font-medium text-ink";
 const fieldClass =
@@ -8,17 +9,6 @@ const lightButtonClass =
   "inline-flex h-11 shrink-0 items-center justify-center rounded-[9px] border border-canvas-border bg-canvas px-[17px] text-[13px] font-medium text-ink transition-colors hover:bg-canvas-2";
 const darkButtonClass =
   "inline-flex h-11 shrink-0 items-center justify-center rounded-[9px] border border-ink bg-ink px-[17px] text-[13px] font-semibold text-canvas transition-colors hover:bg-ink/85";
-
-function formatWhen(iso: string): string {
-  return new Date(iso).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "America/Los_Angeles",
-  });
-}
 
 /**
  * The super admin's Audit log (docs/member-profiles.md, "Super admin";

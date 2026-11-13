@@ -94,6 +94,8 @@ export function describeAuditEntry(entry: AuditEntryInput): string {
       return "Asked the Guild for a type change";
     case "auth.users":
       return "Changed the member's sign-in email";
+    case "broadcast_emails":
+      return "Broadcast email sent";
     case "profiles":
     case "guild_admin_invites":
       if (change && email) return `${change[0].toUpperCase()}${change.slice(1)}: ${email}`;

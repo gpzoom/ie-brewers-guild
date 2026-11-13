@@ -206,6 +206,8 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/events/events.server.ts",
             "src/lib/events/calendar-connection.server.ts",
             "src/lib/hours/confirm-token.server.ts",
+            // src/lib/email/unsubscribe.server.ts -- both exports are createServerFns called from the unsubscribe page.
+            "src/lib/email/unsubscribe.server.ts",
             // src/lib/guild/delete-member.server.ts -- its createServerFn
             // export, deleteMember, is called directly from
             // src/components/guild/DeleteMemberDialog.tsx's confirm handler;
@@ -460,6 +462,9 @@ export default defineConfig(async ({ command, mode }) => {
             // file and used only inside handlers, after the super admin check.
             "src/lib/guild/guild-admins.server.ts",
             "src/lib/guild/audit-log-view.server.ts",
+            // Broadcast email (2026-11-12): only createServerFn exports;
+            // the rules live in the plain broadcast-core.ts.
+            "src/lib/guild/broadcast.server.ts",
             // The Help button (2026-09-27): support-message.server.ts's
             // getSupportContext and sendSupportMessage are called from
             // SupportButton.tsx. The sender is worked out from the session

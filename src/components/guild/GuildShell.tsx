@@ -73,9 +73,9 @@ function isActivePath(pathname: string, prefix: string) {
  *
  * Super admin (docs/member-profiles.md, "Super admin"): the top bar reads
  * "Super admin" instead of "Guild admin", and a second sidebar group holds
- * the super-admin-only screens -- Brand & theme, Guild admins, Audit log,
- * Help messages, Settings -- and a bell in the top bar counts waiting Help
- * messages.
+ * the super-admin-only screens -- Brand & theme, Guild admins, Broadcast
+ * email, Audit log, Help messages, Settings -- and a bell in the top bar
+ * counts waiting Help messages.
  * A Guild admin doesn't see that group; the routes refuse them anyway.
  */
 export function GuildShell({
@@ -100,6 +100,7 @@ export function GuildShell({
   const brandActive = isActivePath(pathname, "/guild/brand");
   const categoriesActive = isActivePath(pathname, "/guild/categories");
   const adminsActive = isActivePath(pathname, "/guild/admins");
+  const broadcastActive = isActivePath(pathname, "/guild/broadcast");
   const auditActive = isActivePath(pathname, "/guild/audit");
   const helpActive = isActivePath(pathname, "/guild/help");
   const settingsActive = isActivePath(pathname, "/guild/settings");
@@ -114,7 +115,10 @@ export function GuildShell({
             {summary.adminEmail}
           </span>
         )}
-        <a href="/" className={`${topBarOutlineClass} max-md:h-11 max-md:border-0 max-md:px-2.5 max-md:text-text-muted`}>
+        <a
+          href="/"
+          className={`${topBarOutlineClass} max-md:h-11 max-md:border-0 max-md:px-2.5 max-md:text-text-muted`}
+        >
           View site
         </a>
       </AppTopBar>
@@ -189,6 +193,13 @@ export function GuildShell({
                 className={sidebarItemClass(adminsActive)}
               >
                 Guild admins
+              </Link>
+              <Link
+                to="/guild/broadcast"
+                aria-current={broadcastActive ? "page" : undefined}
+                className={sidebarItemClass(broadcastActive)}
+              >
+                Broadcast email
               </Link>
               <Link
                 to="/guild/audit"

@@ -21,6 +21,16 @@ describe("describeAuditEntry", () => {
     ).toBe("Guild admin access removed: a@b.co");
   });
 
+  it("labels a broadcast send", () => {
+    expect(
+      describeAuditEntry({
+        tableName: "broadcast_emails",
+        action: "insert",
+        details: { subject: "Hi", recipient_count: 3, failed_count: 0, audience: "All members" },
+      }),
+    ).toBe("Broadcast email sent");
+  });
+
   it("words the everyday member edits", () => {
     expect(describeAuditEntry({ tableName: "member_drafts", action: "update", details: null })).toBe(
       "Saved a draft change",
