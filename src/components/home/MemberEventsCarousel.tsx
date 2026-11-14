@@ -154,7 +154,9 @@ export function CalendarPage({ card }: { card: HomeEventCard }) {
           </p>
           {card.guest && (
             <p className="flex flex-wrap items-center gap-2 text-[13px]" style={{ color: INK_MUTED }}>
-              <span>with a Guild member</span>
+              <span className="font-semibold" style={{ color: INK }}>
+                with {card.guest.name}
+              </span>
               <span className="rounded-full bg-[#F5E2D0] px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-[#7A4413]">
                 GUILD MEMBER
               </span>

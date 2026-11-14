@@ -15,9 +15,9 @@ const card = (o: Partial<HomeEventCard>): HomeEventCard => ({
 });
 
 describe("CalendarPage: a Guild member at the taproom (GV4)", () => {
-  it("the taproom's card names the guest: 'with a Guild member', the marks, 'At the taproom'", () => {
-    const html = renderToStaticMarkup(createElement(CalendarPage, { card: card({ guest: { name: "Sample Taco Truck", tag: "FOOD TRUCK" } }) }));
-    expect(html).toContain("with a Guild member");
+  it("the taproom's card names the guest by name (owner, 2026-11-14), the marks, 'At the taproom'", () => {
+    const html = renderToStaticMarkup(createElement(CalendarPage, { card: card({ title: "Taco Tuesday", guest: { name: "Sample Taco Truck", tag: "FOOD TRUCK" } }) }));
+    expect(html).toContain("with Sample Taco Truck");
     expect(html).toContain("GUILD MEMBER");
     expect(html).toContain("FOOD TRUCK");
     expect(html).toContain("At the taproom · Rancho Cucamonga");
@@ -25,7 +25,7 @@ describe("CalendarPage: a Guild member at the taproom (GV4)", () => {
   });
   it("the taproom's own event: no Guild member line", () => {
     const html = renderToStaticMarkup(createElement(CalendarPage, { card: card({ title: "Trivia" }) }));
-    expect(html).not.toContain("with a Guild member");
+    expect(html).not.toContain("GUILD MEMBER");
   });
   it("ignores an alternate: the carousel picks which version to show", () => {
     const truck = { ...card({}).member, id: "truck", slug: "truck", businessName: "Sample Taco Truck" };

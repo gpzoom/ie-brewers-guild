@@ -188,6 +188,12 @@ describe("a night both the taproom and the guest list alternates in one spot", (
     expect(cards[0].alternate?.venue).toBe("A");
     expect(cards[0].alternate?.guest).toBeUndefined();
   });
+  it("the taproom's own card names the guest too (owner, 2026-11-14)", () => {
+    const stop = row("truck", days(1), { title: "Trivia Night", venue_name: "A" });
+    const own = row("a", hours(24.5), { title: "Tuesday Trivia" });
+    const cards = selectCarouselEvents([stop, own], withTruck, now, {}, link(stop.id));
+    expect(cards[0].guest).toEqual(guest);
+  });
   it("pairs at exactly 60 minutes apart, not at 61", () => {
     const stop = row("truck", days(1));
     const at60 = row("a", hours(25));

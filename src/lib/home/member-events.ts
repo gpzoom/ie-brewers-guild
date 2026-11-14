@@ -158,6 +158,8 @@ export function selectCarouselEvents(
     const guestMember = members.get(stop.row.member_id);
     if (!guestMember) continue;
     own.alternate = toCard(stop.row, guestMember);
+    // The taproom's own card names its guest too (owner, 2026-11-14).
+    own.guest = stop.card.guest;
     used.add(stop.card);
     used.add(own);
     const list = byMember.get(stop.hostId)!;
