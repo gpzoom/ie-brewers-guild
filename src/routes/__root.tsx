@@ -159,7 +159,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 // Routes that render standalone, without the site header/footer. Exact-match
 // only -- fine for single pages with no children.
-const BARE_ROUTES = ["/survey-results"];
+const BARE_ROUTES = ["/survey-results", "/maintenance"];
 
 // Route subtrees that render standalone, without the site header/footer,
 // including every child route underneath them. /admin is here (not in

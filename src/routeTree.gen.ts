@@ -16,6 +16,7 @@ import { Route as NewsRouteImport } from './routes/news'
 import { Route as Members2RouteImport } from './routes/members-2'
 import { Route as Members1RouteImport } from './routes/members-1'
 import { Route as MembersRouteImport } from './routes/members'
+import { Route as MaintenanceRouteImport } from './routes/maintenance'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as GuildRouteImport } from './routes/guild'
 import { Route as EventsRouteImport } from './routes/events'
@@ -98,6 +99,11 @@ const Members1Route = Members1RouteImport.update({
 const MembersRoute = MembersRouteImport.update({
   id: '/members',
   path: '/members',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MaintenanceRoute = MaintenanceRouteImport.update({
+  id: '/maintenance',
+  path: '/maintenance',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JobsRoute = JobsRouteImport.update({
@@ -349,6 +355,7 @@ export interface FileRoutesByFullPath {
   '/events': typeof EventsRoute
   '/guild': typeof GuildRouteWithChildren
   '/jobs': typeof JobsRoute
+  '/maintenance': typeof MaintenanceRoute
   '/members': typeof MembersRoute
   '/members-1': typeof Members1Route
   '/members-2': typeof Members2Route
@@ -404,6 +411,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/jobs': typeof JobsRoute
+  '/maintenance': typeof MaintenanceRoute
   '/members': typeof MembersRoute
   '/members-1': typeof Members1Route
   '/members-2': typeof Members2Route
@@ -460,6 +468,7 @@ export interface FileRoutesById {
   '/events': typeof EventsRoute
   '/guild': typeof GuildRouteWithChildren
   '/jobs': typeof JobsRoute
+  '/maintenance': typeof MaintenanceRoute
   '/members': typeof MembersRoute
   '/members-1': typeof Members1Route
   '/members-2': typeof Members2Route
@@ -519,6 +528,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/guild'
     | '/jobs'
+    | '/maintenance'
     | '/members'
     | '/members-1'
     | '/members-2'
@@ -574,6 +584,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/events'
     | '/jobs'
+    | '/maintenance'
     | '/members'
     | '/members-1'
     | '/members-2'
@@ -629,6 +640,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/guild'
     | '/jobs'
+    | '/maintenance'
     | '/members'
     | '/members-1'
     | '/members-2'
@@ -687,6 +699,7 @@ export interface RootRouteChildren {
   EventsRoute: typeof EventsRoute
   GuildRoute: typeof GuildRouteWithChildren
   JobsRoute: typeof JobsRoute
+  MaintenanceRoute: typeof MaintenanceRoute
   MembersRoute: typeof MembersRoute
   Members1Route: typeof Members1Route
   Members2Route: typeof Members2Route
@@ -761,6 +774,13 @@ declare module '@tanstack/react-router' {
       path: '/members'
       fullPath: '/members'
       preLoaderRoute: typeof MembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/maintenance': {
+      id: '/maintenance'
+      path: '/maintenance'
+      fullPath: '/maintenance'
+      preLoaderRoute: typeof MaintenanceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/jobs': {
@@ -1196,6 +1216,7 @@ const rootRouteChildren: RootRouteChildren = {
   EventsRoute: EventsRoute,
   GuildRoute: GuildRouteWithChildren,
   JobsRoute: JobsRoute,
+  MaintenanceRoute: MaintenanceRoute,
   MembersRoute: MembersRoute,
   Members1Route: Members1Route,
   Members2Route: Members2Route,
