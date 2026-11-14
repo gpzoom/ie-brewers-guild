@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Clock, MapPin, Pause, Play } from "lucide-react";
-import { calendarPageDate, carouselFrame, type GuildEvent, type HomeEventCard } from "@/lib/home/member-events";
+import {
+  calendarPageDate,
+  carouselFrame,
+  memberLabel,
+  type GuildEvent,
+  type HomeEventCard,
+} from "@/lib/home/member-events";
 import { formatTimeRange } from "@/components/profile/EventsModule";
 import { linkifyText } from "@/lib/text/linkify";
 
@@ -113,7 +119,12 @@ export function CalendarPage({ card }: { card: HomeEventCard }) {
               </span>
             )}
           </div>
-          <span className="truncate text-[14px] font-semibold text-white">{member.businessName}</span>
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate text-[14px] font-semibold text-white">{member.businessName}</span>
+            {member.locationCity && (
+              <span className="truncate text-[12px] font-semibold text-white/85">{member.locationCity}</span>
+            )}
+          </span>
         </div>
         <div className="mx-2.5 border-t-2 border-dashed" style={{ borderColor: "#D3CBBD" }} />
         <div className="flex flex-col items-center gap-0.5 px-7 pb-5 pt-4">
@@ -179,7 +190,7 @@ export function CalendarPage({ card }: { card: HomeEventCard }) {
           style={{ borderColor: "#E6DFD2" }}
         >
           <span className="truncate" style={{ color: INK_MUTED }}>
-            {member.businessName}
+            {memberLabel(member)}
           </span>
           <span className="shrink-0 font-semibold underline underline-offset-[3px]">See their events →</span>
         </div>
@@ -477,7 +488,7 @@ export function MemberEventsCarousel({
             </div>
             {upNext.map(({ slide, k }) => {
               const title = slide.kind === "guild" ? slide.event.title : slide.card.title;
-              const who = slide.kind === "guild" ? "ISC Brewers Guild" : slide.card.member.businessName;
+              const who = slide.kind === "guild" ? "ISC Brewers Guild" : memberLabel(slide.card.member);
               return (
                 <button
                   key={slideKey(slide)}

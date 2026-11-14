@@ -36,7 +36,30 @@ export type HomeEventMember = {
   /** Logo tile color (logoBackgroundColor). */
   logoTileHex: string;
   coverAssetId: string | null;
+  /**
+   * The location's city, set only when the business has two or more
+   * published locations, so the card says which one (owner, 2026-11-14).
+   */
+  locationCity?: string | null;
 };
+
+/** Each member whose business has two or more published locations, with its city. */
+export function multiLocationCities(
+  rows: Array<{ id: string; business_id: string | null; city: string | null }>,
+): Map<string, string> {
+  const perBusiness = new Map<string, number>();
+  for (const r of rows) if (r.business_id) perBusiness.set(r.business_id, (perBusiness.get(r.business_id) ?? 0) + 1);
+  const cities = new Map<string, string>();
+  for (const r of rows) {
+    if (r.business_id && r.city && (perBusiness.get(r.business_id) ?? 0) > 1) cities.set(r.id, r.city);
+  }
+  return cities;
+}
+
+/** The member's name, with the city for a multi-location business: "Hangar 24 · Redlands". */
+export function memberLabel(member: HomeEventMember): string {
+  return member.locationCity ? `${member.businessName} · ${member.locationCity}` : member.businessName;
+}
 
 export type HomeEventInputRow = {
   id: string;

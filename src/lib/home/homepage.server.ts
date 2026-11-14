@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClient, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import {
   CAROUSEL_WINDOW_DAYS,
+  multiLocationCities,
   nextGuildEvent,
   selectCarouselEvents,
   type GuildEvent,
@@ -47,6 +48,8 @@ type MemberRow = {
   logo_asset_id: string | null;
   logo_background: string | null;
   cover_asset_id: string | null;
+  business_id: string | null;
+  city: string | null;
 };
 
 /** Published members' events (anon client: RLS keeps it to published, unhidden events). */
@@ -93,7 +96,7 @@ async function loadCards(now: Date): Promise<HomeEventCard[]> {
 
   const { data: memberRows, error: memberError } = await supabase
     .from("members")
-    .select("id, slug, business_name, theme, timezone, logo_asset_id, logo_background, cover_asset_id")
+    .select("id, slug, business_name, theme, timezone, logo_asset_id, logo_background, cover_asset_id, business_id, city")
     .in("id", memberIds)
     .eq("status", "published");
   if (memberError) throw new Error(memberError.message);
@@ -115,6 +118,21 @@ async function loadCards(now: Date): Promise<HomeEventCard[]> {
     }
   }
 
+  // A business with several published locations: the card names the city.
+  const businessIds = [...new Set(published.map((m) => m.business_id).filter((id): id is string => Boolean(id)))];
+  let locationCities = new Map<string, string>();
+  if (businessIds.length) {
+    const { data: siblings, error: siblingError } = await supabase
+      .from("members")
+      .select("id, business_id, city")
+      .in("business_id", businessIds)
+      .eq("status", "published");
+    if (siblingError) throw new Error(siblingError.message);
+    locationCities = multiLocationCities(
+      (siblings ?? []) as Array<{ id: string; business_id: string | null; city: string | null }>,
+    );
+  }
+
   const members = new Map<string, HomeEventMember>();
   for (const m of published) {
     const theme = (m.theme ?? "amber") as MemberThemeName;
@@ -127,6 +145,7 @@ async function loadCards(now: Date): Promise<HomeEventCard[]> {
       logoUrl: m.logo_asset_id ? (logoUrls.get(m.logo_asset_id) ?? null) : null,
       logoTileHex: logoBackgroundColor(m.logo_background, theme),
       coverAssetId: m.cover_asset_id,
+      locationCity: locationCities.get(m.id) ?? null,
     });
   }
   return selectCarouselEvents(rows, members, now, {}, hostsByEventId);

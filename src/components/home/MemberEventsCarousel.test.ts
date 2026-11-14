@@ -37,6 +37,19 @@ describe("CalendarPage: a Guild member at the taproom (GV4)", () => {
   });
 });
 
+describe("CalendarPage: which location (owner, 2026-11-14)", () => {
+  it("a multi-location taproom's card names its city in the header and footer", () => {
+    const multi = { ...card({}).member, businessName: "Hangar 24 Brewing Co.", locationCity: "Redlands" };
+    const html = renderToStaticMarkup(createElement(CalendarPage, { card: card({ title: "Trivia", member: multi }) }));
+    expect(html.split("Redlands").length - 1).toBe(2);
+    expect(html).toContain("Hangar 24 Brewing Co. · Redlands");
+  });
+  it("a single-location taproom: no city added", () => {
+    const html = renderToStaticMarkup(createElement(CalendarPage, { card: card({ title: "Trivia", city: null }) }));
+    expect(html).not.toContain(" · ");
+  });
+});
+
 describe("showsAlternate: a shared night switches every pass", () => {
   it("first pass taproom, second pass guest, third taproom", () => {
     expect([0, 2, 3, 5, 6].map((p) => showsAlternate(p, 3, 0))).toEqual([false, false, true, true, false]);

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   calendarPageDate,
+  memberLabel,
+  multiLocationCities,
   nextGuildEvent,
   selectCarouselEvents,
   type GuildEvent,
@@ -238,5 +240,24 @@ describe("a night both the taproom and the guest list alternates in one spot", (
     const truckOwn = row("truck", days(2), { venue_name: "Elsewhere" });
     const ids = selectCarouselEvents([stop, own, truckOwn], withTruck, now, {}, link(stop.id)).map((c) => c.id);
     expect(ids).toEqual([own.id, truckOwn.id]);
+  });
+});
+
+describe("which location: a business with several taprooms names the city (owner, 2026-11-14)", () => {
+  it("multiLocationCities: only members whose business has two or more published locations", () => {
+    const cities = multiLocationCities([
+      { id: "h1", business_id: "hangar", city: "Redlands" },
+      { id: "h2", business_id: "hangar", city: "Riverside" },
+      { id: "solo", business_id: "solo-biz", city: "Upland" },
+      { id: "none", business_id: null, city: "Ontario" },
+    ]);
+    expect(cities.get("h1")).toBe("Redlands");
+    expect(cities.get("h2")).toBe("Riverside");
+    expect(cities.has("solo")).toBe(false);
+    expect(cities.has("none")).toBe(false);
+  });
+  it("memberLabel: name and city for a multi-location member, the name alone otherwise", () => {
+    expect(memberLabel({ ...member("a"), businessName: "Hangar 24", locationCity: "Redlands" })).toBe("Hangar 24 · Redlands");
+    expect(memberLabel(member("a"))).toBe("A");
   });
 });
