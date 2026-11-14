@@ -1,11 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { MaintenanceMode } from "@/components/site/MaintenanceMode";
+import { getGuildAdminStatus } from "@/lib/guild/guild-admin-status.server";
 
 /**
- * The maintenance page, viewable here for review. The switch that shows it
- * to the public on every page comes after the owner approves it.
+ * The maintenance page (src/lib/site/maintenance.ts). While the switch is
+ * off, visitors are sent home; signed-in Guild admins can still preview it.
  */
 export const Route = createFileRoute("/maintenance")({
+  beforeLoad: async ({ context }) => {
+    if (context.maintenanceOn) return;
+    const { isGuildAdmin } = await getGuildAdminStatus();
+    if (!isGuildAdmin) throw redirect({ to: "/" });
+  },
   head: () => ({
     meta: [
       { title: "Down for Maintenance — Inland Southern California Brewers Guild" },

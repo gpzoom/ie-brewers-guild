@@ -3,6 +3,7 @@ import {
   removeHeroImage,
   saveCalendarSyncInterval,
   saveCarouselDwell,
+  saveMaintenanceMode,
   saveSpotlightEnabled,
   uploadHeroImage,
 } from "@/lib/guild/site-settings.server";
@@ -90,6 +91,8 @@ export function SiteSettingsScreen({ initial }: { initial: SiteSettingsView }) {
           Site-wide settings. Only you, the super admin, see this page.
         </p>
       </div>
+
+      <MaintenanceCard settings={settings} onSaved={setSettings} />
 
       <form onSubmit={onSubmit} className={cardClass}>
         <div className="flex flex-col gap-1">
@@ -241,6 +244,65 @@ function CarouselDwellCard({ settings, onSaved }: CardProps) {
         Shows member events from the next 14 days, taking turns between members.
       </p>
     </form>
+  );
+}
+
+/**
+ * Maintenance mode (src/lib/site/maintenance.ts): visitors see the
+ * maintenance page instead of the site, on both the live and staging sites
+ * (they share one database). Saves as soon as it's flipped.
+ */
+function MaintenanceCard({ settings, onSaved }: CardProps) {
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<Message>(null);
+
+  async function onToggle(enabled: boolean) {
+    setSaving(true);
+    setMessage(null);
+    try {
+      onSaved(await saveMaintenanceMode({ data: { enabled } }));
+      setMessage({
+        kind: "ok",
+        text: enabled
+          ? "It's on: visitors now see the maintenance page."
+          : "It's off: the site is back for everyone.",
+      });
+    } catch (err) {
+      setMessage({ kind: "error", text: errorText(err) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className={cardClass}>
+      <div className="flex flex-col gap-1">
+        <h2 className="text-[16px] font-semibold text-ink">Maintenance mode</h2>
+        <p className="text-pretty text-[13px] leading-[1.5] text-ink-muted">
+          Shows visitors the maintenance page instead of the site, for example while the Sample
+          test members are published. Signed-in Guild admins still see the site, and members can
+          still sign in and use the portal.
+        </p>
+      </div>
+      <label className="flex min-h-11 cursor-pointer items-center justify-between gap-4">
+        <span className="text-[14px] font-medium text-ink">Show the maintenance page</span>
+        <Switch
+          checked={settings.maintenanceMode}
+          disabled={saving}
+          onCheckedChange={(checked) => void onToggle(checked)}
+          aria-label="Show the maintenance page to visitors"
+        />
+      </label>
+      <a
+        href="/maintenance"
+        target="_blank"
+        rel="noreferrer"
+        className="text-[13px] font-semibold text-ink underline underline-offset-2"
+      >
+        Preview the maintenance page
+      </a>
+      <StatusMessage message={message} />
+    </div>
   );
 }
 

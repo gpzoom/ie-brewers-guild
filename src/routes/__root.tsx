@@ -3,6 +3,7 @@ import {
   Outlet,
   Link,
   createRootRouteWithContext,
+  redirect,
   useRouter,
   useRouterState,
   HeadContent,
@@ -18,6 +19,9 @@ import { SupportButton } from "@/components/support/SupportButton";
 import { supportAreaForPath } from "@/lib/support/support-message";
 import { getActiveBrandTokens } from "@/lib/brand/active-brand.server";
 import { getGuildAdminStatus } from "@/lib/guild/guild-admin-status.server";
+import { getMaintenanceMode } from "@/lib/site/maintenance.server";
+import { showsMaintenance } from "@/lib/site/maintenance";
+import { MaintenanceMode } from "@/components/site/MaintenanceMode";
 
 const UNDER_CONSTRUCTION = import.meta.env.VITE_UNDER_CONSTRUCTION === "true";
 
@@ -70,6 +74,19 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // Maintenance mode (src/lib/site/maintenance.ts): visitors go to
+  // /maintenance before any page's data loads, so nothing on the page (a
+  // Sample member's name, say) reaches them. Signed-in Guild admins see the
+  // site; the admin check runs only while the switch is on.
+  beforeLoad: async ({ location }) => {
+    const on = await getMaintenanceMode();
+    if (!on) return { maintenanceOn: false };
+    const { isGuildAdmin } = await getGuildAdminStatus();
+    if (showsMaintenance(location.pathname, { on, isGuildAdmin })) {
+      throw redirect({ to: "/maintenance" });
+    }
+    return { maintenanceOn: true };
+  },
   loader: async () => {
     // Run in parallel -- these are two unrelated concerns (theme tokens,
     // whether the viewer is a Guild admin -- read by members_.$slug.tsx's
@@ -182,7 +199,8 @@ function isBarePathname(pathname: string) {
 }
 
 function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
+  const { queryClient, maintenanceOn } = Route.useRouteContext();
+  const { isGuildAdmin } = Route.useLoaderData();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isBare = isBarePathname(pathname);
 
@@ -193,6 +211,15 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="flex min-h-screen flex-col">
+        {maintenanceOn && isGuildAdmin && !isBare && (
+          <div
+            role="status"
+            className="bg-[#B42318] px-4 py-2 text-center text-[13px] font-semibold text-white"
+          >
+            Maintenance mode is on: visitors see the maintenance page. Turn it off in Guild
+            Settings.
+          </div>
+        )}
         {!isBare && <Header />}
         <main className="flex-1">
           <Outlet />

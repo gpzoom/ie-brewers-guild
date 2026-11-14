@@ -505,6 +505,10 @@ export default defineConfig(async ({ command, mode }) => {
             // (getMemberAlerts), called from guild.alerts.tsx. Session client only;
             // a Guild admin check first, then RLS.
             "src/lib/guild/member-alerts.server.ts",
+            // site/maintenance.server.ts: whether maintenance mode is on
+            // (getMaintenanceMode), called from __root.tsx's loader. Service
+            // role, but it reads one boolean column and returns only that.
+            "src/lib/site/maintenance.server.ts",
           ],
           specifiers: ["server-only"],
         },

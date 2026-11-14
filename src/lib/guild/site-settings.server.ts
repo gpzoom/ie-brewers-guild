@@ -4,6 +4,7 @@ import {
   getSiteSettingsCore,
   saveCalendarSyncIntervalCore,
   saveCarouselDwellCore,
+  saveMaintenanceModeCore,
   saveSpotlightEnabledCore,
   setHeroImageCore,
   type SiteSettingsView,
@@ -46,6 +47,13 @@ export const saveSpotlightEnabled = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<SiteSettingsView> => {
     const supabase = await getSupabaseServerClientForRequest();
     return saveSpotlightEnabledCore(supabase, data.enabled, new Date());
+  });
+
+export const saveMaintenanceMode = createServerFn({ method: "POST" })
+  .inputValidator((data: { enabled: boolean }) => ({ enabled: data?.enabled }))
+  .handler(async ({ data }): Promise<SiteSettingsView> => {
+    const supabase = await getSupabaseServerClientForRequest();
+    return saveMaintenanceModeCore(supabase, data.enabled, new Date());
   });
 
 const HERO_MAX_BYTES = 10 * 1024 * 1024;

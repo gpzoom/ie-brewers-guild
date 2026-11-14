@@ -5,6 +5,7 @@ import {
   saveCalendarSyncIntervalCore,
   getSiteSettingsCore,
   saveCarouselDwellCore,
+  saveMaintenanceModeCore,
   saveSpotlightEnabledCore,
   setHeroImageCore,
   toSiteSettingsView,
@@ -96,6 +97,7 @@ function fakeSession(isSuperAdmin: boolean) {
                     hero_image_path:
                       "hero_image_path" in values ? values.hero_image_path : "hero/old-photo.jpg",
                     spotlight_enabled: values.spotlight_enabled ?? false,
+                    maintenance_mode: values.maintenance_mode ?? false,
                     updated_at: values.updated_at,
                   },
                 ],
@@ -195,6 +197,35 @@ describe("Homepage settings", () => {
       "Choose on or off.",
     );
     expect(session.updates).toHaveLength(2);
+  });
+
+  it("maintenance mode is off unless the row says it's on", () => {
+    expect(toSiteSettingsView(null).maintenanceMode).toBe(false);
+    expect(
+      toSiteSettingsView({
+        calendar_sync_interval_minutes: 15,
+        calendar_sync_last_run_at: null,
+        maintenance_mode: true,
+        updated_at: null,
+      }).maintenanceMode,
+    ).toBe(true);
+  });
+
+  it("the super admin turns maintenance mode on and off; anything but true/false is refused", async () => {
+    const session = fakeSession(true);
+    expect((await saveMaintenanceModeCore(session.client, true, now)).maintenanceMode).toBe(true);
+    expect(session.updates[0]).toMatchObject({ maintenance_mode: true, updated_by_user_id: "user-1" });
+    expect((await saveMaintenanceModeCore(session.client, false, now)).maintenanceMode).toBe(false);
+    await expect(saveMaintenanceModeCore(session.client, "on", now)).rejects.toThrow(
+      "Choose on or off.",
+    );
+    expect(session.updates).toHaveLength(2);
+  });
+
+  it("a Guild admin can't turn on maintenance mode", async () => {
+    const session = fakeSession(false);
+    await expect(saveMaintenanceModeCore(session.client, true, now)).rejects.toThrow();
+    expect(session.updates).toHaveLength(0);
   });
 
   it("a Guild admin can't change the dwell time or the hero", async () => {
