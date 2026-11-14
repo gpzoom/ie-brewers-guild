@@ -4,7 +4,6 @@ import {
   saveCalendarSyncInterval,
   saveCarouselDwell,
   saveMaintenanceMode,
-  saveSpotlightEnabled,
   uploadHeroImage,
 } from "@/lib/guild/site-settings.server";
 import {
@@ -15,18 +14,19 @@ import {
   type CarouselDwellSeconds,
   type SiteSettingsView,
 } from "@/lib/guild/site-settings";
-import { CURRENT_SPOTLIGHT } from "@/lib/home/spotlight";
+import type { HomepageSectionsData } from "@/lib/guild/homepage-sections";
+import { HomepageSectionsCard } from "@/components/guild/HomepageSectionsCard";
+import {
+  cardClass,
+  darkButtonClass,
+  errorText,
+  fieldClass,
+  outlineButtonClass,
+  StatusMessage,
+  type Message,
+} from "@/components/guild/settings-ui";
 import { Switch } from "@/components/ui/switch";
 import defaultHeroImg from "@/assets/hero-home.jpg";
-
-const fieldClass =
-  "h-11 w-full min-w-0 rounded-[9px] border border-canvas-border bg-white px-3 font-sans text-[14px] text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
-const cardClass =
-  "flex max-w-[640px] flex-col gap-4 rounded-[14px] border border-canvas-border bg-white px-4 py-5 md:px-6";
-const outlineButtonClass =
-  "inline-flex h-11 shrink-0 items-center justify-center rounded-[9px] border border-[#D3CBBD] bg-canvas px-[17px] text-[13px] font-medium text-ink transition-colors hover:bg-canvas-2 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
-const darkButtonClass =
-  "inline-flex h-11 shrink-0 items-center justify-center rounded-[9px] border border-ink bg-ink px-[17px] text-[13px] font-semibold text-canvas transition-colors hover:bg-ink/85 disabled:opacity-60";
 
 function formatWhen(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
@@ -55,7 +55,13 @@ function nextCheck(settings: SiteSettingsView): string | null {
  * automatically, how long each homepage carousel page stays up, and the
  * homepage hero image. Times are the Guild's (Pacific).
  */
-export function SiteSettingsScreen({ initial }: { initial: SiteSettingsView }) {
+export function SiteSettingsScreen({
+  initial,
+  initialSections,
+}: {
+  initial: SiteSettingsView;
+  initialSections: HomepageSectionsData;
+}) {
   const [settings, setSettings] = useState(initial);
   const [choice, setChoice] = useState<CalendarSyncInterval>(initial.calendarSyncIntervalMinutes);
   const [saving, setSaving] = useState(false);
@@ -159,30 +165,12 @@ export function SiteSettingsScreen({ initial }: { initial: SiteSettingsView }) {
 
       <CarouselDwellCard settings={settings} onSaved={setSettings} />
       <HeroImageCard settings={settings} onSaved={setSettings} />
-      <SpotlightCard settings={settings} onSaved={setSettings} />
+      <HomepageSectionsCard initial={initialSections} />
     </div>
   );
 }
 
 type CardProps = { settings: SiteSettingsView; onSaved: (settings: SiteSettingsView) => void };
-type Message = { kind: "ok" | "error"; text: string } | null;
-
-function StatusMessage({ message }: { message: Message }) {
-  if (!message) return null;
-  return (
-    <p
-      role={message.kind === "error" ? "alert" : "status"}
-      className={message.kind === "error" ? "text-[13px] text-danger" : "text-[13px] text-ink-muted"}
-    >
-      {message.text}
-    </p>
-  );
-}
-
-function errorText(err: unknown): string {
-  return err instanceof Error ? err.message : "Couldn't save the setting — try again.";
-}
-
 /** Homepage events carousel: how long each page stays up (artboard Z). */
 function CarouselDwellCard({ settings, onSaved }: CardProps) {
   const [choice, setChoice] = useState<CarouselDwellSeconds>(settings.carouselDwellSeconds);
@@ -301,67 +289,6 @@ function MaintenanceCard({ settings, onSaved }: CardProps) {
       >
         Preview the maintenance page
       </a>
-      <StatusMessage message={message} />
-    </div>
-  );
-}
-
-/**
- * Homepage spotlight: show or hide the temporary section under the hero.
- * The slides come from the code (src/lib/home/spotlight.ts); this is only
- * the switch, and it saves as soon as it's flipped.
- */
-function SpotlightCard({ settings, onSaved }: CardProps) {
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<Message>(null);
-  const spotlight = CURRENT_SPOTLIGHT;
-
-  async function onToggle(enabled: boolean) {
-    setSaving(true);
-    setMessage(null);
-    try {
-      onSaved(await saveSpotlightEnabled({ data: { enabled } }));
-      setMessage({
-        kind: "ok",
-        text: enabled ? "It's on the homepage now." : "It's off the homepage now.",
-      });
-    } catch (err) {
-      setMessage({ kind: "error", text: errorText(err) });
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className={cardClass}>
-      <div className="flex flex-col gap-1">
-        <h2 className="text-[16px] font-semibold text-ink">Homepage spotlight</h2>
-        <p className="text-pretty text-[13px] leading-[1.5] text-ink-muted">
-          A temporary section under the homepage image for news worth celebrating, like awards.
-          Turn it off when it's no longer news.
-        </p>
-      </div>
-      {spotlight ? (
-        <>
-          <div className="rounded-[9px] border border-canvas-border bg-canvas px-3 py-2.5 text-[13px] text-ink">
-            <span className="font-semibold">{spotlight.eyebrow}</span>
-            <span className="text-ink-muted"> · {spotlight.slides.length} slides</span>
-          </div>
-          <label className="flex min-h-11 cursor-pointer items-center justify-between gap-4">
-            <span className="text-[14px] font-medium text-ink">Show on the homepage</span>
-            <Switch
-              checked={settings.spotlightEnabled}
-              disabled={saving}
-              onCheckedChange={(checked) => void onToggle(checked)}
-              aria-label="Show the spotlight on the homepage"
-            />
-          </label>
-        </>
-      ) : (
-        <p className="text-[13px] text-ink-muted">
-          No spotlight content right now. Send new slides to your webmaster.
-        </p>
-      )}
       <StatusMessage message={message} />
     </div>
   );

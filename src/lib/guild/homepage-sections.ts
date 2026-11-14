@@ -42,6 +42,12 @@ function announcementLabel(row: { alt_text: string | null; image: { alt_text: st
   return row.alt_text?.trim() || row.image?.alt_text || "Image";
 }
 
+export type HomepageSectionsData = {
+  sections: SettingsSection[];
+  gallery: GalleryImage[];
+  memberPages: Array<{ path: string; label: string }>;
+};
+
 export async function listHomepageSectionsCore(
   c: SupabaseClient,
   now: Date,

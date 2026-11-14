@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { getSiteSettings } from "@/lib/guild/site-settings.server";
+import { listHomepageSections } from "@/lib/guild/homepage-sections.server";
 import { SiteSettingsScreen } from "@/components/guild/SiteSettingsScreen";
 
 /**
@@ -12,11 +13,14 @@ export const Route = createFileRoute("/guild/settings")({
     if (!context.isSuperAdmin) throw redirect({ to: "/guild/roster" });
   },
   staleTime: 0,
-  loader: () => getSiteSettings(),
+  loader: async () => {
+    const [settings, sections] = await Promise.all([getSiteSettings(), listHomepageSections()]);
+    return { settings, sections };
+  },
   component: SettingsRoute,
 });
 
 function SettingsRoute() {
-  const settings = Route.useLoaderData();
-  return <SiteSettingsScreen initial={settings} />;
+  const { settings, sections } = Route.useLoaderData();
+  return <SiteSettingsScreen initial={settings} initialSections={sections} />;
 }
