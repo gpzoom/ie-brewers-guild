@@ -66,7 +66,7 @@ function statusPill(item: NotificationItem) {
   const label = { open: "Open", resolved: "Resolved", unread: "Unread", read: "Read" }[item.status];
   const tone =
     item.status === "open"
-      ? "bg-[#FDF3DC] text-[#5C4210]"
+      ? "bg-[#FEF3F2] text-[#B42318]"
       : item.status === "unread"
         ? "bg-ink text-canvas"
         : "bg-canvas-2 text-ink-muted";

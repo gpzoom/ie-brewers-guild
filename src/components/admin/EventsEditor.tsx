@@ -477,7 +477,7 @@ export function EventsEditor({
                   </span>
                 )}
                 {conflicts.has(event.id) && (
-                  <span className="rounded-full bg-[#FDF3DC] px-2 py-0.5 text-[11px] font-semibold text-[#5C4210]">
+                  <span className="rounded-full bg-[#FEF3F2] px-2 py-0.5 text-[11px] font-semibold text-[#B42318]">
                     ⚠ Closed day: hidden from the public
                   </span>
                 )}

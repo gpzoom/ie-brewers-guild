@@ -11,11 +11,11 @@ export function NotificationsBanner({ text, href }: { text: string | null; href:
   return (
     <div
       role="status"
-      className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[11px] border border-[#E7C98A] bg-[#FDF3DC] px-[17px] py-[13px] text-[13px] text-[#5C4210] md:mb-6"
+      className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[11px] border border-[#FECDCA] bg-[#FEF3F2] px-[17px] py-[13px] text-[13px] text-[#B42318] md:mb-6"
     >
       <span aria-hidden="true">⚠</span>
       <span className="min-w-0 flex-1 text-pretty">{text}</span>
-      <Link to={href} className="font-semibold text-[#5C4210] underline underline-offset-2">
+      <Link to={href} className="font-semibold text-[#B42318] underline underline-offset-2">
         Review →
       </Link>
     </div>
