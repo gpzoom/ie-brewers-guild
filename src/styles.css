@@ -294,3 +294,16 @@
 @media (prefers-reduced-motion: reduce) {
   .spotlight-slide-in, .spotlight-caption-in { animation-duration: 1ms; }
 }
+
+/* Notifications banner (src/components/portal/NotificationsBanner.tsx): a
+   red glow pulses out from its border to grab attention. With reduced motion
+   the thick red border stays and the glow is off. */
+@keyframes notification-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(180, 35, 24, 0.55); }
+  70% { box-shadow: 0 0 0 7px rgba(180, 35, 24, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(180, 35, 24, 0); }
+}
+.notification-pulse { animation: notification-pulse 1.6s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .notification-pulse { animation: none; }
+}
