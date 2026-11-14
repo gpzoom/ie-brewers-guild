@@ -1,6 +1,6 @@
 # Homepage sections: arrange the homepage, add image announcements
 
-Owner request, 2026-11-14. Status: design, awaiting owner approval.
+Owner request, 2026-11-14. Status: approved by the owner 2026-11-14 (with the image gallery added).
 
 ## Why
 
@@ -19,6 +19,9 @@ Settings, not something the webmaster edits.
   description, an optional link, optional start and end dates.
 - Any number of announcements; each can be placed anywhere in the order,
   edited, or deleted.
+- An **announcement image gallery** (owner, 2026-11-14): images are uploaded
+  once and reused, e.g. generic holiday announcements every year. Deleting an
+  announcement never deletes its image.
 - Built so a future section type (a video, a text block) is one more kind of
   row, not a redesign.
 
@@ -85,14 +88,27 @@ New table `public.homepage_sections`:
 - `position int not null` — order on the page, smallest first
 - `enabled boolean not null default true`
 - Image announcement fields (null for other kinds; check that `image`
-  rows have `image_path` and `alt_text`):
-  - `image_path text` — in the public `site-images` bucket, folder
-    `announcements/` (JPEG/PNG, 10 MB limit, as the bucket already enforces)
-  - `alt_text text`
+  rows have `image_id`):
+  - `image_id uuid` — references `announcement_images(id)` **on delete
+    restrict** (an image in use can't be deleted)
+  - `alt_text text` — optional override of the image's description; null
+    means use the image's own
   - `link_kind text` — `none`, `internal`, `external`
   - `link_target text` — a site path (`internal`) or full URL (`external`)
   - `starts_on date`, `ends_on date` (both optional; `ends_on >= starts_on`)
 - `created_at`, `updated_at`, `updated_by_user_id`
+
+New table `public.announcement_images` (the gallery):
+
+- `id uuid` primary key
+- `image_path text not null` — in the public `site-images` bucket, folder
+  `announcements/` (JPEG/PNG, 10 MB limit, as the bucket already enforces)
+- `alt_text text not null` — the description, written once at upload
+- `width int`, `height int` — for layout without jumps (optional if the
+  builder reads them at render)
+- `created_at`, `updated_at`, `updated_by_user_id`
+
+Same RLS as `homepage_sections`.
 
 Exactly one `events` row and one `spotlight` row exist (seeded by the
 migration); they can be moved and switched but not deleted. The migration
@@ -133,7 +149,14 @@ Homepage sections                         (hero image is always first)
   description, link (None / A page on our site / An outside website; the
   page picker or the address box appears accordingly), start date, end date.
   Saving validates everything; errors say what to fix.
-- **Delete** asks to confirm, then removes the row and its image file.
+- **Delete** asks to confirm, then removes the announcement only; its image
+  stays in the gallery.
+- **Image gallery** (in the same card, or a panel it opens; reuse the look of
+  the member portal's media gallery, `src/components/admin/MediaGallery.tsx`):
+  a grid of thumbnails with descriptions. **Upload** (image + description),
+  **Edit description**, **Delete**. Delete is refused while any announcement
+  uses the image, naming those announcements. The announcement form picks an
+  image from the gallery, or uploads a new one, which joins the gallery.
 - The spotlight row shows "No spotlight content right now" when
   `CURRENT_SPOTLIGHT` is null.
 
@@ -171,8 +194,10 @@ Homepage sections                         (hero image is always first)
   row also writes `spotlight_enabled` (a mirror), and the owner is told not to
   use the old live Settings card in that window. The mirror is removed in a
   follow-up after the merge.
-- **Delete:** removes the row and its image file. **Replace image:** the old
-  file is removed only after the save succeeds.
+- **Delete an announcement:** removes the row only (owner's gallery
+  decision). **Delete a gallery image:** refused while in use; otherwise
+  removes the row and then its file. A failed upload-and-save removes the new
+  file.
 - **Moving:** swap two rows' positions in one database call.
 - **Page picker:** lists only public pages that exist as routes.
 - **No separate draft state:** "Off" is the draft; an enabled announcement with
