@@ -31,6 +31,7 @@ export function AnnouncementForm({
   gallery: GalleryImage[];
   memberPages: Array<{ path: string; label: string }>;
   onGalleryChanged: () => Promise<void>;
+  /** Called after a successful save; must not throw. */
   onSaved: () => Promise<void>;
   onCancel: () => void;
 }) {
@@ -59,6 +60,8 @@ export function AnnouncementForm({
     setSaving(true);
     setMessage(null);
     try {
+      // Only the save can fail here: once it succeeded the form closes (onSaved
+      // never throws), so pressing Save again can't create a duplicate.
       await saveAnnouncement({
         data: {
           id: editing?.id,
@@ -76,11 +79,12 @@ export function AnnouncementForm({
           enabled: editing?.enabled ?? true,
         },
       });
-      await onSaved();
     } catch (err) {
       setMessage({ kind: "error", text: errorText(err) });
       setSaving(false);
+      return;
     }
+    await onSaved();
   }
 
   return (

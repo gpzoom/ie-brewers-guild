@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/site/PageHero";
 import { MemberEventsCarousel } from "@/components/home/MemberEventsCarousel";
 import { HomepageSections } from "@/components/home/HomepageSections";
+import { hasEventsSection } from "@/lib/home/sections";
 import { getHomepageData } from "@/lib/home/homepage.server";
 import heroImg from "@/assets/hero-home.jpg";
 
@@ -35,7 +36,10 @@ function HomePage() {
         paddingY="py-10 md:py-12"
       >
         <Button asChild size="lg"><Link to="/members">Meet our members & partners</Link></Button>
-        <Button asChild size="lg" variant="outline"><a href="#coming-up">Upcoming events</a></Button>
+        {/* #coming-up only exists while the Events block is on the page. */}
+        {hasEventsSection(sections) && (
+          <Button asChild size="lg" variant="outline"><a href="#coming-up">Upcoming events</a></Button>
+        )}
       </PageHero>
 
       {/* Events, the spotlight and image announcements, in the order the

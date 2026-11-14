@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { HomepageSectionsCard } from "./HomepageSectionsCard";
+import { HomepageSectionsCard, statusLabel } from "./HomepageSectionsCard";
 import type { SettingsSection } from "@/lib/guild/homepage-sections";
 
 const row = (o: Partial<SettingsSection>): SettingsSection => ({
@@ -78,5 +78,43 @@ describe("AnnouncementForm", () => {
     expect(markup).toContain("Describe the new image");
     expect(form).not.toContain("Describe the new image");
     expect(form).toContain("Description (optional)");
+  });
+});
+
+describe("HomepageSectionsCard when the list could not be read", () => {
+  it("shows a plain error instead of the list", () => {
+    const markup = renderToStaticMarkup(createElement(HomepageSectionsCard, { initial: null }));
+    expect(markup).toContain("Homepage sections");
+    expect(markup).toContain("Couldn&#x27;t load the homepage sections — reload the page to try again.");
+    expect(markup).not.toContain("Add an image announcement");
+  });
+});
+
+describe("statusLabel years", () => {
+  const now = new Date("2026-11-14T20:00:00Z");
+  it("omits the year within the current Pacific year", () => {
+    expect(statusLabel(row({ status: "showing", ends_on: "2026-12-20" }), now)).toBe("Showing · until Dec 20");
+    expect(statusLabel(row({ status: "scheduled", starts_on: "2026-12-01" }), now)).toBe("Scheduled · from Dec 1");
+    expect(statusLabel(row({ status: "ended", ends_on: "2026-10-20" }), now)).toBe("Ended · Oct 20");
+  });
+  it("adds the year when the date is in another year", () => {
+    expect(statusLabel(row({ status: "scheduled", starts_on: "2027-12-01" }), now)).toBe("Scheduled · from Dec 1, 2027");
+    expect(statusLabel(row({ status: "showing", ends_on: "2027-01-05" }), now)).toBe("Showing · until Jan 5, 2027");
+    expect(statusLabel(row({ status: "ended", ends_on: "2025-12-20" }), now)).toBe("Ended · Dec 20, 2025");
+  });
+  it("uses the Pacific year, not UTC, around New Year", () => {
+    const nye = new Date("2027-01-01T03:00:00Z"); // still Dec 31, 2026 in Pacific
+    expect(statusLabel(row({ status: "ended", ends_on: "2026-12-20" }), nye)).toBe("Ended · Dec 20");
+  });
+});
+
+describe("AnnouncementGallery upload button", () => {
+  it("is disabled until a description is typed", async () => {
+    const { AnnouncementGallery } = await import("./AnnouncementGallery");
+    const markup = renderToStaticMarkup(
+      createElement(AnnouncementGallery, { gallery: [], onChanged: async () => {} }),
+    );
+    const button = markup.match(/<button[^>]*>Upload new<\/button>/)?.[0] ?? "";
+    expect(button).toMatch(/ disabled(=|>| )/);
   });
 });

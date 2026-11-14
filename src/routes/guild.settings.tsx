@@ -14,7 +14,11 @@ export const Route = createFileRoute("/guild/settings")({
   },
   staleTime: 0,
   loader: async () => {
-    const [settings, sections] = await Promise.all([getSiteSettings(), listHomepageSections()]);
+    // A failed sections read must not take the rest of Settings (maintenance mode) down with it.
+    const [settings, sections] = await Promise.all([
+      getSiteSettings(),
+      listHomepageSections().catch(() => null),
+    ]);
     return { settings, sections };
   },
   component: SettingsRoute,

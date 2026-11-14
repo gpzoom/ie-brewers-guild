@@ -37,10 +37,8 @@ export type SectionRow = {
 
 /** Pages an announcement may link to (each exists under src/routes). */
 export const INTERNAL_PAGES: ReadonlyArray<{ path: string; label: string }> = [
-  { path: "/", label: "Home" },
   { path: "/about", label: "About" },
   { path: "/members", label: "Members" },
-  { path: "/events", label: "Events" },
   { path: "/jobs", label: "Jobs" },
   { path: "/news", label: "News" },
   { path: "/contact", label: "Contact" },
@@ -154,7 +152,11 @@ export function visibleSections(
     } else if (r.kind === "spotlight") {
       if (ctx.hasSpotlight) out.push({ kind: "spotlight" });
     } else if (r.kind === "image") {
-      if (!r.image || !isInDateWindow(r, ctx.today)) continue;
+      if (!r.image) {
+        console.error(`homepage sections: skipping image section ${r.id} — its image is missing`);
+        continue;
+      }
+      if (!isInDateWindow(r, ctx.today)) continue;
       out.push({
         kind: "image",
         id: r.id,
@@ -167,6 +169,11 @@ export function visibleSections(
     }
   }
   return out;
+}
+
+/** Whether the Events block (the hero's "Upcoming events" target) is on the page. */
+export function hasEventsSection(sections: ReadonlyArray<{ kind: string }>): boolean {
+  return sections.some((s) => s.kind === "events");
 }
 
 /** The layout when there are no rows or the read fails: spotlight (if any), then events. */

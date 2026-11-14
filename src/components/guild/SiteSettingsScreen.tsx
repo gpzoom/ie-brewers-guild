@@ -60,7 +60,7 @@ export function SiteSettingsScreen({
   initialSections,
 }: {
   initial: SiteSettingsView;
-  initialSections: HomepageSectionsData;
+  initialSections: HomepageSectionsData | null;
 }) {
   const [settings, setSettings] = useState(initial);
   const [choice, setChoice] = useState<CalendarSyncInterval>(initial.calendarSyncIntervalMinutes);

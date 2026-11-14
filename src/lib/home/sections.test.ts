@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_SECTIONS,
+  INTERNAL_PAGES,
   checkLink,
+  hasEventsSection,
   isInDateWindow,
   pacificToday,
   resolveLink,
@@ -74,7 +76,7 @@ describe("checkLink", () => {
   it("validates internal links", () => {
     expect(checkLink("internal", "/members/mars-brewing-co")).toBeNull();
     expect(checkLink("internal", "/guild/settings")).toBeTruthy();
-    expect(checkLink("internal", "/events")).toBeNull();
+    expect(checkLink("internal", "/members")).toBeNull();
   });
   it("accepts none", () => {
     expect(checkLink("none", null)).toBeNull();
@@ -121,6 +123,16 @@ describe("visibleSections", () => {
     expect(visibleSections([row({ image: null })], ctx)).toEqual([]);
     expect(visibleSections([row({ ends_on: "2026-12-01" })], ctx)).toEqual([]);
   });
+  it("logs an image row skipped for a missing image, but not one that is off or out of dates", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    visibleSections([row({ id: "bad1", image: null })], ctx);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0][0]).toContain("bad1");
+    spy.mockClear();
+    visibleSections([row({ enabled: false, image: null }), row({ ends_on: "2026-12-01" })], ctx);
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
   it("alt override wins and link resolves", () => {
     const [s] = visibleSections(
       [row({ alt_text: "Override", link_kind: "internal", link_target: "/members/mars" })],
@@ -142,5 +154,21 @@ describe("DEFAULT_SECTIONS", () => {
   it("puts spotlight first when present", () => {
     expect(DEFAULT_SECTIONS(true)).toEqual([{ kind: "spotlight" }, { kind: "events" }]);
     expect(DEFAULT_SECTIONS(false)).toEqual([{ kind: "events" }]);
+  });
+});
+
+describe("hasEventsSection", () => {
+  it("is true only when an events block is listed", () => {
+    expect(hasEventsSection([{ kind: "spotlight" }, { kind: "events" }])).toBe(true);
+    expect(hasEventsSection([{ kind: "spotlight" }])).toBe(false);
+    expect(hasEventsSection([])).toBe(false);
+  });
+});
+
+describe("INTERNAL_PAGES", () => {
+  it("does not offer the homepage or the events redirect", () => {
+    const paths = INTERNAL_PAGES.map((p) => p.path);
+    expect(paths).not.toContain("/");
+    expect(paths).not.toContain("/events");
   });
 });

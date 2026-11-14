@@ -5,6 +5,7 @@ import {
   uploadGalleryImage,
 } from "@/lib/guild/homepage-sections.server";
 import type { GalleryImage } from "@/lib/guild/homepage-sections";
+import { REFRESH_FAILED_TEXT, writeThenRefresh } from "@/lib/guild/write-then-refresh";
 import {
   darkButtonClass,
   errorText,
@@ -45,9 +46,9 @@ export function AnnouncementGallery({
     setBusy(true);
     setMessage(null);
     try {
-      const done = await work();
-      await onChanged();
-      if (done) setMessage({ kind: "ok", text: done });
+      const { value: done, refreshFailed } = await writeThenRefresh(work, onChanged);
+      if (refreshFailed) setMessage({ kind: "error", text: REFRESH_FAILED_TEXT });
+      else if (done) setMessage({ kind: "ok", text: done });
     } catch (err) {
       setMessage({ kind: "error", text: errorText(err) });
     } finally {
@@ -207,7 +208,7 @@ export function AnnouncementGallery({
           <button
             type="button"
             className={gallery.length === 0 ? darkButtonClass : outlineButtonClass}
-            disabled={busy}
+            disabled={busy || !uploadAlt.trim()}
             onClick={() => inputRef.current?.click()}
           >
             {busy ? "Working…" : "Upload new"}
