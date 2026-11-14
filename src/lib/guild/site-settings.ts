@@ -70,8 +70,6 @@ export type SiteSettingsView = {
   carouselDwellSeconds: CarouselDwellSeconds;
   /** Path in the public site-images bucket; null = the built-in hero image. */
   heroImagePath: string | null;
-  /** Whether the homepage spotlight shows (when there's content for it). */
-  spotlightEnabled: boolean;
   /** The public sees the maintenance page (src/lib/site/maintenance.ts). */
   maintenanceMode: boolean;
   updatedAt: string | null;
@@ -82,7 +80,6 @@ export type SiteSettingsRow = {
   calendar_sync_last_run_at: string | null;
   carousel_dwell_seconds?: number | null;
   hero_image_path?: string | null;
-  spotlight_enabled?: boolean | null;
   maintenance_mode?: boolean | null;
   updated_at: string | null;
 };
@@ -101,14 +98,13 @@ export function toSiteSettingsView(row: SiteSettingsRow | null): SiteSettingsVie
       row?.hero_image_path && HERO_IMAGE_PATH_PATTERN.test(row.hero_image_path)
         ? row.hero_image_path
         : null,
-    spotlightEnabled: row?.spotlight_enabled === true,
     maintenanceMode: row?.maintenance_mode === true,
     updatedAt: row?.updated_at ?? null,
   };
 }
 
 export const SITE_SETTINGS_COLUMNS =
-  "calendar_sync_interval_minutes, calendar_sync_last_run_at, carousel_dwell_seconds, hero_image_path, spotlight_enabled, maintenance_mode, updated_at";
+  "calendar_sync_interval_minutes, calendar_sync_last_run_at, carousel_dwell_seconds, hero_image_path, maintenance_mode, updated_at";
 
 /** Reads the settings as the super admin (the table's select policy allows no one else). */
 export async function getSiteSettingsCore(
@@ -176,17 +172,6 @@ export async function saveCarouselDwellCore(
   const actor = await requireSuperAdmin(sessionClient, "change the site settings");
   if (!isCarouselDwellSeconds(seconds)) throw new Error("Choose one of the options.");
   return updateSiteSettings(sessionClient, actor.userId, { carousel_dwell_seconds: seconds }, now);
-}
-
-/** Shows or hides the homepage spotlight (src/lib/home/spotlight.ts). */
-export async function saveSpotlightEnabledCore(
-  sessionClient: SupabaseClient,
-  enabled: unknown,
-  now: Date,
-): Promise<SiteSettingsView> {
-  const actor = await requireSuperAdmin(sessionClient, "change the site settings");
-  if (typeof enabled !== "boolean") throw new Error("Choose on or off.");
-  return updateSiteSettings(sessionClient, actor.userId, { spotlight_enabled: enabled }, now);
 }
 
 /** Turns maintenance mode on or off: the public sees the maintenance page instead of the site. */

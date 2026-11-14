@@ -135,19 +135,6 @@ export async function setSectionEnabledCore(
     .eq("id", id)
     .select("kind");
   if (error || !data || data.length === 0) throw new Error("Couldn't save the change — try again.");
-  // The spotlight row mirrors the old site_settings switch while staging and the
-  // live site share one database. Remove this write after the merge to main.
-  if ((data[0] as { kind: string }).kind === "spotlight") {
-    const { error: mirrorError } = await c
-      .from("site_settings")
-      .update({
-        spotlight_enabled: enabled,
-        updated_at: now.toISOString(),
-        updated_by_user_id: actor.userId,
-      })
-      .eq("id", true);
-    if (mirrorError) throw new Error("Couldn't save the change — try again.");
-  }
 }
 
 /** Swaps a block with its neighbor above (-1) or below (1). */

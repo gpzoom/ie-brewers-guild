@@ -154,14 +154,10 @@ describe("saveAnnouncementCore", () => {
 });
 
 describe("setSectionEnabledCore", () => {
-  it("the spotlight row also writes the site_settings mirror", async () => {
+  it("the spotlight row writes only its own row (the old switch is retired)", async () => {
     const s = fakeSession(true, { homepage_sections: [{ kind: "spotlight" }] });
     await setSectionEnabledCore(s.client, "sp", false, now);
-    expect(s.writes.map((w) => `${w.table}:${w.op}`)).toEqual([
-      "homepage_sections:update",
-      "site_settings:update",
-    ]);
-    expect(s.writes[1].values).toMatchObject({ spotlight_enabled: false });
+    expect(s.writes.map((w) => `${w.table}:${w.op}`)).toEqual(["homepage_sections:update"]);
   });
 
   it("other rows leave site_settings alone", async () => {

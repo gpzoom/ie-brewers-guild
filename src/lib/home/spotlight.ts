@@ -1,8 +1,8 @@
 /**
  * The homepage spotlight (docs/member-profiles.md, "Homepage" > "Spotlight"):
  * a temporary section under the hero that plays a few slides and circles
- * our region's names on them. The super admin turns it on and off on
- * Settings (site_settings.spotlight_enabled); the content lives here, so a
+ * our region's names on them. The super admin places it and turns it on and
+ * off in Settings > Homepage sections; the content lives here, so a
  * new spotlight is a code change. Set CURRENT_SPOTLIGHT to null when there's
  * nothing to show -- the section then never appears, switch or no switch.
  */

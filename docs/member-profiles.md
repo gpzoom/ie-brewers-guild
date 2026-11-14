@@ -330,7 +330,7 @@ The blocks under the hero are a list the super admin orders on **Settings > Home
 - **The gallery:** under the list, **Announcement images** holds every image. Upload once and reuse the same image in as many announcements as needed. An image in use can't be deleted; the message names the announcements using it, so remove it from those first. Deleting an announcement keeps its image in the gallery.
 - **Link safety:** an announcement's link is checked again on the homepage. A link to a member's profile shows only while that member is published; if they're not, the image shows unlinked. An outside address that isn't web http(s) also shows unlinked.
 - **If the list can't be read** (or has no rows), the homepage falls back to the default layout: the Spotlight first (only when there's content), then the Events carousel. The homepage still loads.
-- **Temporary spotlight mirror:** while staging and production share one database, turning the Spotlight row on or off also writes `site_settings.spotlight_enabled`, so the old setting stays in step. Remove that write (the `site_settings` update in `setSectionEnabledCore`, `src/lib/guild/homepage-sections.ts`) after the merge to main.
+- **Old spotlight switch retired** (2026-11-14, after the merge to main): `site_settings.spotlight_enabled` is no longer read or written; the Spotlight row in Homepage sections is the only switch. The column is left in the database, unused.
 
 ### Spotlight
 
