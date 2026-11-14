@@ -320,11 +320,23 @@ A carousel of member events drawn as **tear-off calendar pages**, built only fro
 
 **Half its old height** (owner, 28 September 2026). Its image is the one the super admin uploads on **Settings > Homepage hero image**, or the built-in one until then (members asked for a real photo instead of the AI-generated one). **Upcoming events** in the hero jumps down to the carousel.
 
+### Sections
+
+The blocks under the hero are a list the super admin orders on **Settings > Homepage sections** (owner, 14 November 2026; `src/lib/home/sections.ts`, `src/components/guild/HomepageSectionsCard.tsx`). The hero is always first and isn't in the list.
+
+- **The list:** the **Events carousel**, the **Spotlight** (its row names the current news, if there is any) and any number of **image announcements**. Each row has a switch to show or hide it, and up and down arrows to reorder. The Events and Spotlight rows can be turned off but never deleted. The list lives in `homepage_sections` (migration `supabase/migrations/20261118100000_homepage_sections.sql`), and only the super admin can change it. A Spotlight row with no content shows "No spotlight content right now" and stays hidden on the homepage.
+- **Image announcements:** **Add an image announcement** picks a gallery image, with an optional description that overrides the image's own, a link, and optional **start and end dates**. The link is **none**, a **site page** (from a list), or an **outside address**; an outside address must start with https:// or http:// and opens in a new tab. Dates are whole days in **Pacific time**: the announcement shows from the start of its first day through the end of its last day. Either date can be left blank.
+- **Statuses:** each row reads **Showing** (with "until" its end date, if set), **Scheduled** (from its start date, before it begins), **Ended** (after its end date) or **Off**. Off wins over dates.
+- **The gallery:** under the list, **Announcement images** holds every image. Upload once and reuse the same image in as many announcements as needed. An image in use can't be deleted; the message names the announcements using it, so remove it from those first. Deleting an announcement keeps its image in the gallery.
+- **Link safety:** an announcement's link is checked again on the homepage. A link to a member's profile shows only while that member is published; if they're not, the image shows unlinked. An outside address that isn't web http(s) also shows unlinked.
+- **If the list can't be read** (or has no rows), the homepage falls back to the default layout: the Spotlight first (only when there's content), then the Events carousel. The homepage still loads.
+- **Temporary spotlight mirror:** while staging and production share one database, turning the Spotlight row on or off also writes `site_settings.spotlight_enabled`, so the old setting stays in step. Remove that write (the `site_settings` update in `setSectionEnabledCore`, `src/lib/guild/homepage-sections.ts`) after the merge to main.
+
 ### Spotlight
 
-A **temporary** section between the hero and the carousel, for news worth celebrating (owner, 14 October 2026). The first one is the Great American Beer Festival 2026 results: five award slides, with our region's medalists and finalists highlighted.
+A **temporary** block in the homepage sections list, by default between the hero and the carousel, for news worth celebrating (owner, 14 October 2026). The first one is the Great American Beer Festival 2026 results: five award slides, with our region's medalists and finalists highlighted.
 
-- **On and off:** the super admin flips **Settings > Homepage spotlight**. It's off by default, and it shows only when it's on **and** there's content. Staging and production share the setting.
+- **On and off:** the super admin turns the Spotlight row on or off under **Settings > Homepage sections** (see "Sections"). It shows only when it's on **and** there's content. Staging and production share the setting.
 - **Content lives in the code:** `src/lib/home/spotlight.ts` (`CURRENT_SPOTLIGHT`), with the slide images in `public/spotlight/`. Each slide lists the names to highlight as boxes in the slide's own pixels (slides are 1920×1080). For new news, send the webmaster the slides and the names; with nothing to show, `CURRENT_SPOTLIGHT` is `null`.
 - **For each name:** the slide shows in full, glides in close (more on phones, so the name is readable), dims everything else, and an orange marker loop draws around the name. A caption under the slide says the same in text: award, beer, brewery and city, category, and "See their profile" when the brewery is a published member.
 - **Controls:** like the carousel. It plays by itself and stops on Pause, while hovered, while keyboard focus is inside it and while it's off screen. Arrows, dots, arrow keys and swipe move by hand. With reduced motion there's no glide or drawing, and it doesn't play by itself.
