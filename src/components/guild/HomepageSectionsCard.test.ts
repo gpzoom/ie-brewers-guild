@@ -60,3 +60,23 @@ describe("HomepageSectionsCard", () => {
     expect(html).not.toContain('aria-label="Delete Events carousel"');
   });
 });
+
+describe("AnnouncementForm", () => {
+  it("keeps the gallery's inputs outside the announcement form", async () => {
+    const { AnnouncementForm } = await import("./AnnouncementForm");
+    const markup = renderToStaticMarkup(
+      createElement(AnnouncementForm, {
+        editing: null,
+        gallery: [],
+        memberPages: [],
+        onGalleryChanged: async () => {},
+        onSaved: async () => {},
+        onCancel: () => {},
+      }),
+    );
+    const form = markup.slice(markup.indexOf("<form"), markup.indexOf("</form>"));
+    expect(markup).toContain("Describe the new image");
+    expect(form).not.toContain("Describe the new image");
+    expect(form).toContain("Description (optional)");
+  });
+});
