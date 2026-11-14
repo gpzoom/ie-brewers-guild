@@ -14,10 +14,12 @@ export function HomepageSections({
 }) {
   return (
     <>
-      {sections.map((s) => {
+      {sections.map((s, i) => {
+        // Old layout: each block has 64/80px above it; the last also keeps 64/80px below.
+        const pad = `px-4 pt-16 md:px-6 md:pt-20${i === sections.length - 1 ? " pb-16 md:pb-20" : ""}`;
         if (s.kind === "events") {
           return (
-            <section key="events" id="coming-up" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-10 md:px-6 md:py-12">
+            <section key="events" id="coming-up" className={`mx-auto max-w-7xl scroll-mt-24 ${pad}`}>
               {carousel}
             </section>
           );
@@ -25,13 +27,13 @@ export function HomepageSections({
         if (s.kind === "spotlight") {
           if (!CURRENT_SPOTLIGHT) return null;
           return (
-            <section key="spotlight" className="mx-auto max-w-7xl px-4 py-10 md:px-6 md:py-12">
+            <section key="spotlight" className={`mx-auto max-w-7xl ${pad}`}>
               <SpotlightShowcase spotlight={CURRENT_SPOTLIGHT} />
             </section>
           );
         }
         return (
-          <section key={s.id} className="mx-auto max-w-7xl px-4 py-10 md:px-6 md:py-12">
+          <section key={s.id} className={`mx-auto max-w-7xl ${pad}`}>
             <ImageAnnouncement section={s} />
           </section>
         );

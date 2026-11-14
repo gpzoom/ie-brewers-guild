@@ -194,9 +194,21 @@ async function loadSettings(): Promise<{
  * falls back to the default layout.
  */
 async function loadSections(now: Date): Promise<VisibleSection[]> {
-  const hasSpotlight = Boolean(CURRENT_SPOTLIGHT);
   try {
-    const service = await getSupabaseServiceRoleClient();
+    return await loadSectionsWith(await getSupabaseServiceRoleClient(), now, Boolean(CURRENT_SPOTLIGHT));
+  } catch (err) {
+    console.error("getHomepageData: couldn't read homepage_sections, using the default layout", err);
+    return DEFAULT_SECTIONS(Boolean(CURRENT_SPOTLIGHT));
+  }
+}
+
+/** The core of loadSections, taking the service client (exported for tests). */
+export async function loadSectionsWith(
+  service: Awaited<ReturnType<typeof getSupabaseServiceRoleClient>>,
+  now: Date,
+  hasSpotlight: boolean,
+): Promise<VisibleSection[]> {
+  try {
     const { data, error } = await service
       .from("homepage_sections")
       .select(

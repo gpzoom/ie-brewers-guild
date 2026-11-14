@@ -56,3 +56,14 @@ describe("HomepageSections", () => {
     }
   });
 });
+
+describe("HomepageSections: spacing matches the old homepage", () => {
+  it("default [spotlight, events]: spotlight pt-only, events py", () => {
+    const html = render([{ kind: "spotlight" }, { kind: "events" }]);
+    expect(html).toContain('<section class="mx-auto max-w-7xl px-4 pt-16 md:px-6 md:pt-20">');
+    expect(html).toContain('<section id="coming-up" class="mx-auto max-w-7xl scroll-mt-24 px-4 pt-16 md:px-6 md:pt-20 pb-16 md:pb-20">');
+  });
+  it("an image last keeps the bottom padding", () => {
+    expect(render([{ kind: "events" }, image()])).toContain("md:pt-20 pb-16 md:pb-20");
+  });
+});
