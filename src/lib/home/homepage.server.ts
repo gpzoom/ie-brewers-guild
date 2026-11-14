@@ -22,6 +22,14 @@ import { getMemberThemeHex, type MemberThemeName } from "@/lib/theme/member-them
 import { logoBackgroundColor } from "@/lib/members/logo-background";
 import { guildEvents } from "@/data/site";
 import { loadGuestInfo } from "@/lib/events/guest-info";
+import { CURRENT_SPOTLIGHT } from "@/lib/home/spotlight";
+import {
+  DEFAULT_SECTIONS,
+  pacificToday,
+  visibleSections,
+  type SectionRow,
+  type VisibleSection,
+} from "@/lib/home/sections";
 import { loadHiddenEventIds, withoutHidden } from "@/lib/notifications/hidden-events";
 
 export type HomepageData = {
@@ -32,8 +40,8 @@ export type HomepageData = {
   startOffset: 0 | 1;
   /** The uploaded hero image, or null for the built-in one. */
   heroImageUrl: string | null;
-  /** Settings > Homepage spotlight; it shows only if there's content too. */
-  spotlightEnabled: boolean;
+  /** The blocks below the hero, in order (src/lib/home/sections.ts). */
+  sections: VisibleSection[];
 };
 
 const EVENT_COLUMNS =
@@ -159,7 +167,6 @@ async function loadCards(now: Date): Promise<HomeEventCard[]> {
 async function loadSettings(): Promise<{
   dwellSeconds: CarouselDwellSeconds;
   heroImageUrl: string | null;
-  spotlightEnabled: boolean;
 }> {
   try {
     const service = await getSupabaseServiceRoleClient();
@@ -174,28 +181,75 @@ async function loadSettings(): Promise<{
       heroImageUrl: view.heroImagePath
         ? service.storage.from("site-images").getPublicUrl(view.heroImagePath).data.publicUrl
         : null,
-      spotlightEnabled: view.spotlightEnabled,
     };
   } catch (err) {
     console.error("getHomepageData: couldn't read site_settings, using defaults", err);
-    return { dwellSeconds: DEFAULT_CAROUSEL_DWELL_SECONDS, heroImageUrl: null, spotlightEnabled: false };
+    return { dwellSeconds: DEFAULT_CAROUSEL_DWELL_SECONDS, heroImageUrl: null };
+  }
+}
+
+/**
+ * The ordered blocks below the hero. Service role: the table is super-admin
+ * only, so this public read returns just what a visitor needs. Any failure
+ * falls back to the default layout.
+ */
+async function loadSections(now: Date): Promise<VisibleSection[]> {
+  const hasSpotlight = Boolean(CURRENT_SPOTLIGHT);
+  try {
+    const service = await getSupabaseServiceRoleClient();
+    const { data, error } = await service
+      .from("homepage_sections")
+      .select(
+        "id, kind, position, enabled, image_id, alt_text, link_kind, link_target, starts_on, ends_on, image:announcement_images(image_path, alt_text, width, height)",
+      );
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as unknown as SectionRow[];
+    if (rows.length === 0) return DEFAULT_SECTIONS(hasSpotlight);
+
+    const publishedSlugs = new Set<string>();
+    const needsSlugs = rows.some(
+      (r) =>
+        r.enabled &&
+        r.kind === "image" &&
+        r.link_kind === "internal" &&
+        r.link_target?.startsWith("/members/"),
+    );
+    if (needsSlugs) {
+      const { data: slugRows, error: slugError } = await service
+        .from("members")
+        .select("slug")
+        .eq("status", "published");
+      if (slugError) throw new Error(slugError.message);
+      for (const m of (slugRows ?? []) as Array<{ slug: string }>) publishedSlugs.add(m.slug);
+    }
+
+    return visibleSections(rows, {
+      today: pacificToday(now),
+      hasSpotlight,
+      publishedSlugs,
+      imageUrl: (path) => service.storage.from("site-images").getPublicUrl(path).data.publicUrl,
+    });
+  } catch (err) {
+    console.error("getHomepageData: couldn't read homepage_sections, using the default layout", err);
+    return DEFAULT_SECTIONS(hasSpotlight);
   }
 }
 
 export const getHomepageData = createServerFn({ method: "GET" }).handler(
   async (): Promise<HomepageData> => {
     const now = new Date();
-    const [cards, settings] = await Promise.all([
+    const [cards, settings, sections] = await Promise.all([
       loadCards(now).catch((err) => {
         // The homepage must still load without the carousel.
         console.error("getHomepageData: couldn't load member events", err);
         return [] as HomeEventCard[];
       }),
       loadSettings(),
+      loadSections(now),
     ]);
     // Which version of a shared night shows first this visit (2026-11-13
     // alternation spec). Picked here so the browser renders the same.
     const startOffset: 0 | 1 = Math.random() < 0.5 ? 0 : 1;
-    return { cards, guildEvent: nextGuildEvent(guildEvents, now), startOffset, ...settings };
+    return { cards, guildEvent: nextGuildEvent(guildEvents, now), startOffset, sections, ...settings };
   },
 );
