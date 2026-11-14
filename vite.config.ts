@@ -509,6 +509,11 @@ export default defineConfig(async ({ command, mode }) => {
             // (getMaintenanceMode), called from __root.tsx's loader. Service
             // role, but it reads one boolean column and returns only that.
             "src/lib/site/maintenance.server.ts",
+            // guild/homepage-sections.server.ts: the super admin's homepage
+            // sections and announcement gallery (listHomepageSections,
+            // saveAnnouncement, uploadGalleryImage, ...), called from the
+            // Settings screen. Session client only, after the super admin check.
+            "src/lib/guild/homepage-sections.server.ts",
           ],
           specifiers: ["server-only"],
         },
