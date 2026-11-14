@@ -4,7 +4,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(10);
+insert into _tap (line) select plan(14);
 
 insert into auth.users (id, email, aud, role) values
   ('f0000000-0000-4000-8000-000000000007', 'pgtap-super@example.test', 'authenticated', 'authenticated');
@@ -16,10 +16,16 @@ insert into _tap (line) select ok(
   and to_regclass('public.homepage_sections') is not null,
   'both tables exist');
 
+-- The database is shared with the live site, which has its own announcements.
+-- Start from the default layout; the rollback below puts the real rows back.
+delete from public.homepage_sections;
+delete from public.announcement_images;
+insert into public.homepage_sections (kind, position) values ('spotlight', 1), ('events', 2);
+
 insert into _tap (line) select is(
   (select array_agg(kind || ':' || position order by position) from public.homepage_sections),
   array['spotlight:1', 'events:2'],
-  'seed: spotlight at 1, events at 2');
+  'start: spotlight at 1, events at 2');
 
 -- Guild admin (not super admin): blocked.
 set local role authenticated;
@@ -71,6 +77,39 @@ reset role;
 insert into _tap (line) select is(
   (select deleted from _del), 0::bigint, 'super admin: cannot delete the events section');
 
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000007","role":"authenticated"}';
+select public.move_homepage_section('f4000000-0000-4000-8000-000000000001', 1);
+reset role;
+insert into _tap (line) select is(
+  (select array_agg(kind || ':' || position order by position) from public.homepage_sections),
+  array['spotlight:1', 'events:2', 'image:3'],
+  'move down: events at 2, image at 3');
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000007","role":"authenticated"}';
+select public.move_homepage_section('f4000000-0000-4000-8000-000000000001', 1);
+reset role;
+insert into _tap (line) select is(
+  (select array_agg(kind || ':' || position order by position) from public.homepage_sections),
+  array['spotlight:1', 'events:2', 'image:3'],
+  'move down at the bottom: no change');
+
+-- Super admin deletes the announcement, then its now-unused image.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000007","role":"authenticated"}';
+delete from public.homepage_sections where id = 'f4000000-0000-4000-8000-000000000001';
+delete from public.announcement_images where id = 'f3000000-0000-4000-8000-000000000001';
+reset role;
+insert into _tap (line) select is(
+  (select count(*) from public.homepage_sections where kind = 'image'), 0::bigint,
+  'super admin: deletes an image section');
+insert into _tap (line) select is(
+  (select count(*) from public.announcement_images), 0::bigint,
+  'super admin: deletes an image no section uses');
+
+insert into public.announcement_images (id, image_path, alt_text, width, height)
+values ('f3000000-0000-4000-8000-000000000001', 'announcements/test.jpg', 'A test banner', 800, 400);
 insert into _tap (line) select throws_ok(
   $$insert into public.homepage_sections (kind, position, image_id, starts_on, ends_on)
     values ('image', 10, 'f3000000-0000-4000-8000-000000000001', '2026-12-10', '2026-12-01')$$,

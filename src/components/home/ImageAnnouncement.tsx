@@ -1,4 +1,6 @@
-import type { VisibleSection } from "@/lib/home/sections";
+import type { ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
+import { MEMBER_PATH, type VisibleSection } from "@/lib/home/sections";
 
 /** A super-admin image announcement on the homepage (docs/superpowers/specs/2026-11-14-homepage-sections-design.md). */
 export function ImageAnnouncement({
@@ -22,8 +24,24 @@ export function ImageAnnouncement({
       {img}
     </a>
   ) : (
-    <a href={section.link.href} className="block">
-      {img}
-    </a>
+    <InternalLink href={section.link.href}>{img}</InternalLink>
+  );
+}
+
+/** A link to a page on this site, through the router (no full page reload). */
+function InternalLink({ href, children }: { href: string; children: ReactNode }) {
+  const member = MEMBER_PATH.exec(href);
+  if (member) {
+    return (
+      <Link to="/members/$slug" params={{ slug: member[1] }} className="block">
+        {children}
+      </Link>
+    );
+  }
+  // resolveLink only lets INTERNAL_PAGES paths through, and each is a route.
+  return (
+    <Link to={href as "/about"} className="block">
+      {children}
+    </Link>
   );
 }

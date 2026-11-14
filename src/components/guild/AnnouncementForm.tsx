@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { saveAnnouncement } from "@/lib/guild/homepage-sections.server";
 import type { GalleryImage, SettingsSection } from "@/lib/guild/homepage-sections";
-import { INTERNAL_PAGES, type LinkKind } from "@/lib/home/sections";
+import { INTERNAL_PAGES, checkLink, type LinkKind } from "@/lib/home/sections";
 import { AnnouncementGallery } from "@/components/guild/AnnouncementGallery";
 import {
   darkButtonClass,
@@ -17,6 +17,20 @@ const LINK_CHOICES: Array<{ kind: LinkKind; label: string }> = [
   { kind: "internal", label: "A page on our site" },
   { kind: "external", label: "An outside website" },
 ];
+
+/** What stops the form saving, in plain words, or null when it can save. */
+export function formProblem(f: {
+  imageId: string | null;
+  gallery: GalleryImage[];
+  linkKind: LinkKind;
+  linkTarget: string | null;
+}): string | null {
+  if (!f.imageId) return "Choose an image.";
+  if (!f.gallery.some((g) => g.id === f.imageId)) {
+    return "That image was deleted from the gallery. Choose another image.";
+  }
+  return checkLink(f.linkKind, f.linkTarget);
+}
 
 /** Add or edit one image announcement: image, description, link, and dates. */
 export function AnnouncementForm({
@@ -53,8 +67,11 @@ export function AnnouncementForm({
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!imageId) {
-      setMessage({ kind: "error", text: "Choose an image." });
+    const linkTarget =
+      linkKind === "internal" ? internalTarget : linkKind === "external" ? externalTarget.trim() : null;
+    const problem = formProblem({ imageId, gallery, linkKind, linkTarget });
+    if (problem || !imageId) {
+      setMessage({ kind: "error", text: problem ?? "Choose an image." });
       return;
     }
     setSaving(true);
@@ -68,12 +85,7 @@ export function AnnouncementForm({
           imageId,
           altText: altText.trim() || null,
           linkKind,
-          linkTarget:
-            linkKind === "internal"
-              ? internalTarget
-              : linkKind === "external"
-                ? externalTarget
-                : null,
+          linkTarget,
           startsOn: startsOn || null,
           endsOn: endsOn || null,
           enabled: editing?.enabled ?? true,
@@ -159,7 +171,9 @@ export function AnnouncementForm({
           )}
           {linkKind === "external" && (
             <input
-              type="url"
+              type="text"
+              inputMode="url"
+              autoComplete="url"
               value={externalTarget}
               onChange={(e) => setExternalTarget(e.target.value)}
               placeholder="https://example.com"

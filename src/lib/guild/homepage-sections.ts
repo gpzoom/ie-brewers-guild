@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSuperAdmin } from "@/lib/auth/super-admin";
 import { multiLocationCities } from "@/lib/home/member-events";
-import { checkLink, pacificToday, sectionStatus, type LinkKind, type SectionRow } from "@/lib/home/sections";
+import { SECTION_COLUMNS, checkLink, pacificToday, sectionStatus, type LinkKind, type SectionRow } from "@/lib/home/sections";
 
 /**
  * The super admin's homepage Settings (docs/superpowers/specs/2026-11-14-homepage-sections-design.md):
@@ -28,8 +28,6 @@ export type GalleryImage = {
 };
 
 const ACTION = "change the homepage";
-const SECTION_COLUMNS =
-  "id, kind, position, enabled, image_id, alt_text, link_kind, link_target, starts_on, ends_on, image:announcement_images(image_path, alt_text, width, height)";
 const GALLERY_PATH_PATTERN = /^announcements\/[A-Za-z0-9._-]+$/;
 const ALT_REQUIRED = "Add a short description of the image.";
 

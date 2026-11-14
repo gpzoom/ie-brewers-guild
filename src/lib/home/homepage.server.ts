@@ -25,6 +25,7 @@ import { loadGuestInfo } from "@/lib/events/guest-info";
 import { CURRENT_SPOTLIGHT } from "@/lib/home/spotlight";
 import {
   DEFAULT_SECTIONS,
+  SECTION_COLUMNS,
   pacificToday,
   visibleSections,
   type SectionRow,
@@ -211,9 +212,7 @@ export async function loadSectionsWith(
   try {
     const { data, error } = await service
       .from("homepage_sections")
-      .select(
-        "id, kind, position, enabled, image_id, alt_text, link_kind, link_target, starts_on, ends_on, image:announcement_images(image_path, alt_text, width, height)",
-      );
+      .select(SECTION_COLUMNS);
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as unknown as SectionRow[];
     if (rows.length === 0) return DEFAULT_SECTIONS(hasSpotlight);

@@ -35,6 +35,10 @@ export type SectionRow = {
   } | null;
 };
 
+/** The homepage_sections columns behind SectionRow (homepage loader and Settings). */
+export const SECTION_COLUMNS =
+  "id, kind, position, enabled, image_id, alt_text, link_kind, link_target, starts_on, ends_on, image:announcement_images(image_path, alt_text, width, height)";
+
 /** Pages an announcement may link to (each exists under src/routes). */
 export const INTERNAL_PAGES: ReadonlyArray<{ path: string; label: string }> = [
   { path: "/about", label: "About" },
@@ -44,7 +48,7 @@ export const INTERNAL_PAGES: ReadonlyArray<{ path: string; label: string }> = [
   { path: "/contact", label: "Contact" },
 ];
 
-const MEMBER_PATH = /^\/members\/([a-z0-9-]+)$/;
+export const MEMBER_PATH = /^\/members\/([a-z0-9-]+)$/;
 
 const pacificFormat = new Intl.DateTimeFormat("en-CA", {
   timeZone: "America/Los_Angeles",
