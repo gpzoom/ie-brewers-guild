@@ -45,6 +45,12 @@ async function requireWizardMember(): Promise<PortalMember> {
   if (member.role === "media_events") {
     throw redirect({ href: "/portal" });
   }
+  // An applicant or a declined applicant is never in the wizard (its SQL
+  // refuses them anyway); /portal sends them to /join/finish or the
+  // "isn't active" card.
+  if (member.destination.kind === "join-finish" || member.destination.kind === "inactive") {
+    throw redirect({ href: "/portal" });
+  }
   return member;
 }
 

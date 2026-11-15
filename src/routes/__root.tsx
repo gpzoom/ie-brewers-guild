@@ -140,7 +140,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 // wrapper div because Radix dialogs/popovers/selects portal to <body>,
 // outside any wrapper -- only an ancestor of <body> reaches them. The
 // public site (including /contact) stays on the dark theme.
-const CANVAS_ROUTE_PREFIXES = ["/admin", "/guild", "/signin", "/send", "/portal"];
+// /join/finish (Join the Guild, step 2) reuses the portal's editors, so it
+// sits on the same canvas; the public /join form stays on the dark theme.
+const CANVAS_ROUTE_PREFIXES = ["/admin", "/guild", "/signin", "/send", "/portal", "/join/finish"];
 // ...except the draft previews (src/routes/admin_.preview.tsx, the portal's
 // src/routes/portal.preview.tsx and the setup wizard's preview step), which
 // show the profile the way the public page does: dark site ground, light card.
@@ -189,8 +191,8 @@ const BARE_ROUTES = ["/survey-results", "/maintenance"];
 // /signin and /send are standalone per their artboards (T, J): just a small
 // Guild mark above a light card, no site menu.
 // /portal (the Member Portal: wizard and portal) is chrome-less for the same
-// reasons as /admin.
-const BARE_ROUTE_PREFIXES = ["/admin", "/guild", "/signin", "/send", "/portal", "/auth", "/visit"];
+// reasons as /admin, and /join/finish (an applicant's step 2) like it.
+const BARE_ROUTE_PREFIXES = ["/admin", "/guild", "/signin", "/send", "/portal", "/auth", "/visit", "/join/finish"];
 
 function isBarePathname(pathname: string) {
   const normalized = pathname.replace(/\/+$/, "") || "/";

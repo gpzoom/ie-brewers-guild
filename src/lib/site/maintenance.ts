@@ -17,6 +17,9 @@ const OPEN_PREFIXES = [
   "/unsubscribe",
   "/api",
   "/maintenance",
+  // Join the Guild, step 2: a signed-in applicant's page, reached from the
+  // emailed link (the public /join form itself stays closed).
+  "/join/finish",
 ];
 
 export function showsMaintenance(

@@ -36,6 +36,7 @@ import { Route as PortalSetupRouteImport } from './routes/portal.setup'
 import { Route as PortalPreviewRouteImport } from './routes/portal.preview'
 import { Route as PortalSectionsRouteImport } from './routes/portal._sections'
 import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
+import { Route as JoinFinishRouteImport } from './routes/join_.finish'
 import { Route as GuildSettingsRouteImport } from './routes/guild.settings'
 import { Route as GuildRosterRouteImport } from './routes/guild.roster'
 import { Route as GuildInquiriesRouteImport } from './routes/guild.inquiries'
@@ -200,6 +201,11 @@ const PortalSectionsRoute = PortalSectionsRouteImport.update({
 const MembersSlugRoute = MembersSlugRouteImport.update({
   id: '/members_/$slug',
   path: '/members/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JoinFinishRoute = JoinFinishRouteImport.update({
+  id: '/join_/finish',
+  path: '/join/finish',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuildSettingsRoute = GuildSettingsRouteImport.update({
@@ -393,6 +399,7 @@ export interface FileRoutesByFullPath {
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
   '/guild/settings': typeof GuildSettingsRoute
+  '/join/finish': typeof JoinFinishRoute
   '/members/$slug': typeof MembersSlugRoute
   '/portal': typeof PortalSectionsRouteWithChildren
   '/portal/preview': typeof PortalPreviewRoute
@@ -450,6 +457,7 @@ export interface FileRoutesByTo {
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
   '/guild/settings': typeof GuildSettingsRoute
+  '/join/finish': typeof JoinFinishRoute
   '/members/$slug': typeof MembersSlugRoute
   '/portal': typeof PortalIndexRoute
   '/portal/preview': typeof PortalPreviewRoute
@@ -508,6 +516,7 @@ export interface FileRoutesById {
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
   '/guild/settings': typeof GuildSettingsRoute
+  '/join_/finish': typeof JoinFinishRoute
   '/members_/$slug': typeof MembersSlugRoute
   '/portal/_sections': typeof PortalSectionsRouteWithChildren
   '/portal/preview': typeof PortalPreviewRoute
@@ -569,6 +578,7 @@ export interface FileRouteTypes {
     | '/guild/inquiries'
     | '/guild/roster'
     | '/guild/settings'
+    | '/join/finish'
     | '/members/$slug'
     | '/portal'
     | '/portal/preview'
@@ -626,6 +636,7 @@ export interface FileRouteTypes {
     | '/guild/inquiries'
     | '/guild/roster'
     | '/guild/settings'
+    | '/join/finish'
     | '/members/$slug'
     | '/portal'
     | '/portal/preview'
@@ -683,6 +694,7 @@ export interface FileRouteTypes {
     | '/guild/inquiries'
     | '/guild/roster'
     | '/guild/settings'
+    | '/join_/finish'
     | '/members_/$slug'
     | '/portal/_sections'
     | '/portal/preview'
@@ -723,6 +735,7 @@ export interface RootRouteChildren {
   AdminPreviewRoute: typeof AdminPreviewRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
+  JoinFinishRoute: typeof JoinFinishRoute
   MembersSlugRoute: typeof MembersSlugRoute
   PortalSectionsRoute: typeof PortalSectionsRouteWithChildren
   PortalPreviewRoute: typeof PortalPreviewRoute
@@ -927,6 +940,13 @@ declare module '@tanstack/react-router' {
       path: '/members/$slug'
       fullPath: '/members/$slug'
       preLoaderRoute: typeof MembersSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join_/finish': {
+      id: '/join_/finish'
+      path: '/join/finish'
+      fullPath: '/join/finish'
+      preLoaderRoute: typeof JoinFinishRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guild/settings': {
@@ -1248,6 +1268,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminPreviewRoute: AdminPreviewRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthConfirmRoute: AuthConfirmRoute,
+  JoinFinishRoute: JoinFinishRoute,
   MembersSlugRoute: MembersSlugRoute,
   PortalSectionsRoute: PortalSectionsRouteWithChildren,
   PortalPreviewRoute: PortalPreviewRoute,

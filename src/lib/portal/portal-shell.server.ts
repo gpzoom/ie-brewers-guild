@@ -76,6 +76,11 @@ export const getPortalShell = createServerFn({ method: "GET" }).handler(
     if (member.role !== "media_events" && member.destination.kind === "wizard") {
       throw redirect({ href: "/portal" });
     }
+    // An applicant (-> /join/finish) or a declined applicant (-> "isn't
+    // active") never gets the portal; /portal sends each to the right place.
+    if (member.destination.kind === "join-finish" || member.destination.kind === "inactive") {
+      throw redirect({ href: "/portal" });
+    }
     const supabase = await getSupabaseServerClientForRequest();
     const service = await getSupabaseServiceRoleClient();
     const [shell, publishGate, completeness, sharedLook, notifications] = await Promise.all([
@@ -120,6 +125,12 @@ export const getPortalShell = createServerFn({ method: "GET" }).handler(
  */
 export const getPortalPreviewData = createServerFn({ method: "GET" }).handler(async () => {
   const member = await requirePortalMember();
+  // An applicant previews here too (/join/finish's "Update preview"; its
+  // "Back to editing" goes to /portal, which sends them back to
+  // /join/finish). A declined applicant has nothing to preview.
+  if (member.destination.kind === "inactive") {
+    throw redirect({ href: "/portal" });
+  }
   return loadMemberPreviewData(member.memberId);
 });
 

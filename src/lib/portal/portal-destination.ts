@@ -15,18 +15,32 @@
  * completed" can't happen through the app; if it ever did, the member is
  * still in setup by the rule above and goes to "welcome".
  *
+ * Join the Guild (2026-11-15) comes first, for every role: an applicant
+ * (status "applied") goes to /join/finish -- the wizard's SQL refuses an
+ * applied member (confirm_member_type, complete_member_setup) -- and a
+ * declined applicant gets "Your application isn't active" instead of
+ * anything editable.
  */
+import type { MemberStatus } from "@/lib/supabase/types";
+
 export type PortalRole = "owner" | "co_owner" | "editor" | "media_events";
 
 export type WizardStepName = "welcome" | "basics";
 
-export type PortalDestination = { kind: "wizard"; step: WizardStepName } | { kind: "portal" };
+export type PortalDestination =
+  | { kind: "wizard"; step: WizardStepName }
+  | { kind: "portal" }
+  | { kind: "join-finish" }
+  | { kind: "inactive" };
 
 export function resolvePortalDestination(input: {
   typeConfirmedAt: string | null;
   setupCompletedAt: string | null;
   role: PortalRole;
+  status: MemberStatus;
 }): PortalDestination {
+  if (input.status === "applied") return { kind: "join-finish" };
+  if (input.status === "declined") return { kind: "inactive" };
   if (input.role === "media_events") return { kind: "portal" };
   if (!input.typeConfirmedAt) return { kind: "wizard", step: "welcome" };
   if (!input.setupCompletedAt) return { kind: "wizard", step: "basics" };

@@ -203,6 +203,11 @@ export default defineConfig(async ({ command, mode }) => {
             // /join page's instant preview, is a createServerFn called from
             // the page -- same RPC boundary as join.server.ts above.
             "src/lib/join/join-preview.server.ts",
+            // src/lib/join/finish.server.ts: getJoinFinishState (the
+            // /join/finish loader) and markApplicationDone ("I'm done" in
+            // FinishForm.tsx) are createServerFn exports called from the
+            // page -- same RPC boundary as join.server.ts above.
+            "src/lib/join/finish.server.ts",
             // src/lib/members/member-email.server.ts (Guild-admin sign-in
             // email change) -- same reasoning as member-basics.server.ts
             // right above: its two createServerFn exports, getMemberEmail

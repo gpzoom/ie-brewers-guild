@@ -29,6 +29,7 @@ import {
   type PortalDestination,
   type PortalRole,
 } from "@/lib/portal/portal-destination";
+import type { MemberStatus } from "@/lib/supabase/types";
 
 export type PortalState =
   | { kind: "no-member"; email: string | null }
@@ -110,7 +111,7 @@ const resolvePortalState = createServerOnlyFn(
       await touchImpersonationActivity(impersonation);
       const { data: member } = await service
         .from("members")
-        .select("business_name, type_confirmed_at, setup_completed_at")
+        .select("business_name, type_confirmed_at, setup_completed_at, status")
         .eq("id", impersonation.memberId)
         .maybeSingle();
       if (!member) {
@@ -130,6 +131,7 @@ const resolvePortalState = createServerOnlyFn(
             typeConfirmedAt: member.type_confirmed_at as string | null,
             setupCompletedAt: member.setup_completed_at as string | null,
             role,
+            status: member.status as MemberStatus,
           }),
           switcher: null,
           canSwitchBusiness: false,
@@ -182,6 +184,7 @@ const resolvePortalState = createServerOnlyFn(
           typeConfirmedAt: chosen.typeConfirmedAt,
           setupCompletedAt: chosen.setupCompletedAt,
           role: chosen.role,
+          status: chosen.status,
         }),
         switcher: locationSwitcherFor(memberships, chosen.memberId),
         canSwitchBusiness: chooserEntries(memberships).length > 1,

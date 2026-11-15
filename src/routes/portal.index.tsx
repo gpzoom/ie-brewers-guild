@@ -7,6 +7,7 @@ import {
 } from "@/lib/portal/portal-session.server";
 import { signOutEverything } from "@/lib/auth/sign-out.server";
 import { ChooseList } from "@/components/portal/ChooseList";
+import { InactiveApplicationCard } from "@/components/join/InactiveApplicationCard";
 import { firstPortalSection } from "@/lib/portal/portal-sections";
 import {
   BrandBar,
@@ -32,8 +33,10 @@ function validatePortalSearch(search: Record<string, unknown>): PortalSearch {
  * wizard or portal. While setup is incomplete it sends the member into the
  * setup wizard at the first of steps 1-2 that isn't done; once it's
  * complete, into the portal at their first section (Basics & hours, or
- * Photos for a Photos & events editor). What's left to show here
- * is "Choose a business" and "No business is linked to this sign-in".
+ * Photos for a Photos & events editor). An applicant (Join the Guild)
+ * goes to /join/finish instead. What's left to show here is "Choose a
+ * business", "No business is linked to this sign-in" and, for a declined
+ * applicant, "Your application isn't active".
  */
 export const Route = createFileRoute("/portal/")({
   // Never reuse a previous visit's data: every member shares these URLs, so a
@@ -45,6 +48,14 @@ export const Route = createFileRoute("/portal/")({
   loader: async ({ deps }) => {
     const state = await getPortalState({ data: { forceChoose: deps.forceChoose } });
     if (state.kind === "ready") {
+      // Join the Guild: an applicant finishes on /join/finish; a declined
+      // applicant sees the "isn't active" card here.
+      if (state.destination.kind === "join-finish") {
+        throw redirect({ href: "/join/finish" });
+      }
+      if (state.destination.kind === "inactive") {
+        return { kind: "inactive" as const, canSwitchBusiness: state.canSwitchBusiness };
+      }
       if (state.destination.kind === "wizard") {
         throw redirect({ to: "/portal/setup/$step", params: { step: state.destination.step } });
       }
@@ -70,6 +81,7 @@ function PortalPage() {
         <div className="mx-2.5 sm:mx-0 sm:mt-6">
           {state.kind === "choose" && <ChooseCard entries={state.entries} />}
           {state.kind === "no-member" && <NoMemberCard email={state.email} />}
+          {state.kind === "inactive" && <InactiveApplicationCard canSwitchBusiness={state.canSwitchBusiness} />}
         </div>
       </div>
     </div>
