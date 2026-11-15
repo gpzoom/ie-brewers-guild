@@ -103,6 +103,12 @@ export type MemberRow = {
   type_confirmed_at?: string | null;
   type_confirmed_by_user_id?: string | null;
   setup_completed_at?: string | null;
+  // Join the Guild + Fill from Google (20261119100000_join_applications.sql).
+  // Optional like the columns above: not in the anon-safe column list.
+  google_place_id?: string | null;
+  applied_via_join_at?: string | null;
+  join_welcomed_at?: string | null;
+  join_details_notified_at?: string | null;
 };
 
 export type MediaAssetRow = {
