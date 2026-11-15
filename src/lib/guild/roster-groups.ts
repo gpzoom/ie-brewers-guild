@@ -70,9 +70,22 @@ export function groupRoster(
 
   const nameOf = (g: RosterGroup) => (g.kind === "single" ? g.entry.member.business_name : g.business.name);
   // Applicants waiting for a decision come first, then everyone by name.
-  const hasApplied = (g: RosterGroup) =>
-    g.kind === "single" ? g.entry.member.status === "applied" : g.entries.some((e) => e.member.status === "applied");
   return groups.sort(
-    (a, b) => Number(hasApplied(b)) - Number(hasApplied(a)) || nameOf(a).localeCompare(nameOf(b)),
+    (a, b) => Number(hasApplicant(b)) - Number(hasApplicant(a)) || nameOf(a).localeCompare(nameOf(b)),
   );
+}
+
+/** A group with a location still waiting for a decision (status 'applied'). */
+export function hasApplicant(group: RosterGroup): boolean {
+  return group.kind === "single"
+    ? group.entry.member.status === "applied"
+    : group.entries.some((e) => e.member.status === "applied");
+}
+
+/** The roster's boxed "Applicants waiting for review" section, and everyone else, each keeping its order. */
+export function splitApplicantGroups(groups: RosterGroup[]): { applicants: RosterGroup[]; others: RosterGroup[] } {
+  return {
+    applicants: groups.filter(hasApplicant),
+    others: groups.filter((g) => !hasApplicant(g)),
+  };
 }

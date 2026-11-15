@@ -2,7 +2,12 @@ import { useMemo, useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { MoreHorizontal } from "lucide-react";
 import type { RosterEntry } from "@/lib/guild/roster.server";
-import { groupRoster, matchesRosterSearch, type RosterBusiness } from "@/lib/guild/roster-groups";
+import {
+  groupRoster,
+  matchesRosterSearch,
+  splitApplicantGroups,
+  type RosterBusiness,
+} from "@/lib/guild/roster-groups";
 import type { BusinessManagementMode, MemberStatus, MemberType } from "@/lib/supabase/types";
 import { toast } from "sonner";
 import {
@@ -493,6 +498,33 @@ export function RosterTable({
     );
   }, [entries, businesses]);
 
+  const { applicants: applicantGroups, others: memberGroups } = useMemo(
+    () => splitApplicantGroups(groups),
+    [groups],
+  );
+
+  function renderGroup(group: (typeof groups)[number]) {
+    if (group.kind === "single") return renderMemberRow(group.entry);
+    const { business } = group;
+    return (
+      <li key={`business-${business.id}`} className="border-b border-[#F0EBE3] last:border-b-0">
+        <BusinessRow
+          business={business}
+          locationCount={locationCounts.get(business.id) ?? group.entries.length}
+          busy={false}
+          onModeChange={(mode) => handleModeChange(business, mode)}
+          onInvite={() => {
+            setManagerInviteTarget(business);
+            setManagerInviteOpen(true);
+          }}
+        />
+        <ul aria-label={`${business.name} locations`}>
+          {group.entries.map((entry) => renderMemberRow(entry, business))}
+        </ul>
+      </li>
+    );
+  }
+
   function renderMemberRow(entry: RosterEntry, business?: RosterBusiness) {
     return (
       <MemberRow
@@ -571,6 +603,23 @@ export function RosterTable({
         </select>
       </div>
 
+      {applicantGroups.length > 0 && (
+        <section
+          aria-labelledby="roster-applicants-heading"
+          className="mb-5 overflow-hidden rounded-[14px] border-2 border-[#C98A2E] bg-[#FFF8EC]"
+        >
+          <div className="border-b border-[#EBD3A8] px-5 py-3">
+            <h2 id="roster-applicants-heading" className="text-[15px] font-semibold text-[#3A332C]">
+              Applicants waiting for review ({applicantGroups.length})
+            </h2>
+            <p className="mt-0.5 text-[13px] text-ink-muted">
+              New applications from the Join page. Open one with Edit as them to look it over, then Approve or Decline.
+            </p>
+          </div>
+          <ul className="bg-white">{applicantGroups.map(renderGroup)}</ul>
+        </section>
+      )}
+
       <div className="overflow-hidden rounded-[14px] border border-canvas-border bg-white">
         <div
           className="hidden items-center gap-4 border-b border-[#E6E0D6] bg-[#FCFAF6] px-5 py-3 md:flex"
@@ -584,35 +633,14 @@ export function RosterTable({
         </div>
 
         <ul>
-          {groups.map((group) => {
-            if (group.kind === "single") return renderMemberRow(group.entry);
-            const { business } = group;
-            return (
-              <li
-                key={`business-${business.id}`}
-                className="border-b border-[#F0EBE3] last:border-b-0"
-              >
-                <BusinessRow
-                  business={business}
-                  locationCount={locationCounts.get(business.id) ?? group.entries.length}
-                  busy={false}
-                  onModeChange={(mode) => handleModeChange(business, mode)}
-                  onInvite={() => {
-                    setManagerInviteTarget(business);
-                    setManagerInviteOpen(true);
-                  }}
-                />
-                <ul aria-label={`${business.name} locations`}>
-                  {group.entries.map((entry) => renderMemberRow(entry, business))}
-                </ul>
-              </li>
-            );
-          })}
-          {groups.length === 0 && (
+          {memberGroups.map(renderGroup)}
+          {memberGroups.length === 0 && (
             <li className="px-5 py-8 text-center text-sm text-ink-muted">
               {entries.length === 0
                 ? "No members yet."
-                : "No members match this search and filter combination."}
+                : applicantGroups.length > 0
+                  ? "Only applicants match right now."
+                  : "No members match this search and filter combination."}
             </li>
           )}
         </ul>

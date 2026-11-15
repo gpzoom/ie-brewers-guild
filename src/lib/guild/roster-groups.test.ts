@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupRoster, matchesRosterSearch, type RosterBusiness } from "./roster-groups";
+import { groupRoster, matchesRosterSearch, splitApplicantGroups, type RosterBusiness } from "./roster-groups";
 import type { RosterEntry } from "./roster.server";
 
 function entry(id: string, name: string, city: string, businessId: string | null): RosterEntry {
@@ -27,6 +27,21 @@ describe("groupRoster applied first", () => {
       gs.map((g) => (g.kind === "single" ? g.entry.member.id : g.business.id));
     expect(ids(groupRoster([a, z, h1, h2], [hangar], all))).toEqual(["b1", "m2", "m1"]);
     expect(ids(groupRoster([a, h1], [hangar], all))).toEqual(["m1", "b1"]);
+  });
+
+  it("splitApplicantGroups puts applicants in their own section, everyone else below, order kept", () => {
+    const a = entry("m1", "Alpha Brewing", "Chino", null);
+    const s = entry("m2", "Solorio Brewing", "Rancho Cucamonga", null);
+    s.member.status = "applied";
+    const z = entry("m3", "Zeta Brewing", "Chino", null);
+    z.member.status = "applied";
+    const b = entry("m4", "Beta Brewing", "Ontario", null);
+    const ids = (gs: ReturnType<typeof groupRoster>) =>
+      gs.map((g) => (g.kind === "single" ? g.entry.member.id : g.business.id));
+    const { applicants, others } = splitApplicantGroups(groupRoster([a, s, z, b], [], all));
+    expect(ids(applicants)).toEqual(["m2", "m3"]);
+    expect(ids(others)).toEqual(["m1", "m4"]);
+    expect(splitApplicantGroups(groupRoster([a, b], [], all)).applicants).toEqual([]);
   });
 });
 
