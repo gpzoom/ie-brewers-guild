@@ -51,10 +51,28 @@ describe("searchPlaces", () => {
     expect(err.message).not.toContain("secret-key-123");
   });
 
-  it("throws when the key is missing", async () => {
+  it("throws when no key is set", async () => {
     h.env.GOOGLE_PLACES_API_KEY = undefined;
-    await expect(searchPlaces("a", "b", fakeFetch({}))).rejects.toThrow("Google lookup isn't set up");
-    h.env.GOOGLE_PLACES_API_KEY = "secret-key-123";
+    h.env.GOOGLE_GEOCODING_API_KEY = undefined;
+    try {
+      await expect(searchPlaces("a", "b", fakeFetch({}))).rejects.toThrow("Google lookup isn't set up");
+    } finally {
+      h.env.GOOGLE_PLACES_API_KEY = "secret-key-123";
+    }
+  });
+
+  it("falls back to the existing geocoding key", async () => {
+    h.env.GOOGLE_PLACES_API_KEY = undefined;
+    h.env.GOOGLE_GEOCODING_API_KEY = "geo-key-456";
+    try {
+      const fetchImpl = fakeFetch({ places: [] });
+      await searchPlaces("a", "b", fetchImpl);
+      const init = (fetchImpl as unknown as { mock: { calls: [string, RequestInit][] } }).mock.calls[0][1];
+      expect((init.headers as Record<string, string>)["X-Goog-Api-Key"]).toBe("geo-key-456");
+    } finally {
+      h.env.GOOGLE_PLACES_API_KEY = "secret-key-123";
+      h.env.GOOGLE_GEOCODING_API_KEY = undefined;
+    }
   });
 });
 

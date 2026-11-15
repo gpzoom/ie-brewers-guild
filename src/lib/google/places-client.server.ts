@@ -1,7 +1,7 @@
 /**
  * Server-side Google Places API (New) client for "Fill from Google" and the
  * Join form: a text search (up to 5 candidates) and a place-details fetch.
- * The key (GOOGLE_PLACES_API_KEY) is a Worker secret and is never echoed in
+ * The key (GOOGLE_PLACES_API_KEY, else GOOGLE_GEOCODING_API_KEY) is a Worker secret and is never echoed in
  * errors. `fetchImpl` is injectable for tests.
  */
 
@@ -18,7 +18,10 @@ const BASE = "https://places.googleapis.com/v1";
 
 async function getKey(): Promise<string> {
   const { env } = await import("cloudflare:workers");
-  const key = (env as unknown as Record<string, string | undefined>).GOOGLE_PLACES_API_KEY;
+  const vars = env as unknown as Record<string, string | undefined>;
+  // A dedicated Places key wins; otherwise the existing server-side geocoding
+  // key (Places API (New) is enabled on it). Never the public VITE_ browser key.
+  const key = vars.GOOGLE_PLACES_API_KEY?.trim() || vars.GOOGLE_GEOCODING_API_KEY?.trim();
   if (!key) throw new Error("Google lookup isn't set up");
   return key;
 }
