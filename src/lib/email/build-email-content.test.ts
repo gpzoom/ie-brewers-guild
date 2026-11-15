@@ -198,6 +198,85 @@ describe("buildEmailContent: contact_confirmation", () => {
   });
 });
 
+describe("buildEmailContent: Join application emails", () => {
+  const site = "https://iscbrewersguild.org";
+
+  it("membership_application tells the Guild who applied and links the roster", () => {
+    const content = buildEmailContent(
+      {
+        trigger: "membership_application",
+        memberId: "m1",
+        businessName: "Hop House",
+        memberType: "allied",
+        city: "Riverside",
+        email: "sam@example.com",
+      },
+      site,
+    );
+    expect(content.subject).toBe("[Membership Application] Hop House");
+    expect(content.text).toContain("Business: Hop House");
+    expect(content.text).toContain("Type: Affiliate Member");
+    expect(content.text).toContain("City: Riverside");
+    expect(content.text).toContain("Email: sam@example.com");
+    expect(content.text).toContain(`Review it: ${site}/guild/roster`);
+    expect(content.html).toContain(`href="${site}/guild/roster"`);
+  });
+
+  it("membership_application HTML-escapes applicant-controlled fields", () => {
+    const content = buildEmailContent({
+      trigger: "membership_application",
+      memberId: "m1",
+      businessName: "<b>Bad</b>",
+      memberType: "producer",
+      city: "<i>x</i>",
+      email: "a@example.com",
+    });
+    expect(content.html).not.toContain("<b>Bad</b>");
+    expect(content.html).toContain("&lt;b&gt;Bad&lt;/b&gt;");
+    expect(content.html).toContain("&lt;i&gt;x&lt;/i&gt;");
+  });
+
+  it("application_details_added names the business and links the roster", () => {
+    const content = buildEmailContent(
+      { trigger: "application_details_added", memberId: "m1", businessName: "Hop House" },
+      site,
+    );
+    expect(content.subject).toBe("Hop House added details to their application");
+    expect(content.text).toContain(`${site}/guild/roster`);
+    expect(content.html).toContain(`href="${site}/guild/roster"`);
+  });
+
+  it("join_draft_link carries the one-time link and the sign-in fallback", () => {
+    const content = buildEmailContent(
+      { trigger: "join_draft_link", email: "sam@example.com", businessName: "Hop House", link: "https://x.test/join/abc" },
+      site,
+    );
+    expect(content.subject).toBe("Your Guild profile draft is ready");
+    expect(content.text).toContain(
+      "Add your logo, a cover photo and your links, then preview your page: https://x.test/join/abc",
+    );
+    expect(content.text).toContain(`This link works once. To come back later, sign in at ${site}/signin with this email.`);
+    expect(content.html).toContain('href="https://x.test/join/abc"');
+  });
+
+  it("application_approved links the live page and the sign-in page", () => {
+    const content = buildEmailContent(
+      {
+        trigger: "application_approved",
+        memberId: "m1",
+        businessName: "Hop House",
+        email: "sam@example.com",
+        profileUrl: "https://iscbrewersguild.org/members/hop-house",
+      },
+      site,
+    );
+    expect(content.subject).toBe("Welcome to the Guild — your page is live");
+    expect(content.text).toContain("https://iscbrewersguild.org/members/hop-house");
+    expect(content.text).toContain(`Sign in any time at ${site}/signin with sam@example.com.`);
+    expect(content.html).toContain('href="https://iscbrewersguild.org/members/hop-house"');
+  });
+});
+
 describe("buildEmailContent: contact_form_submitted", () => {
   it("includes the full inquiry content", () => {
     const content = buildEmailContent({

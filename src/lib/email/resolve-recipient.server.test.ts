@@ -213,6 +213,41 @@ describe("resolveRecipient: portal emails", () => {
   });
 });
 
+describe("resolveRecipient: Join application emails", () => {
+  it("application emails to the Guild go to the Guild inbox", async () => {
+    const supabase = fakeSupabase({ memberUser: null, userEmail: null });
+    await expect(
+      resolveRecipient(
+        { trigger: "membership_application", memberId: "m", businessName: "B", memberType: "producer", city: "C", email: "a@x.com" },
+        supabase,
+      ),
+    ).resolves.toEqual([GUILD_NOTIFICATION_EMAIL]);
+    await expect(
+      resolveRecipient({ trigger: "application_details_added", memberId: "m", businessName: "B" }, supabase),
+    ).resolves.toEqual([GUILD_NOTIFICATION_EMAIL]);
+    await expect(
+      resolveRecipient(
+        { trigger: "application_details_added", memberId: "m", businessName: "B" },
+        supabase,
+        "https://ie-brewers-guild-staging.boblelle77.workers.dev",
+      ),
+    ).resolves.toEqual([STAGING_GUILD_NOTIFICATION_EMAIL]);
+  });
+
+  it("the draft link and approval go to the applicant's own address", async () => {
+    const supabase = fakeSupabase({ memberUser: null, userEmail: null });
+    await expect(
+      resolveRecipient({ trigger: "join_draft_link", email: "a@x.com", businessName: "B", link: "https://x/y" }, supabase),
+    ).resolves.toEqual(["a@x.com"]);
+    await expect(
+      resolveRecipient(
+        { trigger: "application_approved", memberId: "m", businessName: "B", email: "a@x.com", profileUrl: "https://x/p" },
+        supabase,
+      ),
+    ).resolves.toEqual(["a@x.com"]);
+  });
+});
+
 describe("resolveRecipient: Help button", () => {
   it("support_message goes to the inbox the server chose", async () => {
     const supabase = fakeSupabase({ memberUser: null, userEmail: null });

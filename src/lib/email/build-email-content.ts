@@ -120,6 +120,36 @@ export type TransactionalEmailPayload =
       /** Optional; empty when they left it blank. */
       note: string;
       userAgent: string | null;
+    }
+  | {
+      /** Join the Guild: a new application, to the Guild. */
+      trigger: "membership_application";
+      memberId: string;
+      businessName: string;
+      memberType: MemberType;
+      city: string;
+      email: string;
+    }
+  | {
+      /** Join the Guild: the applicant added details to a pending application; to the Guild. */
+      trigger: "application_details_added";
+      memberId: string;
+      businessName: string;
+    }
+  | {
+      /** Join the Guild: the one-time link back to the applicant's draft; to the applicant. */
+      trigger: "join_draft_link";
+      email: string;
+      businessName: string;
+      link: string;
+    }
+  | {
+      /** Join the Guild: the application was approved and the page is live; to the applicant. */
+      trigger: "application_approved";
+      memberId: string;
+      businessName: string;
+      email: string;
+      profileUrl: string;
     };
 
 /** replyTo: where hitting Reply goes, when it isn't the sender's no-reply address. */
@@ -498,6 +528,57 @@ ${signInUrl}`,
         )}</strong></p><p style="white-space: pre-wrap;">${escapeHtml(payload.message)}</p><p style="color: #6B6156; font-size: 13px;">${details
           .map(escapeHtml)
           .join("<br>")}</p></div>`,
+      };
+    }
+
+    case "membership_application": {
+      const rosterUrl = `${siteUrl}/guild/roster`;
+      const typeLabel = MEMBER_TYPE_EMAIL_LABEL[payload.memberType] ?? payload.memberType;
+      const lines = [
+        `Business: ${payload.businessName}`,
+        `Type: ${typeLabel}`,
+        `City: ${payload.city}`,
+        `Email: ${payload.email}`,
+      ];
+      return {
+        subject: `[Membership Application] ${payload.businessName}`,
+        text: `${lines.join("\n")}\n\nReview it: ${rosterUrl}`,
+        html: wrapHtml([...lines.map(escapeHtml), `<a href="${rosterUrl}">Review it</a>`]),
+      };
+    }
+
+    case "application_details_added": {
+      const rosterUrl = `${siteUrl}/guild/roster`;
+      const sentence = `${payload.businessName} added details to their application.`;
+      return {
+        subject: `${payload.businessName} added details to their application`,
+        text: `${sentence}\n\nReview it: ${rosterUrl}`,
+        html: wrapHtml([escapeHtml(sentence), `<a href="${rosterUrl}">Review it</a>`]),
+      };
+    }
+
+    case "join_draft_link": {
+      const signInUrl = `${siteUrl}/signin`;
+      const body = "Add your logo, a cover photo and your links, then preview your page:";
+      const note = `This link works once. To come back later, sign in at ${signInUrl} with this email.`;
+      return {
+        subject: "Your Guild profile draft is ready",
+        text: `${body} ${payload.link}\n\n${note}`,
+        html: wrapHtml([`${escapeHtml(body)} <a href="${escapeHtml(payload.link)}">${escapeHtml(payload.link)}</a>`, escapeHtml(note)]),
+      };
+    }
+
+    case "application_approved": {
+      const signInUrl = `${siteUrl}/signin`;
+      const intro = `Welcome to the ${ORG_SHORT_NAME}! ${payload.businessName} is approved and your page is live:`;
+      const signIn = `Sign in any time at ${signInUrl} with ${payload.email}.`;
+      return {
+        subject: "Welcome to the Guild — your page is live",
+        text: `${intro} ${payload.profileUrl}\n\n${signIn}`,
+        html: wrapHtml([
+          `${escapeHtml(intro)} <a href="${escapeHtml(payload.profileUrl)}">${escapeHtml(payload.profileUrl)}</a>`,
+          escapeHtml(signIn),
+        ]),
       };
     }
 

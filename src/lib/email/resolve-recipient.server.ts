@@ -48,6 +48,8 @@ export async function resolveRecipient(
     case "business_invited":
     case "business_location_added":
     case "location_handoff_invited":
+    case "join_draft_link":
+    case "application_approved":
       return [payload.email];
     case "contact_confirmation":
       return [payload.email];
@@ -56,6 +58,8 @@ export async function resolveRecipient(
       return [payload.to];
     case "contact_form_submitted":
     case "type_change_requested":
+    case "membership_application":
+    case "application_details_added":
       return [guildInboxFor(siteUrl)];
     case "creator_upload_pending":
     case "hours_stale":
