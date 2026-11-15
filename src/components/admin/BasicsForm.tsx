@@ -191,6 +191,7 @@ export function BasicsForm({
   hours,
   typeChange,
   categories,
+  googleFill,
   showHeading = true,
 }: {
   memberId: string;
@@ -218,6 +219,8 @@ export function BasicsForm({
    * only for Mobile members; Affiliate Members pick theirs under Discount.
    */
   categories?: ReactNode;
+  /** Guild admins' "Fill from Google" panel, shown above the identity fields. */
+  googleFill?: ReactNode;
   /** False where the page around it has its own heading (the setup wizard's step chrome). */
   showHeading?: boolean;
 }) {
@@ -508,6 +511,7 @@ export function BasicsForm({
         <h2 id="identity-heading" className={cn(sectionLabelClass, "font-sans")}>
           Identity
         </h2>
+        {googleFill}
         <div className="grid grid-cols-1 gap-[14px] md:grid-cols-2 md:gap-4">
           <Field id="business_name" label="Business name" state={status.business_name ?? IDLE}>
             <Input

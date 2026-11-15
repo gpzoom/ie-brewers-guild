@@ -75,7 +75,7 @@ async function loadViewerRole(
 }
 
 /** Keeps a Guild admin's "Edit as them" session alive while they edit (the SQL functions do the audit). */
-async function touchImpersonation(memberId: string) {
+export async function touchImpersonation(memberId: string) {
   const state = await readImpersonationState();
   if (state && state.memberId === memberId) await touchImpersonationActivity(state);
 }

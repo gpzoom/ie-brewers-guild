@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { getMemberDraft } from "@/lib/drafts/drafts.server";
 import { getMemberEmail } from "@/lib/members/member-email.server";
 import { getCategories } from "@/lib/categories/categories.server";
@@ -6,6 +7,7 @@ import { SupplyCategoriesPicker } from "@/components/admin/SupplyCategoriesPicke
 import { BasicsForm } from "@/components/admin/BasicsForm";
 import { HoursEditor } from "@/components/admin/HoursEditor";
 import { SameMemberGuard } from "@/components/admin/SameMemberGuard";
+import { FillFromGooglePanel, type FillSummary } from "@/components/admin/basics/FillFromGooglePanel";
 
 /**
  * "Basics & hours" -- one page (artboard AdminBasics; owner decision
@@ -41,15 +43,39 @@ function BasicsRoute() {
   const { draft, email, categories } = Route.useLoaderData();
   const { memberId, isImpersonating, isSuperAdmin } = Route.useRouteContext();
   const basics = draft.data.basics;
+  const router = useRouter();
+  // Only Guild admins can reach /admin for a member they aren't linked to
+  // ("Edit as them"), so impersonating means the viewer is a Guild admin.
+  const isGuildAdmin = isImpersonating;
+  const [fillSummary, setFillSummary] = useState<FillSummary | null>(null);
+  // Bumped after a fill so the form remounts with the reloaded draft values
+  // (its inputs keep their own local copies).
+  const [fillVersion, setFillVersion] = useState(0);
   return (
     <SameMemberGuard memberId={memberId} dataMemberId={draft.member.id}>
     <BasicsForm
+      key={fillVersion}
       memberId={memberId}
       memberType={draft.member.member_type}
       typeConfirmed={draft.member.type_confirmed_at !== null}
       basics={basics}
       email={email}
       isImpersonating={isImpersonating}
+      googleFill={
+        isGuildAdmin ? (
+          <FillFromGooglePanel
+            memberId={memberId}
+            businessName={basics.business_name}
+            city={basics.city}
+            summary={fillSummary}
+            onFilled={async (summary) => {
+              setFillSummary(summary);
+              await router.invalidate();
+              setFillVersion((v) => v + 1);
+            }}
+          />
+        ) : null
+      }
       canChangeSignInEmail={isSuperAdmin}
       categories={
         draft.member.member_type === "mobile" && (
