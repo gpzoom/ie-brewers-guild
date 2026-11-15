@@ -141,8 +141,8 @@ The admin button is the same under all three.
 - **Approved applicants get an automatic welcome email** when the admin first
   publishes their profile: "Welcome to the Guild, your page is live", with the
   page link and how to sign in. Sent once, only from that publish.
-- **"Fill from Google" is for Guild admins only** for now (proposed by Claude,
-  owner did not object). Members may get it in their portal later.
+- **"Fill from Google" is for Guild admins only** (owner decision,
+  2026-11-15). Members may get it in their portal later.
 
 ## The design
 
