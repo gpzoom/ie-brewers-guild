@@ -1,33 +1,39 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { sendTransactionalEmail } from "@/lib/email/send";
 import { resolveEmailSiteUrl } from "@/lib/email/build-email-content";
-import { createAuthUser, findAuthUserIdByEmail } from "@/lib/guild/auth-accounts.server";
+import { createAuthUser } from "@/lib/guild/auth-accounts.server";
 import { generateUniqueMemberSlug } from "@/lib/guild/unique-member-slug.server";
 import { isHoneypotTripped } from "@/lib/contact/contact-form-validation";
 import { slugify } from "@/lib/slug";
 import { mapPlaceToProfile, type PlaceProfile } from "@/lib/google/place-profile";
 import { getPlaceDetails, searchPlaces, type PlaceCandidate } from "@/lib/google/places-client.server";
-import { SOMETHING_WRONG, collapse, rateLimitMessage } from "@/lib/join/join-guards.server";
-import { findDuplicate } from "@/lib/join/duplicate-check";
+import { currentRequestUrl } from "@/lib/request-url.server";
+import { JOIN_CLOSED, SOMETHING_WRONG, collapse, isJoinOpen, rateLimitMessage } from "@/lib/join/join-guards.server";
+import { ENTER_BUSINESS_NAME } from "@/lib/join/join-messages";
+import { citiesToCheck, findDuplicate } from "@/lib/join/duplicate-check";
 import { loadRosterCandidates } from "@/lib/join/duplicate-check.server";
 import { validateJoinInput, type JoinFieldErrors, type JoinInput } from "@/lib/join/join-validation";
 import { submitJoinCore, type JoinOutcome } from "@/lib/join/submit-join-core";
 
 /**
- * Join the Guild, step 1 (public, no account). Two server functions the
- * /join page calls directly -- like submit-contact-form.server.ts, each
- * handler is its own rate-limit enforcement point, since a createServerFn is
- * a network-reachable endpoint whoever calls it.
+ * Join the Guild, step 1 (public, no account). Server functions the /join
+ * page calls directly -- like submit-contact-form.server.ts, each handler is
+ * its own rate-limit enforcement point, since a createServerFn is a
+ * network-reachable endpoint whoever calls it.
  *
  * Everything here runs with the service-role client, so nothing from the
  * browser is trusted: the input is re-validated, Google details are
  * re-fetched by place id, and the already-a-member check runs again. The
  * answer never says whether the email already has a login.
  *
+ * Ruling R11: everything here refuses with JOIN_CLOSED unless the JOIN_OPEN
+ * Worker var is exactly "true" (getJoinAvailability lets the page show that
+ * up front).
+ *
  * Return shapes (for the page):
+ * - getJoinAvailability → { open: boolean }
  * - joinSearchPlaces → { kind: "results", candidates } | { kind: "error", message }
  * - submitJoin → { kind: "check-email" } | { kind: "already-member" }
  *               | { kind: "invalid", errors } | { kind: "error", message }
@@ -46,16 +52,22 @@ const SEARCH_CITY_MAX = 100;
 
 const errorMessage = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
+/** The /join loader: is Join open (ruling R11)? */
+export const getJoinAvailability = createServerFn({ method: "GET" }).handler(async (): Promise<{ open: boolean }> => {
+  return { open: await isJoinOpen() };
+});
+
 /** "Is this you?" -- up to 5 Google matches for the typed name and city. */
 export const joinSearchPlaces = createServerFn({ method: "POST" })
   .inputValidator((data: { businessName: string; city: string }) => data)
   .handler(async ({ data }): Promise<JoinSearchResult> => {
+    if (!(await isJoinOpen())) return { kind: "error", message: JOIN_CLOSED };
     const limited = await rateLimitMessage("join-search");
     if (limited) return { kind: "error", message: limited };
 
     const businessName = collapse(data?.businessName);
     const city = collapse(data?.city);
-    if (!businessName) return { kind: "error", message: "Enter your business name." };
+    if (!businessName) return { kind: "error", message: ENTER_BUSINESS_NAME };
     if (businessName.length > SEARCH_NAME_MAX || city.length > SEARCH_CITY_MAX) {
       return { kind: "error", message: SEARCH_FAILED };
     }
@@ -103,7 +115,9 @@ async function insertApplicant(service: SupabaseClient, input: JoinInput, profil
       status: "applied",
       applied_via_join_at: new Date().toISOString(),
       google_place_id: input.placeId,
-      contact_email: input.email,
+      // No contact_email: it shows publicly once published, and the
+      // applicant's sign-in email isn't necessarily their public one. The
+      // Guild email carries the address; the welcome uses the owner's login.
       // Google's address block when there is one (kept together), else the
       // typed city. state defaults to CA like the schema.
       city: profile?.city || input.city,
@@ -154,6 +168,7 @@ async function insertApplicant(service: SupabaseClient, input: JoinInput, profil
 export const submitJoin = createServerFn({ method: "POST" })
   .inputValidator((data: JoinInput) => data)
   .handler(async ({ data }): Promise<SubmitJoinResult> => {
+    if (!(await isJoinOpen())) return { kind: "error", message: JOIN_CLOSED };
     const limited = await rateLimitMessage("join-submit");
     if (limited) return { kind: "error", message: limited };
 
@@ -168,43 +183,52 @@ export const submitJoin = createServerFn({ method: "POST" })
     const input = validation.value;
 
     // Same site the request came from, so a staging submit links to staging.
-    let requestUrl: string | null = null;
-    try {
-      requestUrl = getRequest().url;
-    } catch {
-      requestUrl = null;
-    }
-    const siteUrl = resolveEmailSiteUrl(requestUrl);
+    const siteUrl = resolveEmailSiteUrl(currentRequestUrl());
 
     try {
       const service = await getSupabaseServiceRoleClient();
       return await submitJoinCore(
         {
-          async findDuplicate({ businessName, city, placeId, email }) {
-            const roster = await loadRosterCandidates(service, city, placeId);
+          async findDuplicate({ businessName, city, googleCity, placeId, email }) {
+            const roster = await loadRosterCandidates(service, citiesToCheck(city, googleCity), placeId);
             // Only a Join application can be "your own"; only its owner's
             // email counts.
             const joinIds = roster.filter((r) => r.status === "applied" && r.applied_via_join_at).map((r) => r.id);
             const owners = await loadOwnerEmails(service, joinIds);
             const wanted = email.trim().toLowerCase();
             return findDuplicate(
-              { businessName, city, placeId, ownerEmailMatches: (memberId) => owners.get(memberId)?.has(wanted) ?? false },
+              {
+                businessName,
+                city,
+                googleCity,
+                placeId,
+                ownerEmailMatches: (memberId) => owners.get(memberId)?.has(wanted) ?? false,
+              },
               roster,
             );
           },
           async getProfile(placeId) {
             return mapPlaceToProfile(await getPlaceDetails(placeId));
           },
+          async countRecentApplications() {
+            const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+            const { count, error } = await service
+              .from("members")
+              .select("id", { count: "exact", head: true })
+              .gt("applied_via_join_at", since);
+            if (error) throw new Error(`Could not count recent applications: ${error.message}`);
+            return count ?? 0;
+          },
           async createApplicant(applicant, profile) {
             return insertApplicant(service, applicant, profile);
           },
-          async createOrFindUser(email) {
+          async createUserIfNew(email) {
+            // Ruling R10: an email that already has a login is left alone --
+            // never linked automatically (the Guild checks, then Invites).
             const created = await createAuthUser(service, email);
-            if (created.ok) return { userId: created.userId, created: true };
-            if (!created.emailTaken) throw new Error(created.message);
-            const found = await findAuthUserIdByEmail(service, email);
-            if (!found) throw new Error(created.message);
-            return { userId: found, created: false };
+            if (created.ok) return { created: true, userId: created.userId };
+            if (created.emailTaken) return { created: false };
+            throw new Error(created.message);
           },
           async linkOwner(memberId, userId) {
             const { error } = await service.from("member_users").insert({ member_id: memberId, user_id: userId, role: "owner" });
@@ -218,7 +242,7 @@ export const submitJoin = createServerFn({ method: "POST" })
             const { error } = await service.from("members").delete().eq("id", memberId);
             if (error) throw new Error(error.message);
           },
-          async sendGuildEmail(memberId) {
+          async sendGuildEmail(memberId, existingLogin) {
             await sendTransactionalEmail({
               trigger: "membership_application",
               memberId,
@@ -226,6 +250,7 @@ export const submitJoin = createServerFn({ method: "POST" })
               memberType: input.memberType,
               city: input.city,
               email: input.email,
+              existingLogin,
             });
           },
           async sendDraftLink(email, businessName) {

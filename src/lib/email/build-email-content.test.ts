@@ -210,6 +210,7 @@ describe("buildEmailContent: Join application emails", () => {
         memberType: "allied",
         city: "Riverside",
         email: "sam@example.com",
+        existingLogin: false,
       },
       site,
     );
@@ -220,6 +221,26 @@ describe("buildEmailContent: Join application emails", () => {
     expect(content.text).toContain("Email: sam@example.com");
     expect(content.text).toContain(`Review it: ${site}/guild/roster`);
     expect(content.html).toContain(`href="${site}/guild/roster"`);
+    expect(content.text).not.toContain("already has a login");
+  });
+
+  it("membership_application notes an email that already has a login", () => {
+    const content = buildEmailContent(
+      {
+        trigger: "membership_application",
+        memberId: "m1",
+        businessName: "Hop House",
+        memberType: "producer",
+        city: "Riverside",
+        email: "sam@example.com",
+        existingLogin: true,
+      },
+      site,
+    );
+    const line =
+      "This email already has a login on the site. Check that it's really them, then use Invite on the roster to link it.";
+    expect(content.text).toContain(line);
+    expect(content.html).toContain("This email already has a login on the site. Check that it&#39;s really them");
   });
 
   it("membership_application HTML-escapes applicant-controlled fields", () => {
@@ -230,6 +251,7 @@ describe("buildEmailContent: Join application emails", () => {
       memberType: "producer",
       city: "<i>x</i>",
       email: "a@example.com",
+      existingLogin: false,
     });
     expect(content.html).not.toContain("<b>Bad</b>");
     expect(content.html).toContain("&lt;b&gt;Bad&lt;/b&gt;");

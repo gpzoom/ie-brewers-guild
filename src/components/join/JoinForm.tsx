@@ -18,6 +18,7 @@ import {
 } from "@/components/public-forms/PublicFormParts";
 import { getJoinPreview } from "@/lib/join/join-preview.server";
 import { joinSearchPlaces, submitJoin } from "@/lib/join/join.server";
+import { safeJoinMessage } from "@/lib/join/join-messages";
 import { validateJoinInput, type JoinFieldErrors } from "@/lib/join/join-validation";
 import type { MemberProfileData } from "@/lib/members/profile-object";
 import type { PlaceCandidate } from "@/lib/google/places-client.server";
@@ -31,14 +32,11 @@ const TYPE_CHOICES: { value: MemberType; label: string; hint: string }[] = [
   { value: "allied", label: "Affiliate Member", hint: "Supply house, ingredients, equipment or services." },
 ];
 
-const GENERIC_ERROR = "Something went wrong. Try again in a moment.";
 const NO_GOOGLE_NOTE =
   "We couldn't find your business on Google right now, so you can continue without it. You can add details later.";
 
-/** A server function's thrown message is meant to be shown (rate limit, etc.); anything else is generic. */
-function messageOf(err: unknown): string {
-  return err instanceof Error && err.message && err.message.length < 200 ? err.message : GENERIC_ERROR;
-}
+/** A thrown server-function error shows only when it's one of our known messages (rate limit, closed…); else generic. */
+const messageOf = safeJoinMessage;
 
 /**
  * The whole /join flow on one route: details form, "Is this you?" (Producer
@@ -71,8 +69,12 @@ export function JoinForm() {
     setBusy(true);
     setFormError(null);
     try {
-      const data = await getJoinPreview({ data: { businessName: form.businessName, city: form.city, memberType, placeId } });
-      setPreview(data);
+      const result = await getJoinPreview({ data: { businessName: form.businessName, city: form.city, memberType, placeId } });
+      if (result.kind === "already-member") {
+        setStep("already-member");
+        return;
+      }
+      setPreview(result.data);
       setPreviewPlaceId(placeId);
       setSubmitError(null);
       setStep("preview");
@@ -274,7 +276,7 @@ export function JoinForm() {
                 Back
               </button>
             </div>
-            <p className="text-xs text-ink-muted">Powered by Google</p>
+            {candidates.length > 0 && <p className="text-xs text-ink-muted">Powered by Google</p>}
           </CanvasCard>
         )}
 

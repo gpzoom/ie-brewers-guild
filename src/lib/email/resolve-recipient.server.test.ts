@@ -218,7 +218,7 @@ describe("resolveRecipient: Join application emails", () => {
     const supabase = fakeSupabase({ memberUser: null, userEmail: null });
     await expect(
       resolveRecipient(
-        { trigger: "membership_application", memberId: "m", businessName: "B", memberType: "producer", city: "C", email: "a@x.com" },
+        { trigger: "membership_application", memberId: "m", businessName: "B", memberType: "producer", city: "C", email: "a@x.com", existingLogin: false },
         supabase,
       ),
     ).resolves.toEqual([GUILD_NOTIFICATION_EMAIL]);

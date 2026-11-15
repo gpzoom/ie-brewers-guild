@@ -1,13 +1,14 @@
 import { getRequestHeader } from "@tanstack/react-start/server";
+import { SOMETHING_WRONG, TOO_MANY_TRIES, isJoinOpenValue } from "@/lib/join/join-messages";
 
 /**
  * Helpers shared by the public Join server functions (join.server.ts and
  * join-preview.server.ts). Kept in their own file, with no createServerFn,
- * so nothing here is ever reachable from the client bundle.
+ * so nothing here is ever reachable from the client bundle. The messages
+ * live in join-messages.ts so the page can recognize them.
  */
 
-export const TOO_MANY_TRIES = "Too many tries — please wait a minute and try again.";
-export const SOMETHING_WRONG = "Something went wrong. Try again in a moment.";
+export { JOIN_BUSY, JOIN_CLOSED, SOMETHING_WRONG, TOO_MANY_TRIES } from "@/lib/join/join-messages";
 
 type RateLimiter = { limit: (opts: { key: string }) => Promise<{ success: boolean }> };
 
@@ -27,6 +28,17 @@ export async function rateLimitMessage(namespace: "join-submit" | "join-search")
   const clientIp = getRequestHeader("CF-Connecting-IP") ?? "unknown";
   const { success } = await limiter.limit({ key: `${namespace}:${clientIp}` });
   return success ? null : TOO_MANY_TRIES;
+}
+
+/**
+ * Ruling R11: public Join is open only when the JOIN_OPEN Worker var is
+ * exactly "true". Absent or anything else is closed (the default on staging
+ * and live until the owner opens it). /join/finish and the admin fill are
+ * not gated.
+ */
+export async function isJoinOpen(): Promise<boolean> {
+  const { env } = await import("cloudflare:workers");
+  return isJoinOpenValue((env as { JOIN_OPEN?: unknown }).JOIN_OPEN);
 }
 
 export const collapse = (value: unknown) => (typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "");

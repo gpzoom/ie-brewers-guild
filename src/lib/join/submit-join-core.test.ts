@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { submitJoinCore, type JoinDeps } from "./submit-join-core";
 import type { JoinInput } from "./join-validation";
 import type { DuplicateResult } from "./duplicate-check";
+import { JOIN_BUSY } from "./join-messages";
 import type { PlaceProfile } from "@/lib/google/place-profile";
 
 const input: JoinInput = {
@@ -17,7 +18,7 @@ const profile: PlaceProfile = {
   placeId: "ChIJabc123",
   businessName: "Sample Brewery",
   street_address: "1 Main St",
-  city: "Riverside",
+  city: "Corona",
   state: "CA",
   postal_code: "92501",
   latitude: 33.9,
@@ -40,13 +41,17 @@ function makeDeps(overrides: Partial<JoinDeps> = {}) {
       calls.push("getProfile");
       return profile;
     }),
+    countRecentApplications: vi.fn(async () => {
+      calls.push("countRecentApplications");
+      return 0;
+    }),
     createApplicant: vi.fn(async () => {
       calls.push("createApplicant");
       return "member-1";
     }),
-    createOrFindUser: vi.fn(async () => {
-      calls.push("createOrFindUser");
-      return { userId: "user-1", created: true };
+    createUserIfNew: vi.fn(async () => {
+      calls.push("createUserIfNew");
+      return { created: true as const, userId: "user-1" };
     }),
     linkOwner: vi.fn(async () => {
       calls.push("linkOwner");
@@ -81,10 +86,11 @@ describe("submitJoinCore", () => {
     const { deps, calls } = makeDeps();
     await expect(submitJoinCore(deps, input)).resolves.toEqual({ kind: "check-email" });
     expect(calls).toEqual([
-      "findDuplicate",
       "getProfile",
+      "findDuplicate",
+      "countRecentApplications",
       "createApplicant",
-      "createOrFindUser",
+      "createUserIfNew",
       "linkOwner",
       "sendGuildEmail",
       "sendDraftLink",
@@ -92,14 +98,15 @@ describe("submitJoinCore", () => {
     expect(deps.findDuplicate).toHaveBeenCalledWith({
       businessName: "Sample Brewery",
       city: "Riverside",
+      googleCity: "Corona",
       placeId: "ChIJabc123",
       email: "owner@example.com",
     });
     expect(deps.getProfile).toHaveBeenCalledWith("ChIJabc123");
     expect(deps.createApplicant).toHaveBeenCalledWith(input, profile);
-    expect(deps.createOrFindUser).toHaveBeenCalledWith("owner@example.com");
+    expect(deps.createUserIfNew).toHaveBeenCalledWith("owner@example.com");
     expect(deps.linkOwner).toHaveBeenCalledWith("member-1", "user-1");
-    expect(deps.sendGuildEmail).toHaveBeenCalledWith("member-1");
+    expect(deps.sendGuildEmail).toHaveBeenCalledWith("member-1", false);
     expect(deps.sendDraftLink).toHaveBeenCalledWith("owner@example.com", "Sample Brewery");
   });
 
@@ -107,6 +114,7 @@ describe("submitJoinCore", () => {
     const { deps } = makeDeps();
     await expect(submitJoinCore(deps, { ...input, placeId: null })).resolves.toEqual({ kind: "check-email" });
     expect(deps.getProfile).not.toHaveBeenCalled();
+    expect(deps.findDuplicate).toHaveBeenCalledWith(expect.objectContaining({ googleCity: null }));
     expect(deps.createApplicant).toHaveBeenCalledWith({ ...input, placeId: null }, null);
   });
 
@@ -117,8 +125,16 @@ describe("submitJoinCore", () => {
       }),
     });
     await expect(submitJoinCore(deps, input)).resolves.toEqual({ kind: "check-email" });
+    expect(deps.findDuplicate).toHaveBeenCalledWith(expect.objectContaining({ googleCity: null }));
     expect(deps.createApplicant).toHaveBeenCalledWith(input, null);
     expect(errorSpy).toHaveBeenCalled();
+  });
+
+  it("a permanently closed place is treated as no Google data", async () => {
+    const { deps } = makeDeps({ getProfile: vi.fn(async () => ({ ...profile, permanentlyClosed: true })) });
+    await expect(submitJoinCore(deps, input)).resolves.toEqual({ kind: "check-email" });
+    expect(deps.findDuplicate).toHaveBeenCalledWith(expect.objectContaining({ googleCity: null }));
+    expect(deps.createApplicant).toHaveBeenCalledWith(input, null);
   });
 
   it("existing member: returns already-member and creates and sends nothing", async () => {
@@ -126,10 +142,10 @@ describe("submitJoinCore", () => {
       findDuplicate: vi.fn(async () => ({ kind: "existing", memberId: "m-9" }) as DuplicateResult),
     });
     await expect(submitJoinCore(deps, input)).resolves.toEqual({ kind: "already-member" });
-    expect(calls).toEqual([]);
-    expect(deps.getProfile).not.toHaveBeenCalled();
+    expect(calls).toEqual(["getProfile"]);
+    expect(deps.countRecentApplications).not.toHaveBeenCalled();
     expect(deps.createApplicant).not.toHaveBeenCalled();
-    expect(deps.createOrFindUser).not.toHaveBeenCalled();
+    expect(deps.createUserIfNew).not.toHaveBeenCalled();
     expect(deps.sendGuildEmail).not.toHaveBeenCalled();
     expect(deps.sendDraftLink).not.toHaveBeenCalled();
   });
@@ -139,9 +155,9 @@ describe("submitJoinCore", () => {
       findDuplicate: vi.fn(async () => ({ kind: "own-application", memberId: "m-7" }) as DuplicateResult),
     });
     await expect(submitJoinCore(deps, input)).resolves.toEqual({ kind: "check-email" });
-    expect(calls).toEqual(["sendDraftLink"]);
+    expect(calls).toEqual(["getProfile", "sendDraftLink"]);
     expect(deps.createApplicant).not.toHaveBeenCalled();
-    expect(deps.createOrFindUser).not.toHaveBeenCalled();
+    expect(deps.createUserIfNew).not.toHaveBeenCalled();
     expect(deps.linkOwner).not.toHaveBeenCalled();
     expect(deps.sendGuildEmail).not.toHaveBeenCalled();
     expect(deps.sendDraftLink).toHaveBeenCalledWith("owner@example.com", "Sample Brewery");
@@ -158,6 +174,42 @@ describe("submitJoinCore", () => {
     expect(errorSpy).toHaveBeenCalled();
   });
 
+  describe("global brake (ruling R12)", () => {
+    it("more than 20 applications in the last hour: refuses, creates and sends nothing", async () => {
+      const { deps } = makeDeps({ countRecentApplications: vi.fn(async () => 21) });
+      await expect(submitJoinCore(deps, input)).resolves.toEqual({ kind: "error", message: JOIN_BUSY });
+      expect(JOIN_BUSY).toBe("We're getting a lot of applications right now. Please try again later.");
+      expect(deps.createApplicant).not.toHaveBeenCalled();
+      expect(deps.createUserIfNew).not.toHaveBeenCalled();
+      expect(deps.sendGuildEmail).not.toHaveBeenCalled();
+      expect(deps.sendDraftLink).not.toHaveBeenCalled();
+    });
+
+    it("exactly 20 still goes ahead", async () => {
+      const { deps } = makeDeps({ countRecentApplications: vi.fn(async () => 20) });
+      await expect(submitJoinCore(deps, input)).resolves.toEqual({ kind: "check-email" });
+      expect(deps.createApplicant).toHaveBeenCalled();
+    });
+
+    it("a failed count is an error (nothing created)", async () => {
+      const { deps } = makeDeps({
+        countRecentApplications: vi.fn(async () => {
+          throw new Error("db down");
+        }),
+      });
+      await expect(submitJoinCore(deps, input)).rejects.toThrow("db down");
+      expect(deps.createApplicant).not.toHaveBeenCalled();
+    });
+
+    it("an already-member answer doesn't need the count", async () => {
+      const { deps } = makeDeps({
+        findDuplicate: vi.fn(async () => ({ kind: "existing", memberId: "m-9" }) as DuplicateResult),
+        countRecentApplications: vi.fn(async () => 99),
+      });
+      await expect(submitJoinCore(deps, input)).resolves.toEqual({ kind: "already-member" });
+    });
+  });
+
   it("link failure with a newly created user: deletes that user and the member, rethrows", async () => {
     const { deps } = makeDeps({
       linkOwner: vi.fn(async () => {
@@ -171,21 +223,9 @@ describe("submitJoinCore", () => {
     expect(deps.sendDraftLink).not.toHaveBeenCalled();
   });
 
-  it("link failure with an existing user: deletes only the member", async () => {
-    const { deps } = makeDeps({
-      createOrFindUser: vi.fn(async () => ({ userId: "user-old", created: false })),
-      linkOwner: vi.fn(async () => {
-        throw new Error("link failed");
-      }),
-    });
-    await expect(submitJoinCore(deps, input)).rejects.toThrow("link failed");
-    expect(deps.deleteUser).not.toHaveBeenCalled();
-    expect(deps.deleteMember).toHaveBeenCalledWith("member-1");
-  });
-
   it("user creation failure: deletes the member, rethrows", async () => {
     const { deps } = makeDeps({
-      createOrFindUser: vi.fn(async () => {
+      createUserIfNew: vi.fn(async () => {
         throw new Error("auth down");
       }),
     });
@@ -231,14 +271,41 @@ describe("submitJoinCore", () => {
     expect(deps.deleteUser).not.toHaveBeenCalled();
   });
 
-  it("an email that already has a login gets the same check-email as a new one (no reveal)", async () => {
-    const fresh = makeDeps();
-    const existing = makeDeps({ createOrFindUser: vi.fn(async () => ({ userId: "user-old", created: false })) });
-    const a = await submitJoinCore(fresh.deps, input);
-    const b = await submitJoinCore(existing.deps, input);
-    expect(b).toEqual(a);
-    expect(b).toEqual({ kind: "check-email" });
-    expect(existing.deps.linkOwner).toHaveBeenCalledWith("member-1", "user-old");
-    expect(existing.deps.sendDraftLink).toHaveBeenCalled();
+  describe("an email that already has a login (ruling R10)", () => {
+    const existingLogin = () => makeDeps({ createUserIfNew: vi.fn(async () => ({ created: false as const })) });
+
+    it("creates the applicant unlinked, no draft link, Guild email notes the existing login", async () => {
+      const { deps, calls } = existingLogin();
+      await expect(submitJoinCore(deps, input)).resolves.toEqual({ kind: "check-email" });
+      // (createUserIfNew is overridden here, so it isn't in `calls`.)
+      expect(calls).toEqual(["getProfile", "findDuplicate", "countRecentApplications", "createApplicant", "sendGuildEmail"]);
+      expect(deps.createUserIfNew).toHaveBeenCalledWith("owner@example.com");
+      expect(deps.createApplicant).toHaveBeenCalledWith(input, profile);
+      expect(deps.linkOwner).not.toHaveBeenCalled();
+      expect(deps.sendDraftLink).not.toHaveBeenCalled();
+      expect(deps.sendGuildEmail).toHaveBeenCalledWith("member-1", true);
+      expect(deps.deleteMember).not.toHaveBeenCalled();
+      expect(deps.deleteUser).not.toHaveBeenCalled();
+    });
+
+    it("answers the same check-email as a new email (no reveal)", async () => {
+      const a = await submitJoinCore(makeDeps().deps, input);
+      const b = await submitJoinCore(existingLogin().deps, input);
+      expect(b).toEqual(a);
+      expect(b).toEqual({ kind: "check-email" });
+    });
+
+    it("a failed Guild email is logged, still check-email, nothing rolled back", async () => {
+      const { deps } = makeDeps({
+        createUserIfNew: vi.fn(async () => ({ created: false as const })),
+        sendGuildEmail: vi.fn(async () => {
+          throw new Error("resend down");
+        }),
+      });
+      await expect(submitJoinCore(deps, input)).resolves.toEqual({ kind: "check-email" });
+      expect(deps.deleteMember).not.toHaveBeenCalled();
+      expect(deps.sendDraftLink).not.toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalled();
+    });
   });
 });

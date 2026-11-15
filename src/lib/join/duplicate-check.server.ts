@@ -9,18 +9,21 @@ function escapeLike(value: string): string {
 }
 
 /**
- * Members in the same city (case-insensitive) plus any member with the same
- * Google place id. Two simple queries merged by id, so no hand-built .or() string.
+ * Members in any of the given cities (case-insensitive; callers pass the
+ * typed city and, when present, Google's -- see citiesToCheck) plus any
+ * member with the same Google place id. Simple queries merged by id, so no
+ * hand-built .or() string.
  */
 export async function loadRosterCandidates(
   serviceClient: SupabaseClient,
-  city: string,
+  cities: string[],
   placeId: string | null,
 ): Promise<RosterCandidate[]> {
   const byId = new Map<string, RosterCandidate>();
 
-  const trimmed = city.trim();
-  if (trimmed) {
+  for (const city of cities) {
+    const trimmed = city.trim();
+    if (!trimmed) continue;
     const { data, error } = await serviceClient
       .from("members")
       .select(COLUMNS)

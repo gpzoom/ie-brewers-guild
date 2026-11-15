@@ -31,17 +31,36 @@ export function normalizeBusinessName(name: string): string {
   return tokens.join(" ");
 }
 
+/**
+ * The distinct cities to check, case-insensitively: the typed one and, when
+ * present, Google's. Order kept (typed first); blanks dropped.
+ */
+export function citiesToCheck(typedCity: string, googleCity: string | null | undefined): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of [typedCity, googleCity ?? ""]) {
+    const city = raw.trim();
+    const key = city.toLowerCase();
+    if (!city || seen.has(key)) continue;
+    seen.add(key);
+    out.push(city);
+  }
+  return out;
+}
+
 export function findDuplicate(
   input: {
     businessName: string;
     city: string;
+    /** Google's city for the picked place, when it differs from the typed one. */
+    googleCity?: string | null;
     placeId: string | null;
     ownerEmailMatches: (memberId: string) => boolean;
   },
   roster: RosterCandidate[],
 ): DuplicateResult {
   const name = normalizeBusinessName(input.businessName);
-  const city = input.city.trim().toLowerCase();
+  const cities = new Set(citiesToCheck(input.city, input.googleCity).map((c) => c.toLowerCase()));
   let existing: string | null = null;
 
   for (const r of roster) {
@@ -50,7 +69,7 @@ export function findDuplicate(
     const byName =
       name !== "" &&
       normalizeBusinessName(r.business_name) === name &&
-      r.city.trim().toLowerCase() === city;
+      cities.has(r.city.trim().toLowerCase());
     if (!byPlace && !byName) continue;
 
     if (r.status === "applied" && r.applied_via_join_at && input.ownerEmailMatches(r.id)) {
@@ -59,4 +78,20 @@ export function findDuplicate(
     if (existing === null) existing = r.id;
   }
   return existing ? { kind: "existing", memberId: existing } : { kind: "none" };
+}
+
+/**
+ * The already-a-member check before the /join preview (spec §3). The
+ * preview has no email (so it can never reveal whose application is whose):
+ * a match is never "your own". A pending Join application (applied via Join)
+ * is skipped here and left to the submit, which knows the email -- so the
+ * same person re-submitting still gets a fresh draft link, and anyone else
+ * gets "already a member" from the submit instead.
+ */
+export function isAlreadyMemberForPreview(
+  input: { businessName: string; city: string; googleCity?: string | null; placeId: string | null },
+  roster: RosterCandidate[],
+): boolean {
+  const settled = roster.filter((r) => !(r.status === "applied" && r.applied_via_join_at));
+  return findDuplicate({ ...input, ownerEmailMatches: () => false }, settled).kind === "existing";
 }

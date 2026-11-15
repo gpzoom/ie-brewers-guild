@@ -129,6 +129,8 @@ export type TransactionalEmailPayload =
       memberType: MemberType;
       city: string;
       email: string;
+      /** The email already had a login, so the application wasn't linked to it (ruling R10). */
+      existingLogin: boolean;
     }
   | {
       /** Join the Guild: the applicant added details to a pending application; to the Guild. */
@@ -540,6 +542,11 @@ ${signInUrl}`,
         `City: ${payload.city}`,
         `Email: ${payload.email}`,
       ];
+      if (payload.existingLogin) {
+        lines.push(
+          "This email already has a login on the site. Check that it's really them, then use Invite on the roster to link it.",
+        );
+      }
       return {
         subject: `[Membership Application] ${payload.businessName}`,
         text: `${lines.join("\n")}\n\nReview it: ${rosterUrl}`,
