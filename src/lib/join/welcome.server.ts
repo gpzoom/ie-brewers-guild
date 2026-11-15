@@ -1,16 +1,8 @@
-import { getRequest } from "@tanstack/react-start/server";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { resolveEmailSiteUrl } from "@/lib/email/build-email-content";
 import { resolveMemberOwnerEmails } from "@/lib/email/resolve-recipient.server";
 import { sendTransactionalEmail } from "@/lib/email/send";
-
-function currentRequestUrl(): string | null {
-  try {
-    return getRequest().url;
-  } catch {
-    return null;
-  }
-}
+import { currentRequestUrl } from "@/lib/request-url.server";
 
 /**
  * Welcome email for a member who applied through Join, sent once, the first

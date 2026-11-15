@@ -23,7 +23,7 @@
  * made in this build (see this plan's Decision 1).
  */
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { getRequest } from "@tanstack/react-start/server";
+import { currentRequestUrl } from "@/lib/request-url.server";
 import { buildEmailContent, ORG_SHORT_NAME, resolveEmailSiteUrl } from "@/lib/email/build-email-content";
 import { resolveRecipient } from "@/lib/email/resolve-recipient.server";
 
@@ -46,17 +46,6 @@ type EmailWorkerEnv = { RESEND_API_KEY?: string };
 async function getEmailWorkerEnv(): Promise<EmailWorkerEnv> {
   const { env } = await import("cloudflare:workers");
   return env as EmailWorkerEnv;
-}
-
-// The in-flight request's URL, so email links point back at the site that
-// sent them (see resolveEmailSiteUrl). A cron run has no request, and
-// getRequest() throws outside one -- null then means "use SITE_URL".
-function currentRequestUrl(): string | null {
-  try {
-    return getRequest().url;
-  } catch {
-    return null;
-  }
 }
 
 /** Which recipients were emailed and which failed (Guild emails go to the owner and every co-owner). */
