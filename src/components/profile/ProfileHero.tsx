@@ -16,6 +16,8 @@ type ProfileHeroProps = {
   logoUrl: string | null;
   nextLocation: DirectoryEntry | null;
   search: DirectorySearch;
+  /** The /join preview: there's no page to share yet, so no Share button. */
+  hideShare?: boolean;
 };
 
 // Producers carry no badge on the artboard (D/L show "[CITY], CA ·
@@ -83,7 +85,7 @@ function ShareButton({ memberName }: { memberName: string }) {
  * md up; the desktop band is a derived crop of the member's own stored
  * rectangle (see this plan's Decisions section).
  */
-export function ProfileHero({ member, coverUrl, logoUrl, nextLocation, search }: ProfileHeroProps) {
+export function ProfileHero({ member, coverUrl, logoUrl, nextLocation, search, hideShare = false }: ProfileHeroProps) {
   const badge = MEMBER_TYPE_BADGE[member.member_type];
   const logoBackground = logoBackgroundColor(member.logo_background, member.theme);
   const memberSince = member.member_since_year ? `Member since ${member.member_since_year}` : null;
@@ -172,7 +174,7 @@ export function ProfileHero({ member, coverUrl, logoUrl, nextLocation, search }:
               )}
             </p>
           </div>
-          <ShareButton memberName={member.business_name} />
+          {!hideShare && <ShareButton memberName={member.business_name} />}
         </div>
 
         {/* Spec, "Empty and error states": "No tagline -> Line omitted, name

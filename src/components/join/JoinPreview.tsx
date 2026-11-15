@@ -42,7 +42,7 @@ export const JoinPreview = forwardRef<
         </div>
       </div>
 
-      <MemberProfileTemplate data={data} search={{}} mediaMode="preview" />
+      <MemberProfileTemplate data={data} search={{}} mediaMode="preview" hideVisitorControls />
 
       <div className="mx-auto flex w-full max-w-[640px] flex-col gap-3 px-2.5 pb-16 sm:px-6">
         {error && (

@@ -23,6 +23,12 @@ type MemberProfileTemplateProps = {
   data: MemberProfileData;
   search: DirectorySearch;
   mediaMode: ProfileMediaMode;
+  /**
+   * The /join preview only: hide "Back to members" (the header nav) and the
+   * Share button -- the page isn't on the site yet. Not tied to
+   * data.isPreview, so the portal/admin draft previews keep both.
+   */
+  hideVisitorControls?: boolean;
 };
 
 // The profile object (buildProfileObject) carries the raw snake_case DB rows;
@@ -51,7 +57,7 @@ type MemberProfileTemplateProps = {
  * else stacks beside it (artboard L). `lg`, not `md`: at 768px the 420px
  * column would leave the week chips narrower than on a 390px phone.
  */
-export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfileTemplateProps) {
+export function MemberProfileTemplate({ data, search, mediaMode, hideVisitorControls = false }: MemberProfileTemplateProps) {
   const { member, hours, specialHours, events, carouselSlides, links, categories, crossLink, headerPrev, headerNext, headerPosition, crossLinkLogoUrl, nextLocation, logoPublicUrl, coverAsset } = data;
   // Reconstructed from the server's one serialized instant (MemberProfileData.now),
   // never read fresh here -- see that field's own doc comment for why.
@@ -169,7 +175,11 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
     // D/E/V); 24px on a tablet; at 1168px and up the card reaches its
     // 1120px cap (artboard L) and centers.
     <article className="mx-auto w-full max-w-[1168px] px-2.5 pb-10 md:px-6 md:pb-14">
-      <HeaderNav prev={headerPrev} next={headerNext} position={headerPosition} search={search} />
+      {hideVisitorControls ? (
+        <div className="h-4 md:h-6" aria-hidden="true" />
+      ) : (
+        <HeaderNav prev={headerPrev} next={headerNext} position={headerPosition} search={search} />
+      )}
 
       {/* The light profile card (spec, "Color tokens": "the site chrome
           is dark; the profile card is a light canvas, so a member's logo
@@ -177,7 +187,14 @@ export function MemberProfileTemplate({ data, search, mediaMode }: MemberProfile
           Guild's brown"). Every text-ink element inside depends on this
           ancestor establishing bg-canvas. */}
       <div className="theme-canvas overflow-hidden rounded-[22px] bg-canvas text-ink md:rounded-3xl">
-        <ProfileHero member={member} coverUrl={coverUrl} logoUrl={logoPublicUrl} nextLocation={nextLocation} search={search} />
+        <ProfileHero
+          member={member}
+          coverUrl={coverUrl}
+          logoUrl={logoPublicUrl}
+          nextLocation={nextLocation}
+          search={search}
+          hideShare={hideVisitorControls}
+        />
 
         <div
           className={
