@@ -8,6 +8,8 @@ import { adminMemberIdFor, locationSwitcherFor, type LocationSwitcherData } from
 import { PORTAL_MEMBER_COOKIE } from "@/lib/portal/portal-member-cookie";
 import { readImpersonationState, touchImpersonationActivity } from "@/lib/guild/impersonation.server";
 import { loadSharedLook, type SharedLook } from "@/lib/portal/shared-look";
+import { isApplicationStatus } from "@/lib/portal/active-member";
+import type { MemberStatus } from "@/lib/supabase/types";
 
 export type MemberSession = {
   memberId: string;
@@ -100,6 +102,18 @@ export const requireMemberSession = createServerFn({ method: "GET" }).handler(
     const service = await getSupabaseServiceRoleClient();
     const memberships = await listPortalMemberships(service, user.id);
     const memberId = adminMemberIdFor(memberships, getCookie(PORTAL_MEMBER_COOKIE)) ?? routing.memberId;
+
+    // Join the Guild: an applicant or a declined applicant never gets the
+    // editor; /portal sends them to /join/finish or the "isn't active"
+    // card. (A Guild admin's "Edit as them" above is exempt on purpose.)
+    let status = memberships.find((m) => m.memberId === memberId)?.status;
+    if (status === undefined) {
+      const { data: row } = await service.from("members").select("status").eq("id", memberId).maybeSingle();
+      status = (row?.status as MemberStatus | undefined) ?? undefined;
+    }
+    if (isApplicationStatus(status)) {
+      throw redirect({ href: "/portal" });
+    }
 
     return {
       memberId,

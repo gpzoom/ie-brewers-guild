@@ -20,6 +20,7 @@ import { sendTransactionalEmail } from "@/lib/email/send";
 import { ORG_NAME } from "@/lib/email/build-email-content";
 import { recordPeopleAudit } from "@/lib/guild/audit-log.server";
 import { isOwnerLevel } from "@/lib/portal/portal-destination";
+import { assertActiveMember } from "@/lib/portal/active-member";
 
 /**
  * The People section's actions (docs/member-profiles.md, "The People
@@ -40,6 +41,9 @@ import { isOwnerLevel } from "@/lib/portal/portal-destination";
 
 async function requirePeopleAccess(): Promise<PortalMember> {
   const member = await requirePortalMember();
+  // An applicant or a declined applicant can't manage people (invites
+  // send email from the Guild's domain).
+  assertActiveMember(member);
   if (!isOwnerLevel(member.role) && !member.isBusinessManager) {
     throw new Error(
       "Only the profile's owner, a co-owner or the business manager can manage people.",

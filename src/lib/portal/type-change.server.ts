@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { requirePortalMember } from "@/lib/portal/portal-session.server";
+import { assertActiveMember } from "@/lib/portal/active-member";
 import { sendTransactionalEmail } from "@/lib/email/send";
 import { recordAuditLogIfImpersonating } from "@/lib/guild/audit-log.server";
 import type { MemberType } from "@/lib/supabase/types";
@@ -37,6 +38,8 @@ export const requestTypeChange = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<TypeChangeRequestSummary> => {
     const member = await requirePortalMember();
+    // An applicant or a declined applicant can't ask (it emails the Guild).
+    assertActiveMember(member);
     if (member.role === "media_events") {
       throw new Error("Only the profile's owner or a full editor can ask for a type change.");
     }

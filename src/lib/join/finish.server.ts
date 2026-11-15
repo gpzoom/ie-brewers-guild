@@ -5,6 +5,7 @@ import {
   getSupabaseServiceRoleClient,
 } from "@/lib/supabase/server";
 import { requirePortalMember } from "@/lib/portal/portal-session.server";
+import { isOwnerLevel } from "@/lib/portal/portal-destination";
 import {
   loadLogoPhotosCoverSection,
   loadMemberShell,
@@ -78,6 +79,10 @@ export const markApplicationDone = createServerFn({ method: "POST" })
     if (member.memberId !== data.memberId || joinFinishKind(member.destination) !== "form") {
       throw new Error("This application isn't open for changes. Reload the page.");
     }
+    // Only the applicant (owner level) says the application is done.
+    if (!isOwnerLevel(member.role)) {
+      throw new Error("Only the business's owner can send the application.");
+    }
     // A Guild admin "editing as them" doesn't email the Guild about itself.
     if (member.isImpersonating) return { notified: false };
 
@@ -96,9 +101,10 @@ export const markApplicationDone = createServerFn({ method: "POST" })
     if (!shouldNotifyDetails(previous, now)) return { notified: false };
 
     // Conditional stamp: only one of two quick clicks (or two tabs) wins.
+    const stampedAt = now.toISOString();
     const { data: stamped, error: stampError } = await service
       .from("members")
-      .update({ join_details_notified_at: now.toISOString() })
+      .update({ join_details_notified_at: stampedAt })
       .eq("id", member.memberId)
       .eq("status", "applied")
       .or(`join_details_notified_at.is.null,join_details_notified_at.lte.${detailsNotifyCutoff(now)}`)
@@ -122,11 +128,13 @@ export const markApplicationDone = createServerFn({ method: "POST" })
         "markApplicationDone: application_details_added email failed",
         err instanceof Error ? err.message : String(err),
       );
-      // Put the old stamp back so the next "I'm done" can try again today.
+      // Put the old stamp back so the next "I'm done" can try again today --
+      // only if it's still the one this call wrote.
       const { error: undoError } = await service
         .from("members")
         .update({ join_details_notified_at: previous })
-        .eq("id", member.memberId);
+        .eq("id", member.memberId)
+        .eq("join_details_notified_at", stampedAt);
       if (undoError) console.error("markApplicationDone: couldn't undo the stamp", undoError.message);
       return { notified: false };
     }
