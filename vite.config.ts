@@ -199,6 +199,10 @@ export default defineConfig(async ({ command, mode }) => {
             // (places-client.server.ts, duplicate-check.server.ts) are NOT
             // listed: they have no client caller.
             "src/lib/join/join.server.ts",
+            // src/lib/join/join-preview.server.ts: getJoinPreview, the
+            // /join page's instant preview, is a createServerFn called from
+            // the page -- same RPC boundary as join.server.ts above.
+            "src/lib/join/join-preview.server.ts",
             // src/lib/members/member-email.server.ts (Guild-admin sign-in
             // email change) -- same reasoning as member-basics.server.ts
             // right above: its two createServerFn exports, getMemberEmail

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { submitContactForm } from "@/lib/contact/submit-contact-form.server";
 import {
@@ -10,6 +10,7 @@ import {
   CanvasCard,
   CanvasHeading,
   CheckCard,
+  cardLinkClass,
   IconTile,
   InstagramIcon,
   MailIcon,
@@ -126,6 +127,13 @@ function ContactPage() {
               <p className={leadClass}>
                 Questions about the Guild, our members, or joining us? Send a note and someone will come
                 back to you.
+              </p>
+              <p className={leadClass}>
+                Ready to apply?{" "}
+                <Link to="/join" className={cardLinkClass}>
+                  Join the Guild
+                </Link>
+                .
               </p>
             </div>
 

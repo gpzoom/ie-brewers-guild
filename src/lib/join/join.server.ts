@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest, getRequestHeader } from "@tanstack/react-start/server";
+import { getRequest } from "@tanstack/react-start/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { sendTransactionalEmail } from "@/lib/email/send";
@@ -10,6 +10,7 @@ import { isHoneypotTripped } from "@/lib/contact/contact-form-validation";
 import { slugify } from "@/lib/slug";
 import { mapPlaceToProfile, type PlaceProfile } from "@/lib/google/place-profile";
 import { getPlaceDetails, searchPlaces, type PlaceCandidate } from "@/lib/google/places-client.server";
+import { SOMETHING_WRONG, collapse, rateLimitMessage } from "@/lib/join/join-guards.server";
 import { findDuplicate } from "@/lib/join/duplicate-check";
 import { loadRosterCandidates } from "@/lib/join/duplicate-check.server";
 import { validateJoinInput, type JoinFieldErrors, type JoinInput } from "@/lib/join/join-validation";
@@ -39,34 +40,11 @@ export type SubmitJoinResult =
   | { kind: "invalid"; errors: JoinFieldErrors }
   | { kind: "error"; message: string };
 
-export const TOO_MANY_TRIES = "Too many tries — please wait a minute and try again.";
-const SOMETHING_WRONG = "Something went wrong. Try again in a moment.";
 const SEARCH_FAILED = "We couldn't search Google right now. You can continue without it.";
 const SEARCH_NAME_MAX = 200;
 const SEARCH_CITY_MAX = 100;
 
-type RateLimiter = { limit: (opts: { key: string }) => Promise<{ success: boolean }> };
-
-/**
- * Reuses the creator-upload limiter under its own key namespace (as the
- * contact form does). FAILS CLOSED: this is the only abuse guard on a public
- * endpoint, so a missing binding refuses rather than allowing everything.
- * Returns a message to show, or null when the request may go ahead.
- */
-async function rateLimitMessage(namespace: "join-submit" | "join-search"): Promise<string | null> {
-  const { env } = await import("cloudflare:workers");
-  const limiter = (env as { CREATOR_UPLOAD_RATE_LIMITER?: RateLimiter }).CREATOR_UPLOAD_RATE_LIMITER;
-  if (!limiter) {
-    console.error(`${namespace}: CREATOR_UPLOAD_RATE_LIMITER binding is missing -- refusing the request.`);
-    return SOMETHING_WRONG;
-  }
-  const clientIp = getRequestHeader("CF-Connecting-IP") ?? "unknown";
-  const { success } = await limiter.limit({ key: `${namespace}:${clientIp}` });
-  return success ? null : TOO_MANY_TRIES;
-}
-
 const errorMessage = (err: unknown) => (err instanceof Error ? err.message : String(err));
-const collapse = (value: unknown) => (typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "");
 
 /** "Is this you?" -- up to 5 Google matches for the typed name and city. */
 export const joinSearchPlaces = createServerFn({ method: "POST" })

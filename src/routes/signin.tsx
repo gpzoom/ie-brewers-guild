@@ -298,7 +298,7 @@ function SignInPage() {
                 </p>
                 <p className="text-[13px] leading-[1.55] text-ink-muted text-pretty">
                   Not a member yet?{" "}
-                  <Link to="/contact" className={cardLinkClass}>
+                  <Link to="/join" className={cardLinkClass}>
                     Ask us about joining
                   </Link>
                   .
