@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSuperAdmin } from "@/lib/auth/super-admin";
 import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
-import type { MemberRow, MemberType } from "@/lib/supabase/types";
+import type { MemberRow, MemberStatus, MemberType } from "@/lib/supabase/types";
+import { approvalPatch } from "@/lib/join/approval";
 import { geocodeMemberAfterPublish } from "@/lib/geo/geocode.server";
 
 /**
@@ -50,17 +51,19 @@ export const approveMember = createServerFn({ method: "POST" })
     const { data: userData } = await supabase.auth.getUser();
     if (!userData?.user) throw new Error("Not signed in.");
 
-    const { error } = await supabase
+    const { data: current, error: readError } = await supabase
       .from("members")
-      .update({
-        status: "published",
-        approved_at: new Date().toISOString(),
-        approved_by_user_id: userData.user.id,
-      })
-      .eq("id", data.memberId);
+      .select("status")
+      .eq("id", data.memberId)
+      .single();
+    if (readError || !current) throw new Error(readError?.message ?? "Member not found.");
+
+    // An applicant moves to Draft (the owner publishes later); anything else publishes.
+    const patch = approvalPatch(current.status as MemberStatus, userData.user.id, new Date());
+    const { error } = await supabase.from("members").update(patch).eq("id", data.memberId);
     if (error) throw new Error(error.message);
     // Best-effort map pin for a profile going live without coordinates yet.
-    await geocodeMemberAfterPublish(data.memberId, null);
+    if (patch.status === "published") await geocodeMemberAfterPublish(data.memberId, null);
     return { ok: true as const };
   });
 

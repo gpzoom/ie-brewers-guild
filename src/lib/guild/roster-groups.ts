@@ -69,5 +69,10 @@ export function groupRoster(
   }
 
   const nameOf = (g: RosterGroup) => (g.kind === "single" ? g.entry.member.business_name : g.business.name);
-  return groups.sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
+  // Applicants waiting for a decision come first, then everyone by name.
+  const hasApplied = (g: RosterGroup) =>
+    g.kind === "single" ? g.entry.member.status === "applied" : g.entries.some((e) => e.member.status === "applied");
+  return groups.sort(
+    (a, b) => Number(hasApplied(b)) - Number(hasApplied(a)) || nameOf(a).localeCompare(nameOf(b)),
+  );
 }

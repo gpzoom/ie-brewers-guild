@@ -13,7 +13,7 @@ import { guildInboxFor, type TransactionalEmailPayload } from "@/lib/email/build
  * caller (send.ts) treats as a non-error, not a send failure. A single user
  * that can't be looked up is dropped; the others still get the email.
  */
-async function resolveMemberOwnerEmails(supabase: SupabaseClient, memberId: string): Promise<string[]> {
+export async function resolveMemberOwnerEmails(supabase: SupabaseClient, memberId: string): Promise<string[]> {
   const { data: rows, error: memberUserError } = await supabase
     .from("member_users")
     .select("user_id, role")

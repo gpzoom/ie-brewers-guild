@@ -217,11 +217,20 @@ function MemberRow({
                 onSelect={() =>
                   runAction(
                     () => approveMember({ data: { memberId: member.id } }),
-                    `Approved ${member.business_name}`,
+                    member.status === "applied"
+                      ? `Approved ${member.business_name} — moved to Draft`
+                      : `Approved ${member.business_name}`,
                   )
                 }
+                title={
+                  member.status === "applied"
+                    ? "Approve (moves to Draft — then publish from Edit as them)"
+                    : undefined
+                }
               >
-                Approve
+                {member.status === "applied"
+                  ? "Approve (moves to Draft — then publish from Edit as them)"
+                  : "Approve"}
               </DropdownMenuItem>
             )}
             {member.status !== "declined" && (

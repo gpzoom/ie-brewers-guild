@@ -23,6 +23,7 @@ import {
 } from "@/lib/drafts/sections";
 import { validateDraftPatch } from "@/lib/drafts/validate-patch";
 import { geocodeMemberAfterPublish, readAddressSnapshot } from "@/lib/geo/geocode.server";
+import { sendJoinWelcomeIfDue } from "@/lib/join/welcome.server";
 import { refreshMemberProblems } from "@/lib/notifications/problems.server";
 import { loadLookAssets, type LookIds } from "@/lib/media/shared-look-assets";
 import type { MediaAssetRow, MemberStatus, MemberType } from "@/lib/supabase/types";
@@ -261,6 +262,12 @@ export const publishDraft = createServerFn({ method: "POST" })
     // Member notifications: special hours (closed days) only go live on
     // publish, so re-check closed-day conflicts (never throws).
     await refreshMemberProblems();
+    // First publish of a Join applicant: one welcome email (never throws).
+    try {
+      await sendJoinWelcomeIfDue(data.memberId);
+    } catch (err) {
+      console.error("publishDraft: welcome email step failed", err instanceof Error ? err.message : err);
+    }
     const parsed = result as {
       status: MemberStatus;
       published_at: string;

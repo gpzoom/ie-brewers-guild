@@ -15,6 +15,21 @@ function entry(id: string, name: string, city: string, businessId: string | null
 const hangar: RosterBusiness = { id: "b1", name: "Hangar 24 Brewing Co.", mode: "one_manager", hasManager: false, managerEmail: null, managerSignedIn: false, managerUserId: null };
 const all = () => true;
 
+describe("groupRoster applied first", () => {
+  it("applied rows (and businesses with an applied location) sort to the top", () => {
+    const a = entry("m1", "Alpha Brewing", "Chino", null);
+    const z = entry("m2", "Zeta Brewing", "Chino", null);
+    z.member.status = "applied";
+    const h1 = entry("m3", "Hangar 24 Brewing Co.", "Irvine", "b1");
+    const h2 = entry("m4", "Hangar 24 Brewing Co.", "Riverside", "b1");
+    h2.member.status = "applied";
+    const ids = (gs: ReturnType<typeof groupRoster>) =>
+      gs.map((g) => (g.kind === "single" ? g.entry.member.id : g.business.id));
+    expect(ids(groupRoster([a, z, h1, h2], [hangar], all))).toEqual(["b1", "m2", "m1"]);
+    expect(ids(groupRoster([a, h1], [hangar], all))).toEqual(["m1", "b1"]);
+  });
+});
+
 describe("groupRoster", () => {
   const entries = [
     entry("m1", "Hangar 24 Brewing Co.", "Riverside", "b1"),
