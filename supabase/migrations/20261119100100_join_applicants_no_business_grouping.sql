@@ -10,7 +10,8 @@
 -- location.
 --
 -- Redefined from its latest definition (20261016100000_business_functions.sql)
--- with one added early return for status 'applied'.
+-- with one added early return for status 'applied', and applied rows left
+-- out of the sibling lookup (a new member never groups with an applicant).
 create or replace function public.members_join_business_by_name()
 returns trigger
 language plpgsql
@@ -38,6 +39,8 @@ begin
   left join public.businesses b on b.id = m.business_id
   where btrim(m.business_name) = btrim(new.business_name)
     and m.id <> new.id
+    -- Nor is anyone grouped with an applicant.
+    and m.status <> 'applied'
     and (m.business_id is null or b.management_mode = 'separate')
   -- An existing business wins over a member the Guild took out of one.
   order by (m.business_id is null), m.created_at

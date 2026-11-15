@@ -4,7 +4,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(14);
+insert into _tap (line) select plan(17);
 
 insert into _tap (line) select has_column('public', 'members', 'google_place_id', 'members.google_place_id exists');
 insert into _tap (line) select has_column('public', 'members', 'applied_via_join_at', 'members.applied_via_join_at exists');
@@ -64,6 +64,23 @@ insert into _tap (line) select is(
 insert into _tap (line) select is(
   (select business_id from public.members where id = 'f1000000-0000-4000-8000-0000000000c2'), null,
   'the applicant stays out of the new business');
+
+-- A new member never groups with an applicant: a draft whose name matches
+-- only an applied row stays ungrouped and creates no business.
+create temp table _biz_before_2 on commit drop as select count(*)::int as n from public.businesses;
+insert into public.members (id, slug, member_type, business_name, city, status, applied_via_join_at) values
+  ('f1000000-0000-4000-8000-0000000000c4', 'pgtap-join-app-only', 'producer', 'PgTap Applicant Only', 'Ontario', 'applied', now());
+insert into public.members (id, slug, member_type, business_name, city, status) values
+  ('f1000000-0000-4000-8000-0000000000c5', 'pgtap-join-draft-2', 'producer', 'PgTap Applicant Only', 'Corona', 'draft');
+insert into _tap (line) select is(
+  (select business_id from public.members where id = 'f1000000-0000-4000-8000-0000000000c5'), null,
+  'draft matching only an applied row: not grouped');
+insert into _tap (line) select is(
+  (select business_id from public.members where id = 'f1000000-0000-4000-8000-0000000000c4'), null,
+  'draft matching only an applied row: the applicant stays ungrouped');
+insert into _tap (line) select is(
+  (select count(*)::int from public.businesses), (select n from _biz_before_2),
+  'draft matching only an applied row: no businesses row created');
 
 insert into _tap (line) select * from finish();
 select line as tap from _tap order by n;
