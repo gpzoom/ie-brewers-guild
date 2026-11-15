@@ -22,6 +22,9 @@ import { applyDiscountXor, assertValidDiscountPercent } from "@/lib/members/disc
  * typo can't look like a successful save.
  */
 
+/** Longest allowed tagline, in characters. */
+export const TAGLINE_MAX = 70;
+
 const SECTION_KEYS: Record<DraftSection, readonly string[]> = {
   basics: [
     "business_name",
@@ -148,7 +151,7 @@ function validateBasics(patch: Json) {
     }
   }
   validateCoordinates(patch);
-  if (typeof patch.tagline === "string" && patch.tagline.length > 70) {
+  if (typeof patch.tagline === "string" && patch.tagline.length > TAGLINE_MAX) {
     throw new Error("Tagline must be 70 characters or fewer.");
   }
   if (
