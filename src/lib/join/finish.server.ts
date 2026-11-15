@@ -4,7 +4,10 @@ import {
   getSupabaseServerClientForRequest,
   getSupabaseServiceRoleClient,
 } from "@/lib/supabase/server";
+import { setCookie } from "@tanstack/react-start/server";
 import { requirePortalMember } from "@/lib/portal/portal-session.server";
+import { listPortalMemberships } from "@/lib/portal/portal-access";
+import { PORTAL_MEMBER_COOKIE, PORTAL_MEMBER_COOKIE_MAX_AGE } from "@/lib/portal/portal-member-cookie";
 import { isOwnerLevel } from "@/lib/portal/portal-destination";
 import {
   loadLogoPhotosCoverSection,
@@ -12,7 +15,12 @@ import {
   type PortalMemberShell,
 } from "@/lib/portal/section-data.server";
 import { sendTransactionalEmail } from "@/lib/email/send";
-import { detailsNotifyCutoff, joinFinishKind, shouldNotifyDetails } from "@/lib/join/details-notify";
+import {
+  detailsNotifyCutoff,
+  joinFinishKind,
+  shouldNotifyDetails,
+  soleApplicantMembership,
+} from "@/lib/join/details-notify";
 
 /**
  * Join the Guild, step 2 (/join/finish): an applicant (status "applied",
@@ -53,7 +61,28 @@ export const getJoinFinishState = createServerFn({ method: "GET" }).handler(
 
     const member = await requirePortalMember();
     const kind = joinFinishKind(member.destination);
-    if (kind !== "form") return { kind };
+    if (kind !== "form") {
+      // The "Choose a business" cookie may still point at another business
+      // this user has. With exactly one applied membership, switch the
+      // cookie to it and reload, so the page AND every save after it work
+      // on the application (they all resolve the member from the cookie).
+      // No loop: after the reload the chosen member is the applicant.
+      if (!member.isImpersonating) {
+        const service = await getSupabaseServiceRoleClient();
+        const applicant = soleApplicantMembership(await listPortalMemberships(service, member.userId), member.memberId);
+        if (applicant) {
+          setCookie(PORTAL_MEMBER_COOKIE, applicant.memberId, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "lax",
+            path: "/",
+            maxAge: PORTAL_MEMBER_COOKIE_MAX_AGE,
+          });
+          throw redirect({ href: "/join/finish" });
+        }
+      }
+      return { kind };
+    }
 
     const [shell, section] = await Promise.all([
       loadMemberShell(supabase, member),

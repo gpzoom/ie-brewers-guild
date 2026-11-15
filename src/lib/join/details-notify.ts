@@ -1,4 +1,5 @@
 import type { PortalDestination } from "@/lib/portal/portal-destination";
+import type { MemberStatus } from "@/lib/supabase/types";
 
 /**
  * Join the Guild, step 2 (/join/finish): the pure rules, so the server
@@ -38,4 +39,19 @@ export function joinFinishKind(destination: PortalDestination): JoinFinishKind {
   if (destination.kind === "join-finish") return "form";
   if (destination.kind === "inactive") return "inactive";
   return "not-applicant";
+}
+
+/**
+ * When /join/finish's chosen member (the "Choose a business" cookie) isn't
+ * an applicant: the user's one applied membership, if they have exactly
+ * one, so the draft link still lands on the application. Null when there's
+ * no applied membership, or several (then /portal's chooser decides).
+ */
+export function soleApplicantMembership<M extends { memberId: string; status: MemberStatus }>(
+  memberships: M[],
+  chosenMemberId: string,
+): M | null {
+  const applied = memberships.filter((m) => m.status === "applied");
+  if (applied.length !== 1 || applied[0].memberId === chosenMemberId) return null;
+  return applied[0];
 }
