@@ -27,6 +27,7 @@ import { inviteBusinessManager } from "@/lib/guild/businesses.server";
 import { inviteMember, resendInvite } from "@/lib/guild/invite-member.server";
 import { editAsThem } from "@/components/guild/edit-as-them";
 import { coOwnerLine, hasStaleHours, resolveDetailLine } from "@/lib/guild/roster-detail";
+import { isUnwelcomedJoinApplicant, rosterShowsApprove } from "@/lib/join/approval";
 import {
   approveMember,
   declineMember,
@@ -123,6 +124,7 @@ function MemberRow({
 }) {
   const { member } = entry;
   const status = resolveRowStatus(entry, now);
+  const approveMovesToDraft = member.status === "applied" || isUnwelcomedJoinApplicant(member);
   const typeLabel = MEMBER_TYPE_LABEL[member.member_type];
   const indented = business !== undefined;
   const hideInvite = business?.mode === "one_manager";
@@ -211,26 +213,23 @@ function MemberRow({
             align="end"
             className="min-w-[220px] rounded-[10px] border-canvas-border bg-white p-1.5 font-sans shadow-lg"
           >
-            {member.status !== "published" && (
+            {/* A Join applicant never welcomed yet only ever moves to Draft
+                (approveMember enforces it); once it's a Draft, publishing is
+                done from Edit as them, so Approve is hidden there. */}
+            {rosterShowsApprove(member) && (
               <DropdownMenuItem
                 className={menuItemClass}
                 onSelect={() =>
                   runAction(
                     () => approveMember({ data: { memberId: member.id } }),
-                    member.status === "applied"
+                    approveMovesToDraft
                       ? `Approved ${member.business_name} — moved to Draft`
                       : `Approved ${member.business_name}`,
                   )
                 }
-                title={
-                  member.status === "applied"
-                    ? "Approve (moves to Draft — then publish from Edit as them)"
-                    : undefined
-                }
+                title={approveMovesToDraft ? "Approve (moves to Draft — then publish from Edit as them)" : undefined}
               >
-                {member.status === "applied"
-                  ? "Approve (moves to Draft — then publish from Edit as them)"
-                  : "Approve"}
+                {approveMovesToDraft ? "Approve (moves to Draft — then publish from Edit as them)" : "Approve"}
               </DropdownMenuItem>
             )}
             {member.status !== "declined" && (

@@ -43,7 +43,7 @@ export const updateMemberByGuildAdmin = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-/** Approve: publish the profile and stamp who approved it and when. */
+/** Approve: publish the profile (or, for a Join applicant, move it to Draft) and stamp who approved it and when. */
 export const approveMember = createServerFn({ method: "POST" })
   .inputValidator((data: { memberId: string }) => data)
   .handler(async ({ data }) => {
@@ -53,13 +53,16 @@ export const approveMember = createServerFn({ method: "POST" })
 
     const { data: current, error: readError } = await supabase
       .from("members")
-      .select("status")
+      .select("status, applied_via_join_at, join_welcomed_at")
       .eq("id", data.memberId)
       .single();
     if (readError || !current) throw new Error(readError?.message ?? "Member not found.");
 
-    // An applicant moves to Draft (the owner publishes later); anything else publishes.
-    const patch = approvalPatch(current.status as MemberStatus, userData.user.id, new Date());
+    // An applicant -- or any Join member never welcomed yet, whatever its
+    // status -- moves to Draft (publishing happens from Edit as them or by
+    // the owner, which sends the welcome); anything else publishes.
+    const row = current as { status: MemberStatus; applied_via_join_at: string | null; join_welcomed_at: string | null };
+    const patch = approvalPatch(row, userData.user.id, new Date());
     const { error } = await supabase.from("members").update(patch).eq("id", data.memberId);
     if (error) throw new Error(error.message);
     // Best-effort map pin for a profile going live without coordinates yet.
