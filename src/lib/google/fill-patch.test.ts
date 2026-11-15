@@ -49,6 +49,11 @@ const profile: PlaceProfile = {
 const noLinks: LinksDraft = { links: [] };
 
 describe("computeFillPatch", () => {
+  it("fills nothing at all for a permanently closed place", () => {
+    const r = computeFillPatch(basics(), noLinks, { ...profile, permanentlyClosed: true });
+    expect(r).toEqual({ basics: {}, links: null, filled: [], kept: [] });
+  });
+
   it("fills all five fields on an empty draft, address written as a block", () => {
     const r = computeFillPatch(basics(), noLinks, profile);
     expect(r.filled).toEqual(["address", "phone", "tagline", "hours", "website"]);

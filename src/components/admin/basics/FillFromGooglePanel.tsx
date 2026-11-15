@@ -77,7 +77,8 @@ export function FillFromGooglePanel({
     setError(null);
     try {
       const result = await adminFillFromGoogle({ data: { memberId, placeId } });
-      draftStatus?.reportSaved("basics", result.dirtySections);
+      // Nothing is saved for a permanently closed place.
+      if (!result.permanentlyClosed) draftStatus?.reportSaved("basics", result.dirtySections);
       setResults(null);
       setOpen(false);
       await onFilled({
@@ -111,22 +112,23 @@ export function FillFromGooglePanel({
         that are still empty. Anything already filled in stays as it is.
       </p>
 
-      {summary && (
-        <div role="status" className="flex flex-col gap-2">
-          <p className="text-[13px] leading-[1.5] text-ink">
-            <strong>Filled:</strong> {list(summary.filled)}. <strong>Kept yours:</strong>{" "}
-            {list(summary.kept)}.
-          </p>
-          <p className="text-[12px] leading-[1.45] text-ink-muted">
-            These are saved as unpublished changes. Review them, then publish.
-          </p>
-          {summary.permanentlyClosed && (
-            <InfoBox>
-              Google lists this business as permanently closed. Double-check before publishing.
-            </InfoBox>
-          )}
-        </div>
-      )}
+      {summary &&
+        (summary.permanentlyClosed ? (
+          // The server writes nothing for a permanently closed place.
+          <div role="status" className="flex flex-col gap-2">
+            <InfoBox>Google lists this place as permanently closed, so nothing was filled.</InfoBox>
+          </div>
+        ) : (
+          <div role="status" className="flex flex-col gap-2">
+            <p className="text-[13px] leading-[1.5] text-ink">
+              <strong>Filled:</strong> {list(summary.filled)}. <strong>Kept yours:</strong>{" "}
+              {list(summary.kept)}.
+            </p>
+            <p className="text-[12px] leading-[1.45] text-ink-muted">
+              These are saved as unpublished changes. Review them, then publish.
+            </p>
+          </div>
+        ))}
 
       {!open ? (
         <div>

@@ -19,6 +19,10 @@ function hasText(value: string | null | undefined): boolean {
   return typeof value === "string" && value.trim() !== "";
 }
 
+/**
+ * A permanently closed place fills nothing at all (filled and kept both
+ * empty); the caller also skips remembering the place id.
+ */
 export function computeFillPatch(
   basics: BasicsDraft,
   links: LinksDraft,
@@ -28,6 +32,8 @@ export function computeFillPatch(
   let linksOut: LinksDraft | null = null;
   const filled: FillField[] = [];
   const kept: FillField[] = [];
+
+  if (profile.permanentlyClosed) return { basics: patch, links: linksOut, filled, kept };
 
   // Address: one block, only when Google has a street address.
   if (hasText(profile.street_address)) {

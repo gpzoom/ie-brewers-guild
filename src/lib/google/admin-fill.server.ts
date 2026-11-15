@@ -54,6 +54,13 @@ export const adminFillFromGoogle = createServerFn({ method: "POST" })
 
     const bundle = await loadMemberDraftBundle(supabase, data.memberId);
     const profile = mapPlaceToProfile(await getPlaceDetails(data.placeId));
+
+    // A permanently closed place writes nothing (not even the place id);
+    // the panel says so.
+    if (profile.permanentlyClosed) {
+      return { filled: [], kept: [], permanentlyClosed: true, dirtySections: bundle.dirtySections };
+    }
+
     const plan = computeFillPatch(bundle.data.basics, bundle.data.links, profile);
 
     let dirtySections = bundle.dirtySections;
