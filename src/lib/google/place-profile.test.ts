@@ -108,6 +108,34 @@ describe("mapOpeningHours", () => {
     expect(rows[2].closes_next_day).toBe(false);
   });
 
+  it("returns null for a 24/7 place (period with no close)", () => {
+    expect(mapOpeningHours([{ open: { day: 0, hour: 0, minute: 0 } }])).toBeNull();
+  });
+
+  it("handles Saturday to Sunday wraparound", () => {
+    const rows = mapOpeningHours([
+      { open: { day: 6, hour: 22, minute: 0 }, close: { day: 0, hour: 2, minute: 0 } },
+    ])!;
+    expect(rows[6]).toEqual({
+      weekday: 6,
+      opens_at: "22:00",
+      closes_at: "02:00",
+      closes_next_day: true,
+      is_closed: false,
+    });
+    expect(rows[0].is_closed).toBe(true);
+  });
+
+  it("picks the overnight close as latest when a same-day earlier period exists", () => {
+    const rows = mapOpeningHours([
+      { open: { day: 5, hour: 11, minute: 0 }, close: { day: 5, hour: 14, minute: 0 } },
+      { open: { day: 5, hour: 18, minute: 0 }, close: { day: 6, hour: 1, minute: 0 } },
+    ])!;
+    expect(rows[5].opens_at).toBe("11:00");
+    expect(rows[5].closes_at).toBe("01:00");
+    expect(rows[5].closes_next_day).toBe(true);
+  });
+
   it("returns null for undefined periods", () => {
     expect(mapOpeningHours(undefined)).toBeNull();
   });

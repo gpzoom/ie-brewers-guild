@@ -49,6 +49,9 @@ export function mapOpeningHours(
   periods: NonNullable<GooglePlaceDetails["regularOpeningHours"]>["periods"],
 ): DraftHours[] | null {
   if (!periods) return null;
+  // A close-less period is Google's "open 24 hours" (and anything else we
+  // can't express): don't guess, let the person fill the hours in.
+  if (periods.some((p) => !p.close)) return null;
 
   type Span = { open: PlacePoint; close: PlacePoint | undefined; closeMin: number };
   const byDay = new Map<number, Span[]>();
