@@ -254,7 +254,9 @@ On submit (rate-limited, honeypot-checked, server-side with the service role):
   filled in).
 - On that first publish of a member that came through Join, the welcome email
   goes to the applicant (new trigger, e.g. `application_approved`), once.
-  `approved_at` / `approved_by_user_id` are stamped at that publish.
+  `approved_at` / `approved_by_user_id` are stamped at Approve, as today
+  (corrected during planning: `published_at` moves on every publish, so the
+  "sent once" rule uses its own `join_welcomed_at` marker).
 - Decline works as today: the entry, login link and any uploads stay (the
   admin can delete the member as today). A declined applicant who signs in sees
   "Your application isn't active. Please contact us." (Claude's call.)
@@ -263,9 +265,10 @@ On submit (rate-limited, honeypot-checked, server-side with the service role):
 
 - New nullable columns on `members`: `google_place_id` (text), used for the
   already-a-member check and to remember which Google place was used; and
-  `applied_via_join_at` (timestamptz), marking Join applicants so the welcome
-  email goes only to them, once. Needs the owner's go-ahead for `db push`,
-  pushed before the code.
+  `applied_via_join_at` (timestamptz), marking Join applicants;
+  `join_welcomed_at` (timestamptz), so the welcome email goes once; and
+  `join_details_notified_at` (timestamptz), for the once-a-day "added details"
+  email. Needs the owner's go-ahead for `db push`, pushed before the code.
 
 ## Left to the builder
 
