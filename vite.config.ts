@@ -187,6 +187,12 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/members/member-profile.server.ts",
             "src/lib/auth/require-member-session.server.ts",
             "src/lib/members/member-basics.server.ts",
+            // src/lib/google/admin-fill.server.ts: its createServerFn exports,
+            // adminSearchPlaces and adminFillFromGoogle, are called from
+            // FillFromGooglePanel.tsx -- the same RPC boundary as above.
+            // places-client.server.ts (reads the Google key) is NOT listed:
+            // it has no client caller.
+            "src/lib/google/admin-fill.server.ts",
             // src/lib/members/member-email.server.ts (Guild-admin sign-in
             // email change) -- same reasoning as member-basics.server.ts
             // right above: its two createServerFn exports, getMemberEmail

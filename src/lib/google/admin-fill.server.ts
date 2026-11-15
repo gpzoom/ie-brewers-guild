@@ -28,6 +28,7 @@ async function requireGuildAdmin(supabase: SessionClient) {
   }
 }
 
+// memberId comes from the client: any Guild admin may fill any member (intentional).
 export const adminSearchPlaces = createServerFn({ method: "POST" })
   .inputValidator((data: { memberId: string; query: string; city: string }) => data)
   .handler(async ({ data }): Promise<PlaceCandidate[]> => {
