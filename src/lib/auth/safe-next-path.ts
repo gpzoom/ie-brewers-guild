@@ -2,7 +2,7 @@
  * The allowlist for sign-in's `next` destination (spec, "Getting in": check
  * `next` against a short allowlist of internal paths so it can't be used as
  * an open redirect). Only the Member Portal is allowed: "/portal" itself or
- * a path under "/portal/".
+ * a path under "/portal/" -- plus exactly "/join/finish" (Join the Guild).
  *
  * Rules, in order:
  *  - Anything that isn't a string, or is longer than 200 characters, is
@@ -25,6 +25,9 @@
  */
 const MAX_LENGTH = 200;
 const PORTAL_PATH = /^\/portal(?:\/[A-Za-z0-9_-]+)*$/;
+// Join the Guild (2026-11-15): the draft-link email lands on step 2. Exactly
+// this path, nothing under it.
+const JOIN_FINISH_PATH = "/join/finish";
 
 export function safeNextPath(value: unknown): string | undefined {
   if (typeof value !== "string" || value.length === 0 || value.length > MAX_LENGTH) return undefined;
@@ -40,7 +43,7 @@ export function safeNextPath(value: unknown): string | undefined {
   }
   if (decoded !== path) return undefined;
 
-  if (path.length > "/portal".length && path.endsWith("/")) path = path.slice(0, -1);
+  if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
 
-  return PORTAL_PATH.test(path) ? path : undefined;
+  return PORTAL_PATH.test(path) || path === JOIN_FINISH_PATH ? path : undefined;
 }

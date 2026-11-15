@@ -11,6 +11,9 @@ describe("safeNextPath", () => {
     ["/portal?switch=1", "/portal"],
     ["/portal#top", "/portal"],
     ["/portal/media?x=//evil.com", "/portal/media"],
+    ["/join/finish", "/join/finish"],
+    ["/join/finish/", "/join/finish"],
+    ["/join/finish?x=1", "/join/finish"],
   ])("allows %s as %s", (input, expected) => {
     expect(safeNextPath(input)).toBe(expected);
   });
@@ -50,6 +53,12 @@ describe("safeNextPath", () => {
     ["/portal//"],
     ["?next=/portal"],
     [`/portal/${"a".repeat(250)}`],
+    ["/join"],
+    ["/join/"],
+    ["/join/finish/x"],
+    ["/join/finishx"],
+    ["/join//finish"],
+    ["/join/%66inish"],
   ])("drops %j", (input) => {
     expect(safeNextPath(input)).toBeUndefined();
   });

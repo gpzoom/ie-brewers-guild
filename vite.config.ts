@@ -193,6 +193,12 @@ export default defineConfig(async ({ command, mode }) => {
             // places-client.server.ts (reads the Google key) is NOT listed:
             // it has no client caller.
             "src/lib/google/admin-fill.server.ts",
+            // src/lib/join/join.server.ts: the public Join form's
+            // createServerFn exports, joinSearchPlaces and submitJoin, are
+            // called from the /join page -- same RPC boundary. Its helpers
+            // (places-client.server.ts, duplicate-check.server.ts) are NOT
+            // listed: they have no client caller.
+            "src/lib/join/join.server.ts",
             // src/lib/members/member-email.server.ts (Guild-admin sign-in
             // email change) -- same reasoning as member-basics.server.ts
             // right above: its two createServerFn exports, getMemberEmail
