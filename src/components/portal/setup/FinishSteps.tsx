@@ -14,6 +14,7 @@ import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PublishHoursTable } from "@/components/admin/PublishGateDialog";
 import { useDraftStatus } from "@/components/admin/DraftStatusContext";
+import { LegalNotice } from "@/components/site/LegalNotice";
 import { MemberProfileTemplate } from "@/components/profile/MemberProfileTemplate";
 import { StatusBand, bandButtonClass } from "@/components/shell/AppChrome";
 import {
@@ -325,6 +326,10 @@ export function PublishStep({
           Publishing puts your profile on the Guild's member directory. You can keep editing
           afterward — changes go live when you publish them.
         </WizardInfoBox>
+      )}
+
+      {!upToDate && !blocked && (
+        <LegalNotice action="publishing" className="text-[12px] leading-[1.45] text-ink-muted" />
       )}
     </WizardStep>
   );

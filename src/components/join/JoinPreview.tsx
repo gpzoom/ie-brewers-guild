@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { MemberProfileTemplate } from "@/components/profile/MemberProfileTemplate";
 import { NoticeBox, primaryButtonClass, secondaryButtonClass } from "@/components/public-forms/PublicFormParts";
+import { LegalNotice } from "@/components/site/LegalNotice";
 import type { MemberProfileData } from "@/lib/members/profile-object";
 
 /** True when the preview shows anything that came from Google (so "Powered by Google" is owed). */
@@ -53,6 +54,7 @@ export const JoinPreview = forwardRef<
         <button type="button" onClick={onSubmit} disabled={submitting} aria-busy={submitting} className={primaryButtonClass}>
           {submitting ? "Submitting…" : "Submit to the Guild"}
         </button>
+        <LegalNotice action="submitting" className="text-center text-[12px] leading-[1.45] text-[#B6AC9D]" />
         <button type="button" onClick={onBack} disabled={submitting} className={secondaryButtonClass}>
           Go back and change something
         </button>

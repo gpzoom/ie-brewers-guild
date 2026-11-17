@@ -22,6 +22,7 @@ import {
 } from "@/lib/hours/publish-gate";
 import { Checkbox } from "@/components/ui/checkbox";
 import { saveNoteText } from "@/components/admin/SaveNote";
+import { LegalNotice } from "@/components/site/LegalNotice";
 import { useDraftStatus, usePendingDraftSaves } from "@/components/admin/DraftStatusContext";
 import { useMemberEditing } from "@/components/admin/MemberEditingContext";
 import {
@@ -323,6 +324,12 @@ export function PublishGateDialog({
             Hours confirmed {badge.daysAgo} days ago — worth a check.
           </p>
         )}
+        {status.canPublish && (
+          <LegalNotice
+            action="publishing"
+            className="text-[11px] leading-[1.45] text-ink-muted md:text-right md:text-text-muted"
+          />
+        )}
       </div>
 
       <div className="flex gap-2 md:items-center md:gap-3">
@@ -523,6 +530,10 @@ export function PublishGateDialog({
               </button>
             </div>
           </div>
+          <LegalNotice
+            action="publishing"
+            className="text-center text-[12px] leading-[1.45] text-ink-muted sm:text-right"
+          />
         </DialogContent>
       </Dialog>
     </div>
