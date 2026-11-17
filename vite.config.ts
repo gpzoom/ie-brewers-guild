@@ -545,6 +545,7 @@ export default defineConfig(async ({ command, mode }) => {
             // touching the server-only tap_card_* tables. The plain helpers
             // (tap-card-cookies.server.ts, guild-admin.server.ts) stay denied.
             "src/lib/tap-card/batches.server.ts",
+            "src/lib/tap-card/activate.server.ts",
           ],
           specifiers: ["server-only"],
         },

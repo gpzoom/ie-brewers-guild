@@ -50,6 +50,8 @@ export async function resolveRecipient(
     case "location_handoff_invited":
     case "join_draft_link":
     case "application_approved":
+    case "tap_card_welcome":
+    case "tap_card_signin_link":
       return [payload.email];
     case "contact_confirmation":
       return [payload.email];

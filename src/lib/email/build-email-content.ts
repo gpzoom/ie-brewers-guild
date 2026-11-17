@@ -152,6 +152,19 @@ export type TransactionalEmailPayload =
       businessName: string;
       email: string;
       profileUrl: string;
+    }
+  | {
+      /** Inland Tap Card: a card was activated; to the holder. */
+      trigger: "tap_card_welcome";
+      email: string;
+      name: string;
+      cardUrl: string;
+    }
+  | {
+      /** Inland Tap Card: the one-time sign-in link; to the holder. */
+      trigger: "tap_card_signin_link";
+      email: string;
+      link: string;
     };
 
 /** replyTo: where hitting Reply goes, when it isn't the sender's no-reply address. */
@@ -571,6 +584,42 @@ ${signInUrl}`,
       return {
         subject: "Your Guild profile draft is ready",
         text: `${body} ${payload.link}\n\n${note}`,
+        html: wrapHtml([`${escapeHtml(body)} <a href="${escapeHtml(payload.link)}">${escapeHtml(payload.link)}</a>`, escapeHtml(note)]),
+      };
+    }
+
+    case "tap_card_welcome": {
+      const first = payload.name.split(" ")[0] || payload.name;
+      const hi = `Hi ${first},`;
+      const body = "Your Inland Tap Card is ready. Have the bartender tap it at every taproom on the trail to record your visit and get that stop's first-beer offer. See your progress any time:";
+      const trail = `The stops and their offers: ${siteUrl}/trail`;
+      const legal = `The Tap Card is covered by our Terms of Use (${siteUrl}/terms) and Privacy Policy (${siteUrl}/privacy).`;
+      return {
+        subject: "Your Inland Tap Card is ready",
+        text: `${hi}
+
+${body} ${payload.cardUrl}
+
+${trail}
+
+${legal}`,
+        html: wrapHtml([
+          escapeHtml(hi),
+          `${escapeHtml(body)} <a href="${escapeHtml(payload.cardUrl)}">${escapeHtml(payload.cardUrl)}</a>`,
+          `The stops and their offers: <a href="${escapeHtml(`${siteUrl}/trail`)}">${escapeHtml(`${siteUrl}/trail`)}</a>`,
+          escapeHtml(legal),
+        ]),
+      };
+    }
+
+    case "tap_card_signin_link": {
+      const body = "Here's your link to see your Inland Tap Card:";
+      const note = "It works once and expires in 60 minutes. If you didn't ask for it, you can ignore this email.";
+      return {
+        subject: "Sign in to your Inland Tap Card",
+        text: `${body} ${payload.link}
+
+${note}`,
         html: wrapHtml([`${escapeHtml(body)} <a href="${escapeHtml(payload.link)}">${escapeHtml(payload.link)}</a>`, escapeHtml(note)]),
       };
     }

@@ -281,6 +281,29 @@ describe("buildEmailContent: Join application emails", () => {
     expect(content.html).toContain('href="https://x.test/join/abc"');
   });
 
+  it("tap_card_welcome links the holder's card page", () => {
+    const content = buildEmailContent(
+      { trigger: "tap_card_welcome", email: "pat@example.com", name: "Pat Tester", cardUrl: `${site}/card` },
+      site,
+    );
+    expect(content.subject).toBe("Your Inland Tap Card is ready");
+    expect(content.text).toContain("Hi Pat,");
+    expect(content.text).toContain(`${site}/card`);
+    expect(content.text).toContain(`${site}/trail`);
+    expect(content.html).toContain(`href="${site}/card"`);
+  });
+
+  it("tap_card_signin_link carries the one-time link and says it expires", () => {
+    const content = buildEmailContent(
+      { trigger: "tap_card_signin_link", email: "pat@example.com", link: "https://x.test/card/login/abc" },
+      site,
+    );
+    expect(content.subject).toBe("Sign in to your Inland Tap Card");
+    expect(content.text).toContain("https://x.test/card/login/abc");
+    expect(content.text).toContain("works once and expires in 60 minutes");
+    expect(content.html).toContain('href="https://x.test/card/login/abc"');
+  });
+
   it("application_approved links the live page and the sign-in page", () => {
     const content = buildEmailContent(
       {
