@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { TapCardOfferCard } from "@/components/portal/TapCardOfferCard";
 import {
   createScannerDevice,
   listScannerDevices,
@@ -20,10 +21,10 @@ function errorText(err: unknown) {
 
 /**
  * Portal > Tap Card and /admin/tap-card: the brewery's bar devices (and,
- * below them, its offer -- `offerSlot`). A device is any phone or tablet
+ * below them, its offer). A device is any phone or tablet
  * at the bar; opening its setup link once lets it check cards in.
  */
-export function TapCardSection({ memberId, offerSlot }: { memberId: string; offerSlot?: ReactNode }) {
+export function TapCardSection({ memberId }: { memberId: string }) {
   const [devices, setDevices] = useState<ScannerDeviceSummary[] | null>(null);
   const [label, setLabel] = useState("");
   const [setupUrl, setSetupUrl] = useState<string | null>(null);
@@ -150,7 +151,7 @@ export function TapCardSection({ memberId, offerSlot }: { memberId: string; offe
         )}
       </section>
 
-      {offerSlot}
+      <TapCardOfferCard memberId={memberId} />
     </div>
   );
 }

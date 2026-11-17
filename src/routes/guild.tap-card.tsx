@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { listCardBatches, listTrailBreweries } from "@/lib/tap-card/batches.server";
+import { listPendingOffers } from "@/lib/tap-card/offers.server";
 import { CardBatchesPanel } from "@/components/guild/tap-card/CardBatchesPanel";
+import { OfferApprovalsPanel } from "@/components/guild/tap-card/OfferApprovalsPanel";
 import { TapCardTabs, isTapCardTab, type TapCardTab } from "@/components/guild/tap-card/TapCardTabs";
 
 /** /guild/tap-card: the Inland Tap Card program (every Guild admin). ?tab=cards|offers|milestones|rewards */
@@ -14,6 +16,7 @@ export const Route = createFileRoute("/guild/tap-card")({
       const [batches, breweries] = await Promise.all([listCardBatches(), listTrailBreweries()]);
       return { tab: deps.tab, batches, breweries };
     }
+    if (deps.tab === "offers") return { tab: deps.tab, pending: await listPendingOffers() };
     return { tab: deps.tab };
   },
   component: TapCardRoute,
@@ -32,6 +35,7 @@ function TapCardRoute() {
       </div>
       <TapCardTabs tab={data.tab} onChange={(t) => navigate({ search: t === "cards" ? {} : { tab: t } })} />
       {data.tab === "cards" && "batches" in data && <CardBatchesPanel batches={data.batches!} breweries={data.breweries!} />}
+      {data.tab === "offers" && "pending" in data && <OfferApprovalsPanel pending={data.pending!} />}
     </div>
   );
 }

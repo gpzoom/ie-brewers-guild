@@ -1,5 +1,6 @@
 import { createFileRoute, getRouteApi, Link } from "@tanstack/react-router";
 import { getMemberProfileData } from "@/lib/members/member-profile.server";
+import { getStopOffer } from "@/lib/tap-card/trail.server";
 import { validateDirectorySearch } from "@/lib/directory/search-params";
 import { MemberProfileTemplate } from "@/components/profile/MemberProfileTemplate";
 import { ProfilePreviewBanner } from "@/components/guild/ProfilePreviewBanner";
@@ -7,8 +8,14 @@ import { ProfilePreviewBanner } from "@/components/guild/ProfilePreviewBanner";
 export const Route = createFileRoute("/members_/$slug")({
   validateSearch: validateDirectorySearch,
   loaderDeps: ({ search }) => ({ filter: search.filter, sort: search.sort }),
-  loader: async ({ params, deps }) =>
-    getMemberProfileData({ data: { slug: params.slug, filter: deps.filter, sort: deps.sort } }),
+  loader: async ({ params, deps }) => {
+    const [profile, tapCardOffer] = await Promise.all([
+      getMemberProfileData({ data: { slug: params.slug, filter: deps.filter, sort: deps.sort } }),
+      // A failed offer read must never take the profile down.
+      getStopOffer({ data: { slug: params.slug } }).catch(() => null),
+    ]);
+    return { ...profile, tapCardOffer };
+  },
   head: ({ loaderData }) => {
     if (!loaderData) return {};
     const { member, ogImageUrl, siteOrigin } = loaderData;
@@ -127,7 +134,12 @@ function MemberProfilePage() {
       )}
       {/* An unpublished row (visible only to its own editors) has no public
           photos yet, so it loads them the way the draft preview does. */}
-      <MemberProfileTemplate data={data} search={search} mediaMode={data.isPreview ? "preview" : "live"} />
+      <MemberProfileTemplate
+        data={data}
+        search={search}
+        mediaMode={data.isPreview ? "preview" : "live"}
+        tapCardOffer={data.tapCardOffer}
+      />
     </>
   );
 }

@@ -548,6 +548,8 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/tap-card/activate.server.ts",
             "src/lib/tap-card/card-view.server.ts",
             "src/lib/tap-card/brewery-tap-card.server.ts",
+            "src/lib/tap-card/offers.server.ts",
+            "src/lib/tap-card/trail.server.ts",
           ],
           specifiers: ["server-only"],
         },

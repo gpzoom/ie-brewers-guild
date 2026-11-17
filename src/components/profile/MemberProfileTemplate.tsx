@@ -19,6 +19,19 @@ import { getZonedNow } from "@/lib/hours/open-now";
 import { isHttpUrl } from "@/lib/links/url-safety";
 
 
+/** "On the Inland Tap Card" -- a trail stop's offer, linking to the Trail page. */
+function TapCardStopNote({ offer }: { offer: string }) {
+  return (
+    <a
+      href="/trail"
+      className="flex flex-col gap-0.5 rounded-xl border border-canvas-border bg-white px-4 py-3 no-underline hover:bg-canvas-2"
+    >
+      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">On the Inland Tap Card</span>
+      <span className="text-[15px] font-semibold text-ink">{offer}</span>
+    </a>
+  );
+}
+
 type MemberProfileTemplateProps = {
   data: MemberProfileData;
   search: DirectorySearch;
@@ -29,6 +42,8 @@ type MemberProfileTemplateProps = {
    * data.isPreview, so the portal/admin draft previews keep both.
    */
   hideVisitorControls?: boolean;
+  /** Inland Tap Card: this stop's current offer (published trail stops only, from the public page's loader). */
+  tapCardOffer?: string | null;
 };
 
 // The profile object (buildProfileObject) carries the raw snake_case DB rows;
@@ -57,7 +72,7 @@ type MemberProfileTemplateProps = {
  * else stacks beside it (artboard L). `lg`, not `md`: at 768px the 420px
  * column would leave the week chips narrower than on a 390px phone.
  */
-export function MemberProfileTemplate({ data, search, mediaMode, hideVisitorControls = false }: MemberProfileTemplateProps) {
+export function MemberProfileTemplate({ data, search, mediaMode, hideVisitorControls = false, tapCardOffer = null }: MemberProfileTemplateProps) {
   const { member, hours, specialHours, events, carouselSlides, links, categories, crossLink, headerPrev, headerNext, headerPosition, crossLinkLogoUrl, nextLocation, logoPublicUrl, coverAsset } = data;
   // Reconstructed from the server's one serialized instant (MemberProfileData.now),
   // never read fresh here -- see that field's own doc comment for why.
@@ -213,6 +228,7 @@ export function MemberProfileTemplate({ data, search, mediaMode, hideVisitorCont
               now={now}
             />
             <DiscountBlock member={member} />
+            {tapCardOffer && <TapCardStopNote offer={tapCardOffer} />}
             <CategoryChips categories={categories} memberType={member.member_type} />
           </div>
 
