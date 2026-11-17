@@ -49,6 +49,12 @@ export function PrivacyPolicy() {
               give for credit.
             </>,
             <>
+              <strong>If you have an Inland Tap Card:</strong> your name and email address, your card's
+              code, each visit (which stop and when), when you use a stop's offer, and the Guild rewards you
+              earn. When your card is tapped at a stop, the bartender sees your first name and whether
+              you've already used that stop's offer this year. Breweries don't see your email address.
+            </>,
+            <>
               <strong>Email:</strong> members' email addresses for Guild emails, and whether you have
               unsubscribed.
             </>,
@@ -65,7 +71,9 @@ export function PrivacyPolicy() {
         <p>
           Our own cookies are only the ones the site needs. Sign-in cookies keep you signed in. When
           you confirm you're 21 or older, we save a cookie so we don't ask again for one year; it records
-          only that you confirmed you're 21 or older. The Help
+          only that you confirmed you're 21 or older. If you have an Inland Tap Card, a cookie keeps you
+          signed in to your Tap Card page for up to 90 days. A taproom's bar device keeps a cookie that
+          lets it record Tap Card visits for that brewery. The Help
           button may remember your first name on your own device so you don't have to type it again. We
           don't add advertising, analytics or tracking tools to the site.
         </p>
@@ -80,6 +88,7 @@ export function PrivacyPolicy() {
         <LegalList
           items={[
             "To run the member directory, events, jobs board and maps.",
+            "To run the Inland Tap Card: record visits and offers, show your progress, and give out Guild rewards.",
             "To review applications to join and to set up and support member profiles.",
             "To answer your messages and help with sign-in problems.",
             "To send sign-in links, notices about your profile, and Guild emails to members.",
@@ -160,7 +169,8 @@ export function PrivacyPolicy() {
         <p>
           We keep member information while you are a member and for a reasonable time afterward. Messages
           and applications are kept as long as we need them to respond and to keep a record of our
-          decisions. Server logs are kept only briefly.
+          decisions. Inland Tap Card information is kept while the program runs, or until you ask us to
+          delete it. Server logs are kept only briefly.
         </p>
       </LegalSection>
 

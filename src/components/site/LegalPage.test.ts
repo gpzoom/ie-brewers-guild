@@ -40,6 +40,15 @@ describe("Privacy Policy", () => {
     expect(t).toContain("We never add you to an email list without your OK");
   });
 
+  it("describes the Inland Tap Card: what it stores, who sees it, its cookies", () => {
+    expect(t).toContain("Inland Tap Card");
+    expect(t).toContain("each visit (which stop and when)");
+    expect(t).toContain("the bartender sees your first name");
+    expect(t).toContain("Breweries don't see your email address");
+    expect(t).toContain("bar device");
+    expect(t).toContain("signed in to your Tap Card");
+  });
+
   it("lists the Help button's form, which also notes the page and browser", () => {
     expect(t).toContain("the Help button");
     expect(t).toContain("which page you were on");
@@ -73,6 +82,14 @@ describe("Terms of Use", () => {
 
   it("photos sent through a sharing link stay on the website only", () => {
     expect(t).toContain("Photos sent to you through a sharing link are shown only on your profile");
+  });
+
+  it("sets the Inland Tap Card rules", () => {
+    expect(t).toContain("Inland Tap Card");
+    expect(t).toContain("once per stop each calendar year");
+    expect(t).toContain("approved by the Guild");
+    expect(t).toContain("21 or older");
+    expect(t).toContain("can change or end the program");
   });
 
   it("covers the jobs board, as-is information and limits of liability", () => {

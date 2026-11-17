@@ -109,6 +109,17 @@ export function TermsOfUse() {
         </p>
       </LegalSection>
 
+      <LegalSection title="Inland Tap Card">
+        <p>
+          The Inland Tap Card is for people 21 or older. Each stop's offer can be used once per stop each
+          calendar year (Pacific time), and only by the card's holder. The standard offer is a first beer
+          for a nickel; a brewery may offer something else instead once it's approved by the Guild. A stop
+          may refuse service as the law requires. Guild rewards are for visiting different stops, not for
+          how much you drink. The Guild can change or end the program, its rewards and its stops at any
+          time.
+        </p>
+      </LegalSection>
+
       <LegalSection title="Jobs board">
         <p>
           Job postings come from members. The Guild isn't the employer and isn't part of hiring: job

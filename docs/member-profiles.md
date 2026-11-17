@@ -131,7 +131,7 @@ Strip EXIF from uploaded photos. Phone photos carry GPS coordinates, and a membe
 
 ## The Guild Trail
 
-**The Trail is deferred and nothing in this build implements it.** It is described here so the hooks in the data model make sense and so it can be switched on later without a rewrite. No progress strip, no visited count and no visitor data appear anywhere on the current screens.
+**Built as the Inland Tap Card (phase 1, 2026-11-17)** — see `docs/superpowers/specs/2026-11-17-inland-tap-card-design.md`. Plastic NFC/QR cards tapped by brewery staff on a bar device record visits and the once-a-year offer; holders see their progress at `/card`; the public Trail page is `/trail`; a trail stop's profile shows its offer. The profile progress strip described below is still not built.
 
 Two mechanisms that look alike and must not be conflated.
 
@@ -1110,14 +1110,18 @@ Unique on (calendar\_connection\_id, external\_event\_id). **A re-sync reconcile
 
 `categories` holds member categories as `(id, name, slug, sort_order, member_type)`, where `member_type` is `allied` (supply categories) or `mobile` (Entertainment, Food Truck, Pop-up Food Vendor, …), checked in (`allied`, `mobile`). A member may pick any number of categories of their own type. The Guild Categories page has Affiliate and Mobile tabs; `member_categories` joins `(member_id, category_id)`. A join table rather than a text array, so the directory can filter by category later without a migration.
 
-### Trail hooks — not built
+### Inland Tap Card tables
 
-The passport is deferred. Two hooks now so adding it later is not a rewrite, and neither stores anything about a visitor:
+Built 2026-11-17 (migration `20261120100000_inland_tap_card.sql`), replacing the `trail_visits` sketch. `members.trail_eligible` still decides who is a stop (with `status = 'published'` and `member_type = 'producer'`). All tables are server-only (RLS on, no client grants); the Worker checks the caller:
 
-- `members.trail_eligible` exists and is set true for producers. The rule lives in data, so changing who qualifies is an update, not a code change.
-- The shape it would take is recorded here and **not created**: a `trail_visits` table of `(visitor_id, member_id, visited_at)`. Whether `visitor_id` is an anonymous local identifier or a real account is the open product question, and it carries privacy weight, so nothing is written until the Guild decides.
-
-Nothing in the current build writes visitor data of any kind.
+- `tap_card_batches`, `tap_cards` — print runs and card codes (8-char Crockford base32; `/p/<code>`).
+- `tap_card_holders` — name, email (unique ignoring case), how the 21+ check was made.
+- `tap_card_visits` — one per holder per brewery per Pacific day; `redeemed_year` unique per holder and brewery.
+- `scanner_devices` — a brewery's bar devices (token hash; cookie `iebg_scanner`).
+- `tap_card_offers` — a brewer's own offer, `pending` / `approved` / `declined`.
+- `tap_card_milestones`, `tap_card_rewards` — Guild rewards for distinct stops in a calendar year.
+- `tap_card_login_tokens`, `tap_card_sessions` — holder sign-in (cookie `iebg_tapcard`), separate from member sign-in.
+- `site_settings.tap_card_period` (`calendar_year`) and `tap_card_price_cents`.
 
 ### Row level security
 
