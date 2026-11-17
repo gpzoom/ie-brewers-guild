@@ -72,7 +72,10 @@ export async function submitJoinCore(deps: JoinDeps, input: JoinInput): Promise<
       console.error("submitJoin: Google details lookup failed; continuing without it", errorMessage(err));
     }
   }
-  if (profile?.permanentlyClosed) profile = null;
+  // A permanently closed place gives no data and isn't linked to the application
+  // (the duplicate check below still uses its id).
+  const closedPlace = profile?.permanentlyClosed === true;
+  if (closedPlace) profile = null;
 
   const duplicate = await deps.findDuplicate({
     businessName: input.businessName,
@@ -91,7 +94,7 @@ export async function submitJoinCore(deps: JoinDeps, input: JoinInput): Promise<
     return { kind: "error", message: JOIN_BUSY };
   }
 
-  const memberId = await deps.createApplicant(input, profile);
+  const memberId = await deps.createApplicant(closedPlace ? { ...input, placeId: null } : input, profile);
 
   let user: { created: true; userId: string } | { created: false } | null = null;
   try {

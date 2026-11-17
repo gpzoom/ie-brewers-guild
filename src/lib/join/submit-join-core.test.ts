@@ -130,11 +130,11 @@ describe("submitJoinCore", () => {
     expect(errorSpy).toHaveBeenCalled();
   });
 
-  it("a permanently closed place is treated as no Google data", async () => {
+  it("a permanently closed place is treated as no Google data and its id isn't saved", async () => {
     const { deps } = makeDeps({ getProfile: vi.fn(async () => ({ ...profile, permanentlyClosed: true })) });
     await expect(submitJoinCore(deps, input)).resolves.toEqual({ kind: "check-email" });
-    expect(deps.findDuplicate).toHaveBeenCalledWith(expect.objectContaining({ googleCity: null }));
-    expect(deps.createApplicant).toHaveBeenCalledWith(input, null);
+    expect(deps.findDuplicate).toHaveBeenCalledWith(expect.objectContaining({ googleCity: null, placeId: input.placeId }));
+    expect(deps.createApplicant).toHaveBeenCalledWith({ ...input, placeId: null }, null);
   });
 
   it("existing member: returns already-member and creates and sends nothing", async () => {
