@@ -6,6 +6,7 @@ import {
   revokeScannerDevice,
   type ScannerDeviceSummary,
 } from "@/lib/tap-card/brewery-tap-card.server";
+import { SETUP_QR_SIZE, setupQrDataUrl, setupQrFilename } from "@/lib/tap-card/setup-qr";
 
 const fieldClass =
   "h-11 w-full min-w-0 rounded-[9px] border border-canvas-border bg-white px-3 text-[14px] text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
@@ -28,6 +29,8 @@ export function TapCardSection({ memberId }: { memberId: string }) {
   const [devices, setDevices] = useState<ScannerDeviceSummary[] | null>(null);
   const [label, setLabel] = useState("");
   const [setupUrl, setSetupUrl] = useState<string | null>(null);
+  const [setupLabel, setSetupLabel] = useState("");
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -45,6 +48,18 @@ export function TapCardSection({ memberId }: { memberId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memberId]);
 
+  useEffect(() => {
+    setQrDataUrl(null);
+    if (!setupUrl) return;
+    let current = true;
+    setupQrDataUrl(setupUrl)
+      .then((dataUrl) => current && setQrDataUrl(dataUrl))
+      .catch(() => current && setQrDataUrl(null));
+    return () => {
+      current = false;
+    };
+  }, [setupUrl]);
+
   async function onAdd(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -53,6 +68,7 @@ export function TapCardSection({ memberId }: { memberId: string }) {
     try {
       const result = await createScannerDevice({ data: { memberId, label } });
       setSetupUrl(result.setupUrl);
+      setSetupLabel(label);
       setLabel("");
       await reload();
     } catch (err) {
@@ -136,8 +152,26 @@ export function TapCardSection({ memberId }: { memberId: string }) {
         {setupUrl && (
           <div className="flex flex-col gap-2 rounded-xl border border-canvas-border bg-canvas px-4 py-3">
             <p className="text-[13px] font-semibold text-ink">Setup link — open it on the bar device. It&rsquo;s shown only once.</p>
+            <p className="text-[13px] text-ink-muted">
+              Scan the QR code with the bar device&rsquo;s camera, or copy the link and open it there. You can download the QR
+              code to print and take to the bar.
+            </p>
+            {qrDataUrl && (
+              <img
+                src={qrDataUrl}
+                width={SETUP_QR_SIZE}
+                height={SETUP_QR_SIZE}
+                alt="QR code for the bar-device setup link"
+                className="size-[300px] max-w-full rounded-md border border-canvas-border bg-white"
+              />
+            )}
             <code className="break-all text-[12px] text-ink">{setupUrl}</code>
-            <div>
+            <div className="flex flex-wrap gap-2">
+              {qrDataUrl && (
+                <a href={qrDataUrl} download={setupQrFilename(setupLabel)} className={outlineClass}>
+                  Download QR code
+                </a>
+              )}
               <button type="button" className={outlineClass} onClick={onCopy}>
                 {copied ? "Copied" : "Copy link"}
               </button>
