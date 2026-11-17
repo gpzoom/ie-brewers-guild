@@ -14,6 +14,15 @@ describe("AgeGate", () => {
     expect(html).not.toContain('name="year"');
   });
 
+  it("sits over the page as a dark, see-through layer with the page blurred behind it", () => {
+    const html = renderToStaticMarkup(createElement(AgeGate, { onConfirmed: () => {} }));
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain('aria-modal="true"');
+    expect(html).toContain("fixed inset-0");
+    expect(html).toContain("bg-black/65");
+    expect(html).toContain("backdrop-blur-md");
+  });
+
   it("links members to sign in, plus the policies", () => {
     const html = renderToStaticMarkup(createElement(AgeGate, { onConfirmed: () => {} }));
     expect(html).toContain('href="/signin?next=/portal"');

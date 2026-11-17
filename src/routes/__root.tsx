@@ -220,18 +220,21 @@ function RootComponent() {
     return <UnderConstruction />;
   }
 
-  if (
-    ageGateApplies(pathname, {
-      confirmed: ageConfirmedHere || ageGate.confirmed,
-      crawler: ageGate.crawler,
-    })
-  ) {
-    return <AgeGate onConfirmed={() => setAgeConfirmedHere(true)} />;
-  }
+  // The age check sits over the page (owner: dark, see-through, page blurred
+  // behind it); until it's answered the page can't be clicked, focused or scrolled.
+  const showAgeGate = ageGateApplies(pathname, {
+    confirmed: ageConfirmedHere || ageGate.confirmed,
+    crawler: ageGate.crawler,
+  });
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex min-h-screen flex-col">
+      {showAgeGate && <AgeGate onConfirmed={() => setAgeConfirmedHere(true)} />}
+      <div
+        className={showAgeGate ? "flex h-screen flex-col overflow-hidden" : "flex min-h-screen flex-col"}
+        inert={showAgeGate}
+        aria-hidden={showAgeGate || undefined}
+      >
         {maintenanceOn && isGuildAdmin && !isBare && (
           <div
             role="status"

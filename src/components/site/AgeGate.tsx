@@ -21,7 +21,12 @@ export function AgeGate({ onConfirmed }: { onConfirmed: () => void }) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-10 text-center">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Age check"
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-y-auto bg-black/65 px-4 py-10 text-center backdrop-blur-md"
+    >
       <img src={logo} alt="Inland Southern California Brewers Guild" className="h-20 w-20 rounded-sm object-contain" />
       <h1 className="mt-6 font-display text-3xl tracking-wider text-foreground md:text-4xl">
         Inland Southern California Brewers Guild
