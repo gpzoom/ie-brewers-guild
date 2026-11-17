@@ -1,7 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { adminFillFromGoogle, adminSearchPlaces } from "@/lib/google/admin-fill.server";
 import type { FillField } from "@/lib/google/fill-patch";
+import {
+  type FillSummary,
+  stashFillSummary,
+  takeFillSummary,
+} from "@/lib/google/fill-summary-carry";
 import type { PlaceCandidate } from "@/lib/google/places-client.server";
 import { useDraftStatus } from "@/components/admin/DraftStatusContext";
 import {
@@ -12,11 +18,7 @@ import {
   textInputClass,
 } from "@/components/admin/basics/ui";
 
-export type FillSummary = {
-  filled: FillField[];
-  kept: FillField[];
-  permanentlyClosed: boolean;
-};
+export type { FillSummary };
 
 const FIELD_LABEL: Record<FillField, string> = {
   address: "address",
@@ -33,24 +35,26 @@ function list(fields: FillField[]): string {
 /**
  * Guild admins only: finds this business on Google and fills the EMPTY
  * profile fields (address, phone, tagline, hours, website) in the draft.
- * Anything already filled in is kept. The summary is lifted into the route
- * so it survives the form reloading with the new draft values.
+ * Anything already filled in is kept. After a fill the whole page reloads so
+ * every field shows the new values right away; a "working on it" box shows
+ * until then, and the summary is carried across the reload.
  */
 export function FillFromGooglePanel({
   memberId,
   businessName,
   city,
-  summary,
-  onFilled,
 }: {
   memberId: string;
   businessName: string;
   city: string;
-  summary: FillSummary | null;
-  /** Called after a successful fill, so the page can reload the draft into the form. */
-  onFilled: (summary: FillSummary) => Promise<void> | void;
 }) {
   const draftStatus = useDraftStatus();
+  const [summary, setSummary] = useState<FillSummary | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  useEffect(() => {
+    const carried = takeFillSummary(memberId);
+    if (carried) setSummary(carried);
+  }, [memberId]);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(`${businessName} ${city}`.trim());
   const [results, setResults] = useState<PlaceCandidate[] | null>(null);
@@ -77,15 +81,22 @@ export function FillFromGooglePanel({
     setError(null);
     try {
       const result = await adminFillFromGoogle({ data: { memberId, placeId } });
-      // Nothing is saved for a permanently closed place.
-      if (!result.permanentlyClosed) draftStatus?.reportSaved("basics", result.dirtySections);
-      setResults(null);
-      setOpen(false);
-      await onFilled({
+      const next: FillSummary = {
         filled: result.filled,
         kept: result.kept,
         permanentlyClosed: result.permanentlyClosed,
-      });
+      };
+      setResults(null);
+      setOpen(false);
+      // Nothing is saved for a permanently closed place, so nothing to reload.
+      if (result.permanentlyClosed) {
+        setSummary(next);
+        return;
+      }
+      draftStatus?.reportSaved("basics", result.dirtySections);
+      stashFillSummary(memberId, next);
+      setRefreshing(true);
+      window.location.reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't fill from Google — try again.");
     } finally {
@@ -112,7 +123,26 @@ export function FillFromGooglePanel({
         that are still empty. Anything already filled in stays as it is.
       </p>
 
+      {(refreshing || (busy !== null && busy !== "search")) && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-3 rounded-[10px] border border-[#E9C995] bg-[#FFF8EC] px-[13px] py-[11px]"
+        >
+          <Loader2
+            aria-hidden="true"
+            className="size-5 shrink-0 animate-spin text-[#C98A2E] motion-reduce:animate-none"
+          />
+          <p className="text-[13px] font-medium leading-[1.45] text-ink">
+            {refreshing
+              ? "Done. Updating the page with Google's details…"
+              : "Working on it: getting this business's details from Google…"}
+          </p>
+        </div>
+      )}
+
       {summary &&
+        !refreshing &&
         (summary.permanentlyClosed ? (
           // The server writes nothing for a permanently closed place.
           <div role="status" className="flex flex-col gap-2">
@@ -130,7 +160,7 @@ export function FillFromGooglePanel({
           </div>
         ))}
 
-      {!open ? (
+      {refreshing ? null : !open ? (
         <div>
           <button type="button" className={secondaryButtonClass} onClick={() => setOpen(true)}>
             Fill from Google
@@ -154,7 +184,11 @@ export function FillFromGooglePanel({
               onChange={(e) => setQuery(e.target.value)}
               className={`${textInputClass} sm:flex-1`}
             />
-            <button type="submit" className={primaryButtonClass} disabled={busy !== null || !query.trim()}>
+            <button
+              type="submit"
+              className={primaryButtonClass}
+              disabled={busy !== null || !query.trim()}
+            >
               {busy === "search" ? "Searching…" : "Search"}
             </button>
           </form>
