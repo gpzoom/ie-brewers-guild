@@ -34,7 +34,8 @@ describe("Privacy Policy", () => {
 
   it("follows the Brewers Association digital media guidelines: age cookie, under 21, opt-in", () => {
     expect(t).toContain("we save a cookie so we don't ask again for one year");
-    expect(t).toContain("not your date of birth");
+    expect(t).toContain("it records only that you confirmed you're 21 or older");
+    expect(t).not.toContain("date of birth");
     expect(t).toContain("anyone under 21");
     expect(t).toContain("We never add you to an email list without your OK");
   });

@@ -65,7 +65,7 @@ export function PrivacyPolicy() {
         <p>
           Our own cookies are only the ones the site needs. Sign-in cookies keep you signed in. When
           you confirm you're 21 or older, we save a cookie so we don't ask again for one year; it records
-          only that you confirmed your age, not your date of birth, which never leaves your browser. The Help
+          only that you confirmed you're 21 or older. The Help
           button may remember your first name on your own device so you don't have to type it again. We
           don't add advertising, analytics or tracking tools to the site.
         </p>
@@ -166,8 +166,8 @@ export function PrivacyPolicy() {
 
       <LegalSection title="Under 21">
         <p>
-          This site is for adults of legal drinking age (21 and over). We ask for your date of birth
-          before you enter, and anyone who says they're under 21 can't go further, so we don't collect
+          This site is for adults of legal drinking age (21 and over). We ask you to confirm you're 21
+          or older before you enter, and anyone who says they're under 21 can't go further, so we don't collect
           their information. We don't knowingly collect information from anyone under 21. If you think
           someone under 21 has given us information, email <LegalEmail /> and we'll delete it.
         </p>

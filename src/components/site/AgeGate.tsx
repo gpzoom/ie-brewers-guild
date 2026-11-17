@@ -1,26 +1,23 @@
 import { useState, type FormEvent } from "react";
 import logo from "@/assets/logo.svg";
-import { ageCookieString, checkBirthDate, LEGAL_DRINKING_AGE } from "@/lib/site/age-gate";
-
-const fieldClass =
-  "h-12 w-full rounded-md border border-border bg-background px-3 text-center text-lg text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
+import { ageCookieString, LEGAL_DRINKING_AGE } from "@/lib/site/age-gate";
 
 /**
- * The 21+ check shown before the public site (owner, 2026-11-17). The date of
- * birth is checked here and never stored or sent; a yes saves a one-year
- * cookie. Under 21 gets a polite stop and nothing is saved.
+ * The 21+ check shown before the public site. Owner, 2026-11-17: a checkbox
+ * for now, while the membership votes on following the Brewers Association
+ * guidelines (which ask for a date of birth; checkBirthDate in
+ * src/lib/site/age-gate.ts is kept, tested, for that). A yes saves a one-year
+ * cookie; "I'm under 21" gets a polite stop and nothing is saved.
  */
 export function AgeGate({ onConfirmed }: { onConfirmed: () => void }) {
-  const [birth, setBirth] = useState({ month: "", day: "", year: "" });
-  const [state, setState] = useState<"ask" | "invalid" | "under">("ask");
+  const [checked, setChecked] = useState(false);
+  const [under, setUnder] = useState(false);
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
-    const result = checkBirthDate(birth);
-    if (result === "ok") {
-      document.cookie = ageCookieString(window.location.protocol === "https:");
-      onConfirmed();
-    } else setState(result);
+    if (!checked) return;
+    document.cookie = ageCookieString(window.location.protocol === "https:");
+    onConfirmed();
   }
 
   return (
@@ -30,51 +27,38 @@ export function AgeGate({ onConfirmed }: { onConfirmed: () => void }) {
         Inland Southern California Brewers Guild
       </h1>
 
-      {state === "under" ? (
+      {under ? (
         <div role="alert" className="mt-6 max-w-md space-y-3">
           <p className="text-lg font-semibold text-foreground">Sorry, this site is for adults {LEGAL_DRINKING_AGE} and over.</p>
           <p className="text-sm text-muted-foreground">Thanks for stopping by. Please come back when you're {LEGAL_DRINKING_AGE}.</p>
         </div>
       ) : (
-        <form onSubmit={onSubmit} noValidate className="mt-6 w-full max-w-sm space-y-4">
+        <form onSubmit={onSubmit} className="mt-6 w-full max-w-sm space-y-4">
           <p className="text-pretty text-sm text-muted-foreground">
-            You must be {LEGAL_DRINKING_AGE} or older to visit this site. Please enter your date of birth.
+            You must be {LEGAL_DRINKING_AGE} or older to visit this site.
           </p>
-          <fieldset className="grid grid-cols-[1fr_1fr_1.4fr] gap-3 text-left">
-            <legend className="sr-only">Date of birth</legend>
-            {(
-              [
-                ["month", "Month", "MM", 2],
-                ["day", "Day", "DD", 2],
-                ["year", "Year", "YYYY", 4],
-              ] as const
-            ).map(([key, label, placeholder, max]) => (
-              <label key={key} className="flex flex-col gap-1 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                {label}
-                <input
-                  name={key}
-                  inputMode="numeric"
-                  autoComplete={key === "month" ? "bday-month" : key === "day" ? "bday-day" : "bday-year"}
-                  maxLength={max}
-                  placeholder={placeholder}
-                  value={birth[key]}
-                  onChange={(e) => setBirth((b) => ({ ...b, [key]: e.target.value.replace(/\D/g, "") }))}
-                  aria-invalid={state === "invalid" || undefined}
-                  className={fieldClass}
-                />
-              </label>
-            ))}
-          </fieldset>
-          {state === "invalid" && (
-            <p role="alert" className="text-sm font-medium text-destructive">
-              Please enter a real date of birth, like 04 / 21 / 1990.
-            </p>
-          )}
+          <label className="flex min-h-12 cursor-pointer items-center justify-center gap-3 rounded-md border border-border px-4 py-3 text-left text-base text-foreground">
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={(e) => setChecked(e.target.checked)}
+              className="h-5 w-5 shrink-0 accent-[var(--primary)]"
+            />
+            I am {LEGAL_DRINKING_AGE} or older
+          </label>
           <button
             type="submit"
-            className="h-12 w-full rounded-md bg-primary text-sm font-semibold uppercase tracking-widest text-primary-foreground transition-colors hover:bg-primary/90"
+            disabled={!checked}
+            className="h-12 w-full rounded-md bg-primary text-sm font-semibold uppercase tracking-widest text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Enter the site
+          </button>
+          <button
+            type="button"
+            onClick={() => setUnder(true)}
+            className="min-h-11 text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+          >
+            I'm under {LEGAL_DRINKING_AGE}
           </button>
           <p className="text-xs text-muted-foreground">Please drink responsibly.</p>
         </form>

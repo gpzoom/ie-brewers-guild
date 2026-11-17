@@ -33,7 +33,7 @@ export function TermsOfUse() {
       <LegalSection title="21 and over">
         <p>
           This site features producers of beer, wine, cider, mead and spirits. You must be of legal
-          drinking age (21 or older) to use it, and we ask for your date of birth before you enter.
+          drinking age (21 or older) to use it, and we ask you to confirm your age before you enter.
           Please drink responsibly, and never drink and drive.
         </p>
       </LegalSection>
