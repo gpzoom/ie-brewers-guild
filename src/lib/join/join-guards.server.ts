@@ -18,7 +18,9 @@ type RateLimiter = { limit: (opts: { key: string }) => Promise<{ success: boolea
  * endpoint, so a missing binding refuses rather than allowing everything.
  * Returns a message to show, or null when the request may go ahead.
  */
-export async function rateLimitMessage(namespace: "join-submit" | "join-search"): Promise<string | null> {
+export async function rateLimitMessage(
+  namespace: "join-submit" | "join-search" | "tapcard-activate" | "tapcard-signin" | "tapcard-card",
+): Promise<string | null> {
   const { env } = await import("cloudflare:workers");
   const limiter = (env as { CREATOR_UPLOAD_RATE_LIMITER?: RateLimiter }).CREATOR_UPLOAD_RATE_LIMITER;
   if (!limiter) {
