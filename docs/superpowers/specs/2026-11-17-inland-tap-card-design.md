@@ -70,7 +70,7 @@ The Guild wants the public to visit member taprooms they have never been to, and
 
 **Age.** Sign-up page includes the existing 21+ confirmation; staff check ID as they do for any pour.
 
-**Emails.** Only transactional (sign-in link, card activation). Any marketing email needs a separate opt-in. All sends respect the existing pause switch / dry-run rules.
+**Emails.** Only transactional (sign-in link, card activation). Any marketing email needs a separate opt-in. Owner, 2026-11-17: Tap Card emails are treated like sign-in emails — they always go out and don't follow the member-notification pause switch.
 
 ## Data (new tables, Supabase)
 `tap_card_holders` (name, email, created), `tap_cards` (code, batch, brewery, holder, status), `tap_card_visits` (holder, member, visited_at, redeemed bool, card used, recorded_by device), `scanner_devices` (member, token hash, revoked_at), `tap_card_milestones`, `tap_card_challenges`, `wallet_passes` (holder, WalletPush pass id). Settings: redemption period, suggested card price. Brewer offer text on `members`. RLS: holders read only their own; members read aggregate counts only; staff writes only via a Worker route that checks the scanner token. Replaces the `trail_visits` sketch in member-profiles.md.
@@ -93,7 +93,7 @@ The Guild wants the public to visit member taprooms they have never been to, and
 - "One visit per day" and the yearly reset use Pacific time.
 - Trail stops = published members with `trail_eligible` on.
 - Sign-up reuses the existing 21+ check (`src/lib/site/age-gate.ts` — on origin; pull first).
-- TapCard emails go through `src/lib/notifications/send.server.ts` so the pause switch and dry run apply.
+- Tap Card emails are sent like sign-in emails (`sendTransactionalEmail`), outside the notification pause switch (owner, 2026-11-17).
 - Testing: Sample Brewery + test cards flagged `is_test`; email in dry run (shared staging/live database).
 - The privacy/terms update ships in the same release as phase 1, because phase 1 stores names, emails and visits.
 - Card URL domain `iscbrewersguild.org` (matches SITE_ORIGIN) — confirm before the print run, since printed cards can't change.
