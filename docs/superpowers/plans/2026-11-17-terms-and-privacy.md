@@ -70,3 +70,12 @@ Content follows the spec's Content section exactly (every listed point present).
 
 - [ ] Walk the owner through Cloudflare Email Routing → Routing rules → Create address `legal` → destination the owner picks (boblelle77@gmail.com is already verified). Test from a different account. Optional: Gmail "Send mail as" using the existing "Gmail - webmaster" Resend key.
 - [ ] Only after legal@ is confirmed working and the owner says "go": merge to main.
+
+### Task 6: Announcement to existing members (owner sends)
+
+Owner decision 2026-11-17: published members agreed to website display by publishing, but not to reuse beyond the website (decision B). They are told once, by the owner, after the pages are live.
+
+- [ ] Draft the broadcast text for the owner (subject + body, US English, plain): the Guild has posted Terms of Use and a Privacy Policy (links); nothing changes in how profiles work; the Guild may now feature member logos and photos on social media, newsletters and event promotion, always credited; to opt out, email legal@iscbrewersguild.org; keeping a profile published means agreeing to the Terms.
+- [ ] The owner sends it with the Guild Broadcast tool (no code sends anything). Claude never sends it.
+- [ ] Rule for the Guild: no reuse of an existing member's content beyond the website until 30 days after the send date. Opt-outs are kept in the legal@ inbox (a Gmail label "Opted out"); no database change.
+- [ ] Save the send date and the 30-day date to memory.
