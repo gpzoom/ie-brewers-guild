@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrailRouteImport } from './routes/trail'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SurveyResultsRouteImport } from './routes/survey-results'
 import { Route as SigninRouteImport } from './routes/signin'
@@ -77,6 +78,11 @@ import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-m
 import { Route as ApiConfirmHoursTokenRouteImport } from './routes/api.confirm-hours.$token'
 import { Route as ApiAdminMediaAssetIdRouteImport } from './routes/api.admin-media.$assetId'
 
+const TrailRoute = TrailRouteImport.update({
+  id: '/trail',
+  path: '/trail',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -433,6 +439,7 @@ export interface FileRoutesByFullPath {
   '/signin': typeof SigninRoute
   '/survey-results': typeof SurveyResultsRoute
   '/terms': typeof TermsRoute
+  '/trail': typeof TrailRoute
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/discount': typeof AdminDiscountRoute
   '/admin/events': typeof AdminEventsRoute
@@ -500,6 +507,7 @@ export interface FileRoutesByTo {
   '/signin': typeof SigninRoute
   '/survey-results': typeof SurveyResultsRoute
   '/terms': typeof TermsRoute
+  '/trail': typeof TrailRoute
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/discount': typeof AdminDiscountRoute
   '/admin/events': typeof AdminEventsRoute
@@ -568,6 +576,7 @@ export interface FileRoutesById {
   '/signin': typeof SigninRoute
   '/survey-results': typeof SurveyResultsRoute
   '/terms': typeof TermsRoute
+  '/trail': typeof TrailRoute
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/discount': typeof AdminDiscountRoute
   '/admin/events': typeof AdminEventsRoute
@@ -639,6 +648,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/survey-results'
     | '/terms'
+    | '/trail'
     | '/admin/basics'
     | '/admin/discount'
     | '/admin/events'
@@ -706,6 +716,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/survey-results'
     | '/terms'
+    | '/trail'
     | '/admin/basics'
     | '/admin/discount'
     | '/admin/events'
@@ -773,6 +784,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/survey-results'
     | '/terms'
+    | '/trail'
     | '/admin/basics'
     | '/admin/discount'
     | '/admin/events'
@@ -843,6 +855,7 @@ export interface RootRouteChildren {
   SigninRoute: typeof SigninRoute
   SurveyResultsRoute: typeof SurveyResultsRoute
   TermsRoute: typeof TermsRoute
+  TrailRoute: typeof TrailRoute
   AdminPreviewRoute: typeof AdminPreviewRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
@@ -867,6 +880,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trail': {
+      id: '/trail'
+      path: '/trail'
+      fullPath: '/trail'
+      preLoaderRoute: typeof TrailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -1460,6 +1480,7 @@ const rootRouteChildren: RootRouteChildren = {
   SigninRoute: SigninRoute,
   SurveyResultsRoute: SurveyResultsRoute,
   TermsRoute: TermsRoute,
+  TrailRoute: TrailRoute,
   AdminPreviewRoute: AdminPreviewRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthConfirmRoute: AuthConfirmRoute,
