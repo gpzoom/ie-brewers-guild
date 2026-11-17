@@ -11,6 +11,22 @@ import {
 } from "@/lib/portal/portal-sections";
 
 describe("portalSectionsFor", () => {
+  it("gives trail-stop producers a Tap Card section, after Jobs", () => {
+    const sections = portalSectionsFor({ role: "owner", memberType: "producer", trailEligible: true });
+    expect(sections).toContain("tap-card");
+    expect(sections.indexOf("tap-card")).toBe(sections.indexOf("jobs") + 1);
+    expect(portalSectionsFor({ role: "co_owner", memberType: "producer", trailEligible: true })).toContain("tap-card");
+    expect(portalSectionsFor({ role: "editor", memberType: "producer", trailEligible: true })).toContain("tap-card");
+    expect(PORTAL_SECTION_LABELS["tap-card"]).toEqual({ label: "Tap Card", short: "Tap Card" });
+  });
+
+  it("no Tap Card section off the trail, for other member types, or for a Photos & events editor", () => {
+    expect(portalSectionsFor({ role: "owner", memberType: "producer" })).not.toContain("tap-card");
+    expect(portalSectionsFor({ role: "owner", memberType: "producer", trailEligible: false })).not.toContain("tap-card");
+    expect(portalSectionsFor({ role: "owner", memberType: "mobile", trailEligible: true })).not.toContain("tap-card");
+    expect(portalSectionsFor({ role: "media_events", memberType: "producer", trailEligible: true })).not.toContain("tap-card");
+  });
+
   it("gives the owner every section, with Discount only for Affiliate Members", () => {
     expect(portalSectionsFor({ role: "owner", memberType: "producer" })).toEqual([
       "notifications",

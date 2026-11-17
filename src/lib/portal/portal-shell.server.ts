@@ -149,7 +149,8 @@ export type PortalSectionData =
   | ({ section: "food" } & Loaded<typeof loadFoodSection>)
   | ({ section: "jobs" } & Loaded<typeof loadJobsSection>)
   | ({ section: "discount" } & Loaded<typeof loadDiscountSection>)
-  | ({ section: "people" } & Loaded<typeof loadPeople>);
+  | ({ section: "people" } & Loaded<typeof loadPeople>)
+  | { section: "tap-card" };
 
 export const getPortalSectionData = createServerFn({ method: "GET" })
   .inputValidator((data: { section: string }) => {
@@ -163,7 +164,7 @@ export const getPortalSectionData = createServerFn({ method: "GET" })
 
     const { data: row, error } = await supabase
       .from("members")
-      .select("member_type")
+      .select("member_type, trail_eligible")
       .eq("id", id)
       .single();
     if (error || !row) throw new Error("Member not found.");
@@ -171,6 +172,7 @@ export const getPortalSectionData = createServerFn({ method: "GET" })
         role: member.role,
         memberType: row.member_type,
         isBusinessManager: member.isBusinessManager,
+        trailEligible: row.trail_eligible === true,
       })) {
       throw new Error("You don't have access to that section.");
     }
@@ -205,6 +207,9 @@ export const getPortalSectionData = createServerFn({ method: "GET" })
         return { section: "jobs", ...(await loadJobsSection(supabase, id)) };
       case "discount":
         return { section: "discount", ...(await loadDiscountSection(supabase, id)) };
+      case "tap-card":
+        // The section loads its own devices (brewery-tap-card.server.ts checks the caller again).
+        return { section: "tap-card" };
       case "people": {
         // canOpenPortalSection has already checked the caller is the owner,
         // a co-owner, the business manager, or a Guild admin editing as them.

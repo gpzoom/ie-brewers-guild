@@ -19,6 +19,7 @@ import { FinishProfileCard } from "@/components/portal/FinishProfileCard";
 import { RequestTypeChange } from "@/components/portal/RequestTypeChange";
 import { PeopleSection } from "@/components/portal/PeopleSection";
 import { NotificationsView } from "@/components/portal/NotificationsView";
+import { TapCardSection } from "@/components/portal/TapCardSection";
 
 /**
  * One portal section (/portal/$section), from its loaded data. Each is the
@@ -234,6 +235,9 @@ export function PortalSectionView({
         />
       );
     }
+
+    case "tap-card":
+      return <TapCardSection memberId={shell.memberId} />;
 
     case "people":
       return (

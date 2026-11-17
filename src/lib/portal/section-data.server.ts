@@ -59,6 +59,8 @@ export type PortalMemberShell = {
   status: MemberStatus;
   slug: string;
   draftStatus: DraftStatus;
+  /** A stop on the Inland Tap Card trail (Guild-set); opens the Tap Card section for producers. */
+  trailEligible: boolean;
 };
 
 export async function loadMemberShell(
@@ -68,7 +70,7 @@ export async function loadMemberShell(
   const [rowResult, draftStatus] = await Promise.all([
     supabase
       .from("members")
-      .select("business_name, member_type, status, slug, type_confirmed_at, setup_completed_at")
+      .select("business_name, member_type, status, slug, type_confirmed_at, setup_completed_at, trail_eligible")
       .eq("id", member.memberId)
       .maybeSingle(),
     loadDraftStatus(supabase, member.memberId),
@@ -83,6 +85,7 @@ export async function loadMemberShell(
     slug: string;
     type_confirmed_at: string | null;
     setup_completed_at: string | null;
+    trail_eligible: boolean | null;
   };
   return {
     memberId: member.memberId,
@@ -95,6 +98,7 @@ export async function loadMemberShell(
     status: row.status,
     slug: row.slug,
     draftStatus,
+    trailEligible: row.trail_eligible === true,
   };
 }
 

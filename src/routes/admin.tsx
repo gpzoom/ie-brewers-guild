@@ -1,3 +1,4 @@
+import { isTapCardStop } from "@/lib/tap-card/brewery-tap-card.server";
 import { Fragment, useMemo } from "react";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { requireMemberSession } from "@/lib/auth/require-member-session.server";
@@ -42,13 +43,14 @@ export const Route = createFileRoute("/admin")({
     // The location menu (artboard BZ2) comes with the session (a manager's
     // own business; a Guild admin editing as a member never gets it).
     // The Notifications count and banner (spec 2026-11-13), so Edit as them shows them too.
-    const [publishGateData, memberName, draftStatus, notifications] = await Promise.all([
+    const [publishGateData, memberName, draftStatus, notifications, tapCardStop] = await Promise.all([
       getPublishGateData({ data: { memberId: context.memberId } }),
       getMemberDisplayName({ data: { memberId: context.memberId } }),
       getDraftStatus({ data: { memberId: context.memberId } }),
       getNotificationSummary({ data: { surface: "admin" } }),
+      isTapCardStop({ data: { memberId: context.memberId } }),
     ]);
-    return { publishGateData, memberName, draftStatus, notifications };
+    return { publishGateData, memberName, draftStatus, notifications, tapCardStop };
   },
   head: () => ({ meta: [{ title: "Member admin — Inland Southern California Brewers Guild" }] }),
   component: AdminLayout,
@@ -88,7 +90,7 @@ function AdminLayout() {
 
 function AdminLayoutInner() {
   const { memberId, isImpersonating, locationSwitcher } = Route.useRouteContext();
-  const { publishGateData, memberName, draftStatus, notifications } = Route.useLoaderData();
+  const { publishGateData, memberName, draftStatus, notifications, tapCardStop } = Route.useLoaderData();
   const epoch = useDraftStatus()?.epoch ?? 0;
   const isPublished = publishGateData.status === "published";
   return (
@@ -103,6 +105,7 @@ function AdminLayoutInner() {
       publishSlot={<PublishGateDialog memberId={memberId} initial={publishGateData} />}
       navItems={adminNavItemsFor(publishGateData.memberType, {
         people: canInvitePeople(draftStatus.role, isImpersonating),
+        tapCard: tapCardStop && draftStatus.role !== "media_events",
       }).map((item) =>
         item.to === "/admin/notifications" ? { ...item, badge: notificationCount(notifications) } : item,
       )}
