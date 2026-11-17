@@ -26,10 +26,15 @@ describe("Privacy Policy", () => {
   });
 
   it("names the services and links Google's terms and privacy policy", () => {
-    for (const name of ["Cloudflare", "Supabase", "Resend", "Google Maps"]) expect(t).toContain(name);
+    for (const name of ["Cloudflare", "Supabase", "Resend", "Google Maps", "Google Fonts", "Livid"]) expect(t).toContain(name);
     expect(html).toContain('href="https://policies.google.com/privacy"');
     expect(html).toContain('href="https://maps.google.com/help/terms_maps/"');
     expect(t).toContain("We don't sell");
+  });
+
+  it("lists the Help button's form, which also notes the page and browser", () => {
+    expect(t).toContain("the Help button");
+    expect(t).toContain("which page you were on");
   });
 });
 
@@ -51,6 +56,10 @@ describe("Terms of Use", () => {
     expect(t).toContain("newsletters");
     expect(t).toContain("credit");
     expect(t).toContain("opt out");
+  });
+
+  it("photos sent through a sharing link stay on the website only", () => {
+    expect(t).toContain("Photos sent to you through a sharing link are shown only on your profile");
   });
 
   it("covers the jobs board, as-is information and limits of liability", () => {

@@ -28,9 +28,10 @@ export function PrivacyPolicy() {
         <LegalList
           items={[
             <>
-              <strong>When you contact us</strong> (the Contact page or the sign-in help form): your
-              name, email address, phone number if you give it, and your message. With a sign-in help
-              request we also note your browser type, to help us fix the problem.
+              <strong>When you contact us</strong> (the Contact page, the sign-in help form or the Help
+              button): your name, email address, phone number if you give it, and your message. With a
+              sign-in help request or a Help button message we also note your browser type, and for the
+              Help button which page you were on, to help us fix the problem.
             </>,
             <>
               <strong>When you apply to join:</strong> your email address, business name, city and
@@ -62,13 +63,14 @@ export function PrivacyPolicy() {
 
       <LegalSection title="Cookies">
         <p>
-          We use only the cookies needed to sign you in and keep you signed in. The help button may
-          remember your first name on your own device so you don't have to type it again. We don't use
-          advertising cookies, and we don't use analytics or tracking tools.
+          Our own cookies are only the ones needed to sign you in and keep you signed in. The Help
+          button may remember your first name on your own device so you don't have to type it again. We
+          don't add advertising, analytics or tracking tools to the site.
         </p>
         <p>
-          Pages with a map load Google Maps, and Google may set its own cookies. See Google's privacy
-          policy below.
+          Some pages load things from other services: maps from Google Maps, the site's fonts from Google
+          Fonts, and help videos from Livid. Those services receive your IP address and browser
+          information when they load, and may set their own cookies under their own privacy policies.
         </p>
       </LegalSection>
 
@@ -103,6 +105,8 @@ export function PrivacyPolicy() {
             <><strong>Cloudflare</strong> hosts the website, protects it from attacks, and routes our email.</>,
             <><strong>Supabase</strong> stores our database and uploaded photos.</>,
             <><strong>Resend</strong> sends the site's emails.</>,
+            <><strong>Google Fonts</strong> supplies the site's fonts.</>,
+            <><strong>Livid</strong> hosts the help videos in the Member Portal.</>,
             <>
               <strong>Google Maps</strong> shows maps and looks up business details. When a map loads,
               Google receives your IP address and browser information. Google's use is covered by the{" "}

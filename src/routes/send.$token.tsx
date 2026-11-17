@@ -17,6 +17,7 @@ import {
   secondaryButtonClass,
 } from "@/components/public-forms/PublicFormParts";
 import { cn } from "@/lib/utils";
+import { LegalLinks } from "@/components/site/LegalLinks";
 
 /**
  * No auth. No custom server.handlers.POST here -- an earlier version of
@@ -326,6 +327,7 @@ function SendPage() {
           The member reviews everything before it goes on their profile, so it may not appear right away.
           This link only lasts a few days, and you can't see anything else on their account with it.
         </p>
+        <LegalLinks className="text-[11px] text-ink-subtle" />
       </CanvasCard>
     );
   }

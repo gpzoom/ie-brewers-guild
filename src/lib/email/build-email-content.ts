@@ -579,12 +579,18 @@ ${signInUrl}`,
       const signInUrl = `${siteUrl}/signin`;
       const intro = `Welcome to the ${ORG_SHORT_NAME}! ${payload.businessName} is approved and your page is live:`;
       const signIn = `Sign in any time at ${signInUrl} with ${payload.email}.`;
+      // The Guild publishes a Join applicant's page, so the member never sees
+      // the notice beside Publish; the welcome tells them instead.
+      const termsUrl = `${siteUrl}/terms`;
+      const privacyUrl = `${siteUrl}/privacy`;
+      const legal = `Your membership and profile are covered by our Terms of Use (${termsUrl}) and Privacy Policy (${privacyUrl}).`;
       return {
         subject: "Welcome to the Guild — your page is live",
-        text: `${intro} ${payload.profileUrl}\n\n${signIn}`,
+        text: `${intro} ${payload.profileUrl}\n\n${signIn}\n\n${legal}`,
         html: wrapHtml([
           `${escapeHtml(intro)} <a href="${escapeHtml(payload.profileUrl)}">${escapeHtml(payload.profileUrl)}</a>`,
           escapeHtml(signIn),
+          `Your membership and profile are covered by our <a href="${termsUrl}">Terms of Use</a> and <a href="${privacyUrl}">Privacy Policy</a>.`,
         ]),
       };
     }

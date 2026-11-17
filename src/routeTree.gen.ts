@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SurveyResultsRouteImport } from './routes/survey-results'
-import { Route as SurveyRouteImport } from './routes/survey'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as NewsRouteImport } from './routes/news'
@@ -78,11 +77,6 @@ const TermsRoute = TermsRouteImport.update({
 const SurveyResultsRoute = SurveyResultsRouteImport.update({
   id: '/survey-results',
   path: '/survey-results',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SurveyRoute = SurveyRouteImport.update({
-  id: '/survey',
-  path: '/survey',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SigninRoute = SigninRouteImport.update({
@@ -387,7 +381,6 @@ export interface FileRoutesByFullPath {
   '/news': typeof NewsRoute
   '/privacy': typeof PrivacyRoute
   '/signin': typeof SigninRoute
-  '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/terms': typeof TermsRoute
   '/admin/basics': typeof AdminBasicsRoute
@@ -447,7 +440,6 @@ export interface FileRoutesByTo {
   '/news': typeof NewsRoute
   '/privacy': typeof PrivacyRoute
   '/signin': typeof SigninRoute
-  '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/terms': typeof TermsRoute
   '/admin/basics': typeof AdminBasicsRoute
@@ -508,7 +500,6 @@ export interface FileRoutesById {
   '/news': typeof NewsRoute
   '/privacy': typeof PrivacyRoute
   '/signin': typeof SigninRoute
-  '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
   '/terms': typeof TermsRoute
   '/admin/basics': typeof AdminBasicsRoute
@@ -572,7 +563,6 @@ export interface FileRouteTypes {
     | '/news'
     | '/privacy'
     | '/signin'
-    | '/survey'
     | '/survey-results'
     | '/terms'
     | '/admin/basics'
@@ -632,7 +622,6 @@ export interface FileRouteTypes {
     | '/news'
     | '/privacy'
     | '/signin'
-    | '/survey'
     | '/survey-results'
     | '/terms'
     | '/admin/basics'
@@ -692,7 +681,6 @@ export interface FileRouteTypes {
     | '/news'
     | '/privacy'
     | '/signin'
-    | '/survey'
     | '/survey-results'
     | '/terms'
     | '/admin/basics'
@@ -755,7 +743,6 @@ export interface RootRouteChildren {
   NewsRoute: typeof NewsRoute
   PrivacyRoute: typeof PrivacyRoute
   SigninRoute: typeof SigninRoute
-  SurveyRoute: typeof SurveyRoute
   SurveyResultsRoute: typeof SurveyResultsRoute
   TermsRoute: typeof TermsRoute
   AdminPreviewRoute: typeof AdminPreviewRoute
@@ -791,13 +778,6 @@ declare module '@tanstack/react-router' {
       path: '/survey-results'
       fullPath: '/survey-results'
       preLoaderRoute: typeof SurveyResultsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/survey': {
-      id: '/survey'
-      path: '/survey'
-      fullPath: '/survey'
-      preLoaderRoute: typeof SurveyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signin': {
@@ -1304,7 +1284,6 @@ const rootRouteChildren: RootRouteChildren = {
   NewsRoute: NewsRoute,
   PrivacyRoute: PrivacyRoute,
   SigninRoute: SigninRoute,
-  SurveyRoute: SurveyRoute,
   SurveyResultsRoute: SurveyResultsRoute,
   TermsRoute: TermsRoute,
   AdminPreviewRoute: AdminPreviewRoute,

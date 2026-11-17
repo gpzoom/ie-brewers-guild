@@ -75,8 +75,12 @@ export function TermsOfUse() {
           new uses, and remove existing posts where we reasonably can.
         </p>
         <p>
-          You promise that you have the right to share your content, including photos sent to you through
-          a sharing link, and that it doesn't break anyone else's rights.
+          Photos sent to you through a sharing link are shown only on your profile, because that is the
+          permission their photographer gives. We don't reuse them beyond the website.
+        </p>
+        <p>
+          You promise that you have the right to share your content and that it doesn't break anyone
+          else's rights.
         </p>
       </LegalSection>
 

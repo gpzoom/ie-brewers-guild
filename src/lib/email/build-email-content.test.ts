@@ -297,6 +297,24 @@ describe("buildEmailContent: Join application emails", () => {
     expect(content.text).toContain(`Sign in any time at ${site}/signin with sam@example.com.`);
     expect(content.html).toContain('href="https://iscbrewersguild.org/members/hop-house"');
   });
+
+  it("application_approved tells the new member about the Terms and Privacy Policy", () => {
+    const content = buildEmailContent(
+      {
+        trigger: "application_approved",
+        memberId: "m1",
+        businessName: "Hop House",
+        email: "sam@example.com",
+        profileUrl: "https://iscbrewersguild.org/members/hop-house",
+      },
+      site,
+    );
+    expect(content.text).toContain(
+      `Your membership and profile are covered by our Terms of Use (${site}/terms) and Privacy Policy (${site}/privacy).`,
+    );
+    expect(content.html).toContain(`href="${site}/terms"`);
+    expect(content.html).toContain(`href="${site}/privacy"`);
+  });
 });
 
 describe("buildEmailContent: contact_form_submitted", () => {

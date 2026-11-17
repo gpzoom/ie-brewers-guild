@@ -4,6 +4,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { MEMBER_GUIDES } from "@/lib/member-guide";
 import { cn } from "@/lib/utils";
+import { LegalLinks } from "@/components/site/LegalLinks";
 import { normalizeEmailCode, signInRedirectUrl } from "@/lib/auth/sign-in-link";
 import { verifyEmailCode } from "@/lib/auth/sign-in-verify.server";
 import {
@@ -306,6 +307,7 @@ function SignInPage() {
               </div>
             </CanvasCard>
           )}
+          <LegalLinks className="text-center text-[12px] text-[#B6AC9D]" />
         </div>
       </div>
     </div>
