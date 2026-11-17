@@ -68,6 +68,13 @@ describe("ageGateApplies", () => {
     }
     expect(ageGateApplies("/signing", visitor)).toBe(true);
   });
+
+  it("Tap Card: bar-device setup never asks; the card page asks customers", () => {
+    expect(ageGateApplies("/scanner", visitor)).toBe(false);
+    expect(ageGateApplies("/scanner/abc123", visitor)).toBe(false);
+    expect(ageGateApplies("/p/ABCD2345", visitor)).toBe(true);
+    expect(ageGateApplies("/p/ABCD2345", { confirmed: true, crawler: false })).toBe(false);
+  });
 });
 
 describe("isCrawler", () => {

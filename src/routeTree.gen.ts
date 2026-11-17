@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SurveyResultsRouteImport } from './routes/survey-results'
 import { Route as SigninRouteImport } from './routes/signin'
+import { Route as ScannerRouteImport } from './routes/scanner'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as Members2RouteImport } from './routes/members-2'
@@ -33,9 +34,11 @@ import { Route as VisitTokenRouteImport } from './routes/visit.$token'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as SigninHelpRouteImport } from './routes/signin_.help'
 import { Route as SendTokenRouteImport } from './routes/send.$token'
+import { Route as ScannerTokenRouteImport } from './routes/scanner.$token'
 import { Route as PortalSetupRouteImport } from './routes/portal.setup'
 import { Route as PortalPreviewRouteImport } from './routes/portal.preview'
 import { Route as PortalSectionsRouteImport } from './routes/portal._sections'
+import { Route as PCodeRouteImport } from './routes/p.$code'
 import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
 import { Route as JoinFinishRouteImport } from './routes/join_.finish'
 import { Route as GuildTapCardRouteImport } from './routes/guild.tap-card'
@@ -83,6 +86,11 @@ const SurveyResultsRoute = SurveyResultsRouteImport.update({
 const SigninRoute = SigninRouteImport.update({
   id: '/signin',
   path: '/signin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScannerRoute = ScannerRouteImport.update({
+  id: '/scanner',
+  path: '/scanner',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -190,6 +198,11 @@ const SendTokenRoute = SendTokenRouteImport.update({
   path: '/send/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScannerTokenRoute = ScannerTokenRouteImport.update({
+  id: '/$token',
+  path: '/$token',
+  getParentRoute: () => ScannerRoute,
+} as any)
 const PortalSetupRoute = PortalSetupRouteImport.update({
   id: '/portal/setup',
   path: '/portal/setup',
@@ -203,6 +216,11 @@ const PortalPreviewRoute = PortalPreviewRouteImport.update({
 const PortalSectionsRoute = PortalSectionsRouteImport.update({
   id: '/portal/_sections',
   path: '/portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PCodeRoute = PCodeRouteImport.update({
+  id: '/p/$code',
+  path: '/p/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MembersSlugRoute = MembersSlugRouteImport.update({
@@ -386,6 +404,7 @@ export interface FileRoutesByFullPath {
   '/members-2': typeof Members2Route
   '/news': typeof NewsRoute
   '/privacy': typeof PrivacyRoute
+  '/scanner': typeof ScannerRouteWithChildren
   '/signin': typeof SigninRoute
   '/survey-results': typeof SurveyResultsRoute
   '/terms': typeof TermsRoute
@@ -415,9 +434,11 @@ export interface FileRoutesByFullPath {
   '/guild/tap-card': typeof GuildTapCardRoute
   '/join/finish': typeof JoinFinishRoute
   '/members/$slug': typeof MembersSlugRoute
+  '/p/$code': typeof PCodeRoute
   '/portal': typeof PortalSectionsRouteWithChildren
   '/portal/preview': typeof PortalPreviewRoute
   '/portal/setup': typeof PortalSetupRouteWithChildren
+  '/scanner/$token': typeof ScannerTokenRoute
   '/send/$token': typeof SendTokenRoute
   '/signin/help': typeof SigninHelpRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -446,6 +467,7 @@ export interface FileRoutesByTo {
   '/members-2': typeof Members2Route
   '/news': typeof NewsRoute
   '/privacy': typeof PrivacyRoute
+  '/scanner': typeof ScannerRouteWithChildren
   '/signin': typeof SigninRoute
   '/survey-results': typeof SurveyResultsRoute
   '/terms': typeof TermsRoute
@@ -475,8 +497,10 @@ export interface FileRoutesByTo {
   '/guild/tap-card': typeof GuildTapCardRoute
   '/join/finish': typeof JoinFinishRoute
   '/members/$slug': typeof MembersSlugRoute
+  '/p/$code': typeof PCodeRoute
   '/portal': typeof PortalIndexRoute
   '/portal/preview': typeof PortalPreviewRoute
+  '/scanner/$token': typeof ScannerTokenRoute
   '/send/$token': typeof SendTokenRoute
   '/signin/help': typeof SigninHelpRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -507,6 +531,7 @@ export interface FileRoutesById {
   '/members-2': typeof Members2Route
   '/news': typeof NewsRoute
   '/privacy': typeof PrivacyRoute
+  '/scanner': typeof ScannerRouteWithChildren
   '/signin': typeof SigninRoute
   '/survey-results': typeof SurveyResultsRoute
   '/terms': typeof TermsRoute
@@ -536,9 +561,11 @@ export interface FileRoutesById {
   '/guild/tap-card': typeof GuildTapCardRoute
   '/join_/finish': typeof JoinFinishRoute
   '/members_/$slug': typeof MembersSlugRoute
+  '/p/$code': typeof PCodeRoute
   '/portal/_sections': typeof PortalSectionsRouteWithChildren
   '/portal/preview': typeof PortalPreviewRoute
   '/portal/setup': typeof PortalSetupRouteWithChildren
+  '/scanner/$token': typeof ScannerTokenRoute
   '/send/$token': typeof SendTokenRoute
   '/signin_/help': typeof SigninHelpRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -571,6 +598,7 @@ export interface FileRouteTypes {
     | '/members-2'
     | '/news'
     | '/privacy'
+    | '/scanner'
     | '/signin'
     | '/survey-results'
     | '/terms'
@@ -600,9 +628,11 @@ export interface FileRouteTypes {
     | '/guild/tap-card'
     | '/join/finish'
     | '/members/$slug'
+    | '/p/$code'
     | '/portal'
     | '/portal/preview'
     | '/portal/setup'
+    | '/scanner/$token'
     | '/send/$token'
     | '/signin/help'
     | '/unsubscribe/$token'
@@ -631,6 +661,7 @@ export interface FileRouteTypes {
     | '/members-2'
     | '/news'
     | '/privacy'
+    | '/scanner'
     | '/signin'
     | '/survey-results'
     | '/terms'
@@ -660,8 +691,10 @@ export interface FileRouteTypes {
     | '/guild/tap-card'
     | '/join/finish'
     | '/members/$slug'
+    | '/p/$code'
     | '/portal'
     | '/portal/preview'
+    | '/scanner/$token'
     | '/send/$token'
     | '/signin/help'
     | '/unsubscribe/$token'
@@ -691,6 +724,7 @@ export interface FileRouteTypes {
     | '/members-2'
     | '/news'
     | '/privacy'
+    | '/scanner'
     | '/signin'
     | '/survey-results'
     | '/terms'
@@ -720,9 +754,11 @@ export interface FileRouteTypes {
     | '/guild/tap-card'
     | '/join_/finish'
     | '/members_/$slug'
+    | '/p/$code'
     | '/portal/_sections'
     | '/portal/preview'
     | '/portal/setup'
+    | '/scanner/$token'
     | '/send/$token'
     | '/signin_/help'
     | '/unsubscribe/$token'
@@ -754,6 +790,7 @@ export interface RootRouteChildren {
   Members2Route: typeof Members2Route
   NewsRoute: typeof NewsRoute
   PrivacyRoute: typeof PrivacyRoute
+  ScannerRoute: typeof ScannerRouteWithChildren
   SigninRoute: typeof SigninRoute
   SurveyResultsRoute: typeof SurveyResultsRoute
   TermsRoute: typeof TermsRoute
@@ -762,6 +799,7 @@ export interface RootRouteChildren {
   AuthConfirmRoute: typeof AuthConfirmRoute
   JoinFinishRoute: typeof JoinFinishRoute
   MembersSlugRoute: typeof MembersSlugRoute
+  PCodeRoute: typeof PCodeRoute
   PortalSectionsRoute: typeof PortalSectionsRouteWithChildren
   PortalPreviewRoute: typeof PortalPreviewRoute
   PortalSetupRoute: typeof PortalSetupRouteWithChildren
@@ -797,6 +835,13 @@ declare module '@tanstack/react-router' {
       path: '/signin'
       fullPath: '/signin'
       preLoaderRoute: typeof SigninRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scanner': {
+      id: '/scanner'
+      path: '/scanner'
+      fullPath: '/scanner'
+      preLoaderRoute: typeof ScannerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -946,6 +991,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SendTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/scanner/$token': {
+      id: '/scanner/$token'
+      path: '/$token'
+      fullPath: '/scanner/$token'
+      preLoaderRoute: typeof ScannerTokenRouteImport
+      parentRoute: typeof ScannerRoute
+    }
     '/portal/setup': {
       id: '/portal/setup'
       path: '/portal/setup'
@@ -965,6 +1017,13 @@ declare module '@tanstack/react-router' {
       path: '/portal'
       fullPath: '/portal'
       preLoaderRoute: typeof PortalSectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$code': {
+      id: '/p/$code'
+      path: '/p/$code'
+      fullPath: '/p/$code'
+      preLoaderRoute: typeof PCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/members_/$slug': {
@@ -1263,6 +1322,17 @@ const GuildRouteChildren: GuildRouteChildren = {
 
 const GuildRouteWithChildren = GuildRoute._addFileChildren(GuildRouteChildren)
 
+interface ScannerRouteChildren {
+  ScannerTokenRoute: typeof ScannerTokenRoute
+}
+
+const ScannerRouteChildren: ScannerRouteChildren = {
+  ScannerTokenRoute: ScannerTokenRoute,
+}
+
+const ScannerRouteWithChildren =
+  ScannerRoute._addFileChildren(ScannerRouteChildren)
+
 interface PortalSectionsRouteChildren {
   PortalSectionsSectionRoute: typeof PortalSectionsSectionRoute
 }
@@ -1304,6 +1374,7 @@ const rootRouteChildren: RootRouteChildren = {
   Members2Route: Members2Route,
   NewsRoute: NewsRoute,
   PrivacyRoute: PrivacyRoute,
+  ScannerRoute: ScannerRouteWithChildren,
   SigninRoute: SigninRoute,
   SurveyResultsRoute: SurveyResultsRoute,
   TermsRoute: TermsRoute,
@@ -1312,6 +1383,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthConfirmRoute: AuthConfirmRoute,
   JoinFinishRoute: JoinFinishRoute,
   MembersSlugRoute: MembersSlugRoute,
+  PCodeRoute: PCodeRoute,
   PortalSectionsRoute: PortalSectionsRouteWithChildren,
   PortalPreviewRoute: PortalPreviewRoute,
   PortalSetupRoute: PortalSetupRouteWithChildren,

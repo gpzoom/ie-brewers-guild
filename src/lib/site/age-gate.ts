@@ -33,6 +33,8 @@ const OPEN_PREFIXES = [
   "/maintenance",
   "/terms",
   "/privacy",
+  // Inland Tap Card bar-device setup (staff, not a public page).
+  "/scanner",
 ];
 
 export function ageGateApplies(pathname: string, state: { confirmed: boolean; crawler: boolean }): boolean {
