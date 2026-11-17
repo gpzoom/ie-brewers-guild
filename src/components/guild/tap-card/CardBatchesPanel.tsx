@@ -17,8 +17,6 @@ import {
   type Message,
 } from "@/components/guild/settings-ui";
 
-type Brewery = { id: string; name: string; published: boolean };
-
 function saveFile(filename: string, text: string) {
   const url = URL.createObjectURL(new Blob([text], { type: "text/csv" }));
   const a = document.createElement("a");
@@ -29,10 +27,9 @@ function saveFile(filename: string, text: string) {
 }
 
 /** Guild > Tap Card > Cards: make a print run, download it for the printer, clean up test cards. */
-export function CardBatchesPanel({ batches, breweries }: { batches: CardBatchSummary[]; breweries: Brewery[] }) {
+export function CardBatchesPanel({ batches }: { batches: CardBatchSummary[] }) {
   const router = useRouter();
   const [label, setLabel] = useState("");
-  const [memberId, setMemberId] = useState("");
   const [count, setCount] = useState("100");
   const [isTest, setIsTest] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -43,7 +40,7 @@ export function CardBatchesPanel({ batches, breweries }: { batches: CardBatchSum
     setBusy(true);
     setMessage(null);
     try {
-      await createCardBatch({ data: { label, memberId: memberId || null, count: Number(count), isTest } });
+      await createCardBatch({ data: { label, count: Number(count), isTest } });
       setLabel("");
       setMessage({ kind: "ok", text: "Batch made. Download it for the printer below." });
       await router.invalidate();
@@ -79,24 +76,12 @@ export function CardBatchesPanel({ batches, breweries }: { batches: CardBatchSum
         <h2 className="font-display text-[18px] font-bold text-ink">Make a batch of cards</h2>
         <p className="text-[13px] text-ink-muted">
           Each card gets its own code. The file you download has the link for each card's chip and QR code, and the code to
-          print on the front. A card works at every stop; "Sold at" only records which brewery sells it. Make real print
-          runs on the live site so the links point there.
+          print on the card. Every card works at every stop on the trail. Make real print runs on the live site so the links
+          point there.
         </p>
         <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink">
           Batch name
           <input className={fieldClass} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Spring 2027 print run" required maxLength={80} />
-        </label>
-        <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink">
-          Sold at
-          <select className={fieldClass} value={memberId} onChange={(e) => setMemberId(e.target.value)}>
-            <option value="">Not assigned</option>
-            {breweries.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-                {b.published ? "" : " (not published)"}
-              </option>
-            ))}
-          </select>
         </label>
         <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink">
           Number of cards
@@ -115,11 +100,10 @@ export function CardBatchesPanel({ batches, breweries }: { batches: CardBatchSum
       </form>
 
       <div className="overflow-x-auto rounded-[14px] border border-canvas-border bg-white">
-        <table className="w-full min-w-[560px] text-left text-[13px] text-ink">
+        <table className="w-full min-w-[460px] text-left text-[13px] text-ink">
           <thead className="border-b border-[#E6E0D6] bg-[#FCFAF6] text-[11px] uppercase tracking-[0.06em] text-ink-muted">
             <tr>
               <th className="px-5 py-3 font-semibold">Batch</th>
-              <th className="px-3 py-3 font-semibold">Sold at</th>
               <th className="px-3 py-3 font-semibold">Activated</th>
               <th className="px-5 py-3" />
             </tr>
@@ -127,7 +111,7 @@ export function CardBatchesPanel({ batches, breweries }: { batches: CardBatchSum
           <tbody>
             {batches.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-5 py-6 text-ink-muted">
+                <td colSpan={3} className="px-5 py-6 text-ink-muted">
                   No cards yet.
                 </td>
               </tr>
@@ -139,7 +123,6 @@ export function CardBatchesPanel({ batches, breweries }: { batches: CardBatchSum
                   {b.isTest && <span className="ml-2 rounded-full bg-canvas-2 px-2 py-0.5 text-[11px] text-ink-muted">Test</span>}
                   <div className="text-[12px] text-ink-muted">{new Date(b.createdAt).toLocaleDateString("en-US")}</div>
                 </td>
-                <td className="px-3 py-3">{b.memberName ?? "—"}</td>
                 <td className="px-3 py-3">
                   {b.activated} of {b.count}
                 </td>

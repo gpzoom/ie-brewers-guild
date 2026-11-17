@@ -31,7 +31,7 @@ The Guild wants the public to visit member taprooms they have never been to, and
 | Nickel deal | One redemption per person per brewery **per period**; the Guild sets the period (setting, not code) |
 | Non-phone path | Credit-card-style plastic card with **QR code + NFC chip** |
 | Check-in | **Staff scan the customer** (card tap/QR or Wallet pass QR) on a Guild web page on the brewery's own phone/tablet |
-| Card distribution | Sold at taprooms for a **small fee**; taproom keeps sale revenue |
+| Card distribution | Sold at taprooms for a **small fee**. Owner, 2026-11-17: the Guild prints and hands out cards and invoices each brewery off-site (e.g. 50% of a $5 card); batches are not tied to a brewery and the site records no "sold at" |
 | Sign-up data | **Name + email required** to activate |
 | Activation | **Either**: customer scans card QR and fills a short form, or staff type name/email on the scanner page |
 | Guild rewards | **Milestone rewards** (e.g. 5 / 10 / all stops) + **time-limited challenges** |

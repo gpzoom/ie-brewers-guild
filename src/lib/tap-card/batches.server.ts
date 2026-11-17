@@ -6,9 +6,10 @@ import { batchCsv } from "@/lib/tap-card/batch-csv";
 import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
 
 /**
- * Guild > Tap Card > Cards. A batch is a print run: N fresh codes, optionally
- * assigned to the brewery that will sell them (a card still works at every
- * stop -- the brewery only records where it was sold). The CSV links use the
+ * Guild > Tap Card > Cards. A batch is a print run: N fresh codes. Cards are
+ * not tied to a brewery -- every card works at every stop, and the Guild
+ * invoices breweries for cards outside the site (owner, 2026-11-17). The
+ * tap_card_batches.member_id column is left unused. The CSV links use the
  * site the admin is on, so a staging test batch opens on staging; real print
  * runs must be made on the live site.
  */
@@ -17,8 +18,6 @@ export const MAX_BATCH = 2000;
 export type CardBatchSummary = {
   id: string;
   label: string;
-  memberId: string | null;
-  memberName: string | null;
   count: number;
   activated: number;
   isTest: boolean;
@@ -29,7 +28,7 @@ export const listCardBatches = createServerFn({ method: "GET" }).handler(async (
   const { service } = await requireTapCardGuildAdmin();
   const { data, error } = await service
     .from("tap_card_batches")
-    .select("id, label, member_id, card_count, is_test, created_at, members(business_name)")
+    .select("id, label, card_count, is_test, created_at")
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   const batches = data ?? [];
@@ -46,8 +45,6 @@ export const listCardBatches = createServerFn({ method: "GET" }).handler(async (
   return batches.map((b) => ({
     id: b.id,
     label: b.label,
-    memberId: b.member_id,
-    memberName: (b.members as unknown as { business_name: string } | null)?.business_name ?? null,
     count: b.card_count,
     activated: activated.get(b.id) ?? 0,
     isTest: b.is_test,
@@ -55,25 +52,9 @@ export const listCardBatches = createServerFn({ method: "GET" }).handler(async (
   }));
 });
 
-/** Trail stops for the "Sold at" picker (published or not -- a batch can be printed before launch). */
-export const listTrailBreweries = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ id: string; name: string; published: boolean }[]> => {
-    const { service } = await requireTapCardGuildAdmin();
-    const { data, error } = await service
-      .from("members")
-      .select("id, business_name, status")
-      .eq("trail_eligible", true)
-      .in("status", ["draft", "published"])
-      .order("business_name");
-    if (error) throw new Error(error.message);
-    return (data ?? []).map((m) => ({ id: m.id, name: m.business_name, published: m.status === "published" }));
-  },
-);
-
 export const createCardBatch = createServerFn({ method: "POST" })
-  .inputValidator((data: { label: string; memberId: string | null; count: number; isTest: boolean }) => ({
+  .inputValidator((data: { label: string; count: number; isTest: boolean }) => ({
     label: typeof data?.label === "string" ? data.label.trim().slice(0, 80) : "",
-    memberId: typeof data?.memberId === "string" && data.memberId ? data.memberId : null,
     count: Number(data?.count),
     isTest: data?.isTest === true,
   }))
@@ -85,7 +66,7 @@ export const createCardBatch = createServerFn({ method: "POST" })
     }
     const { data: batch, error } = await service
       .from("tap_card_batches")
-      .insert({ label: data.label, member_id: data.memberId, card_count: data.count, is_test: data.isTest, created_by: userId })
+      .insert({ label: data.label, card_count: data.count, is_test: data.isTest, created_by: userId })
       .select("id")
       .single();
     if (error || !batch) throw new Error(error?.message ?? "Could not create the batch.");

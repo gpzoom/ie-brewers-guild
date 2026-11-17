@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { listCardBatches, listTrailBreweries } from "@/lib/tap-card/batches.server";
+import { listCardBatches } from "@/lib/tap-card/batches.server";
 import { listPendingOffers } from "@/lib/tap-card/offers.server";
 import { listEarnedRewards, listMilestones } from "@/lib/tap-card/milestones.server";
 import { tapCardYear } from "@/lib/tap-card/tap-card-time";
@@ -27,8 +27,7 @@ export const Route = createFileRoute("/guild/tap-card")({
     const base = { tab: deps.tab, pendingCount: pending.length };
     switch (deps.tab) {
       case "cards": {
-        const [batches, breweries] = await Promise.all([listCardBatches(), listTrailBreweries()]);
-        return { ...base, batches, breweries };
+        return { ...base, batches: await listCardBatches() };
       }
       case "offers":
         return { ...base, pending };
@@ -59,7 +58,7 @@ function TapCardRoute() {
         badges={{ offers: data.pendingCount }}
         onChange={(t) => navigate({ search: t === "cards" ? {} : { tab: t } })}
       />
-      {data.tab === "cards" && "batches" in data && <CardBatchesPanel batches={data.batches} breweries={data.breweries} />}
+      {data.tab === "cards" && "batches" in data && <CardBatchesPanel batches={data.batches} />}
       {data.tab === "offers" && "pending" in data && <OfferApprovalsPanel pending={data.pending} />}
       {data.tab === "milestones" && "milestones" in data && <MilestonesPanel milestones={data.milestones} />}
       {data.tab === "rewards" && "rewards" in data && (
