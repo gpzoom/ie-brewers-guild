@@ -4,6 +4,7 @@ import {
   saveCalendarSyncInterval,
   saveCarouselDwell,
   saveMaintenanceMode,
+  saveTapCardPrice,
   uploadHeroImage,
 } from "@/lib/guild/site-settings.server";
 import {
@@ -99,6 +100,7 @@ export function SiteSettingsScreen({
       </div>
 
       <MaintenanceCard settings={settings} onSaved={setSettings} />
+      <TapCardPriceCard settings={settings} onSaved={setSettings} />
 
       <form onSubmit={onSubmit} className={cardClass}>
         <div className="flex flex-col gap-1">
@@ -231,6 +233,61 @@ function CarouselDwellCard({ settings, onSaved }: CardProps) {
       <p className="border-t border-canvas-2 pt-3 text-[12px] text-ink-muted">
         Shows member events from the next 14 days, taking turns between members.
       </p>
+    </form>
+  );
+}
+
+/** Inland Tap Card: the suggested price a taproom charges for a card (shown on /trail). */
+function TapCardPriceCard({ settings, onSaved }: CardProps) {
+  const [dollars, setDollars] = useState((settings.tapCardPriceCents / 100).toFixed(2));
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<Message>(null);
+  const cents = Math.round(Number(dollars) * 100);
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    setMessage(null);
+    try {
+      onSaved(await saveTapCardPrice({ data: { cents } }));
+      setMessage({ kind: "ok", text: "Saved." });
+    } catch (err) {
+      setMessage({ kind: "error", text: errorText(err) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} className={cardClass}>
+      <div className="flex flex-col gap-1">
+        <h2 className="text-[16px] font-semibold text-ink">Suggested Tap Card price</h2>
+        <p className="text-pretty text-[13px] leading-[1.5] text-ink-muted">
+          What taprooms charge for an Inland Tap Card. The Trail page shows it; each taproom keeps what it collects.
+        </p>
+      </div>
+      <label className="flex flex-col gap-1.5">
+        <span className="text-[13px] font-medium text-ink">Price in dollars</span>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step={0.25}
+            value={dollars}
+            disabled={saving}
+            onChange={(e) => {
+              setDollars(e.target.value);
+              setMessage(null);
+            }}
+            className={fieldClass}
+          />
+          <button type="submit" disabled={saving || cents === settings.tapCardPriceCents} className={darkButtonClass}>
+            {saving ? "Saving…" : "Save"}
+          </button>
+        </div>
+      </label>
+      <StatusMessage message={message} />
     </form>
   );
 }

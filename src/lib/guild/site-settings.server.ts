@@ -5,6 +5,7 @@ import {
   saveCalendarSyncIntervalCore,
   saveCarouselDwellCore,
   saveMaintenanceModeCore,
+  saveTapCardPriceCore,
   setHeroImageCore,
   type SiteSettingsView,
 } from "@/lib/guild/site-settings";
@@ -46,6 +47,13 @@ export const saveMaintenanceMode = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<SiteSettingsView> => {
     const supabase = await getSupabaseServerClientForRequest();
     return saveMaintenanceModeCore(supabase, data.enabled, new Date());
+  });
+
+export const saveTapCardPrice = createServerFn({ method: "POST" })
+  .inputValidator((data: { cents: number }) => ({ cents: data?.cents }))
+  .handler(async ({ data }): Promise<SiteSettingsView> => {
+    const supabase = await getSupabaseServerClientForRequest();
+    return saveTapCardPriceCore(supabase, data.cents, new Date());
   });
 
 const HERO_MAX_BYTES = 10 * 1024 * 1024;

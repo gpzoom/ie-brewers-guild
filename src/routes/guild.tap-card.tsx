@@ -1,23 +1,44 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { listCardBatches, listTrailBreweries } from "@/lib/tap-card/batches.server";
 import { listPendingOffers } from "@/lib/tap-card/offers.server";
+import { listEarnedRewards, listMilestones } from "@/lib/tap-card/milestones.server";
+import { tapCardYear } from "@/lib/tap-card/tap-card-time";
 import { CardBatchesPanel } from "@/components/guild/tap-card/CardBatchesPanel";
 import { OfferApprovalsPanel } from "@/components/guild/tap-card/OfferApprovalsPanel";
+import { MilestonesPanel } from "@/components/guild/tap-card/MilestonesPanel";
+import { RewardsPanel } from "@/components/guild/tap-card/RewardsPanel";
 import { TapCardTabs, isTapCardTab, type TapCardTab } from "@/components/guild/tap-card/TapCardTabs";
+
+type Search = { tab?: TapCardTab; show?: "all" };
 
 /** /guild/tap-card: the Inland Tap Card program (every Guild admin). ?tab=cards|offers|milestones|rewards */
 export const Route = createFileRoute("/guild/tap-card")({
-  validateSearch: (search: Record<string, unknown>): { tab?: TapCardTab } =>
-    isTapCardTab(search.tab) && search.tab !== "cards" ? { tab: search.tab } : {},
-  loaderDeps: ({ search }) => ({ tab: search.tab ?? "cards" }),
+  validateSearch: (search: Record<string, unknown>): Search => ({
+    ...(isTapCardTab(search.tab) && search.tab !== "cards" ? { tab: search.tab } : {}),
+    ...(search.show === "all" ? { show: "all" as const } : {}),
+  }),
+  loaderDeps: ({ search }) => ({
+    tab: search.tab ?? ("cards" as TapCardTab),
+    show: search.show === "all" ? ("all" as const) : ("waiting" as const),
+  }),
   staleTime: 0,
   loader: async ({ deps }) => {
-    if (deps.tab === "cards") {
-      const [batches, breweries] = await Promise.all([listCardBatches(), listTrailBreweries()]);
-      return { tab: deps.tab, batches, breweries };
+    const pending = await listPendingOffers();
+    const base = { tab: deps.tab, pendingCount: pending.length };
+    switch (deps.tab) {
+      case "cards": {
+        const [batches, breweries] = await Promise.all([listCardBatches(), listTrailBreweries()]);
+        return { ...base, batches, breweries };
+      }
+      case "offers":
+        return { ...base, pending };
+      case "milestones":
+        return { ...base, milestones: await listMilestones() };
+      case "rewards": {
+        const year = tapCardYear(new Date());
+        return { ...base, year, show: deps.show, rewards: await listEarnedRewards({ data: { year, show: deps.show } }) };
+      }
     }
-    if (deps.tab === "offers") return { tab: deps.tab, pending: await listPendingOffers() };
-    return { tab: deps.tab };
   },
   component: TapCardRoute,
 });
@@ -33,9 +54,22 @@ function TapCardRoute() {
           Cards that bartenders tap to record visits and the once-a-year first-beer offer at every stop on the trail.
         </p>
       </div>
-      <TapCardTabs tab={data.tab} onChange={(t) => navigate({ search: t === "cards" ? {} : { tab: t } })} />
-      {data.tab === "cards" && "batches" in data && <CardBatchesPanel batches={data.batches!} breweries={data.breweries!} />}
-      {data.tab === "offers" && "pending" in data && <OfferApprovalsPanel pending={data.pending!} />}
+      <TapCardTabs
+        tab={data.tab}
+        badges={{ offers: data.pendingCount }}
+        onChange={(t) => navigate({ search: t === "cards" ? {} : { tab: t } })}
+      />
+      {data.tab === "cards" && "batches" in data && <CardBatchesPanel batches={data.batches} breweries={data.breweries} />}
+      {data.tab === "offers" && "pending" in data && <OfferApprovalsPanel pending={data.pending} />}
+      {data.tab === "milestones" && "milestones" in data && <MilestonesPanel milestones={data.milestones} />}
+      {data.tab === "rewards" && "rewards" in data && (
+        <RewardsPanel
+          rewards={data.rewards}
+          year={data.year}
+          show={data.show}
+          onShowChange={(show) => navigate({ search: { tab: "rewards", ...(show === "all" ? { show: "all" } : {}) } })}
+        />
+      )}
     </div>
   );
 }

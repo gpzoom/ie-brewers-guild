@@ -18,3 +18,20 @@ describe("newlyEarned", () => {
     expect(newlyEarned([five], 4, new Set())).toEqual([]);
   });
 });
+
+describe("validateMilestone", () => {
+  it("needs a whole number of stops from 1 to 100 and reward text", async () => {
+    const { validateMilestone } = await import("./milestones");
+    expect(validateMilestone({ stopsRequired: 5, rewardText: "  Guild sticker " })).toEqual({
+      ok: true,
+      value: { stopsRequired: 5, rewardText: "Guild sticker" },
+    });
+    expect(validateMilestone({ stopsRequired: 0, rewardText: "x" })).toEqual({ ok: false, message: "Stops must be a whole number from 1 to 100." });
+    expect(validateMilestone({ stopsRequired: 2.5, rewardText: "x" })).toEqual({ ok: false, message: "Stops must be a whole number from 1 to 100." });
+    expect(validateMilestone({ stopsRequired: 3, rewardText: " " })).toEqual({ ok: false, message: "Describe the reward." });
+    expect(validateMilestone({ stopsRequired: 3, rewardText: "x".repeat(141) })).toEqual({
+      ok: false,
+      message: "Keep the reward to 140 characters or fewer.",
+    });
+  });
+});

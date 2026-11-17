@@ -6,6 +6,7 @@ import {
   getSiteSettingsCore,
   saveCarouselDwellCore,
   saveMaintenanceModeCore,
+  saveTapCardPriceCore,
   setHeroImageCore,
   toSiteSettingsView,
 } from "./site-settings";
@@ -96,6 +97,7 @@ function fakeSession(isSuperAdmin: boolean) {
                     hero_image_path:
                       "hero_image_path" in values ? values.hero_image_path : "hero/old-photo.jpg",
                     maintenance_mode: values.maintenance_mode ?? false,
+                    tap_card_price_cents: values.tap_card_price_cents ?? 500,
                     updated_at: values.updated_at,
                   },
                 ],
@@ -195,6 +197,24 @@ describe("Homepage settings", () => {
       "Choose on or off.",
     );
     expect(session.updates).toHaveLength(2);
+  });
+
+  it("the suggested Tap Card price defaults to $5", () => {
+    expect(toSiteSettingsView(null).tapCardPriceCents).toBe(500);
+    expect(
+      toSiteSettingsView({ calendar_sync_interval_minutes: 15, calendar_sync_last_run_at: null, tap_card_price_cents: 300, updated_at: null })
+        .tapCardPriceCents,
+    ).toBe(300);
+  });
+
+  it("the super admin saves a Tap Card price from $0 to $100; anything else is refused", async () => {
+    const session = fakeSession(true);
+    expect((await saveTapCardPriceCore(session.client, 700, now)).tapCardPriceCents).toBe(700);
+    expect(session.updates[0]).toMatchObject({ tap_card_price_cents: 700, updated_by_user_id: "user-1" });
+    await expect(saveTapCardPriceCore(session.client, -1, now)).rejects.toThrow("Enter a price from $0 to $100.");
+    await expect(saveTapCardPriceCore(session.client, 10001, now)).rejects.toThrow("Enter a price from $0 to $100.");
+    await expect(saveTapCardPriceCore(session.client, 5.5, now)).rejects.toThrow("Enter a price from $0 to $100.");
+    expect(session.updates).toHaveLength(1);
   });
 
   it("a Guild admin can't turn on maintenance mode", async () => {
