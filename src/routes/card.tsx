@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { addReplacementCard, getHolderCard, signOutHolder } from "@/lib/tap-card/holder.server";
+import { addReplacementCard, getHolderCard, signOutHolder, turnOffCard } from "@/lib/tap-card/holder.server";
 import type { HolderCardView } from "@/lib/tap-card/holder-view";
 import {
   CanvasHeading,
@@ -35,6 +35,7 @@ function CardPage() {
       <Progress view={view} />
       <Milestones view={view} />
       <StopList view={view} />
+      <MyCards cards={view.cards} />
       <AddCard />
       <SignOut />
     </TapCardShell>
@@ -105,6 +106,44 @@ function StopList({ view }: { view: HolderCardView }) {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+/** Your cards, each with "Turn off" for a lost one (it then stops working everywhere). */
+function MyCards({ cards }: { cards: string[] }) {
+  const [error, setError] = useState<string | null>(null);
+  async function turnOff(code: string) {
+    if (!window.confirm(`Turn off card ${code}? It will stop working at every stop. This can't be undone.`)) return;
+    setError(null);
+    try {
+      const result = await turnOffCard({ data: { code } });
+      if (result.kind === "signed-out") window.location.assign("/card/signin");
+      else if (result.kind === "turned-off") window.location.reload();
+      else setError("That card isn't on your account.");
+    } catch {
+      setError("Something went wrong. Try again in a moment.");
+    }
+  }
+  if (cards.length === 0) return null;
+  return (
+    <section className="flex flex-col gap-2" aria-label="Your cards">
+      <h2 className="text-[15px] font-semibold text-ink">Your {cards.length === 1 ? "card" : "cards"}</h2>
+      <ul className="flex flex-col gap-1.5">
+        {cards.map((code) => (
+          <li key={code} className="flex items-center justify-between gap-3 text-[14px] text-ink">
+            <span className="font-mono">{code}</span>
+            <button type="button" className={cardLinkClass} onClick={() => turnOff(code)}>
+              Lost it? Turn off
+            </button>
+          </li>
+        ))}
+      </ul>
+      {error && (
+        <p role="alert" className={fieldErrorClass}>
+          {error}
+        </p>
+      )}
     </section>
   );
 }

@@ -8,6 +8,7 @@ import { isHoneypotTripped } from "@/lib/contact/contact-form-validation";
 import { SOMETHING_WRONG, rateLimitMessage } from "@/lib/join/join-guards.server";
 import { activateCore, type ActivateInput, type ActivateOutcome, type ActivateStore } from "@/lib/tap-card/activate-core";
 import { readScannerDevice, startHolderSession } from "@/lib/tap-card/tap-card-cookies.server";
+import { sendHolderSignInLink } from "@/lib/tap-card/holder-signin.server";
 
 /**
  * Turning on a card, by the customer on their own phone (public, rate
@@ -15,7 +16,6 @@ import { readScannerDevice, startHolderSession } from "@/lib/tap-card/tap-card-c
  * checking ID). Both send the welcome email; a failed email never undoes
  * the activation.
  */
-export type ActivateResult = ActivateOutcome | { kind: "error"; message: string };
 
 function activateStore(service: SupabaseClient): ActivateStore {
   return {
@@ -70,13 +70,30 @@ async function sendWelcome(email: string, name: string) {
   }
 }
 
+/** What the page is told: an existing account's id never leaves the server. */
+export type ActivateResult =
+  | Exclude<ActivateOutcome, { kind: "existing-holder" }>
+  | { kind: "existing-email" }
+  | { kind: "error"; message: string };
+
+/**
+ * Runs the activation. An email that already has a Tap Card gets a sign-in
+ * link instead (never a session, never this card), so only the person who
+ * can open that inbox can add the card.
+ */
 async function runActivation(input: ActivateInput): Promise<ActivateOutcome> {
   const service = await getSupabaseServiceRoleClient();
   const outcome = await activateCore(activateStore(service), input);
-  if (outcome.kind === "activated" && !outcome.joinedExisting) {
+  if (outcome.kind === "activated") {
     await sendWelcome(input.email.trim().toLowerCase(), input.name.replace(/\s+/g, " ").trim());
+  } else if (outcome.kind === "existing-holder") {
+    await sendHolderSignInLink(service, outcome.holderId, outcome.email);
   }
   return outcome;
+}
+
+function forPage(outcome: ActivateOutcome): ActivateResult {
+  return outcome.kind === "existing-holder" ? { kind: "existing-email" } : outcome;
 }
 
 type CustomerInput = { code: string; name: string; email: string; ageConfirmed: boolean; website: string };
@@ -97,7 +114,7 @@ export const activateCardAsCustomer = createServerFn({ method: "POST" })
       if (isHoneypotTripped(data.website)) return { kind: "unknown-card" };
       const outcome = await runActivation({ ...data, via: "customer", memberId: null });
       if (outcome.kind === "activated") await startHolderSession(outcome.holderId);
-      return outcome;
+      return forPage(outcome);
     } catch (err) {
       console.error("activateCardAsCustomer failed", err instanceof Error ? err.message : String(err));
       return { kind: "error", message: SOMETHING_WRONG };
@@ -115,14 +132,16 @@ export const activateCardAsStaff = createServerFn({ method: "POST" })
     try {
       const device = await readScannerDevice();
       if (device.kind !== "ok") return { kind: "error", message: "This device can't activate cards right now." };
-      return await runActivation({
-        code: data.code,
-        name: data.name,
-        email: data.email,
-        ageConfirmed: data.idChecked,
-        via: "staff",
-        memberId: device.device.memberId,
-      });
+      return forPage(
+        await runActivation({
+          code: data.code,
+          name: data.name,
+          email: data.email,
+          ageConfirmed: data.idChecked,
+          via: "staff",
+          memberId: device.device.memberId,
+        }),
+      );
     } catch (err) {
       console.error("activateCardAsStaff failed", err instanceof Error ? err.message : String(err));
       return { kind: "error", message: SOMETHING_WRONG };

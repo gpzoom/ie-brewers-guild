@@ -53,3 +53,19 @@ export type CardView =
 export function firstNameOf(name: string): string {
   return name.trim().split(/\s+/)[0] || name;
 }
+
+/**
+ * The guessing guard for /p/<code> (final review, Important #3): only an
+ * UNKNOWN code from someone who isn't a working bar device counts against
+ * the per-IP limit, so a busy taproom on one Wi-Fi never turns away real
+ * cardholders, while bulk guessing still stops after a few misses.
+ * `overLimit` counts one try and says whether this IP is now over.
+ */
+export async function guessGuard(
+  deviceKind: ScannerState["kind"],
+  cardFound: boolean,
+  overLimit: () => Promise<boolean>,
+): Promise<"ok" | "throttled"> {
+  if (cardFound || deviceKind === "ok") return "ok";
+  return (await overLimit()) ? "throttled" : "ok";
+}

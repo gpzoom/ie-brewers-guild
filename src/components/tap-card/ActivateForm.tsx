@@ -12,6 +12,25 @@ import {
   primaryButtonClass,
 } from "@/components/public-forms/PublicFormParts";
 
+/** What the form says for anything but a fresh activation (an already-used card is never "success"). */
+export function activateMessage(result: ActivateResult, mode: "customer" | "staff"): string | null {
+  switch (result.kind) {
+    case "activated":
+    case "invalid":
+      return null;
+    case "error":
+      return result.message;
+    case "unknown-card":
+      return "We don't recognize this card.";
+    case "already-active":
+      return "This card is already in use.";
+    case "existing-email":
+      return mode === "customer"
+        ? "That email already has an Inland Tap Card. We emailed it a sign-in link. Open it, then add this card under “Lost your card? Add a new one.”"
+        : "That email already has an Inland Tap Card. We emailed the customer a sign-in link; they can add this card from their card page.";
+  }
+}
+
 /**
  * Turning on a new card. "customer": on their own phone (21+ checkbox,
  * hidden honeypot, starts their session). "staff": on the bar device
@@ -45,9 +64,8 @@ export function ActivateForm({
           ? await activateCardAsCustomer({ data: { code, name, email, ageConfirmed: confirmed, website } })
           : await activateCardAsStaff({ data: { code, name, email, idChecked: confirmed } });
       if (result.kind === "invalid") setErrors(result.errors);
-      else if (result.kind === "error") setMessage(result.message);
-      else if (result.kind === "unknown-card") setMessage("We don't recognize this card.");
-      else onActivated(result);
+      else if (result.kind === "activated") onActivated(result);
+      else setMessage(activateMessage(result, mode));
     } catch {
       setMessage("Something went wrong. Try again in a moment.");
     } finally {

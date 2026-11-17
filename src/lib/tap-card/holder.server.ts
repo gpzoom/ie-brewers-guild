@@ -1,17 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { generateUploadToken, hashUploadToken } from "@/lib/media/upload-tokens";
-import { sendTransactionalEmail } from "@/lib/email/send";
-import { resolveEmailSiteUrl } from "@/lib/email/build-email-content";
-import { currentRequestUrl } from "@/lib/request-url.server";
+import { hashUploadToken } from "@/lib/media/upload-tokens";
+import { sendHolderSignInLink } from "@/lib/tap-card/holder-signin.server";
 import { isHoneypotTripped } from "@/lib/contact/contact-form-validation";
 import { SOMETHING_WRONG, rateLimitMessage } from "@/lib/join/join-guards.server";
 import { normalizeCardCode } from "@/lib/tap-card/card-code";
+import { deactivateCardCore } from "@/lib/tap-card/deactivate-core";
 import { buildHolderView, type HolderCardView } from "@/lib/tap-card/holder-view";
 import { tapCardYear } from "@/lib/tap-card/tap-card-time";
 import { loadTrailStops } from "@/lib/tap-card/trail-stops.server";
 import {
-  LOGIN_TOKEN_TTL_MINUTES,
   endHolderSession,
   readHolderId,
   startHolderSession,
@@ -41,17 +39,7 @@ export const requestHolderSignIn = createServerFn({ method: "POST" })
       const service = await getSupabaseServiceRoleClient();
       const { data: holder, error } = await service.from("tap_card_holders").select("id").eq("email_lower", data.email).maybeSingle();
       if (error) throw new Error(error.message);
-      if (holder) {
-        const raw = generateUploadToken();
-        const { error: insertError } = await service.from("tap_card_login_tokens").insert({
-          holder_id: holder.id,
-          token_hash: await hashUploadToken(raw),
-          expires_at: new Date(Date.now() + LOGIN_TOKEN_TTL_MINUTES * 60 * 1000).toISOString(),
-        });
-        if (insertError) throw new Error(insertError.message);
-        const link = `${resolveEmailSiteUrl(currentRequestUrl())}/card/login/${raw}`;
-        await sendTransactionalEmail({ trigger: "tap_card_signin_link", email: data.email, link });
-      }
+      if (holder) await sendHolderSignInLink(service, holder.id, data.email);
       return { kind: "check-email" };
     } catch (err) {
       console.error("requestHolderSignIn failed", err instanceof Error ? err.message : String(err));
@@ -136,3 +124,27 @@ export const signOutHolder = createServerFn({ method: "POST" }).handler(async ()
   await endHolderSession();
   return { ok: true };
 });
+
+/** "Turn off this card": a lost card stops working at every stop. */
+export const turnOffCard = createServerFn({ method: "POST" })
+  .inputValidator((data: { code: string }) => ({ code: String(data?.code ?? "") }))
+  .handler(async ({ data }): Promise<{ kind: "turned-off" } | { kind: "not-yours" } | { kind: "signed-out" }> => {
+    const holderId = await readHolderId();
+    if (!holderId) return { kind: "signed-out" };
+    const service = await getSupabaseServiceRoleClient();
+    return deactivateCardCore(
+      {
+        async findCard(code) {
+          const { data: card, error } = await service.from("tap_cards").select("id, holder_id, deactivated_at").eq("code", code).maybeSingle();
+          if (error) throw new Error(error.message);
+          return card ? { id: card.id, holderId: card.holder_id, deactivated: card.deactivated_at !== null } : null;
+        },
+        async deactivate(cardId) {
+          const { error } = await service.from("tap_cards").update({ deactivated_at: new Date().toISOString() }).eq("id", cardId);
+          if (error) throw new Error(error.message);
+        },
+      },
+      holderId,
+      data.code,
+    );
+  });

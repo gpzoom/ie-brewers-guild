@@ -55,24 +55,27 @@ describe("activateCore", () => {
     expect(await activateCore(store, input({ via: "staff", memberId: "m1" }))).toEqual({
       kind: "activated",
       holderId: "h1",
-      joinedExisting: false,
     });
     expect(cards[0].holderId).toBe("h1");
     expect(holders[0]).toEqual({ id: "h1", name: "Pat Tester", email: "pat@example.com", via: "staff", memberId: "m1" });
   });
 
-  it("the same email in another case joins the existing holder (a replacement card)", async () => {
+  it("an email that already has a Tap Card never links the card or signs anyone in", async () => {
     const { store, cards, holders } = memoryStore(
       [{ id: "c2", code: "ABCD2345", holderId: null }],
       [{ id: "h7", name: "Pat", email: "pat@x.com", via: "customer", memberId: null }],
     );
     expect(await activateCore(store, input({ email: "  Pat@X.com " }))).toEqual({
-      kind: "activated",
+      kind: "existing-holder",
       holderId: "h7",
-      joinedExisting: true,
+      email: "pat@x.com",
     });
-    expect(cards[0].holderId).toBe("h7");
+    expect(cards[0].holderId).toBeNull();
     expect(holders).toHaveLength(1);
+    expect(await activateCore(store, input({ email: "pat@x.com", via: "staff", memberId: "m1" }))).toMatchObject({
+      kind: "existing-holder",
+    });
+    expect(cards[0].holderId).toBeNull();
   });
 
   it("requires the age confirmation", async () => {

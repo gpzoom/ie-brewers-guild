@@ -36,3 +36,20 @@ describe("pickCardViewKind", () => {
     expect(pickCardViewKind(none, activeCard, "h1")).toBe("customer-own");
   });
 });
+
+describe("guessGuard", () => {
+  it("never limits a real card or a bar device; counts only unknown codes from everyone else", async () => {
+    const { guessGuard } = await import("./card-view");
+    let calls = 0;
+    const limit = async () => {
+      calls++;
+      return calls > 1;
+    };
+    expect(await guessGuard("none", true, limit)).toBe("ok");
+    expect(await guessGuard("ok", false, limit)).toBe("ok");
+    expect(calls).toBe(0);
+    expect(await guessGuard("none", false, limit)).toBe("ok");
+    expect(await guessGuard("blocked", false, limit)).toBe("throttled");
+    expect(calls).toBe(2);
+  });
+});

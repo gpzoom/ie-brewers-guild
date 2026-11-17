@@ -3,9 +3,12 @@ import { normalizeCardCode } from "@/lib/tap-card/card-code";
 /**
  * Turning on a new card: name + email + the 21+ check (spec: name and email
  * are required). The customer can do it on their own phone, or the
- * bartender can do it on the bar device after checking ID. An email that
- * already has a Tap Card account gets the new card added to it -- that's
- * how a lost card is replaced, and the history carries over.
+ * bartender can do it on the bar device after checking ID.
+ *
+ * An email that already has a Tap Card never gets the card here: typing an
+ * address proves nothing about owning it (final review, Critical #1). The
+ * caller emails that address a sign-in link instead; once signed in, the
+ * holder adds the new card from their card page ("Lost your card?").
  */
 export type ActivateInput = {
   code: string;
@@ -19,7 +22,8 @@ export type ActivateInput = {
 export type ActivateFieldErrors = Partial<Record<"name" | "email" | "ageConfirmed", string>>;
 
 export type ActivateOutcome =
-  | { kind: "activated"; holderId: string; joinedExisting: boolean }
+  | { kind: "activated"; holderId: string }
+  | { kind: "existing-holder"; holderId: string; email: string }
   | { kind: "already-active" }
   | { kind: "unknown-card" }
   | { kind: "invalid"; errors: ActivateFieldErrors };
@@ -69,10 +73,14 @@ export async function activateCore(store: ActivateStore, input: ActivateInput): 
   if (Object.keys(errors).length > 0) return { kind: "invalid", errors };
 
   const existing = await store.findHolderIdByEmail(email);
-  const holderId =
-    existing ??
-    (await store.createHolder({ name, email, ageConfirmedVia: input.via, activatedByMemberId: input.memberId }));
+  if (existing) return { kind: "existing-holder", holderId: existing, email };
+  const holderId = await store.createHolder({
+    name,
+    email,
+    ageConfirmedVia: input.via,
+    activatedByMemberId: input.memberId,
+  });
   const linked = await store.linkCard(card.id, holderId);
   if (linked === "already-active") return { kind: "already-active" };
-  return { kind: "activated", holderId, joinedExisting: existing !== null };
+  return { kind: "activated", holderId };
 }

@@ -3,7 +3,7 @@ import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { hashUploadToken } from "@/lib/media/upload-tokens";
 import { rateLimitMessage } from "@/lib/join/join-guards.server";
 import { normalizeCardCode } from "@/lib/tap-card/card-code";
-import { firstNameOf, pickCardViewKind, type CardView } from "@/lib/tap-card/card-view";
+import { firstNameOf, guessGuard, pickCardViewKind, type CardView } from "@/lib/tap-card/card-view";
 import { checkInCore, redemptionStatus, type CheckInOutcome } from "@/lib/tap-card/check-in-core";
 import { tapCardDay, tapCardYear } from "@/lib/tap-card/tap-card-time";
 import { readHolderId, readScannerDevice, setScannerCookie } from "@/lib/tap-card/tap-card-cookies.server";
@@ -32,14 +32,17 @@ export const getCardView = createServerFn({ method: "GET" })
   .inputValidator((data: { code: string }) => ({ code: String(data?.code ?? "") }))
   .handler(async ({ data }): Promise<CardView> => {
     const device = await readScannerDevice();
-    // Staff are never throttled; anyone else is, so codes can't be guessed in bulk.
-    if (device.kind !== "ok") {
-      const limited = await rateLimitMessage("tapcard-card");
-      if (limited) return { view: "throttled", message: limited };
-    }
     const code = normalizeCardCode(data.code);
-    if (!code) return { view: "unknown" };
-    const { service, card } = await loadCard(code);
+    const { service, card } = code ? await loadCard(code) : { service: null, card: null };
+    // Only unknown codes count against the per-IP limit (guessGuard), so real
+    // cardholders on shared Wi-Fi are never turned away.
+    let limitedMessage: string | null = null;
+    const guard = await guessGuard(device.kind, card !== null, async () => {
+      limitedMessage = await rateLimitMessage("tapcard-card");
+      return limitedMessage !== null;
+    });
+    if (guard === "throttled") return { view: "throttled", message: limitedMessage ?? "Too many tries — please wait a minute and try again." };
+    if (!code || !service) return { view: "unknown" };
     const kind = pickCardViewKind(device, card, device.kind === "none" ? await readHolderId() : null);
 
     switch (kind) {
