@@ -9,9 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SurveyResultsRouteImport } from './routes/survey-results'
 import { Route as SurveyRouteImport } from './routes/survey'
 import { Route as SigninRouteImport } from './routes/signin'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as Members2RouteImport } from './routes/members-2'
 import { Route as Members1RouteImport } from './routes/members-1'
@@ -68,6 +70,11 @@ import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-m
 import { Route as ApiConfirmHoursTokenRouteImport } from './routes/api.confirm-hours.$token'
 import { Route as ApiAdminMediaAssetIdRouteImport } from './routes/api.admin-media.$assetId'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SurveyResultsRoute = SurveyResultsRouteImport.update({
   id: '/survey-results',
   path: '/survey-results',
@@ -81,6 +88,11 @@ const SurveyRoute = SurveyRouteImport.update({
 const SigninRoute = SigninRouteImport.update({
   id: '/signin',
   path: '/signin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewsRoute = NewsRouteImport.update({
@@ -373,9 +385,11 @@ export interface FileRoutesByFullPath {
   '/members-1': typeof Members1Route
   '/members-2': typeof Members2Route
   '/news': typeof NewsRoute
+  '/privacy': typeof PrivacyRoute
   '/signin': typeof SigninRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/terms': typeof TermsRoute
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/discount': typeof AdminDiscountRoute
   '/admin/events': typeof AdminEventsRoute
@@ -431,9 +445,11 @@ export interface FileRoutesByTo {
   '/members-1': typeof Members1Route
   '/members-2': typeof Members2Route
   '/news': typeof NewsRoute
+  '/privacy': typeof PrivacyRoute
   '/signin': typeof SigninRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/terms': typeof TermsRoute
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/discount': typeof AdminDiscountRoute
   '/admin/events': typeof AdminEventsRoute
@@ -490,9 +506,11 @@ export interface FileRoutesById {
   '/members-1': typeof Members1Route
   '/members-2': typeof Members2Route
   '/news': typeof NewsRoute
+  '/privacy': typeof PrivacyRoute
   '/signin': typeof SigninRoute
   '/survey': typeof SurveyRoute
   '/survey-results': typeof SurveyResultsRoute
+  '/terms': typeof TermsRoute
   '/admin/basics': typeof AdminBasicsRoute
   '/admin/discount': typeof AdminDiscountRoute
   '/admin/events': typeof AdminEventsRoute
@@ -552,9 +570,11 @@ export interface FileRouteTypes {
     | '/members-1'
     | '/members-2'
     | '/news'
+    | '/privacy'
     | '/signin'
     | '/survey'
     | '/survey-results'
+    | '/terms'
     | '/admin/basics'
     | '/admin/discount'
     | '/admin/events'
@@ -610,9 +630,11 @@ export interface FileRouteTypes {
     | '/members-1'
     | '/members-2'
     | '/news'
+    | '/privacy'
     | '/signin'
     | '/survey'
     | '/survey-results'
+    | '/terms'
     | '/admin/basics'
     | '/admin/discount'
     | '/admin/events'
@@ -668,9 +690,11 @@ export interface FileRouteTypes {
     | '/members-1'
     | '/members-2'
     | '/news'
+    | '/privacy'
     | '/signin'
     | '/survey'
     | '/survey-results'
+    | '/terms'
     | '/admin/basics'
     | '/admin/discount'
     | '/admin/events'
@@ -729,9 +753,11 @@ export interface RootRouteChildren {
   Members1Route: typeof Members1Route
   Members2Route: typeof Members2Route
   NewsRoute: typeof NewsRoute
+  PrivacyRoute: typeof PrivacyRoute
   SigninRoute: typeof SigninRoute
   SurveyRoute: typeof SurveyRoute
   SurveyResultsRoute: typeof SurveyResultsRoute
+  TermsRoute: typeof TermsRoute
   AdminPreviewRoute: typeof AdminPreviewRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
@@ -753,6 +779,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/survey-results': {
       id: '/survey-results'
       path: '/survey-results'
@@ -772,6 +805,13 @@ declare module '@tanstack/react-router' {
       path: '/signin'
       fullPath: '/signin'
       preLoaderRoute: typeof SigninRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/news': {
@@ -1262,9 +1302,11 @@ const rootRouteChildren: RootRouteChildren = {
   Members1Route: Members1Route,
   Members2Route: Members2Route,
   NewsRoute: NewsRoute,
+  PrivacyRoute: PrivacyRoute,
   SigninRoute: SigninRoute,
   SurveyRoute: SurveyRoute,
   SurveyResultsRoute: SurveyResultsRoute,
+  TermsRoute: TermsRoute,
   AdminPreviewRoute: AdminPreviewRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthConfirmRoute: AuthConfirmRoute,

@@ -34,6 +34,10 @@ describe("showsMaintenance: who sees the maintenance page (owner, 2026-11-14)", 
     expect(showsMaintenance("/join/finish", { on: true, isGuildAdmin: false })).toBe(false);
     expect(showsMaintenance("/join", { on: true, isGuildAdmin: false })).toBe(true);
   });
+  it("on: the Terms and Privacy pages stay readable", () => {
+    expect(showsMaintenance("/terms", { on: true, isGuildAdmin: false })).toBe(false);
+    expect(showsMaintenance("/privacy", { on: true, isGuildAdmin: false })).toBe(false);
+  });
   it("a look-alike path isn't exempt", () => {
     expect(showsMaintenance("/guilds", { on: true, isGuildAdmin: false })).toBe(true);
   });
