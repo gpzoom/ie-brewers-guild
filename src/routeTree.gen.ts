@@ -24,6 +24,7 @@ import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as GuildRouteImport } from './routes/guild'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CardRouteImport } from './routes/card'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -52,6 +53,7 @@ import { Route as GuildBrandRouteImport } from './routes/guild.brand'
 import { Route as GuildAuditRouteImport } from './routes/guild.audit'
 import { Route as GuildAlertsRouteImport } from './routes/guild.alerts'
 import { Route as GuildAdminsRouteImport } from './routes/guild.admins'
+import { Route as CardSigninRouteImport } from './routes/card_.signin'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminPreviewRouteImport } from './routes/admin_.preview'
@@ -69,6 +71,7 @@ import { Route as AdminBasicsRouteImport } from './routes/admin.basics'
 import { Route as PortalSetupIndexRouteImport } from './routes/portal.setup.index'
 import { Route as PortalSetupStepRouteImport } from './routes/portal.setup.$step'
 import { Route as PortalSectionsSectionRouteImport } from './routes/portal._sections.$section'
+import { Route as CardLoginTokenRouteImport } from './routes/card_.login.$token'
 import { Route as ApiUnsubscribeTokenRouteImport } from './routes/api.unsubscribe.$token'
 import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
 import { Route as ApiConfirmHoursTokenRouteImport } from './routes/api.confirm-hours.$token'
@@ -147,6 +150,11 @@ const EventsRoute = EventsRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CardRoute = CardRouteImport.update({
+  id: '/card',
+  path: '/card',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -289,6 +297,11 @@ const GuildAdminsRoute = GuildAdminsRouteImport.update({
   path: '/admins',
   getParentRoute: () => GuildRoute,
 } as any)
+const CardSigninRoute = CardSigninRouteImport.update({
+  id: '/card_/signin',
+  path: '/card/signin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthConfirmRoute = AuthConfirmRouteImport.update({
   id: '/auth/confirm',
   path: '/auth/confirm',
@@ -374,6 +387,11 @@ const PortalSectionsSectionRoute = PortalSectionsSectionRouteImport.update({
   path: '/$section',
   getParentRoute: () => PortalSectionsRoute,
 } as any)
+const CardLoginTokenRoute = CardLoginTokenRouteImport.update({
+  id: '/card_/login/$token',
+  path: '/card/login/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiUnsubscribeTokenRoute = ApiUnsubscribeTokenRouteImport.update({
   id: '/api/unsubscribe/$token',
   path: '/api/unsubscribe/$token',
@@ -399,6 +417,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/card': typeof CardRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/guild': typeof GuildRouteWithChildren
@@ -428,6 +447,7 @@ export interface FileRoutesByFullPath {
   '/admin/preview': typeof AdminPreviewRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/card/signin': typeof CardSigninRoute
   '/guild/admins': typeof GuildAdminsRoute
   '/guild/alerts': typeof GuildAlertsRoute
   '/guild/audit': typeof GuildAuditRoute
@@ -457,6 +477,7 @@ export interface FileRoutesByFullPath {
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
   '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
+  '/card/login/$token': typeof CardLoginTokenRoute
   '/portal/$section': typeof PortalSectionsSectionRoute
   '/portal/setup/$step': typeof PortalSetupStepRoute
   '/portal/setup/': typeof PortalSetupIndexRoute
@@ -464,6 +485,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/card': typeof CardRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/jobs': typeof JobsRoute
@@ -492,6 +514,7 @@ export interface FileRoutesByTo {
   '/admin/preview': typeof AdminPreviewRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/card/signin': typeof CardSigninRoute
   '/guild/admins': typeof GuildAdminsRoute
   '/guild/alerts': typeof GuildAlertsRoute
   '/guild/audit': typeof GuildAuditRoute
@@ -519,6 +542,7 @@ export interface FileRoutesByTo {
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
   '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
+  '/card/login/$token': typeof CardLoginTokenRoute
   '/portal/$section': typeof PortalSectionsSectionRoute
   '/portal/setup/$step': typeof PortalSetupStepRoute
   '/portal/setup': typeof PortalSetupIndexRoute
@@ -528,6 +552,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/card': typeof CardRoute
   '/contact': typeof ContactRoute
   '/events': typeof EventsRoute
   '/guild': typeof GuildRouteWithChildren
@@ -557,6 +582,7 @@ export interface FileRoutesById {
   '/admin_/preview': typeof AdminPreviewRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/card_/signin': typeof CardSigninRoute
   '/guild/admins': typeof GuildAdminsRoute
   '/guild/alerts': typeof GuildAlertsRoute
   '/guild/audit': typeof GuildAuditRoute
@@ -586,6 +612,7 @@ export interface FileRoutesById {
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
   '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
+  '/card_/login/$token': typeof CardLoginTokenRoute
   '/portal/_sections/$section': typeof PortalSectionsSectionRoute
   '/portal/setup/$step': typeof PortalSetupStepRoute
   '/portal/setup/': typeof PortalSetupIndexRoute
@@ -596,6 +623,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/card'
     | '/contact'
     | '/events'
     | '/guild'
@@ -625,6 +653,7 @@ export interface FileRouteTypes {
     | '/admin/preview'
     | '/auth/callback'
     | '/auth/confirm'
+    | '/card/signin'
     | '/guild/admins'
     | '/guild/alerts'
     | '/guild/audit'
@@ -654,6 +683,7 @@ export interface FileRouteTypes {
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
     | '/api/unsubscribe/$token'
+    | '/card/login/$token'
     | '/portal/$section'
     | '/portal/setup/$step'
     | '/portal/setup/'
@@ -661,6 +691,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/card'
     | '/contact'
     | '/events'
     | '/jobs'
@@ -689,6 +720,7 @@ export interface FileRouteTypes {
     | '/admin/preview'
     | '/auth/callback'
     | '/auth/confirm'
+    | '/card/signin'
     | '/guild/admins'
     | '/guild/alerts'
     | '/guild/audit'
@@ -716,6 +748,7 @@ export interface FileRouteTypes {
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
     | '/api/unsubscribe/$token'
+    | '/card/login/$token'
     | '/portal/$section'
     | '/portal/setup/$step'
     | '/portal/setup'
@@ -724,6 +757,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/card'
     | '/contact'
     | '/events'
     | '/guild'
@@ -753,6 +787,7 @@ export interface FileRouteTypes {
     | '/admin_/preview'
     | '/auth/callback'
     | '/auth/confirm'
+    | '/card_/signin'
     | '/guild/admins'
     | '/guild/alerts'
     | '/guild/audit'
@@ -782,6 +817,7 @@ export interface FileRouteTypes {
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
     | '/api/unsubscribe/$token'
+    | '/card_/login/$token'
     | '/portal/_sections/$section'
     | '/portal/setup/$step'
     | '/portal/setup/'
@@ -791,6 +827,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
+  CardRoute: typeof CardRoute
   ContactRoute: typeof ContactRoute
   EventsRoute: typeof EventsRoute
   GuildRoute: typeof GuildRouteWithChildren
@@ -809,6 +846,7 @@ export interface RootRouteChildren {
   AdminPreviewRoute: typeof AdminPreviewRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
+  CardSigninRoute: typeof CardSigninRoute
   JoinFinishRoute: typeof JoinFinishRoute
   MembersSlugRoute: typeof MembersSlugRoute
   PCodeRoute: typeof PCodeRoute
@@ -824,6 +862,7 @@ export interface RootRouteChildren {
   ApiConfirmHoursTokenRoute: typeof ApiConfirmHoursTokenRoute
   ApiMemberMediaAssetIdRoute: typeof ApiMemberMediaAssetIdRoute
   ApiUnsubscribeTokenRoute: typeof ApiUnsubscribeTokenRoute
+  CardLoginTokenRoute: typeof CardLoginTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -931,6 +970,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/card': {
+      id: '/card'
+      path: '/card'
+      fullPath: '/card'
+      preLoaderRoute: typeof CardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -1129,6 +1175,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuildAdminsRouteImport
       parentRoute: typeof GuildRoute
     }
+    '/card_/signin': {
+      id: '/card_/signin'
+      path: '/card/signin'
+      fullPath: '/card/signin'
+      preLoaderRoute: typeof CardSigninRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/confirm': {
       id: '/auth/confirm'
       path: '/auth/confirm'
@@ -1247,6 +1300,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/portal/$section'
       preLoaderRoute: typeof PortalSectionsSectionRouteImport
       parentRoute: typeof PortalSectionsRoute
+    }
+    '/card_/login/$token': {
+      id: '/card_/login/$token'
+      path: '/card/login/$token'
+      fullPath: '/card/login/$token'
+      preLoaderRoute: typeof CardLoginTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/unsubscribe/$token': {
       id: '/api/unsubscribe/$token'
@@ -1384,6 +1444,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
+  CardRoute: CardRoute,
   ContactRoute: ContactRoute,
   EventsRoute: EventsRoute,
   GuildRoute: GuildRouteWithChildren,
@@ -1402,6 +1463,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminPreviewRoute: AdminPreviewRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthConfirmRoute: AuthConfirmRoute,
+  CardSigninRoute: CardSigninRoute,
   JoinFinishRoute: JoinFinishRoute,
   MembersSlugRoute: MembersSlugRoute,
   PCodeRoute: PCodeRoute,
@@ -1417,6 +1479,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConfirmHoursTokenRoute: ApiConfirmHoursTokenRoute,
   ApiMemberMediaAssetIdRoute: ApiMemberMediaAssetIdRoute,
   ApiUnsubscribeTokenRoute: ApiUnsubscribeTokenRoute,
+  CardLoginTokenRoute: CardLoginTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

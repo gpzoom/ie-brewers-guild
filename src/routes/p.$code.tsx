@@ -16,7 +16,7 @@ export const Route = createFileRoute("/p/$code")({
   staleTime: 0,
   loader: async ({ params }) => {
     const view = await getCardView({ data: { code: params.code } });
-    if (view.view === "customer-own") throw redirect({ href: "/card" });
+    if (view.view === "customer-own") throw redirect({ to: "/card" });
     return view;
   },
   head: () => ({ meta: [{ title: "Inland Tap Card" }, { name: "robots", content: "noindex, nofollow" }] }),

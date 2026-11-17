@@ -35,6 +35,8 @@ const OPEN_PREFIXES = [
   "/privacy",
   // Inland Tap Card bar-device setup (staff, not a public page).
   "/scanner",
+  // The Tap Card holder's emailed sign-in link.
+  "/card/login",
 ];
 
 export function ageGateApplies(pathname: string, state: { confirmed: boolean; crawler: boolean }): boolean {
