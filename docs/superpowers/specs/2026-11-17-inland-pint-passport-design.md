@@ -88,7 +88,8 @@ The Guild wants the public to visit member taprooms they have never been to, and
 ## Calls I made (owner to check)
 - Members create scanner links and see their dashboard on **/portal** and on the matching **/admin** screen ("Edit as them" rule); Guild screens (card batches, offer approvals, milestones, challenges) go under **/guild**.
 - Scanner link copies `src/lib/media/upload-tokens.ts` (random token shown once, hash stored); the device then stays signed in with a long-lived cookie, and the link can be revoked.
-- Passport holders sign in by emailed link through the existing Supabase sign-in, but land on their own **/passport** page and are kept separate from member accounts.
+- Passport holders sign in with their own single-use emailed link (not the member Supabase sign-in, whose helpers assume a few hundred accounts) and land on their own **/passport** page, kept separate from member accounts.
+- Staff need no in-page camera scanner: the phone's own NFC reader or camera app opens the card link in the default browser, where the scanner-device cookie lives.
 - "One visit per day" and the yearly reset use Pacific time.
 - Trail stops = published members with `trail_eligible` on.
 - Sign-up reuses the existing 21+ check (`src/lib/site/age-gate.ts` — on origin; pull first).
