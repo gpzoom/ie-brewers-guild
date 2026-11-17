@@ -448,3 +448,89 @@ export type BusinessRow = {
   created_at: string;
   updated_at: string;
 };
+
+// Inland Tap Card (spec 2026-11-17). Server-only tables: no client session
+// can read them, so these types are used only with the service-role client.
+
+export type TapCardBatchRow = {
+  id: string;
+  label: string;
+  member_id: string | null;
+  card_count: number;
+  is_test: boolean;
+  created_by: string | null;
+  created_at: string;
+};
+
+export type TapCardRow = {
+  id: string;
+  code: string;
+  batch_id: string;
+  holder_id: string | null;
+  activated_at: string | null;
+  deactivated_at: string | null;
+  created_at: string;
+};
+
+export type TapCardHolderRow = {
+  id: string;
+  name: string;
+  email: string;
+  email_lower: string;
+  age_confirmed_via: "customer" | "staff";
+  activated_by_member_id: string | null;
+  created_at: string;
+};
+
+export type TapCardVisitRow = {
+  id: string;
+  holder_id: string;
+  member_id: string;
+  card_id: string | null;
+  device_id: string | null;
+  visited_at: string;
+  visit_day: string;
+  redeemed_year: number | null;
+  created_at: string;
+};
+
+export type ScannerDeviceRow = {
+  id: string;
+  member_id: string;
+  label: string;
+  token_hash: string;
+  created_by: string | null;
+  last_used_at: string | null;
+  revoked_at: string | null;
+  created_at: string;
+};
+
+export type TapCardOfferStatus = "pending" | "approved" | "declined";
+
+export type TapCardOfferRow = {
+  member_id: string;
+  offer_text: string;
+  status: TapCardOfferStatus;
+  submitted_by: string | null;
+  submitted_at: string;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+};
+
+export type TapCardMilestoneRow = {
+  id: string;
+  stops_required: number;
+  reward_text: string;
+  active: boolean;
+  created_at: string;
+};
+
+export type TapCardRewardRow = {
+  id: string;
+  holder_id: string;
+  milestone_id: string;
+  year: number;
+  earned_at: string;
+  handed_out_at: string | null;
+  handed_out_by: string | null;
+};
