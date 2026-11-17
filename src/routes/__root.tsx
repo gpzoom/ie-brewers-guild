@@ -22,6 +22,10 @@ import { getGuildAdminStatus } from "@/lib/guild/guild-admin-status.server";
 import { getMaintenanceMode } from "@/lib/site/maintenance.server";
 import { showsMaintenance } from "@/lib/site/maintenance";
 import { MaintenanceMode } from "@/components/site/MaintenanceMode";
+import { useState } from "react";
+import { AgeGate } from "@/components/site/AgeGate";
+import { getAgeGateState } from "@/lib/site/age-gate.server";
+import { ageGateApplies } from "@/lib/site/age-gate";
 
 const UNDER_CONSTRUCTION = import.meta.env.VITE_UNDER_CONSTRUCTION === "true";
 
@@ -95,8 +99,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     // getGuildAdminStatus is cheap for the vast majority of anonymous
     // visitors (it short-circuits on cookie presence before doing any
     // real session check -- see its own doc comment).
-    const [brand, adminStatus] = await Promise.all([getActiveBrandTokens(), getGuildAdminStatus()]);
-    return { ...brand, isGuildAdmin: adminStatus.isGuildAdmin };
+    const [brand, adminStatus, ageGate] = await Promise.all([
+      getActiveBrandTokens(),
+      getGuildAdminStatus(),
+      getAgeGateState(),
+    ]);
+    return { ...brand, isGuildAdmin: adminStatus.isGuildAdmin, ageGate };
   },
   head: ({ loaderData }) => ({
     meta: UNDER_CONSTRUCTION
@@ -202,12 +210,23 @@ function isBarePathname(pathname: string) {
 
 function RootComponent() {
   const { queryClient, maintenanceOn } = Route.useRouteContext();
-  const { isGuildAdmin } = Route.useLoaderData();
+  const { isGuildAdmin, ageGate } = Route.useLoaderData();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isBare = isBarePathname(pathname);
+  // Set once the visitor confirms here; the cookie covers later page loads.
+  const [ageConfirmedHere, setAgeConfirmedHere] = useState(false);
 
   if (UNDER_CONSTRUCTION) {
     return <UnderConstruction />;
+  }
+
+  if (
+    ageGateApplies(pathname, {
+      confirmed: ageConfirmedHere || ageGate.confirmed,
+      crawler: ageGate.crawler,
+    })
+  ) {
+    return <AgeGate onConfirmed={() => setAgeConfirmedHere(true)} />;
   }
 
   return (

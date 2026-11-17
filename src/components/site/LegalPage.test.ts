@@ -32,6 +32,13 @@ describe("Privacy Policy", () => {
     expect(t).toContain("We don't sell");
   });
 
+  it("follows the Brewers Association digital media guidelines: age cookie, under 21, opt-in", () => {
+    expect(t).toContain("we save a cookie so we don't ask again for one year");
+    expect(t).toContain("not your date of birth");
+    expect(t).toContain("anyone under 21");
+    expect(t).toContain("We never add you to an email list without your OK");
+  });
+
   it("lists the Help button's form, which also notes the page and browser", () => {
     expect(t).toContain("the Help button");
     expect(t).toContain("which page you were on");
@@ -56,6 +63,11 @@ describe("Terms of Use", () => {
     expect(t).toContain("newsletters");
     expect(t).toContain("credit");
     expect(t).toContain("opt out");
+  });
+
+  it("the Guild monitors member content against the Brewers Association code", () => {
+    expect(t).toContain("The Guild monitors member content");
+    expect(t).toContain("Brewers Association Advertising and Marketing Code");
   });
 
   it("photos sent through a sharing link stay on the website only", () => {

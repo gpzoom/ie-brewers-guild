@@ -33,7 +33,8 @@ export function TermsOfUse() {
       <LegalSection title="21 and over">
         <p>
           This site features producers of beer, wine, cider, mead and spirits. You must be of legal
-          drinking age (21 or older) to use it. Please drink responsibly, and never drink and drive.
+          drinking age (21 or older) to use it, and we ask for your date of birth before you enter.
+          Please drink responsibly, and never drink and drive.
         </p>
       </LegalSection>
 
@@ -89,8 +90,14 @@ export function TermsOfUse() {
           You are responsible for keeping your hours, events, discounts and job postings accurate and up
           to date. Your content must not be false or misleading, must not infringe anyone's rights, and
           must follow the law, including the rules on advertising alcohol and not appealing to people
-          under 21. We may edit, hide, unpublish or remove content that breaks these terms, or that we
-          reasonably believe could harm the Guild, its members or the public.
+          under 21. Beer-related content must also follow the Brewers Association Advertising and
+          Marketing Code.
+        </p>
+        <p>
+          The Guild monitors member content, including photos, events and job postings, for these rules
+          after it's posted.
+          We may edit, hide, unpublish or remove content that breaks these terms, or that we reasonably
+          believe could harm the Guild, its members or the public.
         </p>
       </LegalSection>
 

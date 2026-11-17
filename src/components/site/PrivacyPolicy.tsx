@@ -63,7 +63,9 @@ export function PrivacyPolicy() {
 
       <LegalSection title="Cookies">
         <p>
-          Our own cookies are only the ones needed to sign you in and keep you signed in. The Help
+          Our own cookies are only the ones the site needs. Sign-in cookies keep you signed in. When
+          you confirm you're 21 or older, we save a cookie so we don't ask again for one year; it records
+          only that you confirmed your age, not your date of birth, which never leaves your browser. The Help
           button may remember your first name on your own device so you don't have to type it again. We
           don't add advertising, analytics or tracking tools to the site.
         </p>
@@ -127,6 +129,11 @@ export function PrivacyPolicy() {
 
       <LegalSection title="Your email choices">
         <p>
+          We email only our members and people who ask to hear from us. We never add you to an email list
+          without your OK. For example, writing to us through the Contact page doesn't sign you up for
+          anything.
+        </p>
+        <p>
           Every Guild email sent to a list includes an unsubscribe link. Emails you need to use the site,
           such as sign-in links and notices about your own profile, still go out.
         </p>
@@ -157,11 +164,12 @@ export function PrivacyPolicy() {
         </p>
       </LegalSection>
 
-      <LegalSection title="Children">
+      <LegalSection title="Under 21">
         <p>
-          This site is for adults of legal drinking age (21 and over). It is not meant for children, and
-          we don't knowingly collect information from children under 13. If you think a child has given
-          us information, email <LegalEmail /> and we'll delete it.
+          This site is for adults of legal drinking age (21 and over). We ask for your date of birth
+          before you enter, and anyone who says they're under 21 can't go further, so we don't collect
+          their information. We don't knowingly collect information from anyone under 21. If you think
+          someone under 21 has given us information, email <LegalEmail /> and we'll delete it.
         </p>
       </LegalSection>
 
