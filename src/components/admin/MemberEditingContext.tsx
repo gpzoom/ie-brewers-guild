@@ -28,6 +28,8 @@ export type MemberEditingValue = {
   isImpersonating: boolean;
   /** The member's live status is "published". */
   isPublished: boolean;
+  /** A Join applicant on /join/finish: the Guild publishes, not them. */
+  isApplicant?: boolean;
   slug: string;
   surface: "admin" | "portal";
   /** The location menu for the setup top bar; absent elsewhere or while impersonating. */

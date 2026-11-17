@@ -7,7 +7,8 @@ import { useMemberEditing } from "@/components/admin/MemberEditingContext";
  * cases so it's never wrong: a live page changes when you publish; a
  * never-published one stays hidden until you publish it.
  */
-export function saveNoteText(isPublished: boolean): string {
+export function saveNoteText(isPublished: boolean, isApplicant = false): string {
+  if (isApplicant) return "Changes save as you type. The Guild reviews your application before your page goes live.";
   return isPublished
     ? "Changes save as you type and go live when you publish."
     : "Changes save as you type. Your profile stays hidden until you publish it.";
@@ -19,5 +20,5 @@ export function saveNoteText(isPublished: boolean): string {
  */
 export function SaveNoteText() {
   const editing = useMemberEditing();
-  return <>{saveNoteText(editing?.isPublished ?? false)}</>;
+  return <>{saveNoteText(editing?.isPublished ?? false, editing?.isApplicant ?? false)}</>;
 }

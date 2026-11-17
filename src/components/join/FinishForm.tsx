@@ -45,6 +45,7 @@ export function FinishForm({ state }: { state: JoinFinishForm }) {
       role: state.draftStatus.role,
       isImpersonating: state.isImpersonating,
       isPublished: false,
+      isApplicant: true,
       slug: state.slug,
       surface: "portal",
       // No other portal screens to link to from here.
@@ -134,7 +135,8 @@ function FinishPage({ state }: { state: JoinFinishForm }) {
               <CanvasHeading>Finish your profile</CanvasHeading>
               <p className={leadClass}>
                 Add your logo, a cover photo, a tagline and your links for{" "}
-                <strong className="font-semibold text-ink">{state.businessName}</strong>. Everything
+                <strong className="font-semibold text-ink">{state.businessName}</strong>
+                {state.businessName.endsWith(".") ? "" : "."} Everything
                 saves as you go. The Guild reviews your application before your page goes live.
               </p>
             </div>
