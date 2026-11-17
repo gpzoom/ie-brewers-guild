@@ -38,6 +38,7 @@ import { Route as PortalPreviewRouteImport } from './routes/portal.preview'
 import { Route as PortalSectionsRouteImport } from './routes/portal._sections'
 import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
 import { Route as JoinFinishRouteImport } from './routes/join_.finish'
+import { Route as GuildTapCardRouteImport } from './routes/guild.tap-card'
 import { Route as GuildSettingsRouteImport } from './routes/guild.settings'
 import { Route as GuildRosterRouteImport } from './routes/guild.roster'
 import { Route as GuildInquiriesRouteImport } from './routes/guild.inquiries'
@@ -213,6 +214,11 @@ const JoinFinishRoute = JoinFinishRouteImport.update({
   id: '/join_/finish',
   path: '/join/finish',
   getParentRoute: () => rootRouteImport,
+} as any)
+const GuildTapCardRoute = GuildTapCardRouteImport.update({
+  id: '/tap-card',
+  path: '/tap-card',
+  getParentRoute: () => GuildRoute,
 } as any)
 const GuildSettingsRoute = GuildSettingsRouteImport.update({
   id: '/settings',
@@ -406,6 +412,7 @@ export interface FileRoutesByFullPath {
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
   '/guild/settings': typeof GuildSettingsRoute
+  '/guild/tap-card': typeof GuildTapCardRoute
   '/join/finish': typeof JoinFinishRoute
   '/members/$slug': typeof MembersSlugRoute
   '/portal': typeof PortalSectionsRouteWithChildren
@@ -465,6 +472,7 @@ export interface FileRoutesByTo {
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
   '/guild/settings': typeof GuildSettingsRoute
+  '/guild/tap-card': typeof GuildTapCardRoute
   '/join/finish': typeof JoinFinishRoute
   '/members/$slug': typeof MembersSlugRoute
   '/portal': typeof PortalIndexRoute
@@ -525,6 +533,7 @@ export interface FileRoutesById {
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
   '/guild/settings': typeof GuildSettingsRoute
+  '/guild/tap-card': typeof GuildTapCardRoute
   '/join_/finish': typeof JoinFinishRoute
   '/members_/$slug': typeof MembersSlugRoute
   '/portal/_sections': typeof PortalSectionsRouteWithChildren
@@ -588,6 +597,7 @@ export interface FileRouteTypes {
     | '/guild/inquiries'
     | '/guild/roster'
     | '/guild/settings'
+    | '/guild/tap-card'
     | '/join/finish'
     | '/members/$slug'
     | '/portal'
@@ -647,6 +657,7 @@ export interface FileRouteTypes {
     | '/guild/inquiries'
     | '/guild/roster'
     | '/guild/settings'
+    | '/guild/tap-card'
     | '/join/finish'
     | '/members/$slug'
     | '/portal'
@@ -706,6 +717,7 @@ export interface FileRouteTypes {
     | '/guild/inquiries'
     | '/guild/roster'
     | '/guild/settings'
+    | '/guild/tap-card'
     | '/join_/finish'
     | '/members_/$slug'
     | '/portal/_sections'
@@ -969,6 +981,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JoinFinishRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guild/tap-card': {
+      id: '/guild/tap-card'
+      path: '/tap-card'
+      fullPath: '/guild/tap-card'
+      preLoaderRoute: typeof GuildTapCardRouteImport
+      parentRoute: typeof GuildRoute
+    }
     '/guild/settings': {
       id: '/guild/settings'
       path: '/settings'
@@ -1223,6 +1242,7 @@ interface GuildRouteChildren {
   GuildInquiriesRoute: typeof GuildInquiriesRoute
   GuildRosterRoute: typeof GuildRosterRoute
   GuildSettingsRoute: typeof GuildSettingsRoute
+  GuildTapCardRoute: typeof GuildTapCardRoute
   GuildIndexRoute: typeof GuildIndexRoute
 }
 
@@ -1237,6 +1257,7 @@ const GuildRouteChildren: GuildRouteChildren = {
   GuildInquiriesRoute: GuildInquiriesRoute,
   GuildRosterRoute: GuildRosterRoute,
   GuildSettingsRoute: GuildSettingsRoute,
+  GuildTapCardRoute: GuildTapCardRoute,
   GuildIndexRoute: GuildIndexRoute,
 }
 
