@@ -1,4 +1,5 @@
 import ICAL from "ical.js";
+import { conversionZone, feedTimeZone, pacificWallClockIso, wallClockIn } from "@/lib/events/calendar-time-zone";
 
 export type ParsedIcsEvent = {
   externalEventId: string;
@@ -255,6 +256,24 @@ export function parseIcsFeedForTag(
   }
   const bareTag = syncTag.trim().replace(/^#+/, "").toLowerCase();
 
+  // TEMPORARY (owner, 2026-11-18): a calendar set to a zone other than
+  // Pacific has its times read as the wall-clock times the member typed, in
+  // Pacific Time (calendar-time-zone.ts). Only times written in the
+  // calendar's own zone (or in UTC, or with no zone) are converted; a time
+  // the member pinned to another zone, like Pacific, is left alone.
+  const wrongZone = conversionZone(feedTimeZone(icsText));
+  const timedIso = (t: ICAL.Time): string => {
+    if (wrongZone) {
+      const tzid = t.zone?.tzid;
+      const named = (t as ICAL.Time & { timezone?: string }).timezone;
+      if (tzid === "UTC") return pacificWallClockIso(wallClockIn(t.toJSDate().getTime(), wrongZone));
+      if (tzid === wrongZone || (tzid === "floating" && (named === undefined || named === wrongZone))) {
+        return pacificWallClockIso({ year: t.year, month: t.month, day: t.day, hour: t.hour, minute: t.minute, second: t.second });
+      }
+    }
+    return t.toJSDate().toISOString();
+  };
+
   const jcalData = ICAL.parse(icsText);
   const component = new ICAL.Component(jcalData);
   const vevents = component.getAllSubcomponents("vevent");
@@ -290,13 +309,13 @@ export function parseIcsFeedForTag(
     // the day after its last day (or the next day when there's none).
     const allDay = startDate.isDate;
     const startDay = startDate.toString().slice(0, 10);
-    const startsAt = allDay ? zonedMidnightUtc(startDay, timeZone) : startDate.toJSDate().toISOString();
+    const startsAt = allDay ? zonedMidnightUtc(startDay, timeZone) : timedIso(startDate);
     let endsAt: string | null;
     if (allDay) {
       const endDay = endDate?.isDate ? endDate.toString().slice(0, 10) : null;
       endsAt = zonedMidnightUtc(endDay ?? nextDay(startDay), timeZone);
     } else {
-      endsAt = endDate ? endDate.toJSDate().toISOString() : null;
+      endsAt = endDate ? timedIso(endDate) : null;
     }
     return {
       externalEventId,

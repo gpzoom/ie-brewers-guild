@@ -76,7 +76,7 @@ export type LaunchNames = {
 
 const TYPE_LABEL: Record<string, string> = {
   closed_day_conflict: "Events on a closed day",
-  utc_calendar: "Calendars set to UTC",
+  utc_calendar: "Calendars not set to Pacific Time",
 };
 
 function whenText(r: MemberNotificationRow): string {

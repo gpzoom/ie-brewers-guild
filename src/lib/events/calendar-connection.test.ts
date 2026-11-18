@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { readBoundedText, syncOneIcsConnection, validateIcsUrl } from "./calendar-connection.server";
+import { calendarLinkProblem, readBoundedText, syncOneIcsConnection, validateIcsUrl } from "./calendar-connection.server";
+import { wrongTimeZoneMessage } from "./calendar-time-zone";
 import type { CalendarConnectionRow } from "@/lib/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -389,5 +390,30 @@ describe("refreshIcsConnectionNow's re-select-after-sync data flow", () => {
 
     expect(refreshed.sync_status).toBe("failing");
     expect(refreshed.last_sync_error).toMatch(/responded with 503/i);
+  });
+});
+
+describe("calendarLinkProblem (checked when a calendar link is saved)", () => {
+  afterEach(() => vi.restoreAllMocks());
+  const feed = (zone: string) =>
+    new Response(`BEGIN:VCALENDAR\r\nVERSION:2.0\r\nX-WR-TIMEZONE:${zone}\r\nEND:VCALENDAR\r\n`, { status: 200 });
+
+  it("refuses a calendar set to UTC, saying how to fix it", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(feed("UTC"));
+    expect(await calendarLinkProblem("https://calendar.google.com/x.ics")).toBe(wrongTimeZoneMessage("UTC"));
+  });
+  it("refuses any other zone that isn't Pacific", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(feed("America/Chicago"));
+    expect(await calendarLinkProblem("https://calendar.google.com/x.ics")).toContain("set to America/Chicago, not Pacific Time");
+  });
+  it("accepts a Pacific calendar", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(feed("America/Los_Angeles"));
+    expect(await calendarLinkProblem("https://calendar.google.com/x.ics")).toBeNull();
+  });
+  it("refuses a link it can't open", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("nope", { status: 404 }));
+    expect(await calendarLinkProblem("https://calendar.google.com/x.ics")).toBe(
+      "We couldn't open that calendar link to check it (ICS feed responded with 404). Check the link and try again.",
+    );
   });
 });

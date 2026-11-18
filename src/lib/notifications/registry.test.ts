@@ -99,7 +99,11 @@ describe("notification registry", () => {
     const d = { calendar_connection_id: "c1", purpose: "events" as const, feed_time_zone: "UTC" };
     const events = typeDef("utc_calendar").portal(d, ctx);
     expect(events.body).toBe(
-      `Your Google Calendar (events calendar) is set to UTC, so your event times show 7–8 hours early. In Google Calendar, set the calendar's time zone to Pacific Time - Los Angeles, then check your event times.`,
+      "Your Google Calendar (events calendar) is set to UTC, not Pacific Time. For now the Guild site adjusts your event times so they show correctly, but please fix it: in Google Calendar, open Settings, choose this calendar, and set its Time zone to (GMT-08:00) Pacific Time - Los Angeles. Then check that your event times still look right.",
+    );
+    expect(events.title).toBe("Your calendar's time zone needs fixing");
+    expect(typeDef("utc_calendar").portal({ ...d, feed_time_zone: "America/New_York" }, ctx).body).toContain(
+      "is set to America/New_York, not Pacific Time.",
     );
     const food = typeDef("utc_calendar").portal({ ...d, purpose: "food" }, ctx);
     expect(food.body).toContain("food calendar");

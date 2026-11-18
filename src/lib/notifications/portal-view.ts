@@ -125,7 +125,7 @@ export function summarizeNotifications(
   const parts: string[] = [];
   if (ownConflicts > 0) parts.push(eventsSentence(ownConflicts, "you've"));
   if (guestConflicts > 0) parts.push(eventsSentence(guestConflicts, "the taproom has"));
-  if (utcCalendars > 0) parts.push("Your calendar is set to UTC.");
+  if (utcCalendars > 0) parts.push("Your calendar's time zone needs fixing.");
   if (parts.length === 0) {
     parts.push(
       openProblems === 1 ? "You have 1 open alert." : `You have ${openProblems} open alerts.`,

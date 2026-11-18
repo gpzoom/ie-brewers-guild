@@ -140,13 +140,13 @@ describe("summarizeNotifications", () => {
     );
   });
 
-  it("names a UTC calendar", () => {
-    expect(summarizeNotifications([utc("a")]).bannerText).toBe("Your calendar is set to UTC.");
+  it("names a calendar in the wrong time zone", () => {
+    expect(summarizeNotifications([utc("a")]).bannerText).toBe("Your calendar's time zone needs fixing.");
   });
 
   it("names both when both are open", () => {
     expect(summarizeNotifications([conflict("a"), utc("b")]).bannerText).toBe(
-      "1 of your events is on a day you've marked closed. Your calendar is set to UTC.",
+      "1 of your events is on a day you've marked closed. Your calendar's time zone needs fixing.",
     );
   });
 
