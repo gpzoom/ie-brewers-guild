@@ -220,7 +220,7 @@ export const getStaffQrView = createServerFn({ method: "GET" })
     if (!plate) return { view: "unknown" };
     if (!plate.open) return { view: "closed", memberName: plate.memberName };
     const holderId = await readHolderId();
-    const pending = holderId ? await readPlatePending() : null;
+    const pending = holderId ? await readPlatePending(holderId) : null;
     const decided = decideStaffQrView({ qrMemberId: plate.memberId, signedIn: holderId !== null, pending, now: new Date() });
     const memberName = plate.memberName;
     if (decided.kind === "unknown") return { view: "unknown" };
@@ -253,10 +253,10 @@ export const confirmByStaffQr = createServerFn({ method: "POST" })
     if (!plate?.open) return { kind: "closed" };
     const holderId = await readHolderId();
     if (!holderId) return { kind: "signed-out" };
-    const pending = await readPlatePending();
+    const pending = await readPlatePending(holderId);
     const decided = decideStaffQrView({ qrMemberId: plate.memberId, signedIn: true, pending, now: new Date() });
     if (decided.kind !== "check-in" && decided.kind !== "confirm") return { kind: "scan-plate-first" };
-    if (!(await claimPlatePending(pending!.at))) return { kind: "scan-plate-first" };
+    if (!(await claimPlatePending(pending!))) return { kind: "scan-plate-first" };
     const choice: PlateChoice = decided.kind === "confirm" && !data.skipReward ? decided.choice : { kind: "none" };
     return recordVisit(service, { holderId, memberId: plate.memberId, cardId: null, deviceId: null, at: new Date() }, choice);
   });

@@ -14,6 +14,9 @@ import {
 } from "@/components/public-forms/PublicFormParts";
 import { Eyebrow, TapCardShell } from "@/components/tap-card/TapCardShell";
 import { useByDate } from "@/components/tap-card/CheckInScreen";
+import { CardScanner } from "@/components/tap-card/CardScanner";
+import { SaveToHomeScreen } from "@/components/tap-card/SaveToHomeScreen";
+import { CARD_APP_HEAD_LINKS, CARD_APP_HEAD_META } from "@/lib/tap-card/card-app";
 
 /** /card: a card holder's progress this year. Signed out → the email sign-in. */
 export const Route = createFileRoute("/card")({
@@ -23,7 +26,10 @@ export const Route = createFileRoute("/card")({
     if (!view) throw redirect({ to: "/card/signin" });
     return view;
   },
-  head: () => ({ meta: [{ title: "My Inland Tap Card" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({
+    meta: [{ title: "My Inland Tap Card" }, { name: "robots", content: "noindex, nofollow" }, ...CARD_APP_HEAD_META],
+    links: CARD_APP_HEAD_LINKS,
+  }),
   component: CardPage,
 });
 
@@ -33,6 +39,8 @@ function CardPage() {
     <TapCardShell>
       <Eyebrow>Inland Tap Card · {view.year}</Eyebrow>
       <CanvasHeading size="md">{view.firstName}&rsquo;s Inland Tap Card</CanvasHeading>
+      <CardScanner />
+      <SaveToHomeScreen />
       <Waiting view={view} />
       <Progress view={view} />
       <Milestones view={view} />

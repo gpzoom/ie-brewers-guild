@@ -320,14 +320,16 @@ describe("buildEmailContent: Join application emails", () => {
     expect(content.html).toContain(`href="${site}/card"`);
   });
 
-  it("tap_card_signin_link carries the one-time link and says it expires", () => {
+  it("tap_card_signin_link carries the code, the one-time link, and says they expire", () => {
     const content = buildEmailContent(
-      { trigger: "tap_card_signin_link", email: "pat@example.com", link: "https://x.test/card/login/abc" },
+      { trigger: "tap_card_signin_link", email: "pat@example.com", link: "https://x.test/card/login/abc", code: "042137" },
       site,
     );
-    expect(content.subject).toBe("Sign in to your Inland Tap Card");
+    expect(content.subject).toBe("Your Inland Tap Card sign-in code: 042137");
+    expect(content.text).toContain("Your sign-in code: 042137");
     expect(content.text).toContain("https://x.test/card/login/abc");
-    expect(content.text).toContain("works once and expires in 60 minutes");
+    expect(content.text).toContain("work once and expire in 60 minutes");
+    expect(content.html).toContain("042137");
     expect(content.html).toContain('href="https://x.test/card/login/abc"');
   });
 

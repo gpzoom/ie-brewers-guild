@@ -114,19 +114,26 @@ export async function setPlatePending(p: { memberId: string; plateCode: string; 
   return (data ?? []).length > 0;
 }
 
-export async function readPlatePending(): Promise<Pending | null> {
-  const raw = getCookie(HOLDER_COOKIE);
-  if (!raw) return null;
+/**
+ * The person's newest waiting plate choice, from any of their signed-in
+ * browsers -- so the plate scanned with the phone's camera (browser) and the
+ * bartender QR scanned from a Home Screen card still go together.
+ */
+export async function readPlatePending(holderId: string): Promise<(Pending & { sessionId: string }) | null> {
   const service = await getSupabaseServiceRoleClient();
   const { data, error } = await service
     .from("tap_card_sessions")
-    .select("pending_member_id, pending_plate_code, pending_choice, pending_at")
-    .eq("token_hash", await hashUploadToken(raw))
+    .select("id, pending_member_id, pending_plate_code, pending_choice, pending_at")
+    .eq("holder_id", holderId)
+    .not("pending_at", "is", null)
+    .gt("expires_at", new Date().toISOString())
+    .order("pending_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
   if (error) throw new Error(error.message);
   const choice = parsePendingChoice(data?.pending_choice);
   if (!data?.pending_member_id || !data.pending_plate_code || !data.pending_at || !choice) return null;
-  return { memberId: data.pending_member_id, plateCode: data.pending_plate_code, choice, at: data.pending_at };
+  return { sessionId: data.id, memberId: data.pending_member_id, plateCode: data.pending_plate_code, choice, at: data.pending_at };
 }
 
 /**
@@ -134,15 +141,13 @@ export async function readPlatePending(): Promise<Pending | null> {
  * bartender scan confirms one choice even if the page sends twice. False
  * when another request already took it.
  */
-export async function claimPlatePending(pendingAt: string): Promise<boolean> {
-  const raw = getCookie(HOLDER_COOKIE);
-  if (!raw) return false;
+export async function claimPlatePending(pending: { sessionId: string; at: string }): Promise<boolean> {
   const service = await getSupabaseServiceRoleClient();
   const { data, error } = await service
     .from("tap_card_sessions")
     .update({ pending_member_id: null, pending_plate_code: null, pending_choice: null, pending_at: null })
-    .eq("token_hash", await hashUploadToken(raw))
-    .eq("pending_at", pendingAt)
+    .eq("id", pending.sessionId)
+    .eq("pending_at", pending.at)
     .select("id");
   if (error) throw new Error(error.message);
   return (data ?? []).length > 0;

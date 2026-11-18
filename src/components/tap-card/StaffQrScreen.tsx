@@ -3,6 +3,7 @@ import { confirmByStaffQr, type StaffQrPage } from "@/lib/tap-card/plate.server"
 import { CanvasHeading, fieldErrorClass, leadClass, primaryButtonClass, secondaryButtonClass } from "@/components/public-forms/PublicFormParts";
 import { Eyebrow } from "@/components/tap-card/TapCardShell";
 import { PlateSuccess, plateRefusal, type PlateOk } from "@/components/tap-card/PlateSuccess";
+import { CardScanner } from "@/components/tap-card/CardScanner";
 
 /**
  * /s/<token>: the customer scanned the bartender's QR code. A plain check-in
@@ -56,6 +57,7 @@ export function StaffQrScreen({ token, view }: { token: string; view: StaffQrPag
         <>
           <CanvasHeading size="md">Scan the counter plate first</CanvasHeading>
           <p className={leadClass}>Scan the Tap Card plate on the counter, choose what you&rsquo;d like, then scan this code again.</p>
+          <CardScanner label="Scan the counter plate" />
         </>
       )}
       {view.view === "wrong-brewery" && (

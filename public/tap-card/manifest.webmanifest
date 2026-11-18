@@ -1,0 +1,15 @@
+{
+  "name": "Inland Tap Card",
+  "short_name": "Tap Card",
+  "description": "Your Inland Tap Card: Beer Trail progress, rewards, and check-ins.",
+  "id": "/card",
+  "start_url": "/card",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    { "src": "/tap-card/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/tap-card/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

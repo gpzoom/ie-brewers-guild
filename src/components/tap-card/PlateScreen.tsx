@@ -7,6 +7,8 @@ import { CanvasHeading, fieldErrorClass, inputClass, labelClass, leadClass, prim
 import { Eyebrow } from "@/components/tap-card/TapCardShell";
 import { useByDate } from "@/components/tap-card/CheckInScreen";
 import { PlateSuccess, StaffCodeForm, plateRefusal, type PlateOk } from "@/components/tap-card/PlateSuccess";
+import { SignInCodeForm } from "@/components/tap-card/SignInCodeForm";
+import { CardScanner } from "@/components/tap-card/CardScanner";
 
 type Ready = Extract<PlateView, { view: "ready" }>;
 
@@ -57,6 +59,7 @@ function ReadyScreen({ view }: { view: Ready }) {
           minutes.
         </p>
         <p className="rounded-xl border border-canvas-border bg-white px-4 py-3 text-[15px] text-ink">{picked}</p>
+        {step === "scan" && <CardScanner label="Scan the bartender's QR code" />}
         {step === "code" ? (
           <StaffCodeForm
             label="Confirm"
@@ -137,16 +140,19 @@ function SignedOut({ code, memberName }: { code: string; memberName: string }) {
       <Eyebrow>{memberName}</Eyebrow>
       <CanvasHeading size="md">Sign in to your Tap Card</CanvasHeading>
       {sent ? (
-        <p className={leadClass}>We sent a sign-in link to that email. Open it on this phone. You&rsquo;ll only need to do this once on this phone.</p>
+        <SignInCodeForm email={email} onSignedIn={() => window.location.reload()} />
       ) : (
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
-          <p className={leadClass}>Enter the email you used for your card. We&rsquo;ll send a link that brings you back here.</p>
+          <p className={leadClass}>
+            Enter the email you used for your card. We&rsquo;ll email you a sign-in code. You&rsquo;ll only need to do this once on this
+            phone.
+          </p>
           <label className={`${labelClass} flex flex-col gap-1.5`}>
             Email
             <input className={inputClass} type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </label>
           <button type="submit" className={primaryButtonClass} disabled={busy}>
-            {busy ? "Sending…" : "Send sign-in link"}
+            {busy ? "Sending…" : "Email me a code"}
           </button>
           {error && (
             <p role="alert" className={fieldErrorClass}>

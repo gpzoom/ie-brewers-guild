@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { safeHolderNext } from "@/lib/tap-card/plate";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { hashUploadToken } from "@/lib/media/upload-tokens";
-import { sendHolderSignInLink } from "@/lib/tap-card/holder-signin.server";
+import { sendHolderSignInLink, signInCodeStore } from "@/lib/tap-card/holder-signin.server";
+import { SIGNIN_CODE_MAX_TRIES, normalizeSignInCode, verifySignInCode } from "@/lib/tap-card/signin-code";
 import { isHoneypotTripped } from "@/lib/contact/contact-form-validation";
 import { SOMETHING_WRONG, rateLimitMessage } from "@/lib/join/join-guards.server";
 import { normalizeCardCode } from "@/lib/tap-card/card-code";
@@ -45,6 +46,46 @@ export const requestHolderSignIn = createServerFn({ method: "POST" })
       return { kind: "check-email" };
     } catch (err) {
       console.error("requestHolderSignIn failed", err instanceof Error ? err.message : String(err));
+      return { kind: "error", message: SOMETHING_WRONG };
+    }
+  });
+
+/**
+ * The emailed 6-digit code, typed in: works once, within the hour; 5 wrong
+ * tries end it. Like the request, never says whether the email has a card.
+ */
+export const signInWithCode = createServerFn({ method: "POST" })
+  .inputValidator((data: { email: string; code: string }) => ({
+    email: String(data?.email ?? "").trim().toLowerCase(),
+    code: normalizeSignInCode(data?.code),
+  }))
+  .handler(async ({ data }): Promise<{ kind: "ok" } | { kind: "error"; message: string }> => {
+    try {
+      const limited = await rateLimitMessage("tapcard-signin");
+      if (limited) return { kind: "error", message: limited };
+      if (!data.code) return { kind: "error", message: "Enter the 6 digits from the email." };
+      const expired = "That code has expired or was already used. Send a new one.";
+      if (!EMAIL_PATTERN.test(data.email) || data.email.length > 320) return { kind: "error", message: expired };
+      const service = await getSupabaseServiceRoleClient();
+      const { data: holder, error } = await service.from("tap_card_holders").select("id").eq("email_lower", data.email).maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!holder) return { kind: "error", message: expired };
+      const result = await verifySignInCode(signInCodeStore(service, holder.id), data.code);
+      switch (result.kind) {
+        case "ok":
+          await startHolderSession(holder.id);
+          return { kind: "ok" };
+        case "wrong":
+          return { kind: "error", message: `That code isn't right. ${result.triesLeft} ${result.triesLeft === 1 ? "try" : "tries"} left.` };
+        case "too-many":
+          return { kind: "error", message: `That was ${SIGNIN_CODE_MAX_TRIES} wrong tries, so the code has stopped working. Send a new one.` };
+        case "busy":
+          return { kind: "error", message: "One moment, then try again." };
+        case "expired":
+          return { kind: "error", message: expired };
+      }
+    } catch (err) {
+      console.error("signInWithCode failed", err instanceof Error ? err.message : String(err));
       return { kind: "error", message: SOMETHING_WRONG };
     }
   });

@@ -10,10 +10,12 @@ import {
   primaryButtonClass,
 } from "@/components/public-forms/PublicFormParts";
 import { TapCardShell } from "@/components/tap-card/TapCardShell";
+import { SignInCodeForm } from "@/components/tap-card/SignInCodeForm";
+import { CARD_APP_HEAD_LINKS, CARD_APP_HEAD_META } from "@/lib/tap-card/card-app";
 
 /** /card/signin: email a one-time link to a card holder. Never says whether the email has a card. */
 export const Route = createFileRoute("/card_/signin")({
-  head: () => ({ meta: [{ title: "Sign in — Inland Tap Card" }] }),
+  head: () => ({ meta: [{ title: "Sign in — Inland Tap Card" }, ...CARD_APP_HEAD_META], links: CARD_APP_HEAD_LINKS }),
   component: CardSignIn,
 });
 
@@ -43,12 +45,10 @@ function CardSignIn() {
     <TapCardShell>
       <CanvasHeading size="md">See your Inland Tap Card</CanvasHeading>
       {sent ? (
-        <p className={leadClass}>
-          Check your email. If that address has a Tap Card, we sent a link to it. The link works once, for 60 minutes.
-        </p>
+        <SignInCodeForm email={email} onSignedIn={() => window.location.assign("/card")} />
       ) : (
         <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-          <p className={leadClass}>Enter the email you used when you turned on your card. We&rsquo;ll send you a sign-in link.</p>
+          <p className={leadClass}>Enter the email you used when you turned on your card. We&rsquo;ll email you a sign-in code.</p>
           <label className="flex flex-col gap-1.5">
             <span className={labelClass}>Email</span>
             <input className={inputClass} type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -58,7 +58,7 @@ function CardSignIn() {
             <input tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
           </label>
           <button type="submit" className={primaryButtonClass} disabled={busy}>
-            {busy ? "Sending…" : "Email me a link"}
+            {busy ? "Sending…" : "Email me a code"}
           </button>
           {error && (
             <p role="alert" className={fieldErrorClass}>

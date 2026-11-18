@@ -177,6 +177,8 @@ export type TransactionalEmailPayload =
       trigger: "tap_card_signin_link";
       email: string;
       link: string;
+      /** The 6-digit code that does the same as the link (typed in anywhere). */
+      code: string;
     };
 
 /** replyTo: where hitting Reply goes, when it isn't the sender's no-reply address. */
@@ -640,14 +642,23 @@ ${legal}`,
     }
 
     case "tap_card_signin_link": {
-      const body = "Here's your link to see your Inland Tap Card:";
-      const note = "It works once and expires in 60 minutes. If you didn't ask for it, you can ignore this email.";
+      const codeLine = `Your sign-in code: ${payload.code}`;
+      const codeHelp = "Type it in on the sign-in screen.";
+      const body = "Or open this link on the same phone:";
+      const note = "The code and the link work once and expire in 60 minutes. If you didn't ask for them, you can ignore this email.";
       return {
-        subject: "Sign in to your Inland Tap Card",
-        text: `${body} ${payload.link}
+        subject: `Your Inland Tap Card sign-in code: ${payload.code}`,
+        text: `${codeLine}
+${codeHelp}
+
+${body} ${payload.link}
 
 ${note}`,
-        html: wrapHtml([`${escapeHtml(body)} <a href="${escapeHtml(payload.link)}">${escapeHtml(payload.link)}</a>`, escapeHtml(note)]),
+        html: wrapHtml([
+          `Your sign-in code: <strong style="font-size: 22px; letter-spacing: 0.15em;">${escapeHtml(payload.code)}</strong><br>${escapeHtml(codeHelp)}`,
+          `${escapeHtml(body)} <a href="${escapeHtml(payload.link)}">${escapeHtml(payload.link)}</a>`,
+          escapeHtml(note),
+        ]),
       };
     }
 
