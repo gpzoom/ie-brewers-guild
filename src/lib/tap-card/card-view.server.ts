@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { hashUploadToken } from "@/lib/media/upload-tokens";
+import { generateUploadToken, hashUploadToken } from "@/lib/media/upload-tokens";
+import { claimScannerCore, type ClaimStore } from "@/lib/tap-card/claim-scanner";
 import { rateLimitMessage } from "@/lib/join/join-guards.server";
 import { normalizeCardCode } from "@/lib/tap-card/card-code";
 import { firstNameOf, guessGuard, pickCardViewKind, type CardView } from "@/lib/tap-card/card-view";
@@ -108,21 +109,57 @@ export const recordCheckIn = createServerFn({ method: "POST" })
   });
 
 /** The bar device's one-time setup link: remembers this browser as that brewery's device. */
+async function scannerClaimStore(): Promise<ClaimStore> {
+  const service = await getSupabaseServiceRoleClient();
+  return {
+    async byHash(hash) {
+      const { data, error } = await service
+        .from("scanner_devices")
+        .select("id, revoked_at, members!inner(business_name)")
+        .eq("token_hash", hash)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!data) return null;
+      return {
+        id: data.id,
+        revokedAt: data.revoked_at,
+        memberName: (data.members as unknown as { business_name: string }).business_name,
+      };
+    },
+    async swapHash(id, oldHash, newHash) {
+      const { data, error } = await service
+        .from("scanner_devices")
+        .update({ token_hash: newHash, last_used_at: new Date().toISOString() })
+        .eq("id", id)
+        .eq("token_hash", oldHash)
+        .select("id");
+      if (error) throw new Error(error.message);
+      return (data ?? []).length === 1;
+    },
+  };
+}
+
+/**
+ * /scanner/<token> on page load: is this setup link still good? Only looks --
+ * opening the link (or a message app previewing it) never uses it up.
+ */
+export const checkScannerLink = createServerFn({ method: "GET" })
+  .inputValidator((data: { token: string }) => ({ token: String(data?.token ?? "") }))
+  .handler(async ({ data }): Promise<{ ok: false } | { ok: true; memberName: string }> => {
+    if (!data.token || data.token.length > 100) return { ok: false };
+    const device = await (await scannerClaimStore()).byHash(await hashUploadToken(data.token));
+    if (!device || device.revokedAt) return { ok: false };
+    return { ok: true, memberName: device.memberName };
+  });
+
+/** The "Set up this device" button: uses the link up and remembers this browser as a bar device. */
 export const claimScannerLink = createServerFn({ method: "POST" })
   .inputValidator((data: { token: string }) => ({ token: String(data?.token ?? "") }))
-  .handler(async ({ data }): Promise<{ ok: boolean; memberName?: string }> => {
-    if (!data.token || data.token.length > 100) return { ok: false };
-    const service = await getSupabaseServiceRoleClient();
-    const { data: device, error } = await service
-      .from("scanner_devices")
-      .select("id, revoked_at, members!inner(business_name)")
-      .eq("token_hash", await hashUploadToken(data.token))
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!device || device.revoked_at) return { ok: false };
-    setScannerCookie(data.token);
-    await service.from("scanner_devices").update({ last_used_at: new Date().toISOString() }).eq("id", device.id);
-    return { ok: true, memberName: (device.members as unknown as { business_name: string }).business_name };
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    const result = await claimScannerCore(await scannerClaimStore(), data.token, generateUploadToken());
+    if (!result.ok) return { ok: false };
+    setScannerCookie(result.deviceKey);
+    return { ok: true };
   });
 
 /** /scanner: is this browser a bar device, and for which brewery? */

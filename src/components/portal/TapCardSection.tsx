@@ -151,7 +151,7 @@ export function TapCardSection({ memberId }: { memberId: string }) {
 
         {setupUrl && (
           <div className="flex flex-col gap-2 rounded-xl border border-canvas-border bg-canvas px-4 py-3">
-            <p className="text-[13px] font-semibold text-ink">Setup link — open it on the bar device. It&rsquo;s shown only once.</p>
+            <p className="text-[13px] font-semibold text-ink">Setup link — open it on the bar device. It&rsquo;s shown only once and works once.</p>
             <p className="text-[13px] text-ink-muted">
               Scan the QR code with the bar device&rsquo;s camera, or copy the link and open it there. You can download the QR
               code to print and take to the bar.
