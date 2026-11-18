@@ -62,6 +62,7 @@ export async function resolveRecipient(
     case "type_change_requested":
     case "membership_application":
     case "application_details_added":
+    case "tap_card_offer_submitted":
       return [guildInboxFor(siteUrl)];
     case "creator_upload_pending":
     case "hours_stale":

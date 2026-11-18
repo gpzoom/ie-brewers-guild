@@ -13,13 +13,28 @@ export function isTapCardTab(value: unknown): value is TapCardTab {
   return typeof value === "string" && (TAP_CARD_TABS as readonly string[]).includes(value);
 }
 
-/** Guild > Tap Card tab strip (same look as Categories). */
-export function TapCardTabs({ tab, onChange, badges }: { tab: TapCardTab; onChange: (t: TapCardTab) => void; badges?: Partial<Record<TapCardTab, number>> }) {
+/**
+ * Guild > Tap Card tab strip (same look as Categories). A tab in `alerts`
+ * gets the red pulsing border the member portal's alert banner uses (Offers,
+ * while loyalty offers wait for approval).
+ */
+export function TapCardTabs({
+  tab,
+  onChange,
+  badges,
+  alerts,
+}: {
+  tab: TapCardTab;
+  onChange: (t: TapCardTab) => void;
+  badges?: Partial<Record<TapCardTab, number>>;
+  alerts?: Partial<Record<TapCardTab, boolean>>;
+}) {
   return (
     <div role="tablist" aria-label="Tap Card" className="flex flex-wrap gap-2">
       {TAP_CARD_TABS.map((value) => {
         const active = value === tab;
         const badge = badges?.[value];
+        const alert = alerts?.[value] === true;
         return (
           <button
             key={value}
@@ -27,9 +42,9 @@ export function TapCardTabs({ tab, onChange, badges }: { tab: TapCardTab; onChan
             role="tab"
             aria-selected={active}
             onClick={() => onChange(value)}
-            className={`inline-flex h-11 items-center rounded-[9px] border px-[15px] text-[13px] transition-colors md:h-[42px] ${
-              active ? "border-ink bg-ink font-semibold text-canvas" : "border-canvas-border bg-white text-ink hover:bg-canvas-2"
-            }`}
+            className={`inline-flex h-11 items-center rounded-[9px] px-[15px] text-[13px] transition-colors md:h-[42px] ${
+              active ? "bg-ink font-semibold text-canvas" : "bg-white text-ink hover:bg-canvas-2"
+            } ${alert ? "notification-pulse border-2 border-[#B42318]" : active ? "border border-ink" : "border border-canvas-border"}`}
           >
             {LABELS[value]}
             {badge ? <span className={`ml-2 text-[12px] ${active ? "text-canvas/70" : "text-ink-muted"}`}>{badge}</span> : null}

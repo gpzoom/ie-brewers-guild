@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
+import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { alertBadgeCount } from "@/lib/tap-card/offer-alerts";
 
 export type GuildShellSummary = {
   /** Signed-in Guild admin's email, shown in the top bar (profiles has no name column). */
@@ -13,7 +14,7 @@ export type GuildShellSummary = {
    * admin (the table's select policy would show them nothing anyway).
    */
   waitingHelpCount: number | null;
-  /** Open member problems (all types) -- the "Member alerts" sidebar badge. */
+  /** Open member problems (all types) plus Tap Card offers waiting for approval -- the "Member alerts" sidebar badge. */
   openMemberAlerts: number | null;
 };
 
@@ -52,7 +53,8 @@ export const getGuildShellSummary = createServerFn({ method: "GET" }).handler(
     if (!profile?.is_guild_admin) return empty;
     const isSuperAdmin = (profile as { is_super_admin?: boolean }).is_super_admin === true;
 
-    const [inquiries, members, help, alerts] = await Promise.all([
+    const service = await getSupabaseServiceRoleClient();
+    const [inquiries, members, help, alerts, offers] = await Promise.all([
       supabase.from("inquiries").select("id", { count: "exact", head: true }).eq("status", "open"),
       supabase.from("members").select("id", { count: "exact", head: true }),
       isSuperAdmin
@@ -66,7 +68,11 @@ export const getGuildShellSummary = createServerFn({ method: "GET" }).handler(
         .select("id", { count: "exact", head: true })
         .eq("kind", "problem")
         .eq("status", "open"),
+      // Server-only table (no RLS policies): counted with the service key,
+      // only after the Guild admin check above.
+      service.from("tap_card_member_offers").select("id", { count: "exact", head: true }).eq("draft_status", "pending"),
     ]);
+    if (offers.error) console.error("getGuildShellSummary: waiting offers count failed", offers.error);
     if (alerts.error) console.error("getGuildShellSummary: Member alerts count failed", alerts.error);
     if (inquiries.error) console.error("getGuildShellSummary: inquiry count failed", inquiries.error);
     if (members.error) console.error("getGuildShellSummary: member count failed", members.error);
@@ -77,7 +83,7 @@ export const getGuildShellSummary = createServerFn({ method: "GET" }).handler(
       openInquiryCount: inquiries.error ? null : (inquiries.count ?? 0),
       memberCount: members.error ? null : (members.count ?? 0),
       waitingHelpCount: !help || help.error ? null : (help.count ?? 0),
-      openMemberAlerts: alerts.error ? null : (alerts.count ?? 0),
+      openMemberAlerts: alertBadgeCount(alerts.error ? null : (alerts.count ?? 0), offers.error ? null : (offers.count ?? 0)),
     };
   },
 );

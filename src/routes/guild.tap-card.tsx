@@ -60,6 +60,7 @@ function TapCardRoute() {
       <TapCardTabs
         tab={data.tab}
         badges={{ offers: data.pendingCount }}
+        alerts={{ offers: data.pendingCount > 0 }}
         onChange={(t) => navigate({ search: t === "cards" ? {} : { tab: t } })}
       />
       {data.tab === "cards" && "batches" in data && <CardBatchesPanel batches={data.batches} />}

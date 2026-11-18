@@ -268,6 +268,33 @@ describe("buildEmailContent: Join application emails", () => {
     expect(content.html).toContain(`href="${site}/guild/roster"`);
   });
 
+  it("tap_card_offer_submitted tells the Guild what to review and links the Offers tab", () => {
+    const content = buildEmailContent(
+      {
+        trigger: "tap_card_offer_submitted",
+        memberId: "m1",
+        businessName: "Sample Brewery",
+        label: "Visit 2",
+        reward: "Free soft pretzel",
+        terms: "One per visit. Food only.",
+        change: false,
+      },
+      site,
+    );
+    expect(content.subject).toBe("Tap Card: Sample Brewery sent a loyalty offer for approval");
+    expect(content.text).toContain("Visit 2: Free soft pretzel");
+    expect(content.text).toContain("Terms: One per visit. Food only.");
+    expect(content.text).toContain(`${site}/guild/tap-card?tab=offers`);
+    expect(content.html).toContain(`href="${site}/guild/tap-card?tab=offers"`);
+    const change = buildEmailContent(
+      { trigger: "tap_card_offer_submitted", memberId: "m1", businessName: "Sample <b>", label: "Every 3 visits", reward: "$1 off", terms: "", change: true },
+      site,
+    );
+    expect(change.subject).toBe("Tap Card: Sample <b> sent a change to a loyalty offer for approval");
+    expect(change.text).not.toContain("Terms:");
+    expect(change.html).toContain("Sample &lt;b&gt;");
+  });
+
   it("join_draft_link carries the one-time link and the sign-in fallback", () => {
     const content = buildEmailContent(
       { trigger: "join_draft_link", email: "sam@example.com", businessName: "Hop House", link: "https://x.test/join/abc" },

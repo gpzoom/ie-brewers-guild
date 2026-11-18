@@ -3,7 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TapCardMemberOfferRow } from "@/lib/supabase/types";
 import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
 import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
-import { DEFAULT_EXPIRY_DAYS, EXPIRY_CHOICES, validateMemberOffer, type OfferSlot } from "@/lib/tap-card/loyalty";
+import { DEFAULT_EXPIRY_DAYS, EXPIRY_CHOICES, offerLabel, validateMemberOffer, type OfferSlot } from "@/lib/tap-card/loyalty";
+import { sendTransactionalEmail } from "@/lib/email/send";
 import { SLOT_ORDER, otherStepNumbers, sameDraft, slotViews, type OfferVersion, type SeenDraft, type SlotView } from "@/lib/tap-card/member-offers-view";
 import { STANDARD_OFFER } from "@/lib/tap-card/tap-card-copy";
 
@@ -82,6 +83,23 @@ export const submitMemberOffer = createServerFn({ method: "POST" })
       .from("tap_card_member_offers")
       .upsert({ member_id: data.memberId, slot: data.slot, ...draft }, { onConflict: "member_id,slot" });
     if (error) throw new Error(error.message);
+
+    // Tell the Guild (owner, 2026-11-18). From staging this goes to the test
+    // inbox (guildInboxFor). A failed send never fails the submit.
+    try {
+      const { data: member } = await service.from("members").select("business_name").eq("id", data.memberId).maybeSingle();
+      await sendTransactionalEmail({
+        trigger: "tap_card_offer_submitted",
+        memberId: data.memberId,
+        businessName: (member?.business_name as string | undefined) ?? "A member",
+        label: offerLabel(data.slot, checked.value.visitNumber),
+        reward: checked.value.reward,
+        terms: checked.value.terms,
+        change: views.some((v) => v.slot === data.slot && v.live !== null),
+      });
+    } catch (err) {
+      console.error("sendTransactionalEmail(tap_card_offer_submitted) failed", err);
+    }
     return { ok: true };
   });
 

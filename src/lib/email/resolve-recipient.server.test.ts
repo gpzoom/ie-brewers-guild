@@ -234,6 +234,15 @@ describe("resolveRecipient: Join application emails", () => {
     ).resolves.toEqual([STAGING_GUILD_NOTIFICATION_EMAIL]);
   });
 
+  it("a submitted Tap Card offer goes to the Guild inbox (the test inbox from staging)", async () => {
+    const supabase = fakeSupabase({ memberUser: null, userEmail: null });
+    const payload = { trigger: "tap_card_offer_submitted" as const, memberId: "m", businessName: "B", label: "Visit 2", reward: "R", terms: "", change: false };
+    await expect(resolveRecipient(payload, supabase)).resolves.toEqual([GUILD_NOTIFICATION_EMAIL]);
+    await expect(
+      resolveRecipient(payload, supabase, "https://ie-brewers-guild-staging.boblelle77.workers.dev"),
+    ).resolves.toEqual([STAGING_GUILD_NOTIFICATION_EMAIL]);
+  });
+
   it("the draft link and approval go to the applicant's own address", async () => {
     const supabase = fakeSupabase({ memberUser: null, userEmail: null });
     await expect(

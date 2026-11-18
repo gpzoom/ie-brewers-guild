@@ -133,6 +133,18 @@ export type TransactionalEmailPayload =
       existingLogin: boolean;
     }
   | {
+      /** Tap Card: a brewery sent a loyalty offer (or a change) for approval; to the Guild. */
+      trigger: "tap_card_offer_submitted";
+      memberId: string;
+      businessName: string;
+      /** "Visit 2" or "Every 3 visits". */
+      label: string;
+      reward: string;
+      terms: string;
+      /** True when an approved offer already exists and this is a change to it. */
+      change: boolean;
+    }
+  | {
       /** Join the Guild: the applicant added details to a pending application; to the Guild. */
       trigger: "application_details_added";
       memberId: string;
@@ -574,6 +586,21 @@ ${signInUrl}`,
         subject: `${payload.businessName} added details to their application`,
         text: `${sentence}\n\nReview it: ${rosterUrl}`,
         html: wrapHtml([escapeHtml(sentence), `<a href="${rosterUrl}">Review it</a>`]),
+      };
+    }
+
+    case "tap_card_offer_submitted": {
+      const reviewUrl = `${siteUrl}/guild/tap-card?tab=offers`;
+      const what = payload.change ? "a change to a loyalty offer" : "a loyalty offer";
+      const lines = [
+        `${payload.businessName} sent ${what} for approval.`,
+        `${payload.label}: ${payload.reward}`,
+        ...(payload.terms ? [`Terms: ${payload.terms}`] : []),
+      ];
+      return {
+        subject: `Tap Card: ${payload.businessName} sent ${what} for approval`,
+        text: `${lines.join("\n")}\n\nReview offers: ${reviewUrl}`,
+        html: wrapHtml([...lines.map(escapeHtml), `<a href="${reviewUrl}">Review offers</a>`]),
       };
     }
 
