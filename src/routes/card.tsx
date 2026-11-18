@@ -128,7 +128,7 @@ function Milestones({ view }: { view: HolderCardView }) {
 function StopList({ view }: { view: HolderCardView }) {
   return (
     <section className="flex flex-col gap-2" aria-label="Stops">
-      <h2 className="text-[15px] font-semibold text-ink">The stops</h2>
+      <h2 className="text-[15px] font-semibold text-ink">The Beer Trail Stops</h2>
       <ul className="flex flex-col divide-y divide-canvas-border rounded-xl border border-canvas-border bg-white">
         {view.stops.map((s) => (
           <li key={s.memberId} className="flex items-start justify-between gap-3 px-4 py-3">
