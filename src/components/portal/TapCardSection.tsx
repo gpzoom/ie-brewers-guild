@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { TapCardOfferCard } from "@/components/portal/TapCardOfferCard";
+import { TapCardOffersSection } from "@/components/portal/TapCardOffersSection";
 import {
   createScannerDevice,
   listScannerDevices,
@@ -125,7 +125,7 @@ export function TapCardSection({ memberId }: { memberId: string }) {
         <h1 className="font-display text-[24px] font-bold leading-[1.15] text-ink md:text-[27px]">Tap Card</h1>
         <p className="text-pretty text-[13px] text-ink-muted">
           You&rsquo;re a stop on the Inland Tap Card trail. Customers&rsquo; cards are tapped on a bar device to record each
-          visit and your first-beer offer.
+          visit and hand out rewards.
         </p>
       </header>
 
@@ -214,7 +214,7 @@ export function TapCardSection({ memberId }: { memberId: string }) {
         )}
       </section>
 
-      <TapCardOfferCard memberId={memberId} />
+      <TapCardOffersSection memberId={memberId} />
     </div>
   );
 }
