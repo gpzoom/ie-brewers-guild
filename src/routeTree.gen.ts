@@ -38,6 +38,7 @@ import { Route as TCodeRouteImport } from './routes/t.$code'
 import { Route as SigninHelpRouteImport } from './routes/signin_.help'
 import { Route as SendTokenRouteImport } from './routes/send.$token'
 import { Route as ScannerTokenRouteImport } from './routes/scanner_.$token'
+import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as PortalSetupRouteImport } from './routes/portal.setup'
 import { Route as PortalPreviewRouteImport } from './routes/portal.preview'
 import { Route as PortalSectionsRouteImport } from './routes/portal._sections'
@@ -222,6 +223,11 @@ const SendTokenRoute = SendTokenRouteImport.update({
 const ScannerTokenRoute = ScannerTokenRouteImport.update({
   id: '/scanner_/$token',
   path: '/scanner/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const STokenRoute = STokenRouteImport.update({
+  id: '/s/$token',
+  path: '/s/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalSetupRoute = PortalSetupRouteImport.update({
@@ -478,6 +484,7 @@ export interface FileRoutesByFullPath {
   '/portal': typeof PortalSectionsRouteWithChildren
   '/portal/preview': typeof PortalPreviewRoute
   '/portal/setup': typeof PortalSetupRouteWithChildren
+  '/s/$token': typeof STokenRoute
   '/scanner/$token': typeof ScannerTokenRoute
   '/send/$token': typeof SendTokenRoute
   '/signin/help': typeof SigninHelpRoute
@@ -546,6 +553,7 @@ export interface FileRoutesByTo {
   '/p/$code': typeof PCodeRoute
   '/portal': typeof PortalIndexRoute
   '/portal/preview': typeof PortalPreviewRoute
+  '/s/$token': typeof STokenRoute
   '/scanner/$token': typeof ScannerTokenRoute
   '/send/$token': typeof SendTokenRoute
   '/signin/help': typeof SigninHelpRoute
@@ -617,6 +625,7 @@ export interface FileRoutesById {
   '/portal/_sections': typeof PortalSectionsRouteWithChildren
   '/portal/preview': typeof PortalPreviewRoute
   '/portal/setup': typeof PortalSetupRouteWithChildren
+  '/s/$token': typeof STokenRoute
   '/scanner_/$token': typeof ScannerTokenRoute
   '/send/$token': typeof SendTokenRoute
   '/signin_/help': typeof SigninHelpRoute
@@ -690,6 +699,7 @@ export interface FileRouteTypes {
     | '/portal'
     | '/portal/preview'
     | '/portal/setup'
+    | '/s/$token'
     | '/scanner/$token'
     | '/send/$token'
     | '/signin/help'
@@ -758,6 +768,7 @@ export interface FileRouteTypes {
     | '/p/$code'
     | '/portal'
     | '/portal/preview'
+    | '/s/$token'
     | '/scanner/$token'
     | '/send/$token'
     | '/signin/help'
@@ -828,6 +839,7 @@ export interface FileRouteTypes {
     | '/portal/_sections'
     | '/portal/preview'
     | '/portal/setup'
+    | '/s/$token'
     | '/scanner_/$token'
     | '/send/$token'
     | '/signin_/help'
@@ -878,6 +890,7 @@ export interface RootRouteChildren {
   PortalSectionsRoute: typeof PortalSectionsRouteWithChildren
   PortalPreviewRoute: typeof PortalPreviewRoute
   PortalSetupRoute: typeof PortalSetupRouteWithChildren
+  STokenRoute: typeof STokenRoute
   ScannerTokenRoute: typeof ScannerTokenRoute
   SendTokenRoute: typeof SendTokenRoute
   SigninHelpRoute: typeof SigninHelpRoute
@@ -1095,6 +1108,13 @@ declare module '@tanstack/react-router' {
       path: '/scanner/$token'
       fullPath: '/scanner/$token'
       preLoaderRoute: typeof ScannerTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/s/$token': {
+      id: '/s/$token'
+      path: '/s/$token'
+      fullPath: '/s/$token'
+      preLoaderRoute: typeof STokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portal/setup': {
@@ -1501,6 +1521,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortalSectionsRoute: PortalSectionsRouteWithChildren,
   PortalPreviewRoute: PortalPreviewRoute,
   PortalSetupRoute: PortalSetupRouteWithChildren,
+  STokenRoute: STokenRoute,
   ScannerTokenRoute: ScannerTokenRoute,
   SendTokenRoute: SendTokenRoute,
   SigninHelpRoute: SigninHelpRoute,

@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { getCounterPlate, resetPlateLink, saveStaffCode, type CounterPlate } from "@/lib/tap-card/plate.server";
+import { getCounterPlate, resetPlateLink, resetStaffQr, saveStaffCode, type CounterPlate } from "@/lib/tap-card/plate.server";
 import { SETUP_QR_SIZE, setupQrDataUrl } from "@/lib/tap-card/setup-qr";
 
 const fieldClass =
@@ -17,6 +17,7 @@ function errorText(err: unknown) {
 export function CounterPlateCard({ memberId }: { memberId: string }) {
   const [plate, setPlate] = useState<CounterPlate | null>(null);
   const [qr, setQr] = useState<string | null>(null);
+  const [staffQr, setStaffQr] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -40,6 +41,29 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
       current = false;
     };
   }, [plate?.url]);
+
+  useEffect(() => {
+    setStaffQr(null);
+    if (!plate) return;
+    let current = true;
+    setupQrDataUrl(plate.staffQrUrl).then((d) => current && setStaffQr(d)).catch(() => undefined);
+    return () => {
+      current = false;
+    };
+  }, [plate?.staffQrUrl]);
+
+  async function onResetStaffQr() {
+    if (!window.confirm("Make a new bartender QR code? The one you have now will stop working right away.")) return;
+    setBusy(true);
+    setError(null);
+    try {
+      setPlate(await resetStaffQr({ data: { memberId } }));
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function onSave(event: FormEvent) {
     event.preventDefault();
@@ -76,8 +100,8 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
         Counter plate
       </h2>
       <p className="text-[13px] text-ink-muted">
-        Customers with a smartphone tap or scan this plate at your bar. Your bartender confirms with the staff code. Customers
-        with only a plastic card still need a bar device.
+        Customers with a smartphone tap or scan this plate at your bar and choose a check-in or a reward. Then they scan
+        your bartender QR code (below) to confirm. Customers with only a plastic card still need a bar device.
       </p>
       {plate && (
         <>
@@ -104,6 +128,36 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
               Make a new plate link
             </button>
           </div>
+          <h3 className="mt-2 font-display text-[16px] font-bold text-ink">Bartender QR code</h3>
+          <p className="text-[13px] text-ink-muted">
+            Print this and keep it behind the counter, out of customers&rsquo; reach. After a customer chooses at the plate, your
+            bartender holds it up and the customer scans it to confirm. If you think someone has copied it, make a new one: the old
+            one stops working right away.
+          </p>
+          {staffQr && (
+            <img
+              src={staffQr}
+              width={SETUP_QR_SIZE}
+              height={SETUP_QR_SIZE}
+              alt="Bartender QR code"
+              className="size-[220px] max-w-full rounded-md border border-canvas-border bg-white"
+            />
+          )}
+          <div className="flex flex-wrap gap-2">
+            {staffQr && (
+              <a href={staffQr} download="bartender-qr.png" className={outlineClass}>
+                Download bartender QR
+              </a>
+            )}
+            <button type="button" className={outlineClass} disabled={busy} onClick={onResetStaffQr}>
+              Make a new bartender QR
+            </button>
+          </div>
+          <h3 className="mt-2 font-display text-[16px] font-bold text-ink">Staff code (backup)</h3>
+          <p className="text-[13px] text-ink-muted">
+            If the bartender QR code isn&rsquo;t handy, your bartender can type this code on the customer&rsquo;s phone instead. It&rsquo;s
+            also needed to undo a reward.
+          </p>
           <form onSubmit={onSave} className="flex flex-col gap-2 sm:flex-row sm:items-end">
             <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink">
               Staff code (4 digits)

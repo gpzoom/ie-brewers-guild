@@ -206,7 +206,7 @@ const STAGING_HOST = "ie-brewers-guild-staging.boblelle77.workers.dev";
  */
 export const DEFAULT_SUPPORT_INBOX_EMAIL = "boblelle77@gmail.com";
 
-function isStagingSite(siteUrl: string | null): boolean {
+export function isStagingSite(siteUrl: string | null): boolean {
   if (!siteUrl) return false;
   try {
     return new URL(siteUrl).hostname === STAGING_HOST;

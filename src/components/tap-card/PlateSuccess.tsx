@@ -1,0 +1,142 @@
+import { useEffect, useState, type FormEvent } from "react";
+import { undoAtPlate, type PlateResult } from "@/lib/tap-card/plate.server";
+import { CanvasHeading, fieldErrorClass, inputClass, labelClass, leadClass, primaryButtonClass } from "@/components/public-forms/PublicFormParts";
+import { outcomeMessage } from "@/components/tap-card/CheckInScreen";
+
+export type PlateOk = Extract<PlateResult, { kind: "ok" }>;
+
+const clock = (d: Date) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit", timeZone: "America/Los_Angeles" });
+
+/** Ticks every second, so a screenshot of an old success screen is easy to spot. */
+function LiveClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  return (
+    <span className="font-mono text-[22px] font-semibold tabular-nums text-[#05603A]" aria-label="Current time">
+      {clock(now)}
+    </span>
+  );
+}
+
+export function plateRefusal(result: Exclude<PlateResult, PlateOk> | { kind: "scan-plate-first" }): string {
+  switch (result.kind) {
+    case "wrong-code":
+      return `That code isn't right. ${result.triesLeft} ${result.triesLeft === 1 ? "try" : "tries"} left.`;
+    case "locked":
+      return "Too many tries. Ask your bartender to try again in 15 minutes.";
+    case "signed-out":
+      return "You've been signed out. Scan the counter plate again to sign in.";
+    case "closed":
+      return "This plate isn't taking check-ins right now. Ask your bartender to tap your card.";
+    case "scan-plate-first":
+      return "Scan the counter plate first, then the bartender's QR code.";
+  }
+}
+
+function StaffCodeField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <label className={`${labelClass} flex flex-col gap-1.5`}>
+      Bartender: staff code
+      <input
+        className={`${inputClass} max-w-[160px] text-center text-[22px] tracking-[0.3em]`}
+        type="password"
+        inputMode="numeric"
+        autoComplete="off"
+        maxLength={4}
+        pattern="[0-9]{4}"
+        required
+        value={value}
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
+      />
+    </label>
+  );
+}
+
+/** The bartender's 4-digit staff code, then the call (the backup to the bartender QR). */
+export function StaffCodeForm({ label, onSubmit }: { label: string; onSubmit: (staffCode: string) => Promise<PlateResult> }) {
+  const [staffCode, setStaffCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await onSubmit(staffCode);
+      if (result.kind !== "ok") setError(plateRefusal(result));
+      setStaffCode("");
+    } catch {
+      setError("That didn't save. Check the connection and try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-3">
+      <StaffCodeField value={staffCode} onChange={setStaffCode} />
+      <button type="submit" className={primaryButtonClass} disabled={busy}>
+        {busy ? "Saving…" : label}
+      </button>
+      {error && (
+        <p role="alert" className={fieldErrorClass}>
+          {error}
+        </p>
+      )}
+    </form>
+  );
+}
+
+/** The green screen the customer shows the bartender. */
+export function PlateSuccess({ memberName, plateCode, initial }: { memberName: string; plateCode: string; initial: PlateOk }) {
+  const [done, setDone] = useState(initial);
+  const [undoing, setUndoing] = useState(false);
+  const [confirmedAt] = useState(() => new Date());
+  const { state } = done;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col items-center gap-3 rounded-[18px] border-2 border-[#12B76A] bg-[#ECFDF3] px-5 py-6 text-center">
+        <span className="relative flex size-16 items-center justify-center" aria-hidden="true">
+          <span className="absolute inline-flex size-full rounded-full bg-[#12B76A] opacity-40 motion-safe:animate-ping" />
+          <span className="relative inline-flex size-16 items-center justify-center rounded-full bg-[#12B76A] text-[34px] font-bold text-white">✓</span>
+        </span>
+        <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#05603A]">{memberName}</p>
+        <CanvasHeading size="md">{state.firstToday ? `Visit #${state.visitNumber} recorded` : `Checked in today — visit #${state.visitNumber}`}</CanvasHeading>
+        {state.used && <p className="text-[22px] font-bold text-ink">{state.used.reward}</p>}
+        {state.used && <p className="text-[14px] text-ink">Used just now. Bartender: please pour.</p>}
+        <LiveClock />
+        <p className="text-[12px] text-ink-muted">Confirmed at {clock(confirmedAt)}</p>
+      </div>
+      {[...state.newlyEarned, ...done.milestoneRewards].map((r) => (
+        <p key={r} className="text-[15px] text-ink">
+          🎉 You just earned: {r}
+        </p>
+      ))}
+      {outcomeMessage(done.outcome) && <p className={leadClass}>{outcomeMessage(done.outcome)}</p>}
+      {done.outcome === "undone" && <p className={leadClass}>Put back on your card.</p>}
+      {state.used &&
+        (undoing ? (
+          <StaffCodeForm
+            label="Undo"
+            onSubmit={async (staffCode) => {
+              const result = await undoAtPlate({ data: { code: plateCode, staffCode } });
+              if (result.kind === "ok") {
+                setDone(result);
+                setUndoing(false);
+              }
+              return result;
+            }}
+          />
+        ) : (
+          <button type="button" className="w-fit text-[14px] font-medium text-brand underline underline-offset-2" onClick={() => setUndoing(true)}>
+            Undo (bartender&rsquo;s code)
+          </button>
+        ))}
+    </div>
+  );
+}

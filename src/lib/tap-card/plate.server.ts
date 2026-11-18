@@ -8,7 +8,9 @@ import { firstNameOf } from "@/lib/tap-card/card-view";
 import { barState, checkInVisit, undoBarReward, useBarReward, type BarState, type RewardChoice } from "@/lib/tap-card/bar-core";
 import { barStore } from "@/lib/tap-card/bar-store.server";
 import { awardMilestones } from "@/lib/tap-card/tap-card-store.server";
-import { readHolderId } from "@/lib/tap-card/tap-card-cookies.server";
+import { claimPlatePending, onStagingSite, readHolderId, readPlatePending, setPlatePending } from "@/lib/tap-card/tap-card-cookies.server";
+import { generateUploadToken } from "@/lib/media/upload-tokens";
+import { decideStaffQrView, isStaffQrToken, memberTakesCheckIns, parsePendingChoice, staffQrUrl, type PendingChoice } from "@/lib/tap-card/staff-qr";
 import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
 import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
 import { tapCardDay, tapCardYear } from "@/lib/tap-card/tap-card-time";
@@ -38,17 +40,30 @@ async function loadPlate(service: SupabaseClient, rawCode: string): Promise<Plat
     memberId: data.member_id,
     memberName: m.business_name,
     staffCode: data.staff_code,
-    open: m.status === "published" && m.member_type === "producer" && m.trail_eligible && data.staff_code !== null,
+    // The staff code still turns the plate on (it's the backup to the bartender QR).
+    open: memberTakesCheckIns({ status: m.status, memberType: m.member_type, trailEligible: m.trail_eligible }, onStagingSite()) && data.staff_code !== null,
   };
 }
 
 /** A brewery's plate, made on first use (codes are random; a clash just tries again). */
-async function ensurePlate(service: SupabaseClient, memberId: string): Promise<{ code: string; staffCode: string | null }> {
+async function ensurePlate(service: SupabaseClient, memberId: string): Promise<{ code: string; staffCode: string | null; staffQr: string }> {
   for (let attempt = 0; attempt < 5; attempt++) {
-    const { data, error } = await service.from("tap_card_plates").select("code, staff_code").eq("member_id", memberId).maybeSingle();
+    const { data, error } = await service.from("tap_card_plates").select("code, staff_code, staff_qr").eq("member_id", memberId).maybeSingle();
     if (error) throw new Error(error.message);
-    if (data) return { code: data.code, staffCode: data.staff_code };
-    const { error: insertError } = await service.from("tap_card_plates").insert({ member_id: memberId, code: generateCardCode() });
+    if (data?.staff_qr) return { code: data.code, staffCode: data.staff_code, staffQr: data.staff_qr };
+    if (data) {
+      // A plate made before the bartender QR: give it one now.
+      const { error: qrError } = await service
+        .from("tap_card_plates")
+        .update({ staff_qr: generateUploadToken() })
+        .eq("member_id", memberId)
+        .is("staff_qr", null);
+      if (qrError && qrError.code !== "23505") throw new Error(qrError.message);
+      continue;
+    }
+    const { error: insertError } = await service
+      .from("tap_card_plates")
+      .insert({ member_id: memberId, code: generateCardCode(), staff_qr: generateUploadToken() });
     if (insertError && insertError.code !== "23505") throw new Error(insertError.message);
   }
   throw new Error("Couldn't make the plate link. Try again.");
@@ -147,15 +162,103 @@ export const confirmAtPlate = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<PlateResult> => {
     const ctx = await plateContext(data.code, data.staffCode);
     if ("refuse" in ctx) return ctx.refuse!;
-    const store = barStore(ctx.service);
-    let state = await checkInVisit(store, ctx.input);
-    const milestoneRewards = state.firstToday
-      ? (await awardMilestones(ctx.service, ctx.input.holderId, tapCardYear(ctx.input.at))).map((m) => m.rewardText)
-      : [];
-    if (data.choice.kind === "none") return { kind: "ok", state, milestoneRewards };
-    const used = await useBarReward(store, { ...ctx.input, choice: data.choice });
-    state = { ...used.state, firstToday: state.firstToday, newlyEarned: state.newlyEarned };
-    return { kind: "ok", state, milestoneRewards, outcome: used.outcome };
+    return recordVisit(ctx.service, ctx.input, data.choice);
+  });
+
+/** Records today's visit and, if chosen, uses a reward (both ways of confirming end here). */
+async function recordVisit(
+  service: SupabaseClient,
+  input: { holderId: string; memberId: string; cardId: null; deviceId: null; at: Date },
+  choice: PlateChoice,
+): Promise<PlateResult> {
+  const store = barStore(service);
+  let state = await checkInVisit(store, input);
+  const milestoneRewards = state.firstToday ? (await awardMilestones(service, input.holderId, tapCardYear(input.at))).map((m) => m.rewardText) : [];
+  if (choice.kind === "none") return { kind: "ok", state, milestoneRewards };
+  const used = await useBarReward(store, { ...input, choice });
+  state = { ...used.state, firstToday: state.firstToday, newlyEarned: state.newlyEarned };
+  return { kind: "ok", state, milestoneRewards, outcome: used.outcome };
+}
+
+// ---- The bartender QR (/s/<token>) ----
+
+/** The plate's Continue: hold the customer's choice for the bartender QR. */
+export const choosePlateAction = createServerFn({ method: "POST" })
+  .inputValidator((data: { code: string; choice: PendingChoice }) => ({
+    code: String(data?.code ?? ""),
+    choice: parsePendingChoice(data?.choice) ?? ({ kind: "none" } as PendingChoice),
+  }))
+  .handler(async ({ data }): Promise<{ kind: "ok" } | { kind: "signed-out" } | { kind: "closed" }> => {
+    const service = await getSupabaseServiceRoleClient();
+    const plate = await loadPlate(service, data.code);
+    if (!plate?.open) return { kind: "closed" };
+    if (!(await readHolderId())) return { kind: "signed-out" };
+    const saved = await setPlatePending({ memberId: plate.memberId, plateCode: normalizeCardCode(data.code)!, choice: data.choice });
+    return saved ? { kind: "ok" } : { kind: "signed-out" };
+  });
+
+async function plateByStaffQr(service: SupabaseClient, token: string): Promise<Plate | null> {
+  if (!isStaffQrToken(token)) return null;
+  const { data, error } = await service.from("tap_card_plates").select("code").eq("staff_qr", token).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? loadPlate(service, data.code) : null;
+}
+
+export type StaffQrPage =
+  | { view: "unknown" }
+  | { view: "closed"; memberName: string }
+  | { view: "scan-plate-first"; memberName: string }
+  | { view: "wrong-brewery"; memberName: string }
+  | { view: "check-in"; memberName: string; plateCode: string }
+  | { view: "confirm"; memberName: string; plateCode: string; rewardText: string };
+
+export const getStaffQrView = createServerFn({ method: "GET" })
+  .inputValidator((data: { token: string }) => ({ token: String(data?.token ?? "") }))
+  .handler(async ({ data }): Promise<StaffQrPage> => {
+    const service = await getSupabaseServiceRoleClient();
+    const plate = await plateByStaffQr(service, data.token);
+    if (!plate) return { view: "unknown" };
+    if (!plate.open) return { view: "closed", memberName: plate.memberName };
+    const holderId = await readHolderId();
+    const pending = holderId ? await readPlatePending() : null;
+    const decided = decideStaffQrView({ qrMemberId: plate.memberId, signedIn: holderId !== null, pending, now: new Date() });
+    const memberName = plate.memberName;
+    if (decided.kind === "unknown") return { view: "unknown" };
+    if (decided.kind === "scan-plate-first" || decided.kind === "wrong-brewery") return { view: decided.kind, memberName };
+    if (decided.kind === "check-in") return { view: "check-in", memberName, plateCode: decided.plateCode };
+    const state = await barState(barStore(service), {
+      holderId: holderId!,
+      memberId: plate.memberId,
+      cardId: null,
+      deviceId: null,
+      at: new Date(),
+      firstToday: false,
+      newlyEarned: [],
+    });
+    const wanted = decided.choice;
+    const reward = [state.featured, ...state.others].find(
+      (r) => r !== null && (wanted.kind === "trail" ? r.kind === "trail" : r.kind === "member" && r.id === wanted.id),
+    );
+    // The reward is gone (used or expired since the plate): a plain check-in is still fine.
+    if (!reward || state.used) return { view: "check-in", memberName, plateCode: decided.plateCode };
+    return { view: "confirm", memberName, plateCode: decided.plateCode, rewardText: reward.reward };
+  });
+
+/** The customer confirmed on the bartender QR page: record the waiting choice once. */
+export const confirmByStaffQr = createServerFn({ method: "POST" })
+  .inputValidator((data: { token: string; skipReward?: boolean }) => ({ token: String(data?.token ?? ""), skipReward: data?.skipReward === true }))
+  .handler(async ({ data }): Promise<PlateResult | { kind: "scan-plate-first" }> => {
+    const service = await getSupabaseServiceRoleClient();
+    const plate = await plateByStaffQr(service, data.token);
+    if (!plate?.open) return { kind: "closed" };
+    const holderId = await readHolderId();
+    if (!holderId) return { kind: "signed-out" };
+    const pending = await readPlatePending();
+    const decided = decideStaffQrView({ qrMemberId: plate.memberId, signedIn: true, pending, now: new Date() });
+    if (decided.kind !== "check-in" && decided.kind !== "confirm") return { kind: "scan-plate-first" };
+    if (!(await claimPlatePending(pending!.at))) return { kind: "scan-plate-first" };
+    const choice: PlateChoice = decided.kind === "confirm" && !data.skipReward ? decided.choice : { kind: "none" };
+    return recordVisit(service, { holderId, memberId: plate.memberId, cardId: null, deviceId: null, at: new Date() }, choice);
   });
 
 export const undoAtPlate = createServerFn({ method: "POST" })
@@ -169,14 +272,33 @@ export const undoAtPlate = createServerFn({ method: "POST" })
 
 // ---- The brewery's Counter plate box (Portal/Admin > Tap Card) ----
 
-export type CounterPlate = { url: string; printedCode: string; staffCode: string | null };
+export type CounterPlate = { url: string; printedCode: string; staffCode: string | null; staffQrUrl: string };
+
+function counterPlate(plate: { code: string; staffCode: string | null; staffQr: string }): CounterPlate {
+  const site = resolveEmailSiteUrl(currentRequestUrl());
+  return { url: plateUrl(site, plate.code), printedCode: formatCardCode(plate.code), staffCode: plate.staffCode, staffQrUrl: staffQrUrl(site, plate.staffQr) };
+}
 
 export const getCounterPlate = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => ({ memberId: String(data?.memberId ?? "") }))
   .handler(async ({ data }): Promise<CounterPlate> => {
     const { service } = await requireTapCardEditor(data.memberId);
-    const plate = await ensurePlate(service, data.memberId);
-    return { url: plateUrl(resolveEmailSiteUrl(currentRequestUrl()), plate.code), printedCode: formatCardCode(plate.code), staffCode: plate.staffCode };
+    return counterPlate(await ensurePlate(service, data.memberId));
+  });
+
+/** A copied or lost bartender QR: a new one; the old one stops working at once. */
+export const resetStaffQr = createServerFn({ method: "POST" })
+  .inputValidator((data: { memberId: string }) => ({ memberId: String(data?.memberId ?? "") }))
+  .handler(async ({ data }): Promise<CounterPlate> => {
+    const { service } = await requireTapCardEditor(data.memberId);
+    const current = await ensurePlate(service, data.memberId);
+    const staffQr = generateUploadToken();
+    const { error } = await service
+      .from("tap_card_plates")
+      .update({ staff_qr: staffQr, updated_at: new Date().toISOString() })
+      .eq("member_id", data.memberId);
+    if (error) throw new Error(error.message);
+    return counterPlate({ ...current, staffQr });
   });
 
 export const saveStaffCode = createServerFn({ method: "POST" })
@@ -206,7 +328,7 @@ export const resetPlateLink = createServerFn({ method: "POST" })
         .from("tap_card_plates")
         .update({ code, updated_at: new Date().toISOString() })
         .eq("member_id", data.memberId);
-      if (!error) return { url: plateUrl(resolveEmailSiteUrl(currentRequestUrl()), code), printedCode: formatCardCode(code), staffCode: current.staffCode };
+      if (!error) return counterPlate({ ...current, code });
       if (error.code !== "23505") throw new Error(error.message);
     }
     throw new Error("Couldn't make a new plate link. Try again.");

@@ -27,6 +27,7 @@ const OPEN_PREFIXES = [
   // card pages, during maintenance. The public /trail page stays closed.
   "/p",
   "/t",
+  "/s",
   "/scanner",
   "/card",
 ];
