@@ -30,7 +30,8 @@
 2. A reward that expires while banked: it must not show at the bar or on /card, and **Use it** on a stale screen must be refused. → loyalty test `pickBarRewards drops expired rewards`; bar-core test `using an expired reward is refused` (Tasks 2, 6).
 3. A brewery removes Step 1 and adds a new Step 1 (or changes its visit number): someone who already earned Step 1 never earns it again. → pgTAP `a step is earned once per person per brewery` (Task 1) + loyalty test `earnedOnVisit skips steps already earned` (Task 2).
 4. Undo from a different brewery's device, or for yesterday's visit: refused. Undo then use a different reward the same visit: allowed. → bar-core tests (Task 6).
-5. Two ladder steps ending up on the same visit number through a pending edit approved after another step changed: approval must re-check and refuse. → loyalty test `validateMemberOffer rejects a visit number another step uses`, used by `reviewMemberOffer` (Tasks 2, 4).
+5. A photographed plate used away from the bar: with no staff code nothing is recorded, and guessing the code stops after 5 tries for 15 minutes. → Task 7b (`confirmAtPlate` locks; `getPlateView` records nothing).
+6. Two ladder steps ending up on the same visit number through a pending edit approved after another step changed: approval must re-check and refuse. → loyalty test `validateMemberOffer rejects a visit number another step uses`, used by `reviewMemberOffer` (Tasks 2, 4).
 
 ---
 
@@ -49,11 +50,12 @@
   - `tap_card_member_settings` — `member_id uuid pk → members cascade`, `reward_expiry_days int not null default 90 check in (30,60,90,365)`.
   - `tap_card_earned_rewards` — `id`, `holder_id → tap_card_holders cascade`, `member_id → members cascade`, `slot text check in (...)`, `reward text not null`, `terms text not null default ''`, `earned_visit_id uuid not null → tap_card_visits cascade`, `earned_at timestamptz not null default now()`, `expires_at timestamptz not null`, `used_at timestamptz`, `used_visit_id uuid → tap_card_visits set null`, `used_device_id uuid → scanner_devices set null`; check `(used_at is null) = (used_visit_id is null)`.
   - Unique indexes: `(earned_visit_id, slot)`; partial `(holder_id, member_id, slot) where slot <> 'repeat'` (a step earned once ever); partial `(used_visit_id) where used_visit_id is not null` (one member reward per visit); index `(holder_id, member_id) where used_at is null`.
+  - `tap_card_plates` — `member_id uuid pk → members cascade`, `code text not null unique check (code ~ '^[0-9A-HJKMNP-TV-Z]{8}$')`, `staff_code text check (staff_code ~ '^[0-9]{4}$')`, `created_at`, `updated_at`.
   - Drops `public.tap_card_offers`.
 - Produces TS types: `TapCardOfferSlot`, `TapCardMemberOfferRow`, `TapCardOfferTemplateRow`, `TapCardEarnedRewardRow`.
 
 - [ ] **Step 1: Write the failing pgTAP test** `supabase/tests/tap_card_loyalty.test.sql` (same frame as `tap_card.test.sql`: `begin; \ir _fixtures.psql; ... rollback;`), plan 14:
-  - `has_table` × 4 for the new tables; `hasnt_table('public','tap_card_offers', ...)`.
+  - `has_table` × 5 for the new tables (incl. `tap_card_plates`); `hasnt_table('public','tap_card_offers', ...)`; `throws_ok` 23514 for `staff_code '12a4'` (plan count +2 → 16).
   - `throws_ok` 23514: member offer with `slot 'step4'`; with `live_visit_number 1`; with `live_reward 'ab'`; settings with `reward_expiry_days 45`.
   - `throws_ok` 23505 `a step is earned once per person per brewery`: two earned rows, same holder/member/`step1`, different visits.
   - `lives_ok` `the repeating reward can be earned on many visits`: two `repeat` rows on different visits.
@@ -210,7 +212,7 @@ Layout (spec "Member's Offers section"):
   ```ts
   export type BarStore = {
     findVisit(holderId: string, memberId: string, day: string): Promise<{ id: string; redeemedYear: number | null } | null>;
-    insertVisit(v: { holderId: string; memberId: string; cardId: string; deviceId: string; day: string }): Promise<"ok" | "duplicate">;
+    insertVisit(v: { holderId: string; memberId: string; cardId: string | null; deviceId: string | null; day: string }): Promise<"ok" | "duplicate">;
     countVisits(holderId: string, memberId: string): Promise<number>;
     trailRedeemedIn(holderId: string, memberId: string, year: number): Promise<{ visitId: string; day: string } | null>;
     setTrailRedeemed(visitId: string, year: number | null): Promise<"ok" | "duplicate">;
@@ -220,7 +222,7 @@ Layout (spec "Member's Offers section"):
     insertEarned(r: { holderId: string; memberId: string; slot: OfferSlot; reward: string; terms: string; visitId: string; earnedAt: Date; expiresAt: Date }): Promise<"ok" | "duplicate">;
     banked(holderId: string, memberId: string): Promise<{ id: string; reward: string; terms: string; expiresAt: string; earnedAt: string }[]>;  // unused
     memberRewardUsedOn(visitId: string): Promise<{ id: string; reward: string; terms: string; expiresAt: string } | null>;
-    markUsed(rewardId: string, visitId: string, deviceId: string, at: Date): Promise<"ok" | "taken">;   // only if unused and the visit has none
+    markUsed(rewardId: string, visitId: string, deviceId: string | null, at: Date): Promise<"ok" | "taken">;   // only if unused and the visit has none
     clearUse(rewardId: string, visitId: string): Promise<void>;
   };
   export type BarState = {
@@ -231,7 +233,7 @@ Layout (spec "Member's Offers section"):
     others: BarReward[];
     newlyEarned: string[];
   };
-  export type VisitInput = { holderId: string; memberId: string; cardId: string; deviceId: string; at: Date };
+  export type VisitInput = { holderId: string; memberId: string; cardId: string | null; deviceId: string | null; at: Date };  // null device = counter plate
   export async function checkInVisit(store: BarStore, input: VisitInput): Promise<BarState>;
   export async function useBarReward(store: BarStore, input: VisitInput & { choice: { kind: "trail" } | { kind: "member"; id: string } }):
     Promise<{ outcome: "used" | "already-used-today" | "not-available"; state: BarState }>;
@@ -295,6 +297,56 @@ Layout (spec "Member's Offers section"):
 - [ ] **Step 4: Verify** `npx tsc --noEmit -p .` clean; build succeeds; `npx vitest run src/lib/tap-card` passes; grep finds no `recordCheckIn`, `checkInCore`, `redemptionStatus`.
 - [ ] **Step 5: Commit** `feat(tap-card): one-tap bar screen with banked rewards and undo`.
 
+### Task 7b: Counter plate
+
+**Files:**
+- Create: `src/lib/tap-card/plate.ts`, `src/lib/tap-card/plate.test.ts` (pure)
+- Create: `src/lib/tap-card/plate.server.ts` (RPC; allowlist)
+- Create: `src/routes/t.$code.tsx`, `src/components/tap-card/PlateScreen.tsx`, `src/components/portal/CounterPlateCard.tsx`
+- Modify: `src/components/portal/TapCardSection.tsx` (render `CounterPlateCard` between Bar devices and Offers)
+- Modify: `src/lib/tap-card/setup-qr.ts` (generalize: `qrDataUrl(url)`, `qrFilename(prefix, label)`; keep the old names as thin wrappers or update callers + tests)
+- Modify: `src/lib/site/maintenance.ts` + test (`"/t"` open like `"/p"`), `src/lib/site/age-gate.ts` + test (`/t` treated like `/p`)
+- Modify: `src/lib/join/join-guards.server.ts` (namespace `tapcard-staffcode`)
+- Modify: `src/components/guild/tap-card/CardBatchesPanel.tsx` + `batches.server.ts` (**Download counter plate links** → CSV `brewery,code,printed_code,url` for every trail stop, creating missing plates)
+- Modify: `src/lib/tap-card/holder.server.ts` / `card_.signin.tsx` (sign-in link may carry a `next` of `/t/<code>`; only `/t/` and `/card` paths accepted)
+
+**Interfaces:**
+- Consumes: Task 6 (`checkInVisit`, `useBarReward`, `undoBarReward`, `barState`, `BarState`) with `deviceId: null`, `cardId: null`; `generateCardCode`, `formatCardCode` (`card-code.ts`); `readHolderId`; `rateLimitMessage`.
+- Produces:
+  ```ts
+  // plate.ts
+  export function validateStaffCode(raw: string): { ok: true; code: string } | { ok: false; message: string };  // "Use 4 digits."
+  export function staffCodeMatches(entered: string, stored: string | null): boolean;  // false when stored is null
+  export function plateUrl(siteUrl: string, code: string): string;                       // `${siteUrl}/t/${code}`
+  // plate.server.ts
+  export type PlateView =
+    | { view: "unknown" } | { view: "closed"; memberName: string }          // no staff code set / not a published trail stop
+    | { view: "signed-out"; code: string; memberName: string }
+    | { view: "ready"; code: string; memberName: string; firstName: string; nextVisitNumber: number; checkedInToday: boolean;
+        state: BarState | null };                                            // state of today's visit if any; else preview of waiting rewards
+  export const getPlateView: (d: { code: string }) => Promise<PlateView>;     // GET, records nothing
+  export const confirmAtPlate: (d: { code: string; staffCode: string; choice: { kind: "none" } | { kind: "trail" } | { kind: "member"; id: string } }) =>
+    Promise<{ kind: "ok"; state: BarState; outcome: string } | { kind: "wrong-code"; triesLeft: number } | { kind: "locked" } | { kind: "signed-out" } | { kind: "closed" }>;
+  export const undoAtPlate: (d: { code: string; staffCode: string }) => Promise<same as confirmAtPlate>;
+  export const getCounterPlate: (d: { memberId: string }) => Promise<{ url: string; printedCode: string; staffCode: string | null }>;  // creates the plate if missing
+  export const saveStaffCode: (d: { memberId: string; staffCode: string }) => Promise<{ ok: true }>;
+  export const resetPlateLink: (d: { memberId: string }) => Promise<{ url: string; printedCode: string }>;
+  ```
+- `confirmAtPlate`: holder from the holder-session cookie; plate's brewery must be a published trail stop with a staff code; wrong code counts against `rateLimitMessage("tapcard-staffcode")` keyed per holder + brewery (5 tries / 15 min → `locked`); right code → `checkInVisit`, then `useBarReward` when a choice was made. `undoAtPlate` needs the code too.
+- Member editor check (portal functions): same `is_member_full_editor` + producer + trail_eligible check as `brewery-tap-card.server.ts`.
+
+Copy:
+- `PlateScreen` ready: eyebrow brewery; heading `` `Hi ${firstName} — this will be visit #${n}` `` (or `` `Checked in today — visit #${n}` ``); "Use now:" radio list (Beer Trail offer first, then waiting rewards by expiry, plus "Just check in"; first option pre-selected); "Bartender: staff code" 4-digit numeric input (`inputMode="numeric"`, `autocomplete="off"`); **Confirm**. Success: `` `✓ Visit #${n} recorded` `` + `` `${reward} used` `` + "Undo (bartender's code)" link. Wrong code: `` `That code isn't right. ${triesLeft} tries left.` ``; locked: "Too many tries. Ask your bartender to try again in 15 minutes."
+- signed-out: "Sign in to your Tap Card" → email field → "We sent a sign-in link to that email. Open it on this phone." (uses the existing sign-in sender; returns to `/t/<code>`).
+- closed: "Ask your bartender to tap your card."
+- `CounterPlateCard` (portal): heading "Counter plate"; "Customers with a smartphone tap or scan this plate at your bar. Your bartender confirms with the staff code. Customers with only a plastic card still need a bar device."; QR (300 px) + **Download QR code** + printed code; "Staff code" 4-digit field + **Save** (shows the current code); **Make a new plate link** (confirm: "Your current plate will stop working.").
+
+- [ ] **Step 1: Failing tests** in `plate.test.ts`: `validateStaffCode("0420")` ok; `"420"`, `"12a4"`, `"12345"` → `"Use 4 digits."`; `staffCodeMatches("0420","0420")` true, `("0421","0420")` false, `("0420", null)` false; `plateUrl("https://x.org","ABCD2345")` → `"https://x.org/t/ABCD2345"`. Plus maintenance/age-gate tests for `/t/ABCD2345` open.
+- [ ] **Step 2: Run** `npx vitest run src/lib/tap-card/plate.test.ts src/lib/site` → FAIL.
+- [ ] **Step 3: Implement** the files above; allowlist `plate.server.ts`.
+- [ ] **Step 4: Run** the tests → PASS; full suite; typecheck; build.
+- [ ] **Step 5: Commit** `feat(tap-card): counter plate — customer taps their phone, bartender confirms with a staff code`.
+
 ### Task 8: Guild approvals for Member Offers
 
 **Files:**
@@ -337,6 +389,7 @@ Copy: intro "Breweries' loyalty rewards wait here for your OK. Check each one ag
 Content:
 - Terms (Tap Card section) adds: breweries may offer loyalty rewards for return visits; each is set by the brewery and approved by the Guild; earned rewards wait on the card until used and expire after the period the brewery shows; one reward per visit; rewards have no cash value and can't be transferred; the brewery honors its rewards. Keep "21 and over".
 - Privacy adds: for each brewery, how many times you've visited and which rewards you've earned and used, kept with your card.
+- Guide: new "Counter plate" part (download the QR, NFC plates from the Guild or an NFC sticker, set and change the staff code, plastic-card customers still need a bar device). Terms: check-ins at a plate need the bartender's code.
 - Guide section C: Guild Offers (Beer Trail, set by the Guild); Member Offers (up to 3 steps + 1 repeating, start from a template or scratch, Guild approves, the approved version stays live during a change, removing keeps earned rewards); "Unused rewards last"; section B (checking in) rewritten: tapping records the visit, **Use it**, "N more waiting", **Undo**.
 - Do NOT change `LEGAL.effectiveDate` (bumped at the merge to main).
 
@@ -356,5 +409,6 @@ Content:
   4. Bar device: tap a test card → "Visit #1 recorded", Beer Trail offer featured → **Use it** → **Undo** → **Use it**.
   5. Visits 2 and 3 need different days: ask the owner before inserting back-dated test visits for the test holder with a read-write query; otherwise check earning in the unit tests and stop here.
   6. Customer /card shows "Waiting for you" and "Your visits".
+  6b. Counter plate: set a staff code, download the plate QR, scan it with a signed-in customer phone (a different test card holder than step 4), enter a wrong code once, then the right code → visit recorded; Undo with the code.
   7. Profile page shows "Come back for more".
   8. Clean up: unpublish Sample Brewery, Maintenance Mode off, delete the test batch.

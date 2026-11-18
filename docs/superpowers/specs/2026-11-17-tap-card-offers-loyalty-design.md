@@ -85,6 +85,7 @@ wait.
 | Templates | Managed by Guild admin; members pick one (fills reward + terms, fully editable) or start from scratch |
 | Priority | Super simple for members; no bartender decision-making |
 | Content | Placeholders for now; owner will flesh out rewards and templates later |
+| Bar hardware | **Both**: the bar phone (staff tap the card) and a counter plate (customer taps their phone; bartender enters a 4-digit staff code) |
 | Release | **Together with phase 1**: both stay on staging and go live in one release (one Privacy/Terms/Member Guide update). Phase 1's brewer-replaces-trail-offer box is replaced, never launched |
 
 ## How it works
@@ -149,6 +150,55 @@ wait.
   Normal use never touches it.
 - New-card activation (staff or customer) is unchanged; activation by staff
   leads straight into the recorded visit.
+
+### Counter plate (no-device option)
+
+*Owner, 2026-11-17: offer both — the bar phone (above) and a counter plate.*
+
+A **counter plate** is a plastic plate at the bar with a QR code and NFC chip,
+like a card. It lets a brewery take part with **no phone or tablet of its
+own**, for customers who have a smartphone. Plastic-card-only customers still
+need a bar phone; each brewery uses one or both.
+
+```
+ Customer taps/scans the plate with their phone
+   → their phone (signed in to their Tap Card) shows:
+     ┌───────────────────────────────────────┐
+     │ Sample Brewery                        │
+     │ Hi Pat — this will be visit #6        │
+     │ Use now:  (•) Free soft pretzel       │
+     │           ( ) Just check in           │
+     │ Bartender: staff code [____]          │
+     │ [ Confirm ]                           │
+     └───────────────────────────────────────┘
+   → bartender types the 4-digit staff code → Confirm
+   → "✓ Visit #6 recorded — Free soft pretzel used"
+```
+
+- Each brewery has **one plate link** (`/t/<code>`, same code style as cards),
+  made automatically. The member's Tap Card screen shows its QR code to
+  download, and **Make a new plate link** (old plates stop working). The Guild
+  can download every brewery's plate link for the printer, like a card batch.
+- **Nothing is recorded until the staff code is entered.** A photo of the plate
+  is useless at home. The visit, the reward and the one-reward-per-visit rule
+  are the same as at a bar phone.
+- The **customer picks** the reward on their own phone (nobody is waiting on
+  them); the soonest-expiring one is pre-selected, Beer Trail offer first.
+- **Staff code:** 4 digits, set by the brewery on its Tap Card screen, shown
+  there to owners/editors, changeable any time staff turn over. No code set =
+  the plate page says "Ask your bartender to tap your card."
+- **Wrong codes:** after 5 wrong tries the plate locks for that customer at
+  that brewery for 15 minutes.
+- **Undo** on the success screen also needs the staff code (otherwise a customer
+  could undo and use a reward twice). Same day only.
+- **Not signed in on this phone:** the page asks for the card's email and sends
+  the usual sign-in link, which returns to the plate page.
+- A customer must already have an activated card. Activating a new card still
+  happens at a bar phone or by the customer on their card's own link.
+
+*(Calls I made: one plate link per brewery; staff code stored so the brewery can
+see it; customer chooses the reward on a plate; undo needs the code; 5 tries /
+15 minutes.)*
 
 ### Customer's card page (/card)
 
