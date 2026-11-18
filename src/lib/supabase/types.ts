@@ -517,6 +517,52 @@ export type TapCardOfferRow = {
   reviewed_at: string | null;
 };
 
+export type TapCardOfferSlot = "step1" | "step2" | "step3" | "repeat";
+
+export type TapCardMemberOfferRow = {
+  id: string;
+  member_id: string;
+  slot: TapCardOfferSlot;
+  live_visit_number: number | null;
+  live_reward: string | null;
+  live_terms: string | null;
+  live_approved_at: string | null;
+  live_approved_by: string | null;
+  draft_visit_number: number | null;
+  draft_reward: string | null;
+  draft_terms: string | null;
+  draft_status: "pending" | "declined" | null;
+  draft_submitted_at: string | null;
+  draft_submitted_by: string | null;
+  decline_note: string | null;
+  created_at: string;
+};
+
+export type TapCardOfferTemplateRow = {
+  id: string;
+  title: string;
+  reward: string;
+  terms: string;
+  sort_order: number;
+  hidden: boolean;
+  created_at: string;
+};
+
+export type TapCardEarnedRewardRow = {
+  id: string;
+  holder_id: string;
+  member_id: string;
+  slot: TapCardOfferSlot;
+  reward: string;
+  terms: string;
+  earned_visit_id: string;
+  earned_at: string;
+  expires_at: string;
+  used_at: string | null;
+  used_visit_id: string | null;
+  used_device_id: string | null;
+};
+
 export type TapCardMilestoneRow = {
   id: string;
   stops_required: number;

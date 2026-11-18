@@ -4,11 +4,11 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(26);
+insert into _tap (line) select plan(24);
 
 insert into _tap (line) select has_table('public', t, t || ' exists')
 from unnest(array['tap_card_batches', 'tap_cards', 'tap_card_holders', 'tap_card_visits', 'scanner_devices',
-  'tap_card_offers', 'tap_card_milestones', 'tap_card_rewards', 'tap_card_login_tokens', 'tap_card_sessions']) as t;
+  'tap_card_milestones', 'tap_card_rewards', 'tap_card_login_tokens', 'tap_card_sessions']) as t;
 
 insert into _tap (line) select is(
   (select column_default from information_schema.columns
@@ -58,10 +58,6 @@ insert into _tap (line) select throws_ok(
 insert into _tap (line) select throws_ok(
   $q$ insert into public.tap_card_holders (name, email, age_confirmed_via) values ('Pat Again', 'pat@EXAMPLE.test', 'staff') $q$,
   '23505', null, 'the same email in a different case is refused');
-insert into _tap (line) select throws_ok(
-  $q$ insert into public.tap_card_offers (member_id, offer_text, status)
-      values ('f1000000-0000-4000-8000-000000000001', 'Free flight', 'maybe') $q$,
-  '23514', null, 'an offer status outside pending/approved/declined is refused');
 
 -- No client session can read or write any of it.
 set local role authenticated;
@@ -80,7 +76,7 @@ insert into _tap (line) select throws_ok(
 reset role;
 set local role anon;
 insert into _tap (line) select throws_ok(
-  $q$ select count(*) from public.tap_card_offers $q$, '42501', null, 'anon: cannot read offers');
+  $q$ select count(*) from public.tap_card_holders $q$, '42501', null, 'anon: cannot read holders');
 reset role;
 
 select line from _tap order by n;
