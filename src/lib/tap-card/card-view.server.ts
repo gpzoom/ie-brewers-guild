@@ -5,11 +5,11 @@ import { claimScannerCore, type ClaimStore } from "@/lib/tap-card/claim-scanner"
 import { rateLimitMessage } from "@/lib/join/join-guards.server";
 import { normalizeCardCode } from "@/lib/tap-card/card-code";
 import { firstNameOf, guessGuard, pickCardViewKind, type CardView } from "@/lib/tap-card/card-view";
-import { checkInCore, redemptionStatus, type CheckInOutcome } from "@/lib/tap-card/check-in-core";
-import { tapCardDay, tapCardYear } from "@/lib/tap-card/tap-card-time";
+import { checkInVisit, undoBarReward, useBarReward, type BarState, type RewardChoice } from "@/lib/tap-card/bar-core";
+import { barStore } from "@/lib/tap-card/bar-store.server";
+import { tapCardYear } from "@/lib/tap-card/tap-card-time";
 import { readHolderId, readScannerDevice, setScannerCookie } from "@/lib/tap-card/tap-card-cookies.server";
-import { awardMilestones, checkInStore } from "@/lib/tap-card/tap-card-store.server";
-import { offerForMember } from "@/lib/tap-card/offers-db.server";
+import { awardMilestones } from "@/lib/tap-card/tap-card-store.server";
 
 /**
  * /p/<code>, /scanner/<token>: the card page and the bar device's setup.
@@ -53,25 +53,10 @@ export const getCardView = createServerFn({ method: "GET" })
         return { view: "staff-blocked", memberName: device.kind === "blocked" ? device.device.memberName : "" };
       case "staff-activate":
         return { view: "staff-activate", code, memberName: device.kind === "ok" ? device.device.memberName : "" };
-      case "staff-check-in": {
+      case "staff-check-in":
+        // Read-only: the check-in screen records the visit with a POST once it opens.
         if (device.kind !== "ok" || !card?.holderId) return { view: "unknown" };
-        const now = new Date();
-        const store = checkInStore(service);
-        const [redemption, today, offer] = await Promise.all([
-          redemptionStatus(store, card.holderId, device.device.memberId, now),
-          store.findVisit(card.holderId, device.device.memberId, tapCardDay(now)),
-          offerForMember(service, device.device.memberId),
-        ]);
-        return {
-          view: "staff-check-in",
-          code,
-          memberName: device.device.memberName,
-          firstName: firstNameOf(card.holderName),
-          offer,
-          redemption,
-          visitedToday: today !== null,
-        };
-      }
+        return { view: "staff-check-in", code, memberName: device.device.memberName, firstName: firstNameOf(card.holderName) };
       case "customer-activate":
         return { view: "customer-activate", code };
       case "customer-active":
@@ -81,31 +66,56 @@ export const getCardView = createServerFn({ method: "GET" })
     }
   });
 
-export type RecordCheckInResult =
-  | (CheckInOutcome & { rewards: string[] })
+export type BarResult =
+  | { kind: "ok"; state: BarState; milestoneRewards: string[]; outcome?: "used" | "already-used-today" | "not-available" | "undone" | "nothing-to-undo" }
   | { kind: "not-allowed" }
   | { kind: "unknown-card" };
 
-export const recordCheckIn = createServerFn({ method: "POST" })
-  .inputValidator((data: { code: string; redeem: boolean }) => ({ code: String(data?.code ?? ""), redeem: data?.redeem === true }))
-  .handler(async ({ data }): Promise<RecordCheckInResult> => {
-    const device = await readScannerDevice();
-    if (device.kind !== "ok") return { kind: "not-allowed" };
-    const code = normalizeCardCode(data.code);
-    const { service, card } = code ? await loadCard(code) : { service: null, card: null };
-    if (!service || !card?.holderId) return { kind: "unknown-card" };
-    const at = new Date();
-    const outcome = await checkInCore(checkInStore(service), {
-      holderId: card.holderId,
-      memberId: device.device.memberId,
-      cardId: card.id,
-      deviceId: device.device.id,
-      redeem: data.redeem,
-      at,
-    });
-    const visitAdded = outcome.kind === "recorded" || (outcome.kind === "already-redeemed" && outcome.visitRecorded);
-    const rewards = visitAdded ? (await awardMilestones(service, card.holderId, tapCardYear(at))).map((m) => m.rewardText) : [];
-    return { ...outcome, rewards };
+/** Bar device + card for the bar POSTs; null result means refuse with that BarResult. */
+async function barContext(rawCode: string) {
+  const device = await readScannerDevice();
+  if (device.kind !== "ok") return { refuse: { kind: "not-allowed" } as BarResult };
+  const code = normalizeCardCode(rawCode);
+  const { service, card } = code ? await loadCard(code) : { service: null, card: null };
+  if (!service || !card?.holderId) return { refuse: { kind: "unknown-card" } as BarResult };
+  return {
+    service,
+    input: { holderId: card.holderId, memberId: device.device.memberId, cardId: card.id, deviceId: device.device.id, at: new Date() },
+  };
+}
+
+/** The check-in screen opened: record today's visit (once) and say what's waiting. */
+export const checkInCard = createServerFn({ method: "POST" })
+  .inputValidator((data: { code: string }) => ({ code: String(data?.code ?? "") }))
+  .handler(async ({ data }): Promise<BarResult> => {
+    const ctx = await barContext(data.code);
+    if ("refuse" in ctx) return ctx.refuse!;
+    const state = await checkInVisit(barStore(ctx.service), ctx.input);
+    const milestoneRewards = state.firstToday
+      ? (await awardMilestones(ctx.service, ctx.input.holderId, tapCardYear(ctx.input.at))).map((m) => m.rewardText)
+      : [];
+    return { kind: "ok", state, milestoneRewards };
+  });
+
+export const useCardReward = createServerFn({ method: "POST" })
+  .inputValidator((data: { code: string; choice: RewardChoice }) => ({
+    code: String(data?.code ?? ""),
+    choice: (data?.choice?.kind === "member" ? { kind: "member", id: String(data.choice.id ?? "") } : { kind: "trail" }) as RewardChoice,
+  }))
+  .handler(async ({ data }): Promise<BarResult> => {
+    const ctx = await barContext(data.code);
+    if ("refuse" in ctx) return ctx.refuse!;
+    const { outcome, state } = await useBarReward(barStore(ctx.service), { ...ctx.input, choice: data.choice });
+    return { kind: "ok", state, milestoneRewards: [], outcome };
+  });
+
+export const undoCardReward = createServerFn({ method: "POST" })
+  .inputValidator((data: { code: string }) => ({ code: String(data?.code ?? "") }))
+  .handler(async ({ data }): Promise<BarResult> => {
+    const ctx = await barContext(data.code);
+    if ("refuse" in ctx) return ctx.refuse!;
+    const { outcome, state } = await undoBarReward(barStore(ctx.service), ctx.input);
+    return { kind: "ok", state, milestoneRewards: [], outcome };
   });
 
 /** The bar device's one-time setup link: remembers this browser as that brewery's device. */

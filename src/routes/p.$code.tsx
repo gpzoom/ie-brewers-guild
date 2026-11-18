@@ -69,13 +69,17 @@ function CardBody({ view }: { view: CardView }) {
           <CanvasHeading size="md">New card</CanvasHeading>
           {activatedName ? (
             <>
-              <p className="text-[20px] font-semibold text-ink">Card activated</p>
-              <button type="button" className={primaryButtonClass} onClick={() => router.invalidate()}>
-                Check them in now
-              </button>
+              <p className="text-[20px] font-semibold text-ink">Card activated — checking them in…</p>
             </>
           ) : (
-            <ActivateForm code={view.code} mode="staff" onActivated={() => setActivatedName("ok")} />
+            <ActivateForm
+              code={view.code}
+              mode="staff"
+              onActivated={() => {
+                setActivatedName("ok");
+                void router.invalidate();
+              }}
+            />
           )}
         </>
       );

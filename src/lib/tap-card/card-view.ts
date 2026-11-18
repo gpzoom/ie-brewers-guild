@@ -30,22 +30,12 @@ export function pickCardViewKind(
   return sessionHolderId === card.holderId ? "customer-own" : "customer-active";
 }
 
-export type RedemptionView = { available: true } | { available: false; redeemedOn: string };
-
 export type CardView =
   | { view: "unknown" }
   | { view: "throttled"; message: string }
   | { view: "staff-blocked"; memberName: string }
   | { view: "staff-activate"; code: string; memberName: string }
-  | {
-      view: "staff-check-in";
-      code: string;
-      memberName: string;
-      firstName: string;
-      offer: string;
-      redemption: RedemptionView;
-      visitedToday: boolean;
-    }
+  | { view: "staff-check-in"; code: string; memberName: string; firstName: string }
   | { view: "customer-activate"; code: string }
   | { view: "customer-active" }
   | { view: "customer-own" };

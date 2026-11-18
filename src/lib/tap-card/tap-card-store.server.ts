@@ -1,57 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CheckInStore } from "@/lib/tap-card/check-in-core";
 import { newlyEarned, type Milestone } from "@/lib/tap-card/milestones";
 
-/**
- * Database side of the check-in rules (no createServerFn here). The unique
- * indexes from the migration turn a double tap or two devices at once into
- * "duplicate" instead of a second row.
- */
-export function checkInStore(service: SupabaseClient): CheckInStore {
-  return {
-    async findVisit(holderId, memberId, day) {
-      const { data, error } = await service
-        .from("tap_card_visits")
-        .select("id, redeemed_year")
-        .eq("holder_id", holderId)
-        .eq("member_id", memberId)
-        .eq("visit_day", day)
-        .maybeSingle();
-      if (error) throw new Error(error.message);
-      return data ? { id: data.id, redeemedYear: data.redeemed_year } : null;
-    },
-    async hasRedeemed(holderId, memberId, year) {
-      const { data, error } = await service
-        .from("tap_card_visits")
-        .select("visit_day")
-        .eq("holder_id", holderId)
-        .eq("member_id", memberId)
-        .eq("redeemed_year", year)
-        .maybeSingle();
-      if (error) throw new Error(error.message);
-      return data ? { day: data.visit_day } : null;
-    },
-    async insertVisit(v) {
-      const { error } = await service.from("tap_card_visits").insert({
-        holder_id: v.holderId,
-        member_id: v.memberId,
-        card_id: v.cardId,
-        device_id: v.deviceId,
-        visit_day: v.day,
-        redeemed_year: v.redeemedYear,
-      });
-      if (!error) return "ok";
-      if (error.code === "23505") return "duplicate";
-      throw new Error(error.message);
-    },
-    async markRedeemed(visitId, year) {
-      const { error } = await service.from("tap_card_visits").update({ redeemed_year: year }).eq("id", visitId);
-      if (!error) return "ok";
-      if (error.code === "23505") return "duplicate";
-      throw new Error(error.message);
-    },
-  };
-}
+/** Guild milestone helpers (no createServerFn here). */
 
 /** Distinct stops this holder visited in a calendar year. */
 export async function distinctStopsInYear(service: SupabaseClient, holderId: string, year: number): Promise<number> {
