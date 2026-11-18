@@ -46,7 +46,7 @@ export function StaffQrScreen({ token, view }: { token: string; view: StaffQrPag
     );
   }
   if (done && (view.view === "check-in" || view.view === "confirm")) {
-    return <PlateSuccess memberName={view.memberName} plateCode={view.plateCode} initial={done} />;
+    return <PlateSuccess memberName={view.memberName} memberSlug={view.memberSlug} plateCode={view.plateCode} initial={done} />;
   }
 
   return (

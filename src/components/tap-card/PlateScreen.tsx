@@ -45,7 +45,7 @@ function ReadyScreen({ view }: { view: Ready }) {
     }
   }
 
-  if (done) return <PlateSuccess memberName={view.memberName} plateCode={view.code} initial={done} />;
+  if (done) return <PlateSuccess memberName={view.memberName} memberSlug={view.memberSlug} plateCode={view.code} initial={done} />;
 
   const picked = choice === "none" ? "Just check in" : rewardLine(waiting.find((r) => keyOf(r) === choice)!);
 

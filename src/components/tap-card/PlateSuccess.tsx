@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { undoAtPlate, type PlateResult } from "@/lib/tap-card/plate.server";
-import { CanvasHeading, fieldErrorClass, inputClass, labelClass, leadClass, primaryButtonClass } from "@/components/public-forms/PublicFormParts";
+import { CanvasHeading, fieldErrorClass, inputClass, labelClass, leadClass, primaryButtonClass, secondaryButtonClass } from "@/components/public-forms/PublicFormParts";
 import { outcomeMessage } from "@/components/tap-card/CheckInScreen";
+import { successLinks } from "@/lib/tap-card/card-app";
 
 export type PlateOk = Extract<PlateResult, { kind: "ok" }>;
 
@@ -92,7 +93,17 @@ export function StaffCodeForm({ label, onSubmit }: { label: string; onSubmit: (s
 }
 
 /** The green screen the customer shows the bartender. */
-export function PlateSuccess({ memberName, plateCode, initial }: { memberName: string; plateCode: string; initial: PlateOk }) {
+export function PlateSuccess({
+  memberName,
+  memberSlug,
+  plateCode,
+  initial,
+}: {
+  memberName: string;
+  memberSlug: string;
+  plateCode: string;
+  initial: PlateOk;
+}) {
   const [done, setDone] = useState(initial);
   const [undoing, setUndoing] = useState(false);
   const [confirmedAt] = useState(() => new Date());
@@ -137,6 +148,13 @@ export function PlateSuccess({ memberName, plateCode, initial }: { memberName: s
             Undo (bartender&rsquo;s code)
           </button>
         ))}
+      <nav aria-label="Where to next" className="mt-2 flex flex-col gap-2">
+        {successLinks({ memberName, memberSlug }).map((l) => (
+          <a key={l.href} href={l.href} className={secondaryButtonClass}>
+            {l.label}
+          </a>
+        ))}
+      </nav>
     </div>
   );
 }

@@ -23,22 +23,23 @@ import { PLATE_LOCK_MINUTES, plateUrl, staffCodeGate, validateStaffCode, type At
  * page only looks.
  */
 
-type Plate = { memberId: string; memberName: string; staffCode: string | null; open: boolean };
+type Plate = { memberId: string; memberName: string; memberSlug: string; staffCode: string | null; open: boolean };
 
 async function loadPlate(service: SupabaseClient, rawCode: string): Promise<Plate | null> {
   const code = normalizeCardCode(rawCode);
   if (!code) return null;
   const { data, error } = await service
     .from("tap_card_plates")
-    .select("member_id, staff_code, members!inner(business_name, status, member_type, trail_eligible)")
+    .select("member_id, staff_code, members!inner(business_name, slug, status, member_type, trail_eligible)")
     .eq("code", code)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
-  const m = data.members as unknown as { business_name: string; status: string; member_type: string; trail_eligible: boolean };
+  const m = data.members as unknown as { business_name: string; slug: string; status: string; member_type: string; trail_eligible: boolean };
   return {
     memberId: data.member_id,
     memberName: m.business_name,
+    memberSlug: m.slug,
     staffCode: data.staff_code,
     // The staff code still turns the plate on (it's the backup to the bartender QR).
     open: memberTakesCheckIns({ status: m.status, memberType: m.member_type, trailEligible: m.trail_eligible }, onStagingSite()) && data.staff_code !== null,
@@ -99,7 +100,7 @@ export type PlateView =
   | { view: "unknown" }
   | { view: "closed"; memberName: string }
   | { view: "signed-out"; code: string; memberName: string }
-  | { view: "ready"; code: string; memberName: string; firstName: string; nextVisitNumber: number; checkedInToday: boolean; state: BarState };
+  | { view: "ready"; code: string; memberName: string; memberSlug: string; firstName: string; nextVisitNumber: number; checkedInToday: boolean; state: BarState };
 
 export const getPlateView = createServerFn({ method: "GET" })
   .inputValidator((data: { code: string }) => ({ code: String(data?.code ?? "") }))
@@ -122,6 +123,7 @@ export const getPlateView = createServerFn({ method: "GET" })
       view: "ready",
       code,
       memberName: plate.memberName,
+      memberSlug: plate.memberSlug,
       firstName: firstNameOf(holder.name),
       nextVisitNumber: today ? state.visitNumber : state.visitNumber + 1,
       checkedInToday: today !== null,
@@ -209,8 +211,8 @@ export type StaffQrPage =
   | { view: "closed"; memberName: string }
   | { view: "scan-plate-first"; memberName: string }
   | { view: "wrong-brewery"; memberName: string }
-  | { view: "check-in"; memberName: string; plateCode: string }
-  | { view: "confirm"; memberName: string; plateCode: string; rewardText: string };
+  | { view: "check-in"; memberName: string; memberSlug: string; plateCode: string }
+  | { view: "confirm"; memberName: string; memberSlug: string; plateCode: string; rewardText: string };
 
 export const getStaffQrView = createServerFn({ method: "GET" })
   .inputValidator((data: { token: string }) => ({ token: String(data?.token ?? "") }))
@@ -222,10 +224,10 @@ export const getStaffQrView = createServerFn({ method: "GET" })
     const holderId = await readHolderId();
     const pending = holderId ? await readPlatePending(holderId) : null;
     const decided = decideStaffQrView({ qrMemberId: plate.memberId, signedIn: holderId !== null, pending, now: new Date() });
-    const memberName = plate.memberName;
+    const { memberName, memberSlug } = plate;
     if (decided.kind === "unknown") return { view: "unknown" };
     if (decided.kind === "scan-plate-first" || decided.kind === "wrong-brewery") return { view: decided.kind, memberName };
-    if (decided.kind === "check-in") return { view: "check-in", memberName, plateCode: decided.plateCode };
+    if (decided.kind === "check-in") return { view: "check-in", memberName, memberSlug, plateCode: decided.plateCode };
     const state = await barState(barStore(service), {
       holderId: holderId!,
       memberId: plate.memberId,
@@ -240,8 +242,8 @@ export const getStaffQrView = createServerFn({ method: "GET" })
       (r) => r !== null && (wanted.kind === "trail" ? r.kind === "trail" : r.kind === "member" && r.id === wanted.id),
     );
     // The reward is gone (used or expired since the plate): a plain check-in is still fine.
-    if (!reward || state.used) return { view: "check-in", memberName, plateCode: decided.plateCode };
-    return { view: "confirm", memberName, plateCode: decided.plateCode, rewardText: reward.reward };
+    if (!reward || state.used) return { view: "check-in", memberName, memberSlug, plateCode: decided.plateCode };
+    return { view: "confirm", memberName, memberSlug, plateCode: decided.plateCode, rewardText: reward.reward };
   });
 
 /** The customer confirmed on the bartender QR page: record the waiting choice once. */

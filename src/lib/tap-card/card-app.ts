@@ -37,3 +37,12 @@ export const CARD_APP_HEAD_META = [
   { name: "apple-mobile-web-app-title", content: "Tap Card" },
   { name: "theme-color", content: "#000000" },
 ];
+
+/** The buttons under the success screen. No Sign out here, on purpose (owner, 2026-11-18). */
+export function successLinks(m: { memberName: string; memberSlug: string }): { label: string; href: string }[] {
+  return [
+    { label: "Go to my account", href: "/card" },
+    { label: `Go to ${m.memberName}'s profile`, href: `/members/${encodeURIComponent(m.memberSlug)}` },
+    { label: "Go to the homepage", href: "/" },
+  ];
+}

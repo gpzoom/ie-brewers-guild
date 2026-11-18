@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { homeScreenKind, scannedTapCardPath } from "@/lib/tap-card/card-app";
+import { homeScreenKind, scannedTapCardPath, successLinks } from "@/lib/tap-card/card-app";
 
 const TOKEN = "a".repeat(40) + "_-9";
 
@@ -33,5 +33,18 @@ describe("homeScreenKind", () => {
   });
   it("shows browser-menu steps everywhere else", () => {
     expect(homeScreenKind({ userAgent: android, standalone: false, canPrompt: false })).toBe("menu");
+  });
+});
+
+describe("successLinks", () => {
+  it("offers the card, the brewery's profile and the homepage -- never Sign out", () => {
+    expect(successLinks({ memberName: "Sample Brewery", memberSlug: "sample-brewery" })).toEqual([
+      { label: "Go to my account", href: "/card" },
+      { label: "Go to Sample Brewery's profile", href: "/members/sample-brewery" },
+      { label: "Go to the homepage", href: "/" },
+    ]);
+  });
+  it("encodes the slug", () => {
+    expect(successLinks({ memberName: "A", memberSlug: "a b" })[1].href).toBe("/members/a%20b");
   });
 });
