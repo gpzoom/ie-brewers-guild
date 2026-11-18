@@ -26,6 +26,7 @@ const OPEN_PREFIXES = [
   // Inland Tap Card: bars keep checking cards in, and customers keep their own
   // card pages, during maintenance. The public /trail page stays closed.
   "/p",
+  "/t",
   "/scanner",
   "/card",
 ];

@@ -39,7 +39,7 @@ describe("showsMaintenance: who sees the maintenance page (owner, 2026-11-14)", 
     expect(showsMaintenance("/privacy", { on: true, isGuildAdmin: false })).toBe(false);
   });
   it("on: Tap Card bar checks and customers' own card pages keep working; the public Trail page doesn't", () => {
-    for (const path of ["/p/ABCD2345", "/scanner", "/scanner/abc", "/card", "/card/signin", "/card/login/abc"]) {
+    for (const path of ["/p/ABCD2345", "/t/ABCD2345", "/scanner", "/scanner/abc", "/card", "/card/signin", "/card/login/abc"]) {
       expect(showsMaintenance(path, { on: true, isGuildAdmin: false })).toBe(false);
     }
     expect(showsMaintenance("/trail", { on: true, isGuildAdmin: false })).toBe(true);

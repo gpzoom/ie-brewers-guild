@@ -73,6 +73,16 @@ create table public.tap_card_plates (
   updated_at timestamptz not null default now()
 );
 
+-- Wrong staff codes typed at a plate: 5 within 15 minutes locks that plate
+-- for that customer (counted by the server).
+create table public.tap_card_plate_misses (
+  id uuid primary key default gen_random_uuid(),
+  holder_id uuid not null references public.tap_card_holders (id) on delete cascade,
+  member_id uuid not null references public.members (id) on delete cascade,
+  missed_at timestamptz not null default now()
+);
+create index tap_card_plate_misses_recent on public.tap_card_plate_misses (holder_id, member_id, missed_at);
+
 create table public.tap_card_earned_rewards (
   id uuid primary key default gen_random_uuid(),
   holder_id uuid not null references public.tap_card_holders (id) on delete cascade,
@@ -105,7 +115,7 @@ do $$
 declare t text;
 begin
   foreach t in array array['tap_card_member_offers', 'tap_card_offer_templates', 'tap_card_member_settings',
-    'tap_card_plates', 'tap_card_earned_rewards'] loop
+    'tap_card_plates', 'tap_card_plate_misses', 'tap_card_earned_rewards'] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('revoke all on public.%I from anon, authenticated', t);
   end loop;

@@ -7,6 +7,7 @@ import {
   downloadBatchCsv,
   type CardBatchSummary,
 } from "@/lib/tap-card/batches.server";
+import { downloadPlateLinksCsv } from "@/lib/tap-card/plate.server";
 import {
   StatusMessage,
   cardClass,
@@ -54,6 +55,15 @@ export function CardBatchesPanel({ batches }: { batches: CardBatchSummary[] }) {
   async function onDownload(batchId: string) {
     try {
       const file = await downloadBatchCsv({ data: { batchId } });
+      saveFile(file.filename, file.csv);
+    } catch (err) {
+      setMessage({ kind: "error", text: errorText(err) });
+    }
+  }
+
+  async function onDownloadPlates() {
+    try {
+      const file = await downloadPlateLinksCsv();
       saveFile(file.filename, file.csv);
     } catch (err) {
       setMessage({ kind: "error", text: errorText(err) });
@@ -143,6 +153,19 @@ export function CardBatchesPanel({ batches }: { batches: CardBatchSummary[] }) {
           </tbody>
         </table>
       </div>
+
+      <section className={cardClass}>
+        <h2 className="font-display text-[18px] font-bold text-ink">Counter plates</h2>
+        <p className="text-[13px] text-ink-muted">
+          One plate per trail stop. The file has each brewery&rsquo;s plate link for the plate&rsquo;s chip and QR code, and the
+          code to print on it. Make it on the live site so the links point there.
+        </p>
+        <div>
+          <button type="button" onClick={onDownloadPlates} className={outlineButtonClass}>
+            Download counter plate links
+          </button>
+        </div>
+      </section>
     </div>
   );
 }

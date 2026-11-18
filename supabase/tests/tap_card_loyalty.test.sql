@@ -5,11 +5,11 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(16);
+insert into _tap (line) select plan(17);
 
 insert into _tap (line) select has_table('public', t, t || ' exists')
 from unnest(array['tap_card_member_offers', 'tap_card_offer_templates', 'tap_card_member_settings',
-  'tap_card_earned_rewards', 'tap_card_plates']) as t;
+  'tap_card_earned_rewards', 'tap_card_plates', 'tap_card_plate_misses']) as t;
 insert into _tap (line) select hasnt_table('public', 'tap_card_offers', 'the old per-brewery trail offer table is gone');
 
 insert into _tap (line) select throws_ok(

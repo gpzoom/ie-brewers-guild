@@ -74,6 +74,8 @@ describe("ageGateApplies", () => {
     expect(ageGateApplies("/scanner/abc123", visitor)).toBe(false);
     expect(ageGateApplies("/p/ABCD2345", visitor)).toBe(true);
     expect(ageGateApplies("/p/ABCD2345", { confirmed: true, crawler: false })).toBe(false);
+    expect(ageGateApplies("/t/ABCD2345", visitor)).toBe(true);
+    expect(ageGateApplies("/t/ABCD2345", { confirmed: true, crawler: false })).toBe(false);
     expect(ageGateApplies("/card/login/abc", visitor)).toBe(false);
     expect(ageGateApplies("/card", visitor)).toBe(true);
   });

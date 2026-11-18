@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { safeHolderNext } from "@/lib/tap-card/plate";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { hashUploadToken } from "@/lib/media/upload-tokens";
 import { sendHolderSignInLink } from "@/lib/tap-card/holder-signin.server";
@@ -24,9 +25,10 @@ import {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const requestHolderSignIn = createServerFn({ method: "POST" })
-  .inputValidator((data: { email: string; website: string }) => ({
+  .inputValidator((data: { email: string; website: string; next?: string }) => ({
     email: String(data?.email ?? "").trim().toLowerCase(),
     website: String(data?.website ?? ""),
+    next: safeHolderNext(data?.next),
   }))
   .handler(async ({ data }): Promise<{ kind: "check-email" } | { kind: "error"; message: string }> => {
     try {
@@ -39,7 +41,7 @@ export const requestHolderSignIn = createServerFn({ method: "POST" })
       const service = await getSupabaseServiceRoleClient();
       const { data: holder, error } = await service.from("tap_card_holders").select("id").eq("email_lower", data.email).maybeSingle();
       if (error) throw new Error(error.message);
-      if (holder) await sendHolderSignInLink(service, holder.id, data.email);
+      if (holder) await sendHolderSignInLink(service, holder.id, data.email, data.next);
       return { kind: "check-email" };
     } catch (err) {
       console.error("requestHolderSignIn failed", err instanceof Error ? err.message : String(err));
