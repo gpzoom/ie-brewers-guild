@@ -96,7 +96,8 @@ function TrailPage() {
           </ul>
         )}
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          21 and over. One offer per stop per calendar year. Offers are set by each brewery and approved by the Guild. See the{" "}
+          21 and over. One Beer Trail offer per stop per calendar year. Come back for loyalty rewards set by each brewery
+          and approved by the Guild. See the{" "}
           <a href="/terms" className="underline underline-offset-2">
             Terms of Use
           </a>

@@ -1,6 +1,6 @@
 import { createFileRoute, getRouteApi, Link } from "@tanstack/react-router";
 import { getMemberProfileData } from "@/lib/members/member-profile.server";
-import { getStopOffer } from "@/lib/tap-card/trail.server";
+import { getStopTapCard } from "@/lib/tap-card/trail.server";
 import { validateDirectorySearch } from "@/lib/directory/search-params";
 import { MemberProfileTemplate } from "@/components/profile/MemberProfileTemplate";
 import { ProfilePreviewBanner } from "@/components/guild/ProfilePreviewBanner";
@@ -9,12 +9,12 @@ export const Route = createFileRoute("/members_/$slug")({
   validateSearch: validateDirectorySearch,
   loaderDeps: ({ search }) => ({ filter: search.filter, sort: search.sort }),
   loader: async ({ params, deps }) => {
-    const [profile, tapCardOffer] = await Promise.all([
+    const [profile, tapCard] = await Promise.all([
       getMemberProfileData({ data: { slug: params.slug, filter: deps.filter, sort: deps.sort } }),
       // A failed offer read must never take the profile down.
-      getStopOffer({ data: { slug: params.slug } }).catch(() => null),
+      getStopTapCard({ data: { slug: params.slug } }).catch(() => null),
     ]);
-    return { ...profile, tapCardOffer };
+    return { ...profile, tapCard };
   },
   head: ({ loaderData }) => {
     if (!loaderData) return {};
@@ -138,7 +138,7 @@ function MemberProfilePage() {
         data={data}
         search={search}
         mediaMode={data.isPreview ? "preview" : "live"}
-        tapCardOffer={data.tapCardOffer}
+        tapCard={data.tapCard}
       />
     </>
   );

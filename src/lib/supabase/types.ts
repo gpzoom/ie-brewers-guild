@@ -505,18 +505,6 @@ export type ScannerDeviceRow = {
   created_at: string;
 };
 
-export type TapCardOfferStatus = "pending" | "approved" | "declined";
-
-export type TapCardOfferRow = {
-  member_id: string;
-  offer_text: string;
-  status: TapCardOfferStatus;
-  submitted_by: string | null;
-  submitted_at: string;
-  reviewed_by: string | null;
-  reviewed_at: string | null;
-};
-
 export type TapCardOfferSlot = "step1" | "step2" | "step3" | "repeat";
 
 export type TapCardMemberOfferRow = {

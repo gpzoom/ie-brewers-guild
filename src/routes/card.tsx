@@ -13,6 +13,7 @@ import {
   secondaryButtonClass,
 } from "@/components/public-forms/PublicFormParts";
 import { Eyebrow, TapCardShell } from "@/components/tap-card/TapCardShell";
+import { useByDate } from "@/components/tap-card/CheckInScreen";
 
 /** /card: a card holder's progress this year. Signed out → the email sign-in. */
 export const Route = createFileRoute("/card")({
@@ -32,9 +33,11 @@ function CardPage() {
     <TapCardShell>
       <Eyebrow>Inland Tap Card · {view.year}</Eyebrow>
       <CanvasHeading size="md">{view.firstName}&rsquo;s Inland Tap Card</CanvasHeading>
+      <Waiting view={view} />
       <Progress view={view} />
       <Milestones view={view} />
       <StopList view={view} />
+      <YourVisits view={view} />
       <MyCards cards={view.cards} />
       <AddCard />
       <SignOut />
@@ -60,6 +63,44 @@ function Progress({ view }: { view: HolderCardView }) {
         <div className="h-full rounded-full bg-brand" style={{ width: `${pct}%` }} />
       </div>
     </div>
+  );
+}
+
+/** Loyalty rewards earned at breweries, waiting to be used. */
+function Waiting({ view }: { view: HolderCardView }) {
+  if (view.waiting.length === 0) return null;
+  return (
+    <section className="flex flex-col gap-2 rounded-xl border border-canvas-border bg-white px-4 py-3.5" aria-label="Waiting for you">
+      <h2 className="text-[15px] font-semibold text-ink">Waiting for you</h2>
+      <ul className="flex flex-col gap-3">
+        {view.waiting.map((w) => (
+          <li key={`${w.memberName}-${w.reward}-${w.expiresAt}`} className="flex flex-col gap-0.5">
+            <span className="text-[16px] font-semibold text-ink">{w.reward}</span>
+            <span className="text-[13px] text-ink-muted">
+              {w.memberName} · Use by {useByDate(w.expiresAt)}
+            </span>
+            {w.terms && <span className="text-[13px] text-ink-muted">{w.terms}</span>}
+          </li>
+        ))}
+      </ul>
+      <p className={hintClass}>Ask the bartender for it on your next visit. One reward per visit.</p>
+    </section>
+  );
+}
+
+function YourVisits({ view }: { view: HolderCardView }) {
+  if (view.visitCounts.length === 0) return null;
+  return (
+    <section className="flex flex-col gap-2" aria-label="Your visits">
+      <h2 className="text-[15px] font-semibold text-ink">Your visits</h2>
+      <ul className="flex flex-col gap-1 text-[14px] text-ink">
+        {view.visitCounts.map((v) => (
+          <li key={v.memberId}>
+            {v.name} — {v.count} {v.count === 1 ? "visit" : "visits"}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

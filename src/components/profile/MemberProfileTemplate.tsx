@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import type { StopTapCard } from "@/lib/tap-card/trail.server";
 import { ProfileHero } from "@/components/profile/ProfileHero";
 import { StatusBlock } from "@/components/profile/StatusBlock";
 import { ScheduleChips } from "@/components/profile/ScheduleChips";
@@ -20,15 +21,26 @@ import { isHttpUrl } from "@/lib/links/url-safety";
 
 
 /** "On the Inland Tap Card" -- a trail stop's offer, linking to the Trail page. */
-function TapCardStopNote({ offer }: { offer: string }) {
+function TapCardStopNote({ tapCard }: { tapCard: StopTapCard }) {
   return (
-    <a
-      href="/trail"
-      className="flex flex-col gap-0.5 rounded-xl border border-canvas-border bg-white px-4 py-3 no-underline hover:bg-canvas-2"
-    >
-      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">On the Inland Tap Card</span>
-      <span className="text-[15px] font-semibold text-ink">{offer}</span>
-    </a>
+    <div className="flex flex-col gap-1 rounded-xl border border-canvas-border bg-white px-4 py-3">
+      <a href="/trail" className="flex flex-col gap-0.5 no-underline hover:text-primary">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">On the Inland Tap Card</span>
+        <span className="text-[15px] font-semibold text-ink">{tapCard.trailOffer}</span>
+      </a>
+      {tapCard.memberOffers.length > 0 && (
+        <div className="mt-1 flex flex-col gap-0.5 border-t border-canvas-border pt-2">
+          <span className="text-[13px] font-medium text-ink">Come back for more:</span>
+          <ul className="flex flex-col gap-0.5 text-[13px] text-ink">
+            {tapCard.memberOffers.map((o) => (
+              <li key={o.label}>
+                {o.label} — {o.reward}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -42,8 +54,8 @@ type MemberProfileTemplateProps = {
    * data.isPreview, so the portal/admin draft previews keep both.
    */
   hideVisitorControls?: boolean;
-  /** Inland Tap Card: this stop's current offer (published trail stops only, from the public page's loader). */
-  tapCardOffer?: string | null;
+  /** Inland Tap Card: this stop's Beer Trail offer and loyalty rewards (published trail stops only, from the public page's loader). */
+  tapCard?: StopTapCard | null;
 };
 
 // The profile object (buildProfileObject) carries the raw snake_case DB rows;
@@ -72,7 +84,7 @@ type MemberProfileTemplateProps = {
  * else stacks beside it (artboard L). `lg`, not `md`: at 768px the 420px
  * column would leave the week chips narrower than on a 390px phone.
  */
-export function MemberProfileTemplate({ data, search, mediaMode, hideVisitorControls = false, tapCardOffer = null }: MemberProfileTemplateProps) {
+export function MemberProfileTemplate({ data, search, mediaMode, hideVisitorControls = false, tapCard = null }: MemberProfileTemplateProps) {
   const { member, hours, specialHours, events, carouselSlides, links, categories, crossLink, headerPrev, headerNext, headerPosition, crossLinkLogoUrl, nextLocation, logoPublicUrl, coverAsset } = data;
   // Reconstructed from the server's one serialized instant (MemberProfileData.now),
   // never read fresh here -- see that field's own doc comment for why.
@@ -228,7 +240,7 @@ export function MemberProfileTemplate({ data, search, mediaMode, hideVisitorCont
               now={now}
             />
             <DiscountBlock member={member} />
-            {tapCardOffer && <TapCardStopNote offer={tapCardOffer} />}
+            {tapCard && <TapCardStopNote tapCard={tapCard} />}
             <CategoryChips categories={categories} memberType={member.member_type} />
           </div>
 

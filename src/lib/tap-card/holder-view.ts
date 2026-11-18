@@ -14,7 +14,13 @@ export type HolderViewInput = {
   milestones: { id: string; stopsRequired: number; rewardText: string }[];
   rewards: { milestoneId: string; year: number; handedOutAt: string | null }[];
   cards: string[];
+  /** Every visit, any year (for "Your visits"). */
+  allVisits: { memberId: string; memberName: string; visitDay: string }[];
+  /** Unused, unexpired loyalty rewards. */
+  waiting: WaitingReward[];
 };
+
+export type WaitingReward = { memberName: string; reward: string; terms: string; expiresAt: string };
 
 export type HolderCardView = {
   firstName: string;
@@ -24,6 +30,8 @@ export type HolderCardView = {
   totalStops: number;
   milestones: { stopsRequired: number; rewardText: string; earned: boolean; handedOut: boolean }[];
   cards: string[];
+  waiting: WaitingReward[];
+  visitCounts: { memberId: string; name: string; count: number }[];
 };
 
 export function buildHolderView(input: HolderViewInput): HolderCardView {
@@ -55,5 +63,17 @@ export function buildHolderView(input: HolderViewInput): HolderCardView {
     totalStops: input.stops.length,
     milestones,
     cards: input.cards.map(formatCardCode),
+    waiting: [...input.waiting].sort((a, b) => a.expiresAt.localeCompare(b.expiresAt)),
+    visitCounts: visitCounts(input.allVisits),
   };
+}
+
+function visitCounts(visits: HolderViewInput["allVisits"]): HolderCardView["visitCounts"] {
+  const counts = new Map<string, { memberId: string; name: string; count: number }>();
+  for (const v of visits) {
+    const row = counts.get(v.memberId) ?? { memberId: v.memberId, name: v.memberName, count: 0 };
+    row.count += 1;
+    counts.set(v.memberId, row);
+  }
+  return [...counts.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 }

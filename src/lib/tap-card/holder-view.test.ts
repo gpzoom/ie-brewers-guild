@@ -21,6 +21,8 @@ const input = (over: Partial<HolderViewInput> = {}): HolderViewInput => ({
   ],
   rewards: [{ milestoneId: "m1", year: 2026, handedOutAt: null }],
   cards: ["ABCD2345"],
+  allVisits: [],
+  waiting: [],
   ...over,
 });
 
@@ -46,6 +48,38 @@ describe("buildHolderView", () => {
     expect(buildHolderView(input()).milestones).toEqual([
       { stopsRequired: 1, rewardText: "Pin", earned: true, handedOut: false },
       { stopsRequired: 2, rewardText: "Sticker", earned: false, handedOut: false },
+    ]);
+  });
+});
+
+describe("loyalty on the card page", () => {
+  it("lists waiting rewards soonest-expiring first", () => {
+    const view = buildHolderView(
+      input({
+        waiting: [
+          { memberName: "Zeta Brewing", reward: "Glass", terms: "", expiresAt: "2026-09-01T00:00:00.000Z" },
+          { memberName: "Alpha Ales", reward: "Pretzel", terms: "Food only", expiresAt: "2026-07-01T00:00:00.000Z" },
+        ],
+      }),
+    );
+    expect(view.waiting.map((w) => w.reward)).toEqual(["Pretzel", "Glass"]);
+  });
+
+  it("counts visits at each brewery across every year, most first", () => {
+    const view = buildHolderView(
+      input({
+        allVisits: [
+          { memberId: "b", memberName: "Alpha Ales", visitDay: "2025-12-31" },
+          { memberId: "a", memberName: "Zeta Brewing", visitDay: "2026-03-01" },
+          { memberId: "a", memberName: "Zeta Brewing", visitDay: "2026-04-01" },
+          { memberId: "c", memberName: "Mid Brewing", visitDay: "2026-04-02" },
+        ],
+      }),
+    );
+    expect(view.visitCounts).toEqual([
+      { memberId: "a", name: "Zeta Brewing", count: 2 },
+      { memberId: "b", name: "Alpha Ales", count: 1 },
+      { memberId: "c", name: "Mid Brewing", count: 1 },
     ]);
   });
 });

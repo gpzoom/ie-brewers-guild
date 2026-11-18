@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClient, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { offerForMember } from "@/lib/tap-card/offers-db.server";
+import { offerLabel, type OfferSlot } from "@/lib/tap-card/loyalty";
+import { STANDARD_OFFER } from "@/lib/tap-card/tap-card-copy";
 import { loadTrailStops, type TrailStop } from "@/lib/tap-card/trail-stops.server";
 import { loadDirectory } from "@/lib/members/directory.server";
 import type { DirectoryMember } from "@/lib/members/directory";
@@ -11,10 +12,12 @@ import { DEFAULT_TAP_CARD_PRICE_CENTS } from "@/lib/guild/site-settings";
  * public pages already show (the offer is public by design).
  */
 
-/** A stop's current offer for its profile page; null when it isn't a published trail stop. */
-export const getStopOffer = createServerFn({ method: "GET" })
+export type StopTapCard = { trailOffer: string; memberOffers: { label: string; reward: string; terms: string }[] };
+
+/** A trail stop's profile note: the Beer Trail offer and its approved loyalty rewards; null when it isn't a published trail stop. */
+export const getStopTapCard = createServerFn({ method: "GET" })
   .inputValidator((data: { slug: string }) => ({ slug: String(data?.slug ?? "") }))
-  .handler(async ({ data }): Promise<string | null> => {
+  .handler(async ({ data }): Promise<StopTapCard | null> => {
     const service = await getSupabaseServiceRoleClient();
     const { data: member, error } = await service
       .from("members")
@@ -25,7 +28,24 @@ export const getStopOffer = createServerFn({ method: "GET" })
       .eq("trail_eligible", true)
       .maybeSingle();
     if (error || !member) return null;
-    return offerForMember(service, member.id);
+    const { data: offers, error: offersError } = await service
+      .from("tap_card_member_offers")
+      .select("slot, live_visit_number, live_reward, live_terms")
+      .eq("member_id", member.id)
+      .not("live_reward", "is", null);
+    if (offersError) throw new Error(offersError.message);
+    const live = (offers ?? []).map((o) => ({
+      slot: o.slot as OfferSlot,
+      visitNumber: o.live_visit_number as number,
+      reward: o.live_reward as string,
+      terms: o.live_terms ?? "",
+    }));
+    const steps = live.filter((o) => o.slot !== "repeat").sort((x, y) => x.visitNumber - y.visitNumber);
+    const repeat = live.filter((o) => o.slot === "repeat");
+    return {
+      trailOffer: STANDARD_OFFER,
+      memberOffers: [...steps, ...repeat].map((o) => ({ label: offerLabel(o.slot, o.visitNumber), reward: o.reward, terms: o.terms })),
+    };
   });
 
 export type TrailPageData = {

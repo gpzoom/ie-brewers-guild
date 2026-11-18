@@ -76,15 +76,24 @@ export const getHolderCard = createServerFn({ method: "GET" }).handler(async ():
   if (!holderId) return null;
   const service = await getSupabaseServiceRoleClient();
   const year = tapCardYear(new Date());
-  const [holder, stops, visits, milestones, rewards, cards] = await Promise.all([
+  const nowIso = new Date().toISOString();
+  const [holder, stops, visits, milestones, rewards, cards, allVisits, waiting] = await Promise.all([
     service.from("tap_card_holders").select("name").eq("id", holderId).maybeSingle(),
     loadTrailStops(service),
     service.from("tap_card_visits").select("member_id, visit_day, redeemed_year").eq("holder_id", holderId).gte("visit_day", `${year}-01-01`),
     service.from("tap_card_milestones").select("id, stops_required, reward_text").eq("active", true),
     service.from("tap_card_rewards").select("milestone_id, year, handed_out_at").eq("holder_id", holderId).eq("year", year),
     service.from("tap_cards").select("code").eq("holder_id", holderId).is("deactivated_at", null).order("activated_at"),
+    service.from("tap_card_visits").select("member_id, visit_day, members(business_name)").eq("holder_id", holderId),
+    service
+      .from("tap_card_earned_rewards")
+      .select("reward, terms, expires_at, members(business_name)")
+      .eq("holder_id", holderId)
+      .is("used_at", null)
+      .gt("expires_at", nowIso),
   ]);
-  for (const r of [holder, visits, milestones, rewards, cards]) if (r.error) throw new Error(r.error.message);
+  for (const r of [holder, visits, milestones, rewards, cards, allVisits, waiting]) if (r.error) throw new Error(r.error.message);
+  const nameOf = (m: unknown) => (m as { business_name: string } | null)?.business_name ?? "";
   if (!holder.data) return null;
   return buildHolderView({
     holderName: holder.data.name,
@@ -94,6 +103,8 @@ export const getHolderCard = createServerFn({ method: "GET" }).handler(async ():
     milestones: (milestones.data ?? []).map((m) => ({ id: m.id, stopsRequired: m.stops_required, rewardText: m.reward_text })),
     rewards: (rewards.data ?? []).map((r) => ({ milestoneId: r.milestone_id, year: r.year, handedOutAt: r.handed_out_at })),
     cards: (cards.data ?? []).map((c) => c.code),
+    allVisits: (allVisits.data ?? []).map((v) => ({ memberId: v.member_id, memberName: nameOf(v.members), visitDay: v.visit_day })),
+    waiting: (waiting.data ?? []).map((w) => ({ memberName: nameOf(w.members), reward: w.reward, terms: w.terms, expiresAt: w.expires_at })),
   });
 });
 
