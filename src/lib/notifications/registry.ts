@@ -5,6 +5,7 @@ import type {
   NotificationTypeDef,
   UtcCalendarDetails,
 } from "./types";
+import { zoneLabel } from "@/lib/events/calendar-time-zone";
 
 const ALL_ROLES: MemberRole[] = ["owner", "co_owner", "editor", "media_events"];
 
@@ -92,7 +93,7 @@ const closedDayConflict: NotificationTypeDef<ClosedDayConflictDetails> = {
 
 function utcSentence(d: UtcCalendarDetails): string {
   const which = d.purpose === "food" ? "food calendar" : "events calendar";
-  return `Your Google Calendar (${which}) is set to UTC, so your event times show 7–8 hours early. In Google Calendar, set the calendar's time zone to Pacific Time - Los Angeles, then check your event times.`;
+  return `Your Google Calendar (${which}) is set to ${zoneLabel(d.feed_time_zone)}, not Pacific Time. For now the Guild site adjusts your event times so they show correctly, but please fix it: in Google Calendar, open Settings, choose this calendar, and set its Time zone to (GMT-08:00) Pacific Time - Los Angeles. Then check that your event times still look right.`;
 }
 
 const utcCalendar: NotificationTypeDef<UtcCalendarDetails> = {
@@ -105,7 +106,7 @@ const utcCalendar: NotificationTypeDef<UtcCalendarDetails> = {
   reminderDaysBefore: null,
   portal(d) {
     return {
-      title: "Your calendar is set to UTC",
+      title: "Your calendar's time zone needs fixing",
       body: utcSentence(d),
       buttons: [{ label: "Edit in Events", to: "/portal/events" }],
     };
@@ -113,7 +114,7 @@ const utcCalendar: NotificationTypeDef<UtcCalendarDetails> = {
   email(d, _ctx, sendKind) {
     return {
       heading:
-        sendKind === "reminder" ? "Reminder: your calendar is set to UTC" : "Your calendar is set to UTC",
+        sendKind === "reminder" ? "Reminder: your calendar's time zone needs fixing" : "Your calendar's time zone needs fixing",
       lines: [utcSentence(d)],
       button: { label: "Edit in Events", path: "/portal/events" },
     };

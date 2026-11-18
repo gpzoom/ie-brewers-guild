@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { feedTimeZone } from "@/lib/notifications/utc-calendar";
+import { feedTimeZone, isWrongTimeZone, wrongTimeZoneMessage } from "@/lib/events/calendar-time-zone";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { buildEventUpsertRows, parseIcsFeedForTag, staleSyncedEventIds } from "@/lib/events/ics-sync";
@@ -128,6 +128,57 @@ function toFriendlyFetchError(err: unknown): Error {
   return err instanceof Error ? err : new Error(String(err));
 }
 
+/** Downloads a calendar feed with the time and size limits; throws a readable error. */
+async function fetchIcsText(icsUrl: string): Promise<string> {
+  let response: Response;
+  try {
+    response = await fetch(icsUrl, { signal: AbortSignal.timeout(ICS_FETCH_TIMEOUT_MS) });
+  } catch (err) {
+    throw toFriendlyFetchError(err);
+  }
+  if (!response.ok) throw new Error(`ICS feed responded with ${response.status}`);
+
+  // Fast-path early exit when the server is honest about size -- the
+  // real bound is readBoundedText below, since Content-Length isn't
+  // always sent and can't be fully trusted (see readBoundedText's doc
+  // comment). Cancels the body rather than just discarding the
+  // response, so the connection is actually torn down instead of left
+  // to keep receiving bytes in the background after this has already
+  // decided to fail.
+  const contentLength = response.headers.get("content-length");
+  if (contentLength && Number(contentLength) > MAX_ICS_BYTES) {
+    await response.body?.cancel().catch(() => {});
+    throw new Error(`The calendar feed is larger than the ${Math.round(MAX_ICS_BYTES / (1024 * 1024))}MB limit.`);
+  }
+
+  try {
+    // The same AbortSignal governs the response body stream, not just
+    // the initial connection -- a timeout that fires mid-stream throws
+    // out of readBoundedText's reader.read() loop the same way it does
+    // out of fetch() itself, so this needs the same friendly-message
+    // conversion. See toFriendlyFetchError's doc comment.
+    return await readBoundedText(response, MAX_ICS_BYTES);
+  } catch (err) {
+    throw toFriendlyFetchError(err);
+  }
+}
+
+/**
+ * Checked before a calendar link is saved (owner, 2026-11-18): the calendar
+ * must be set to Pacific Time. Null when it's fine (or names no zone).
+ */
+export async function calendarLinkProblem(icsUrl: string): Promise<string | null> {
+  let icsText: string;
+  try {
+    icsText = await fetchIcsText(icsUrl);
+  } catch (err) {
+    const why = err instanceof Error ? err.message.replace(/[.\s]+$/, "") : "no answer";
+    return `We couldn't open that calendar link to check it (${why.slice(0, 200)}). Check the link and try again.`;
+  }
+  const zone = feedTimeZone(icsText);
+  return zone !== null && isWrongTimeZone(zone) ? wrongTimeZoneMessage(zone) : null;
+}
+
 // Each member has at most one ICS connection per purpose (events, food);
 // every lookup names the purpose, since maybeSingle() fails on two rows.
 export const getCalendarConnection = createServerFn({ method: "GET" })
@@ -186,6 +237,11 @@ export const saveIcsConnection = createServerFn({ method: "POST" })
       });
       if (problem) throw new Error(problem);
     }
+
+    // The calendar must be set to Pacific Time before it's connected
+    // (calendar-time-zone.ts). Calendars connected earlier are converted.
+    const linkProblem = await calendarLinkProblem(data.icsUrl);
+    if (linkProblem) throw new Error(linkProblem);
 
     const { data: existing } = await supabase
       .from("calendar_connections")
@@ -348,40 +404,7 @@ export async function syncOneIcsConnection(supabase: SupabaseClient, connection:
     const urlCheck = validateIcsUrl(connection.ics_url);
     if (!urlCheck.valid) throw new Error(urlCheck.reason);
 
-    let response: Response;
-    try {
-      response = await fetch(connection.ics_url, { signal: AbortSignal.timeout(ICS_FETCH_TIMEOUT_MS) });
-    } catch (err) {
-      throw toFriendlyFetchError(err);
-    }
-    if (!response.ok) throw new Error(`ICS feed responded with ${response.status}`);
-
-    // Fast-path early exit when the server is honest about size -- the
-    // real bound is readBoundedText below, since Content-Length isn't
-    // always sent and can't be fully trusted (see readBoundedText's doc
-    // comment). Cancels the body rather than just discarding the
-    // response, so the connection is actually torn down instead of left
-    // to keep receiving bytes in the background after this has already
-    // decided to fail.
-    const contentLength = response.headers.get("content-length");
-    if (contentLength && Number(contentLength) > MAX_ICS_BYTES) {
-      await response.body?.cancel().catch(() => {});
-      throw new Error(
-        `The calendar feed is larger than the ${Math.round(MAX_ICS_BYTES / (1024 * 1024))}MB limit.`,
-      );
-    }
-
-    let icsText: string;
-    try {
-      // The same AbortSignal governs the response body stream, not just
-      // the initial connection -- a timeout that fires mid-stream throws
-      // out of readBoundedText's reader.read() loop the same way it does
-      // out of fetch() itself, so this needs the same friendly-message
-      // conversion. See toFriendlyFetchError's doc comment.
-      icsText = await readBoundedText(response, MAX_ICS_BYTES);
-    } catch (err) {
-      throw toFriendlyFetchError(err);
-    }
+    const icsText = await fetchIcsText(connection.ics_url);
 
     // All-day entries start at the member's own local midnight.
     const { data: memberRow } = await supabase

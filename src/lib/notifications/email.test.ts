@@ -78,7 +78,7 @@ describe("buildNotificationEmail", () => {
     });
     expect(e.subject).toBe("Mars Brewing Co.: 2 alerts");
     expect(e.text).toContain("An event is on a closed day");
-    expect(e.text).toContain("Your calendar is set to UTC");
+    expect(e.text).toContain("Your calendar's time zone needs fixing");
     expect(e.text).toContain("food calendar");
   });
 

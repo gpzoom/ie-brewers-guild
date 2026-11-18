@@ -2,28 +2,19 @@ import type { MemberNotificationRow } from "@/lib/supabase/types";
 import type { ProblemOpen } from "./closed-day";
 import { rowFields, typeDef } from "./registry";
 import type { UtcCalendarDetails } from "./types";
+import { feedTimeZone, isUtcName, isWrongTimeZone } from "@/lib/events/calendar-time-zone";
+
+export { feedTimeZone };
 
 /**
- * A Google Calendar feed whose X-WR-TIMEZONE is UTC makes event times show
- * 7-8 hours early. We detect it; we never convert times. Pure: the server
- * wrapper loads the inputs and writes the result.
+ * A Google Calendar feed whose X-WR-TIMEZONE is anything but Pacific Time
+ * (the type keeps its first name, utc_calendar). Its times are converted for
+ * now (calendar-time-zone.ts); this alert asks the member to fix the setting.
+ * Pure: the server wrapper loads the inputs and writes the result.
  */
 export const UTC_CALENDAR = "utc_calendar";
 
-const UTC_ZONES = new Set(["utc", "gmt", "etc/utc", "etc/gmt", "etc/uct", "uct", "zulu"]);
-
-export function isUtcZone(tz: string | null): boolean {
-  return tz !== null && UTC_ZONES.has(tz.trim().toLowerCase());
-}
-
-/** The feed's X-WR-TIMEZONE value, or null when the header is absent. */
-export function feedTimeZone(icsText: string): string | null {
-  // A CRLF (or LF) followed by a space or tab continues the previous line.
-  const unfolded = icsText.replace(/\r?\n[ \t]/g, "");
-  const match = /^X-WR-TIMEZONE(?:;[^:\r\n]*)?:(.*)$/im.exec(unfolded);
-  const value = match?.[1].trim();
-  return value ? value : null;
-}
+export const isUtcZone = isUtcName;
 
 export type UtcConnection = {
   id: string;
@@ -53,7 +44,7 @@ export function decideUtcProblems(i: UtcInputs): {
   for (const c of i.connections) {
     const member = i.members.get(c.member_id);
     if (!member || !member.published) continue;
-    if (!isUtcZone(c.feed_time_zone) || isUtcZone(member.timezone)) continue;
+    if (!isWrongTimeZone(c.feed_time_zone)) continue;
     if (c.feed_has_timed_events !== true) continue;
     const key = utcKey(c.member_id, c.id);
     wanted.set(key, {

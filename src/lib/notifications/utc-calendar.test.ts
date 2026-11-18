@@ -86,13 +86,19 @@ describe("decideUtcProblems", () => {
     });
     expect(d.opens).toEqual([]);
   });
-  it("does not open for a member in UTC", () => {
+  it("opens for any zone other than Pacific Time", () => {
     const d = decideUtcProblems({
-      connections: [conn()],
-      members: members({ timezone: "UTC" }),
+      connections: [conn({ feed_time_zone: "America/New_York" })],
+      members: members(),
       openRows: [],
     });
-    expect(d.opens).toEqual([]);
+    expect(d.opens[0]?.details.feed_time_zone).toBe("America/New_York");
+  });
+  it("does not open for a Pacific calendar, or one that doesn't name its zone", () => {
+    for (const zone of ["America/Los_Angeles", "US/Pacific", null]) {
+      const d = decideUtcProblems({ connections: [conn({ feed_time_zone: zone })], members: members(), openRows: [] });
+      expect(d.opens).toEqual([]);
+    }
   });
   it("does not open for an unpublished member", () => {
     const d = decideUtcProblems({
