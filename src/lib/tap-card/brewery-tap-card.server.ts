@@ -1,32 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { getSupabaseServerClientForRequest } from "@/lib/supabase/server";
 import { generateUploadToken, hashUploadToken } from "@/lib/media/upload-tokens";
 import { resolveEmailSiteUrl } from "@/lib/email/build-email-content";
 import { currentRequestUrl } from "@/lib/request-url.server";
 import { newSetupLinkCore, type SetupLinkStore } from "@/lib/tap-card/setup-link";
+import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
 
 /**
  * A brewery's own Tap Card screen (Portal > Tap Card and /admin/tap-card):
- * the bar devices that can check cards in. The tables are server-only, so
- * each function first asks the database whether the signed-in person is
- * the owner, a co-owner, a full editor, or a Guild admin (Edit as them) of
- * this member -- the same is_member_full_editor check other editors use --
- * and only then uses the service-role client.
+ * the bar devices that can check cards in. requireTapCardEditor checks the
+ * caller before any service-role read or write.
  */
-async function requireTapCardEditor(memberId: string) {
-  const supabase = await getSupabaseServerClientForRequest();
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth?.user) throw new Error("Please sign in again.");
-  const { data: allowed, error } = await supabase.rpc("is_member_full_editor", { target_member_id: memberId });
-  if (error) throw new Error(error.message);
-  if (allowed !== true) throw new Error("Only the owner or a full editor can manage the Tap Card.");
-  const service = await getSupabaseServiceRoleClient();
-  const { data: member } = await service.from("members").select("member_type, trail_eligible").eq("id", memberId).maybeSingle();
-  if (!member || member.member_type !== "producer" || !member.trail_eligible) {
-    throw new Error("This member isn't a stop on the Inland Tap Card trail.");
-  }
-  return { userId: auth.user.id, service };
-}
 
 /** For the /admin menu: is this member a Tap Card stop? (Reads the member's own row.) */
 export const isTapCardStop = createServerFn({ method: "GET" })
