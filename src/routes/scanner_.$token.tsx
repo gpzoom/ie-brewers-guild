@@ -9,7 +9,7 @@ import { Eyebrow, TapCardShell } from "@/components/tap-card/TapCardShell";
  * printed as a QR code). Opening it only looks; the button uses it up, so a
  * message app previewing the link can't spend it.
  */
-export const Route = createFileRoute("/scanner/$token")({
+export const Route = createFileRoute("/scanner_/$token")({
   staleTime: 0,
   loader: ({ params }) => checkScannerLink({ data: { token: params.token } }),
   head: () => ({ meta: [{ title: "Bar device setup — Inland Tap Card" }, { name: "robots", content: "noindex, nofollow" }] }),

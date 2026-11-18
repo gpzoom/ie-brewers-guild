@@ -36,7 +36,7 @@ import { Route as VisitTokenRouteImport } from './routes/visit.$token'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
 import { Route as SigninHelpRouteImport } from './routes/signin_.help'
 import { Route as SendTokenRouteImport } from './routes/send.$token'
-import { Route as ScannerTokenRouteImport } from './routes/scanner.$token'
+import { Route as ScannerTokenRouteImport } from './routes/scanner_.$token'
 import { Route as PortalSetupRouteImport } from './routes/portal.setup'
 import { Route as PortalPreviewRouteImport } from './routes/portal.preview'
 import { Route as PortalSectionsRouteImport } from './routes/portal._sections'
@@ -214,9 +214,9 @@ const SendTokenRoute = SendTokenRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ScannerTokenRoute = ScannerTokenRouteImport.update({
-  id: '/$token',
-  path: '/$token',
-  getParentRoute: () => ScannerRoute,
+  id: '/scanner_/$token',
+  path: '/scanner/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PortalSetupRoute = PortalSetupRouteImport.update({
   id: '/portal/setup',
@@ -435,7 +435,7 @@ export interface FileRoutesByFullPath {
   '/members-2': typeof Members2Route
   '/news': typeof NewsRoute
   '/privacy': typeof PrivacyRoute
-  '/scanner': typeof ScannerRouteWithChildren
+  '/scanner': typeof ScannerRoute
   '/signin': typeof SigninRoute
   '/survey-results': typeof SurveyResultsRoute
   '/terms': typeof TermsRoute
@@ -503,7 +503,7 @@ export interface FileRoutesByTo {
   '/members-2': typeof Members2Route
   '/news': typeof NewsRoute
   '/privacy': typeof PrivacyRoute
-  '/scanner': typeof ScannerRouteWithChildren
+  '/scanner': typeof ScannerRoute
   '/signin': typeof SigninRoute
   '/survey-results': typeof SurveyResultsRoute
   '/terms': typeof TermsRoute
@@ -572,7 +572,7 @@ export interface FileRoutesById {
   '/members-2': typeof Members2Route
   '/news': typeof NewsRoute
   '/privacy': typeof PrivacyRoute
-  '/scanner': typeof ScannerRouteWithChildren
+  '/scanner': typeof ScannerRoute
   '/signin': typeof SigninRoute
   '/survey-results': typeof SurveyResultsRoute
   '/terms': typeof TermsRoute
@@ -609,7 +609,7 @@ export interface FileRoutesById {
   '/portal/_sections': typeof PortalSectionsRouteWithChildren
   '/portal/preview': typeof PortalPreviewRoute
   '/portal/setup': typeof PortalSetupRouteWithChildren
-  '/scanner/$token': typeof ScannerTokenRoute
+  '/scanner_/$token': typeof ScannerTokenRoute
   '/send/$token': typeof SendTokenRoute
   '/signin_/help': typeof SigninHelpRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
@@ -817,7 +817,7 @@ export interface FileRouteTypes {
     | '/portal/_sections'
     | '/portal/preview'
     | '/portal/setup'
-    | '/scanner/$token'
+    | '/scanner_/$token'
     | '/send/$token'
     | '/signin_/help'
     | '/unsubscribe/$token'
@@ -851,7 +851,7 @@ export interface RootRouteChildren {
   Members2Route: typeof Members2Route
   NewsRoute: typeof NewsRoute
   PrivacyRoute: typeof PrivacyRoute
-  ScannerRoute: typeof ScannerRouteWithChildren
+  ScannerRoute: typeof ScannerRoute
   SigninRoute: typeof SigninRoute
   SurveyResultsRoute: typeof SurveyResultsRoute
   TermsRoute: typeof TermsRoute
@@ -866,6 +866,7 @@ export interface RootRouteChildren {
   PortalSectionsRoute: typeof PortalSectionsRouteWithChildren
   PortalPreviewRoute: typeof PortalPreviewRoute
   PortalSetupRoute: typeof PortalSetupRouteWithChildren
+  ScannerTokenRoute: typeof ScannerTokenRoute
   SendTokenRoute: typeof SendTokenRoute
   SigninHelpRoute: typeof SigninHelpRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
@@ -1069,12 +1070,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SendTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/scanner/$token': {
-      id: '/scanner/$token'
-      path: '/$token'
+    '/scanner_/$token': {
+      id: '/scanner_/$token'
+      path: '/scanner/$token'
       fullPath: '/scanner/$token'
       preLoaderRoute: typeof ScannerTokenRouteImport
-      parentRoute: typeof ScannerRoute
+      parentRoute: typeof rootRouteImport
     }
     '/portal/setup': {
       id: '/portal/setup'
@@ -1423,17 +1424,6 @@ const GuildRouteChildren: GuildRouteChildren = {
 
 const GuildRouteWithChildren = GuildRoute._addFileChildren(GuildRouteChildren)
 
-interface ScannerRouteChildren {
-  ScannerTokenRoute: typeof ScannerTokenRoute
-}
-
-const ScannerRouteChildren: ScannerRouteChildren = {
-  ScannerTokenRoute: ScannerTokenRoute,
-}
-
-const ScannerRouteWithChildren =
-  ScannerRoute._addFileChildren(ScannerRouteChildren)
-
 interface PortalSectionsRouteChildren {
   PortalSectionsSectionRoute: typeof PortalSectionsSectionRoute
 }
@@ -1476,7 +1466,7 @@ const rootRouteChildren: RootRouteChildren = {
   Members2Route: Members2Route,
   NewsRoute: NewsRoute,
   PrivacyRoute: PrivacyRoute,
-  ScannerRoute: ScannerRouteWithChildren,
+  ScannerRoute: ScannerRoute,
   SigninRoute: SigninRoute,
   SurveyResultsRoute: SurveyResultsRoute,
   TermsRoute: TermsRoute,
@@ -1491,6 +1481,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortalSectionsRoute: PortalSectionsRouteWithChildren,
   PortalPreviewRoute: PortalPreviewRoute,
   PortalSetupRoute: PortalSetupRouteWithChildren,
+  ScannerTokenRoute: ScannerTokenRoute,
   SendTokenRoute: SendTokenRoute,
   SigninHelpRoute: SigninHelpRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
