@@ -3,6 +3,7 @@ import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from 
 import { generateUploadToken, hashUploadToken } from "@/lib/media/upload-tokens";
 import { resolveEmailSiteUrl } from "@/lib/email/build-email-content";
 import { currentRequestUrl } from "@/lib/request-url.server";
+import { newSetupLinkCore, type SetupLinkStore } from "@/lib/tap-card/setup-link";
 
 /**
  * A brewery's own Tap Card screen (Portal > Tap Card and /admin/tap-card):
@@ -71,6 +72,49 @@ export const createScannerDevice = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     return { setupUrl: `${resolveEmailSiteUrl(currentRequestUrl())}/scanner/${raw}` };
+  });
+
+/** "Show setup code": a fresh link for a device that isn't set up yet (the old one stops working). */
+export const newScannerSetupLink = createServerFn({ method: "POST" })
+  .inputValidator((data: { memberId: string; deviceId: string }) => ({
+    memberId: String(data?.memberId ?? ""),
+    deviceId: String(data?.deviceId ?? ""),
+  }))
+  .handler(async ({ data }): Promise<{ setupUrl: string }> => {
+    const { service } = await requireTapCardEditor(data.memberId);
+    const store: SetupLinkStore = {
+      async find(deviceId, memberId) {
+        const { data: row, error } = await service
+          .from("scanner_devices")
+          .select("revoked_at, last_used_at")
+          .eq("id", deviceId)
+          .eq("member_id", memberId)
+          .maybeSingle();
+        if (error) throw new Error(error.message);
+        return row ? { revokedAt: row.revoked_at, lastUsedAt: row.last_used_at } : null;
+      },
+      async replaceHashIfNotSetUp(deviceId, newHash) {
+        const { data: rows, error } = await service
+          .from("scanner_devices")
+          .update({ token_hash: newHash })
+          .eq("id", deviceId)
+          .eq("member_id", data.memberId)
+          .is("revoked_at", null)
+          .is("last_used_at", null)
+          .select("id");
+        if (error) throw new Error(error.message);
+        return (rows ?? []).length === 1;
+      },
+    };
+    const result = await newSetupLinkCore(store, data.memberId, data.deviceId, generateUploadToken());
+    if (!result.ok) {
+      throw new Error(
+        result.reason === "already-set-up"
+          ? "This device is already set up. To set up another one, add a new device."
+          : "That device has been turned off.",
+      );
+    }
+    return { setupUrl: `${resolveEmailSiteUrl(currentRequestUrl())}/scanner/${result.token}` };
   });
 
 export const revokeScannerDevice = createServerFn({ method: "POST" })

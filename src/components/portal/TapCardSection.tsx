@@ -3,6 +3,7 @@ import { TapCardOfferCard } from "@/components/portal/TapCardOfferCard";
 import {
   createScannerDevice,
   listScannerDevices,
+  newScannerSetupLink,
   revokeScannerDevice,
   type ScannerDeviceSummary,
 } from "@/lib/tap-card/brewery-tap-card.server";
@@ -78,6 +79,26 @@ export function TapCardSection({ memberId }: { memberId: string }) {
     }
   }
 
+  async function onShowCode(device: ScannerDeviceSummary) {
+    if (
+      setupUrl &&
+      setupLabel === device.label &&
+      !window.confirm(`Make a new setup code for "${device.label}"? The one showing now (and any printed copy) will stop working.`)
+    ) {
+      return;
+    }
+    setError(null);
+    setCopied(false);
+    try {
+      const result = await newScannerSetupLink({ data: { memberId, deviceId: device.id } });
+      setSetupUrl(result.setupUrl);
+      setSetupLabel(device.label);
+    } catch (err) {
+      setError(errorText(err));
+      await reload();
+    }
+  }
+
   async function onRevoke(device: ScannerDeviceSummary) {
     if (!window.confirm(`Turn off "${device.label}"? It won't be able to check cards in until you set it up again.`)) return;
     try {
@@ -131,9 +152,16 @@ export function TapCardSection({ memberId }: { memberId: string }) {
                     {d.lastUsedAt ? `Last used ${new Date(d.lastUsedAt).toLocaleDateString("en-US")}` : "Not set up yet"}
                   </div>
                 </div>
-                <button type="button" className={outlineClass} onClick={() => onRevoke(d)}>
-                  Turn off
-                </button>
+                <div className="flex flex-wrap justify-end gap-2">
+                  {!d.lastUsedAt && (
+                    <button type="button" className={outlineClass} onClick={() => onShowCode(d)}>
+                      Show setup code
+                    </button>
+                  )}
+                  <button type="button" className={outlineClass} onClick={() => onRevoke(d)}>
+                    Turn off
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
@@ -151,10 +179,11 @@ export function TapCardSection({ memberId }: { memberId: string }) {
 
         {setupUrl && (
           <div className="flex flex-col gap-2 rounded-xl border border-canvas-border bg-canvas px-4 py-3">
-            <p className="text-[13px] font-semibold text-ink">Setup link — open it on the bar device. It&rsquo;s shown only once and works once.</p>
+            <p className="text-[13px] font-semibold text-ink">Setup code for &ldquo;{setupLabel}&rdquo; — it works once.</p>
             <p className="text-[13px] text-ink-muted">
               Scan the QR code with the bar device&rsquo;s camera, or copy the link and open it there. You can download the QR
-              code to print and take to the bar.
+              code to print and take to the bar. If you lose it before the device is set up, press <b>Show setup code</b> next
+              to the device for a new one.
             </p>
             {qrDataUrl && (
               <img
