@@ -19,21 +19,21 @@ insert into public.event_hosts (event_id, host_member_id, status) values
 
 set local role anon;
 insert into _tap (line) select is(
-  (select count(*)::int from public.event_hosts), 1, 'a visitor reads only the shown link');
+  (select count(*)::int from public.event_hosts where event_id in ('f3000000-0000-4000-8000-000000000011', 'f3000000-0000-4000-8000-000000000012')), 1, 'a visitor reads only the shown link');
 reset role;
 
 -- The guest's event must be publicly readable too: an unpublished guest's link stays out of sight.
 update public.members set status = 'draft' where id = 'f1000000-0000-4000-8000-000000000004';
 set local role anon;
 insert into _tap (line) select is(
-  (select count(*)::int from public.event_hosts), 0, 'a visitor reads no link to an unpublished guest''s stop');
+  (select count(*)::int from public.event_hosts where event_id in ('f3000000-0000-4000-8000-000000000011', 'f3000000-0000-4000-8000-000000000012')), 0, 'a visitor reads no link to an unpublished guest''s stop');
 reset role;
 update public.members set status = 'published' where id = 'f1000000-0000-4000-8000-000000000004';
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000003","role":"authenticated"}';
 insert into _tap (line) select is(
-  (select count(*)::int from public.event_hosts), 2, 'the host''s Photos & events editor reads both');
+  (select count(*)::int from public.event_hosts where event_id in ('f3000000-0000-4000-8000-000000000011', 'f3000000-0000-4000-8000-000000000012')), 2, 'the host''s Photos & events editor reads both');
 insert into _tap (line) select lives_ok(
   $q$ select public.set_event_host_status('f3000000-0000-4000-8000-000000000011', 'hidden') $q$,
   'the host''s editor can hide a stop');
@@ -49,7 +49,7 @@ insert into _tap (line) select throws_ok(
 
 set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000006","role":"authenticated"}';
 insert into _tap (line) select is(
-  (select count(*)::int from public.event_hosts where status = 'hidden'), 0, 'a stranger reads no hidden link');
+  (select count(*)::int from public.event_hosts where status = 'hidden' and event_id in ('f3000000-0000-4000-8000-000000000011', 'f3000000-0000-4000-8000-000000000012')), 0, 'a stranger reads no hidden link');
 insert into _tap (line) select throws_ok(
   $q$ select public.set_event_host_status('f3000000-0000-4000-8000-000000000011', 'shown') $q$,
   '42501', null, 'a stranger can''t show or hide');
