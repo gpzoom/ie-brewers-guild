@@ -53,6 +53,12 @@ describe("Privacy Policy", () => {
     expect(t).toContain("signed in to your Tap Card");
   });
 
+  it("describes loyalty rewards and counter plates", () => {
+    expect(t).toContain("how many times you've visited each brewery");
+    expect(t).toContain("which rewards you've earned");
+    expect(t).toContain("counter plate");
+  });
+
   it("lists the Help button's form, which also notes the page and browser", () => {
     expect(t).toContain("the Help button");
     expect(t).toContain("which page you were on");
@@ -94,6 +100,15 @@ describe("Terms of Use", () => {
     expect(t).toContain("approved by the Guild");
     expect(t).toContain("21 or older");
     expect(t).toContain("can change or end the program");
+  });
+
+  it("sets the loyalty reward rules", () => {
+    expect(t).toContain("loyalty rewards");
+    expect(t).toContain("set by each brewery");
+    expect(t).toContain("expire");
+    expect(t).toContain("One reward per visit");
+    expect(t).toContain("no cash value");
+    expect(t).toContain("staff code");
   });
 
   it("covers the jobs board, as-is information and limits of liability", () => {

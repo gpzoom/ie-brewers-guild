@@ -131,7 +131,7 @@ Strip EXIF from uploaded photos. Phone photos carry GPS coordinates, and a membe
 
 ## The Guild Trail
 
-**Built as the Inland Tap Card (phase 1, 2026-11-17)** — see `docs/superpowers/specs/2026-11-17-inland-tap-card-design.md`. Plastic NFC/QR cards tapped by brewery staff on a bar device record visits and the once-a-year offer; holders see their progress at `/card`; the public Trail page is `/trail`; a trail stop's profile shows its offer. The profile progress strip described below is still not built.
+**Built as the Inland Tap Card (phase 1, 2026-11-17)** — see `docs/superpowers/specs/2026-11-17-inland-tap-card-design.md`. Plastic NFC/QR cards tapped by brewery staff on a bar device record visits and the once-a-year offer; holders see their progress at `/card`; the public Trail page is `/trail`; a trail stop's profile shows its offer. **Offers & loyalty (2026-11-18)** — see `docs/superpowers/specs/2026-11-17-tap-card-offers-loyalty-design.md`: the Beer Trail offer is the Guild's (breweries can't change it); each brewery adds up to 3 visit-number steps + 1 repeating loyalty reward, from Guild templates or scratch, approved by the Guild; earned rewards are banked and expire; a tap on the bar device records the visit and shows one reward (**Use it**, **Undo**); a **counter plate** (`/t/<code>`) lets a customer's own phone check in once the bartender enters a 4-digit staff code. The profile progress strip described below is still not built.
 
 Two mechanisms that look alike and must not be conflated.
 
@@ -1118,7 +1118,11 @@ Built 2026-11-17 (migration `20261120100000_inland_tap_card.sql`), replacing the
 - `tap_card_holders` — name, email (unique ignoring case), how the 21+ check was made.
 - `tap_card_visits` — one per holder per brewery per Pacific day; `redeemed_year` unique per holder and brewery.
 - `scanner_devices` — a brewery's bar devices (token hash; cookie `iebg_scanner`).
-- `tap_card_offers` — a brewer's own offer, `pending` / `approved` / `declined`.
+- `tap_card_member_offers` — a brewery's loyalty rewards (slots `step1`–`step3`, `repeat`): the approved (live) version plus one waiting/declined change (migration `20261121100000_tap_card_loyalty.sql`, which also drops phase 1's `tap_card_offers`).
+- `tap_card_offer_templates` — Guild templates members copy from.
+- `tap_card_member_settings` — per-brewery reward expiry (30/60/90/365 days, default 90).
+- `tap_card_earned_rewards` — banked rewards (a snapshot of the text, expiry, used on which visit); a step is earned once per person per brewery, one reward used per visit.
+- `tap_card_plates`, `tap_card_plate_misses` — a brewery's counter plate code + staff code; wrong codes (5 in 15 minutes locks).
 - `tap_card_milestones`, `tap_card_rewards` — Guild rewards for distinct stops in a calendar year.
 - `tap_card_login_tokens`, `tap_card_sessions` — holder sign-in (cookie `iebg_tapcard`), separate from member sign-in.
 - `site_settings.tap_card_period` (`calendar_year`) and `tap_card_price_cents`.

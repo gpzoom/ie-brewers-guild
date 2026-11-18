@@ -38,7 +38,7 @@ The Guild wants the public to visit member taprooms they have never been to, and
 | Brewer value | New-customer counts, Trail map listing + Wallet location alerts, slow-day boosts, card revenue |
 | Build approach | **Guild site owns the trail; WalletPush (owner's existing account, has an API) issues and updates Wallet passes** |
 | Reset period | **Calendar year** (Jan 1, Pacific time). Kept as a setting so it can change later |
-| Brewer's own offer | **Guild approves first**; standard nickel offer shows until approved |
+| Brewer's own offer | **Guild approves first**; standard nickel offer shows until approved. *Superseded 2026-11-17 by the offers & loyalty design: the Beer Trail offer is the Guild's only; breweries add loyalty rewards instead.* |
 | Launch | **Cards first** (phase 1); Wallet passes follow in phase 2, linked to the same holder accounts |
 
 ## Approaches considered

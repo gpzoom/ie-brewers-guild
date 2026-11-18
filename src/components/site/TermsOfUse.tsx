@@ -111,12 +111,17 @@ export function TermsOfUse() {
 
       <LegalSection title="Inland Tap Card">
         <p>
-          The Inland Tap Card is for people 21 or older. Each stop's offer can be used once per stop each
-          calendar year (Pacific time), and only by the card's holder. The standard offer is a first beer
-          for a nickel; a brewery may offer something else instead once it's approved by the Guild. A stop
-          may refuse service as the law requires. Guild rewards are for visiting different stops, not for
-          how much you drink. The Guild can change or end the program, its rewards and its stops at any
-          time.
+          The Inland Tap Card is for people 21 or older. The Beer Trail offer, set by the Guild, can be used
+          once per stop each calendar year (Pacific time), and only by the card's holder. A stop may refuse
+          service as the law requires. Guild rewards are for visiting different stops, not for how much you
+          drink. The Guild can change or end the program, its rewards and its stops at any time.
+        </p>
+        <p>
+          Breweries may also offer loyalty rewards for coming back. Each one is set by each brewery and
+          approved by the Guild, and the brewery honors it. A reward you earn waits on your card until you use
+          it, and rewards expire after the time the brewery shows. One reward per visit. Rewards have no cash
+          value and can't be transferred. At a brewery's counter plate, a check-in counts only when the
+          bartender enters the brewery's staff code.
         </p>
       </LegalSection>
 

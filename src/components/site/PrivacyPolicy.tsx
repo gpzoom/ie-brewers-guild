@@ -52,9 +52,12 @@ export function PrivacyPolicy() {
               <strong>If you have an Inland Tap Card:</strong> your name and email address, your card's
               code, which stop turned on your card and whether you or a bartender confirmed you're 21 or
               older, each visit (which stop and when) and which bar device recorded each visit, when you use
-              a stop's offer, and the Guild rewards you earn. When your card is tapped at a stop, the
+              a stop's offer, the Guild rewards you earn, how many times you've visited each brewery, and
+              which rewards you've earned from breweries and when you used them. When your card is tapped at a stop, the
               bartender sees your first name, whether you've already used that stop's offer this year, and
-              any Guild reward you just earned. If a bartender turns on your card for you, they type in your
+              any Guild reward you just earned, plus any loyalty rewards waiting for you there. If you check in
+              at a brewery's counter plate, your own phone shows the same, and the bartender enters a staff
+              code on it. If a bartender turns on your card for you, they type in your
               name and email; otherwise breweries don't see your email address.
             </>,
             <>
@@ -91,7 +94,7 @@ export function PrivacyPolicy() {
         <LegalList
           items={[
             "To run the member directory, events, jobs board and maps.",
-            "To run the Inland Tap Card: record visits and offers, show your progress, and give out Guild rewards.",
+            "To run the Inland Tap Card: record visits and offers, show your progress, and give out Guild and brewery rewards.",
             "To review applications to join and to set up and support member profiles.",
             "To answer your messages and help with sign-in problems.",
             "To send sign-in links, notices about your profile, and Guild emails to members.",
