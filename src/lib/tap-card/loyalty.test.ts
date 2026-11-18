@@ -6,6 +6,7 @@ import {
   offerLabel,
   pickBarRewards,
   validateMemberOffer,
+  validateTemplate,
   type LiveOffer,
 } from "@/lib/tap-card/loyalty";
 import { STANDARD_OFFER } from "@/lib/tap-card/tap-card-copy";
@@ -108,6 +109,21 @@ describe("pickBarRewards", () => {
   });
   it("has nothing when nothing is waiting", () => {
     expect(pickBarRewards({ trailAvailable: false, banked: [], now })).toEqual({ featured: null, others: [] });
+  });
+});
+
+describe("validateTemplate", () => {
+  const t = { title: "Free snack", reward: "Free soft pretzel", terms: "" };
+  it("accepts a template", () => {
+    expect(validateTemplate(t)).toEqual({ ok: true, value: t });
+  });
+  it("needs a name of 60 characters or fewer", () => {
+    expect(validateTemplate({ ...t, title: "  " })).toEqual({ ok: false, message: "Give the template a name." });
+    expect(validateTemplate({ ...t, title: "x".repeat(61) })).toEqual({ ok: false, message: "Keep the name to 60 characters or fewer." });
+  });
+  it("checks the reward and terms like an offer", () => {
+    expect(validateTemplate({ ...t, reward: "ab" })).toEqual({ ok: false, message: "Write at least 3 characters." });
+    expect(validateTemplate({ ...t, terms: "x".repeat(301) })).toEqual({ ok: false, message: "Keep the terms to 300 characters or fewer." });
   });
 });
 

@@ -1,17 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { listCardBatches } from "@/lib/tap-card/batches.server";
 import { listPendingOffers } from "@/lib/tap-card/offers.server";
+import { listOfferTemplates } from "@/lib/tap-card/offer-templates.server";
 import { listEarnedRewards, listMilestones } from "@/lib/tap-card/milestones.server";
 import { tapCardYear } from "@/lib/tap-card/tap-card-time";
 import { CardBatchesPanel } from "@/components/guild/tap-card/CardBatchesPanel";
 import { OfferApprovalsPanel } from "@/components/guild/tap-card/OfferApprovalsPanel";
+import { TemplatesPanel } from "@/components/guild/tap-card/TemplatesPanel";
 import { MilestonesPanel } from "@/components/guild/tap-card/MilestonesPanel";
 import { RewardsPanel } from "@/components/guild/tap-card/RewardsPanel";
 import { TapCardTabs, isTapCardTab, type TapCardTab } from "@/components/guild/tap-card/TapCardTabs";
 
 type Search = { tab?: TapCardTab; show?: "all" };
 
-/** /guild/tap-card: the Inland Tap Card program (every Guild admin). ?tab=cards|offers|milestones|rewards */
+/** /guild/tap-card: the Inland Tap Card program (every Guild admin). ?tab=cards|offers|templates|milestones|rewards */
 export const Route = createFileRoute("/guild/tap-card")({
   validateSearch: (search: Record<string, unknown>): Search => ({
     ...(isTapCardTab(search.tab) && search.tab !== "cards" ? { tab: search.tab } : {}),
@@ -31,6 +33,8 @@ export const Route = createFileRoute("/guild/tap-card")({
       }
       case "offers":
         return { ...base, pending };
+      case "templates":
+        return { ...base, templates: await listOfferTemplates() };
       case "milestones":
         return { ...base, milestones: await listMilestones() };
       case "rewards": {
@@ -50,7 +54,7 @@ function TapCardRoute() {
       <div className="flex max-w-[640px] flex-col gap-1.5">
         <h1 className="font-display text-[28px] font-bold leading-tight tracking-[-0.01em] text-ink">Inland Tap Card</h1>
         <p className="text-pretty text-[13px] text-[#564E45]">
-          Cards that bartenders tap to record visits and the once-a-year first-beer offer at every stop on the trail.
+          Cards that bartenders tap to record visits, the Beer Trail offer, and each stop's loyalty rewards.
         </p>
       </div>
       <TapCardTabs
@@ -60,6 +64,7 @@ function TapCardRoute() {
       />
       {data.tab === "cards" && "batches" in data && <CardBatchesPanel batches={data.batches} />}
       {data.tab === "offers" && "pending" in data && <OfferApprovalsPanel pending={data.pending} />}
+      {data.tab === "templates" && "templates" in data && <TemplatesPanel templates={data.templates} />}
       {data.tab === "milestones" && "milestones" in data && <MilestonesPanel milestones={data.milestones} />}
       {data.tab === "rewards" && "rewards" in data && (
         <RewardsPanel

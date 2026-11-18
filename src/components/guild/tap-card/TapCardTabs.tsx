@@ -1,9 +1,10 @@
-export const TAP_CARD_TABS = ["cards", "offers", "milestones", "rewards"] as const;
+export const TAP_CARD_TABS = ["cards", "offers", "templates", "milestones", "rewards"] as const;
 export type TapCardTab = (typeof TAP_CARD_TABS)[number];
 
 const LABELS: Record<TapCardTab, string> = {
   cards: "Cards",
   offers: "Offers",
+  templates: "Templates",
   milestones: "Milestones",
   rewards: "Rewards",
 };

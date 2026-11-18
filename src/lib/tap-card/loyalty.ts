@@ -49,6 +49,20 @@ export function validateMemberOffer(
   return { ok: true, value: { slot: input.slot, visitNumber: n, reward: text.reward, terms: text.terms } };
 }
 
+/** A Guild offer template: a name for the picker, plus the reward and terms it fills in. */
+export function validateTemplate(input: {
+  title: string;
+  reward: string;
+  terms: string;
+}): { ok: true; value: { title: string; reward: string; terms: string } } | { ok: false; message: string } {
+  const title = tidy(input.title);
+  if (!title) return { ok: false, message: "Give the template a name." };
+  if (title.length > TEMPLATE_TITLE_MAX) return { ok: false, message: `Keep the name to ${TEMPLATE_TITLE_MAX} characters or fewer.` };
+  const text = checkRewardAndTerms(input.reward, input.terms);
+  if (!text.ok) return text;
+  return { ok: true, value: { title, reward: text.reward, terms: text.terms } };
+}
+
 /** What a visit earns: steps first (in slot order), then the repeating reward. */
 export function earnedOnVisit(
   visitNumber: number,
