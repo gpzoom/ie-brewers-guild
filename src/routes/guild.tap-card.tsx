@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { listCardBatches } from "@/lib/tap-card/batches.server";
-import { listPendingOffers } from "@/lib/tap-card/offers.server";
+import { listPendingMemberOffers } from "@/lib/tap-card/member-offers.server";
 import { listOfferTemplates } from "@/lib/tap-card/offer-templates.server";
 import { listEarnedRewards, listMilestones } from "@/lib/tap-card/milestones.server";
 import { tapCardYear } from "@/lib/tap-card/tap-card-time";
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/guild/tap-card")({
   }),
   staleTime: 0,
   loader: async ({ deps }) => {
-    const pending = await listPendingOffers();
+    const pending = await listPendingMemberOffers();
     const base = { tab: deps.tab, pendingCount: pending.length };
     switch (deps.tab) {
       case "cards": {
