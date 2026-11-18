@@ -5,7 +5,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(17);
+insert into _tap (line) select plan(20);
 
 insert into _tap (line) select has_table('public', t, t || ' exists')
 from unnest(array['tap_card_member_offers', 'tap_card_offer_templates', 'tap_card_member_settings',
@@ -66,6 +66,20 @@ insert into _tap (line) select throws_ok(
   $q$ update public.tap_card_earned_rewards set used_at = now(), used_visit_id = 'f4400000-0000-4000-8000-000000000003'
       where slot = 'repeat' and earned_visit_id = 'f4400000-0000-4000-8000-000000000002' $q$,
   '23505', null, 'one member reward used per visit');
+
+-- One reward per visit across the Beer Trail offer and member rewards (both directions).
+insert into _tap (line) select throws_ok(
+  $q$ update public.tap_card_visits set redeemed_year = 2026 where id = 'f4400000-0000-4000-8000-000000000003' $q$,
+  '23505', null, 'the Beer Trail offer cannot be used on a visit that already used a member reward');
+update public.tap_card_visits set redeemed_year = 2027 where id = 'f4400000-0000-4000-8000-000000000002';
+insert into _tap (line) select throws_ok(
+  $q$ update public.tap_card_earned_rewards set used_at = now(), used_visit_id = 'f4400000-0000-4000-8000-000000000002'
+      where slot = 'repeat' and earned_visit_id = 'f4400000-0000-4000-8000-000000000003' $q$,
+  '23505', null, 'a member reward cannot be used on a visit that used the Beer Trail offer');
+-- Test cleanup deletes holders; a used reward must not block that.
+insert into _tap (line) select lives_ok(
+  $q$ delete from public.tap_card_holders where id = 'f4100000-0000-4000-8000-000000000001' $q$,
+  'deleting a holder with a used reward works');
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"f0000000-0000-4000-8000-000000000001","role":"authenticated"}';

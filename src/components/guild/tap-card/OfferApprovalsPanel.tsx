@@ -16,7 +16,7 @@ export function OfferApprovalsPanel({ pending }: { pending: PendingMemberOffer[]
     setBusy(true);
     setMessage(null);
     try {
-      await reviewMemberOffer({ data: { id: offer.id, approve, note: approve ? "" : note } });
+      await reviewMemberOffer({ data: { id: offer.id, approve, note: approve ? "" : note, seen: { ...offer.draft, submittedAt: offer.submittedAt } } });
       setMessage({ kind: "ok", text: `${offer.memberName}: ${approve ? "approved" : "declined"}.` });
       setDeclining(null);
       setNote("");

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TapCardMemberOfferRow } from "@/lib/supabase/types";
-import { otherStepNumbers, slotViews } from "@/lib/tap-card/member-offers-view";
+import { otherStepNumbers, sameDraft, slotViews } from "@/lib/tap-card/member-offers-view";
 
 function row(o: Partial<TapCardMemberOfferRow>): TapCardMemberOfferRow {
   return {
@@ -83,5 +83,29 @@ describe("otherStepNumbers", () => {
   it("ignores declined changes", () => {
     const declined = slotViews([row({ slot: "step1", draft_visit_number: 7, draft_reward: "X y z", draft_terms: "", draft_status: "declined" })]);
     expect(otherStepNumbers(declined, "step2", "live-and-draft")).toEqual([]);
+  });
+});
+
+describe("sameDraft", () => {
+  const waiting = row({
+    draft_visit_number: 4,
+    draft_reward: "Free pretzel",
+    draft_terms: "Food only",
+    draft_status: "pending",
+    draft_submitted_at: "2026-11-18T10:00:00+00:00",
+  });
+  const seen = { visitNumber: 4, reward: "Free pretzel", terms: "Food only", submittedAt: "2026-11-18T10:00:00+00:00" };
+
+  it("matches the change the admin is looking at", () => {
+    expect(sameDraft(waiting, seen)).toBe(true);
+  });
+  it("refuses when the brewery sent something else since", () => {
+    expect(sameDraft({ ...waiting, draft_reward: "Free pint" }, seen)).toBe(false);
+    expect(sameDraft({ ...waiting, draft_visit_number: 5 }, seen)).toBe(false);
+    expect(sameDraft({ ...waiting, draft_terms: "" }, seen)).toBe(false);
+    expect(sameDraft({ ...waiting, draft_submitted_at: "2026-11-18T11:00:00+00:00" }, seen)).toBe(false);
+  });
+  it("refuses when nothing is waiting", () => {
+    expect(sameDraft({ ...waiting, draft_status: "declined" }, seen)).toBe(false);
   });
 });

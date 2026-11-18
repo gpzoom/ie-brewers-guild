@@ -49,3 +49,21 @@ export function otherStepNumbers(views: SlotView[], slot: OfferSlot, use: "live-
   }
   return [...new Set(numbers)].sort((a, b) => a - b);
 }
+
+/** The waiting change exactly as a Guild admin saw it on the approvals screen. */
+export type SeenDraft = { visitNumber: number; reward: string; terms: string; submittedAt: string };
+
+/**
+ * Approve/decline only what the admin actually looked at: if the brewery sent
+ * a different change since, refuse (final review, Important 2).
+ */
+export function sameDraft(row: TapCardMemberOfferRow, seen: SeenDraft): boolean {
+  return (
+    row.draft_status === "pending" &&
+    row.draft_visit_number === seen.visitNumber &&
+    row.draft_reward === seen.reward &&
+    (row.draft_terms ?? "") === seen.terms &&
+    row.draft_submitted_at !== null &&
+    new Date(row.draft_submitted_at).getTime() === new Date(seen.submittedAt).getTime()
+  );
+}

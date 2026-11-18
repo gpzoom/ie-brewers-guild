@@ -1,5 +1,7 @@
 import type { TapCardOfferSlot } from "@/lib/supabase/types";
+import { TZDate } from "@date-fns/tz";
 import { STANDARD_OFFER } from "@/lib/tap-card/tap-card-copy";
+import { TAP_CARD_TZ } from "@/lib/tap-card/tap-card-time";
 
 /**
  * Loyalty rewards (spec 2026-11-17-tap-card-offers-loyalty-design.md).
@@ -76,8 +78,14 @@ export function earnedOnVisit(
   return [...steps, ...repeat].map((o) => ({ slot: o.slot, reward: o.reward, terms: o.terms }));
 }
 
+/**
+ * A reward lasts the brewery's number of days, through the end of that last
+ * Pacific day -- "Use by Jun 30" means all of June 30 (final review).
+ */
 export function expiresAt(earnedAt: Date, days: number): Date {
-  return new Date(earnedAt.getTime() + days * 24 * 60 * 60 * 1000);
+  const local = new TZDate(earnedAt.getTime(), TAP_CARD_TZ);
+  const last = new TZDate(local.getFullYear(), local.getMonth(), local.getDate() + days, 23, 59, 59, 999, TAP_CARD_TZ);
+  return new Date(last.getTime());
 }
 
 export type BarReward =

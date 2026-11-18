@@ -4,7 +4,7 @@ import type { TapCardMemberOfferRow } from "@/lib/supabase/types";
 import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
 import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
 import { DEFAULT_EXPIRY_DAYS, EXPIRY_CHOICES, validateMemberOffer, type OfferSlot } from "@/lib/tap-card/loyalty";
-import { SLOT_ORDER, otherStepNumbers, slotViews, type OfferVersion, type SlotView } from "@/lib/tap-card/member-offers-view";
+import { SLOT_ORDER, otherStepNumbers, sameDraft, slotViews, type OfferVersion, type SeenDraft, type SlotView } from "@/lib/tap-card/member-offers-view";
 import { STANDARD_OFFER } from "@/lib/tap-card/tap-card-copy";
 
 /**
@@ -171,26 +171,34 @@ export const listPendingMemberOffers = createServerFn({ method: "GET" }).handler
  * stays on the brewery's screen with the note; the live version is untouched.
  */
 export const reviewMemberOffer = createServerFn({ method: "POST" })
-  .inputValidator((data: { id: string; approve: boolean; note: string }) => ({
+  .inputValidator((data: { id: string; approve: boolean; note: string; seen: SeenDraft }) => ({
     id: String(data?.id ?? ""),
     approve: data?.approve === true,
     note: String(data?.note ?? "").replace(/\s+/g, " ").trim().slice(0, 300),
+    seen: {
+      visitNumber: Number(data?.seen?.visitNumber),
+      reward: String(data?.seen?.reward ?? ""),
+      terms: String(data?.seen?.terms ?? ""),
+      submittedAt: String(data?.seen?.submittedAt ?? ""),
+    },
   }))
   .handler(async ({ data }): Promise<{ ok: true }> => {
     const { userId, service } = await requireTapCardGuildAdmin();
     const { data: found, error } = await service.from("tap_card_member_offers").select(OFFER_COLUMNS).eq("id", data.id).maybeSingle();
     if (error) throw new Error(error.message);
     const row = found as TapCardMemberOfferRow | null;
-    if (!row || row.draft_status !== "pending" || row.draft_visit_number === null || row.draft_reward === null) {
-      throw new Error("That change isn't waiting any more.");
-    }
+    const gone = "That change isn't waiting any more, or the brewery sent a new one. Reload to see the latest.";
+    if (!row || row.draft_visit_number === null || row.draft_reward === null || !sameDraft(row, data.seen)) throw new Error(gone);
     if (!data.approve) {
-      const { error: declineError } = await service
+      const { data: declined, error: declineError } = await service
         .from("tap_card_member_offers")
         .update({ draft_status: "declined", decline_note: data.note || null })
         .eq("id", row.id)
-        .eq("draft_status", "pending");
+        .eq("draft_status", "pending")
+        .eq("draft_submitted_at", row.draft_submitted_at!)
+        .select("id");
       if (declineError) throw new Error(declineError.message);
+      if ((declined ?? []).length !== 1) throw new Error(gone);
       return { ok: true };
     }
     const views = slotViews(await loadRows(service, row.member_id));
@@ -199,7 +207,7 @@ export const reviewMemberOffer = createServerFn({ method: "POST" })
       otherStepNumbers(views, row.slot, "live"),
     );
     if (!checked.ok) throw new Error(checked.message);
-    const { error: approveError } = await service
+    const { data: approved, error: approveError } = await service
       .from("tap_card_member_offers")
       .update({
         live_visit_number: checked.value.visitNumber,
@@ -217,7 +225,9 @@ export const reviewMemberOffer = createServerFn({ method: "POST" })
       })
       .eq("id", row.id)
       .eq("draft_status", "pending")
-      .eq("draft_reward", row.draft_reward);
+      .eq("draft_submitted_at", row.draft_submitted_at!)
+      .select("id");
     if (approveError) throw new Error(approveError.message);
+    if ((approved ?? []).length !== 1) throw new Error(gone);
     return { ok: true };
   });

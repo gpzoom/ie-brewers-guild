@@ -35,6 +35,7 @@ function StaffCodeField({ value, onChange }: { value: string; onChange: (v: stri
       Bartender: staff code
       <input
         className={`${inputClass} max-w-[160px] text-center text-[22px] tracking-[0.3em]`}
+        type="password"
         inputMode="numeric"
         autoComplete="off"
         maxLength={4}

@@ -32,3 +32,31 @@ export function safeHolderNext(raw: unknown): string | null {
   if (raw === "/card") return raw;
   return /^\/t\/[0-9A-HJKMNP-TV-Z]{8}$/.test(raw) ? raw : null;
 }
+
+/** Staff-code tries at one plate by one customer in the last PLATE_LOCK_MINUTES. */
+export type AttemptStore = {
+  record(): Promise<string>;
+  recent(): Promise<number>;
+  clear(id: string): Promise<void>;
+};
+
+/**
+ * Every try is written down BEFORE the code is checked and counted after, so
+ * guesses sent all at once each see the others and can't slip past the limit
+ * (final review, Important 1). A right code (within the limit) erases its try.
+ */
+export async function staffCodeGate(
+  store: AttemptStore,
+  entered: string,
+  stored: string | null,
+): Promise<{ kind: "ok" } | { kind: "wrong-code"; triesLeft: number } | { kind: "locked" }> {
+  const id = await store.record();
+  const tries = await store.recent();
+  if (tries > PLATE_MAX_MISSES) return { kind: "locked" };
+  if (staffCodeMatches(entered, stored)) {
+    await store.clear(id);
+    return { kind: "ok" };
+  }
+  const left = triesLeft(tries);
+  return left === 0 ? { kind: "locked" } : { kind: "wrong-code", triesLeft: left };
+}

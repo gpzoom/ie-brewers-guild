@@ -82,8 +82,13 @@ describe("earnedOnVisit", () => {
 });
 
 describe("expiresAt", () => {
-  it("adds the brewery's days", () => {
-    expect(expiresAt(new Date("2026-03-01T20:00:00Z"), 90).toISOString()).toBe("2026-05-30T20:00:00.000Z");
+  it("adds the brewery's days and lasts to the end of that Pacific day", () => {
+    // Earned Mar 1 at noon Pacific; 90 days later is May 30, good until 11:59:59.999 pm Pacific.
+    expect(expiresAt(new Date("2026-03-01T20:00:00Z"), 90).toISOString()).toBe("2026-05-31T06:59:59.999Z");
+  });
+  it("keeps a late-evening reward on its own Pacific day", () => {
+    // Earned Jun 10 at 11 pm Pacific (Jun 11 06:00 UTC); 30 days later is Jul 10 Pacific.
+    expect(expiresAt(new Date("2026-06-11T06:00:00Z"), 30).toISOString()).toBe("2026-07-11T06:59:59.999Z");
   });
 });
 

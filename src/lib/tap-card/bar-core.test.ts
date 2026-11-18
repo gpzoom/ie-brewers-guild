@@ -152,8 +152,8 @@ describe("checkInVisit", () => {
   it("banks an earned reward with the brewery's expiry", async () => {
     const { store, earned } = memoryStore({ visits: [earlier("2026-06-01", "old1", 2026)], offers: { m1: [pretzel] }, expiry: { m1: 30 } });
     const state = await checkInVisit(store, input);
-    expect(earned[0].expiresAt).toBe("2026-07-10T20:00:00.000Z");
-    expect(state.featured).toEqual({ kind: "member", id: earned[0].id, reward: "Free soft pretzel", terms: "Food only", expiresAt: "2026-07-10T20:00:00.000Z" });
+    expect(earned[0].expiresAt).toBe("2026-07-11T06:59:59.999Z");
+    expect(state.featured).toEqual({ kind: "member", id: earned[0].id, reward: "Free soft pretzel", terms: "Food only", expiresAt: "2026-07-11T06:59:59.999Z" });
   });
 
   it("features the soonest-expiring reward once the Beer Trail offer is used this year", async () => {

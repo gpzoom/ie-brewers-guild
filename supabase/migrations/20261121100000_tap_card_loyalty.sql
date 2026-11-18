@@ -15,7 +15,8 @@
 --   * a ladder step (step1-3) is earned once per person per brewery, ever --
 --     even if the brewery edits or re-adds it;
 --   * a reward slot is earned at most once per visit;
---   * at most one member reward is used per visit.
+--   * at most one reward is used per visit -- one member reward, or the Beer
+--     Trail offer, never both (triggers below, serialized on the visit row).
 
 -- The Beer Trail offer is the Guild's now; breweries no longer replace it.
 drop table public.tap_card_offers;
@@ -73,8 +74,9 @@ create table public.tap_card_plates (
   updated_at timestamptz not null default now()
 );
 
--- Wrong staff codes typed at a plate: 5 within 15 minutes locks that plate
--- for that customer (counted by the server).
+-- Staff-code tries at a plate, written before the code is checked (a right
+-- code erases its own try): more than 5 within 15 minutes locks that plate
+-- for that customer.
 create table public.tap_card_plate_misses (
   id uuid primary key default gen_random_uuid(),
   holder_id uuid not null references public.tap_card_holders (id) on delete cascade,
@@ -110,6 +112,43 @@ create unique index tap_card_earned_rewards_one_used_a_visit
 create index tap_card_earned_rewards_waiting
   on public.tap_card_earned_rewards (holder_id, member_id)
   where used_at is null;
+
+-- One reward per visit across both kinds: the Beer Trail offer lives on the
+-- visit row (redeemed_year), member rewards on tap_card_earned_rewards
+-- (used_visit_id). Each side refuses if the other is already used, with the
+-- visit row locked so two presses at once can't both pass. unique_violation
+-- (23505) so the app reads it as "already used".
+create function public.tap_card_one_reward_per_visit_trail() returns trigger
+language plpgsql set search_path = public as $fn$
+begin
+  if new.redeemed_year is not null and old.redeemed_year is null
+     and exists (select 1 from public.tap_card_earned_rewards where used_visit_id = new.id) then
+    raise exception 'a reward was already used on this visit' using errcode = '23505';
+  end if;
+  return new;
+end $fn$;
+
+create function public.tap_card_one_reward_per_visit_member() returns trigger
+language plpgsql set search_path = public as $fn$
+declare redeemed smallint;
+begin
+  if new.used_visit_id is not null and new.used_visit_id is distinct from old.used_visit_id then
+    select redeemed_year into redeemed from public.tap_card_visits where id = new.used_visit_id for update;
+    if redeemed is not null then
+      raise exception 'the Beer Trail offer was already used on this visit' using errcode = '23505';
+    end if;
+  end if;
+  return new;
+end $fn$;
+
+create trigger tap_card_visits_one_reward
+  before update of redeemed_year on public.tap_card_visits
+  for each row execute function public.tap_card_one_reward_per_visit_trail();
+create trigger tap_card_earned_rewards_one_reward
+  before update of used_visit_id on public.tap_card_earned_rewards
+  for each row execute function public.tap_card_one_reward_per_visit_member();
+revoke all on function public.tap_card_one_reward_per_visit_trail() from public, anon, authenticated;
+revoke all on function public.tap_card_one_reward_per_visit_member() from public, anon, authenticated;
 
 do $$
 declare t text;
