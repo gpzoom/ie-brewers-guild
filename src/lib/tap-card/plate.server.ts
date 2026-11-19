@@ -9,7 +9,6 @@ import { barState, checkInVisit, undoBarReward, useBarReward, type BarState, typ
 import { barStore } from "@/lib/tap-card/bar-store.server";
 import { awardMilestones } from "@/lib/tap-card/tap-card-store.server";
 import { claimPlatePending, onStagingSite, readHolderId, readPlatePending, setPlatePending } from "@/lib/tap-card/tap-card-cookies.server";
-import { generateUploadToken } from "@/lib/media/upload-tokens";
 import { decideStaffQrView, isStaffQrToken, memberTakesCheckIns, parsePendingChoice, staffQrUrl, type PendingChoice } from "@/lib/tap-card/staff-qr";
 import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
 import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
@@ -53,10 +52,10 @@ async function ensurePlate(service: SupabaseClient, memberId: string): Promise<{
     if (error) throw new Error(error.message);
     if (data?.staff_qr) return { code: data.code, staffCode: data.staff_code, staffQr: data.staff_qr };
     if (data) {
-      // A plate made before the bartender QR: give it one now.
+      // A plate made before the bartender QR (or before 8-character codes): give it one now.
       const { error: qrError } = await service
         .from("tap_card_plates")
-        .update({ staff_qr: generateUploadToken() })
+        .update({ staff_qr: generateCardCode() })
         .eq("member_id", memberId)
         .is("staff_qr", null);
       if (qrError && qrError.code !== "23505") throw new Error(qrError.message);
@@ -64,7 +63,7 @@ async function ensurePlate(service: SupabaseClient, memberId: string): Promise<{
     }
     const { error: insertError } = await service
       .from("tap_card_plates")
-      .insert({ member_id: memberId, code: generateCardCode(), staff_qr: generateUploadToken() });
+      .insert({ member_id: memberId, code: generateCardCode(), staff_qr: generateCardCode() });
     if (insertError && insertError.code !== "23505") throw new Error(insertError.message);
   }
   throw new Error("Couldn't make the plate link. Try again.");
@@ -274,11 +273,11 @@ export const undoAtPlate = createServerFn({ method: "POST" })
 
 // ---- The brewery's Counter plate box (Portal/Admin > Tap Card) ----
 
-export type CounterPlate = { url: string; printedCode: string; staffCode: string | null; staffQrUrl: string };
+export type CounterPlate = { url: string; printedCode: string; staffCode: string | null; staffQrUrl: string; staffQrPrinted: string };
 
 function counterPlate(plate: { code: string; staffCode: string | null; staffQr: string }): CounterPlate {
   const site = resolveEmailSiteUrl(currentRequestUrl());
-  return { url: plateUrl(site, plate.code), printedCode: formatCardCode(plate.code), staffCode: plate.staffCode, staffQrUrl: staffQrUrl(site, plate.staffQr) };
+  return { url: plateUrl(site, plate.code), printedCode: formatCardCode(plate.code), staffCode: plate.staffCode, staffQrUrl: staffQrUrl(site, plate.staffQr), staffQrPrinted: formatCardCode(plate.staffQr) };
 }
 
 export const getCounterPlate = createServerFn({ method: "GET" })
@@ -294,7 +293,7 @@ export const resetStaffQr = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<CounterPlate> => {
     const { service } = await requireTapCardEditor(data.memberId);
     const current = await ensurePlate(service, data.memberId);
-    const staffQr = generateUploadToken();
+    const staffQr = generateCardCode();
     const { error } = await service
       .from("tap_card_plates")
       .update({ staff_qr: staffQr, updated_at: new Date().toISOString() })

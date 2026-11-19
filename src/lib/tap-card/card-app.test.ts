@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { homeScreenKind, scannedTapCardPath, successLinks } from "@/lib/tap-card/card-app";
 
-const TOKEN = "a".repeat(40) + "_-9";
+const TOKEN = "ABCD1234";
 
 describe("scannedTapCardPath", () => {
   it("opens a counter plate or a bartender QR code, on this site", () => {
@@ -10,7 +10,7 @@ describe("scannedTapCardPath", () => {
     expect(scannedTapCardPath("/t/ABCD2345")).toBe("/t/ABCD2345");
   });
   it("ignores every other code", () => {
-    for (const bad of ["https://example.com/", "https://iscbrewersguild.org/card", "https://iscbrewersguild.org/t/abc", "hello", "", `/s/${TOKEN}x`, "javascript:alert(1)"]) {
+    for (const bad of ["https://example.com/", "https://iscbrewersguild.org/card", "https://iscbrewersguild.org/t/abc", "hello", "", `/s/${TOKEN}X`, `/s/${"a".repeat(40)}_-9`, "javascript:alert(1)"]) {
       expect(scannedTapCardPath(bad)).toBeNull();
     }
   });

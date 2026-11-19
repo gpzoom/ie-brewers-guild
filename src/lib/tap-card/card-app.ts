@@ -4,7 +4,7 @@
  */
 
 const PLATE_PATH = /^\/t\/[0-9A-HJKMNP-TV-Z]{8}$/;
-const STAFF_QR_PATH = /^\/s\/[A-Za-z0-9_-]{43}$/;
+const STAFF_QR_PATH = /^\/s\/[0-9A-HJKMNP-TV-Z]{8}$/;
 
 /**
  * The page a scanned code should open -- only a counter plate or a

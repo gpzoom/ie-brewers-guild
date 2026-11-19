@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SETUP_QR_SIZE, setupQrDataUrl, setupQrFilename } from "@/lib/tap-card/setup-qr";
+import { SETUP_QR_SIZE, qrCaptionLines, setupQrDataUrl, setupQrFilename } from "@/lib/tap-card/setup-qr";
 
 function pngSize(dataUrl: string) {
   const bytes = Buffer.from(dataUrl.replace(/^data:image\/png;base64,/, ""), "base64");
@@ -27,5 +27,12 @@ describe("setupQrFilename", () => {
   it("falls back when the name has nothing usable", () => {
     expect(setupQrFilename("")).toBe("bar-device-qr.png");
     expect(setupQrFilename("!!!")).toBe("bar-device-qr.png");
+  });
+});
+
+describe("qrCaptionLines", () => {
+  it("names the QR and shows its code", () => {
+    expect(qrCaptionLines("plate", "ABCD-1234")).toEqual(["Counter plate", "ABCD-1234"]);
+    expect(qrCaptionLines("bartender", "WXYZ-5678")).toEqual(["Bartender QR", "WXYZ-5678"]);
   });
 });

@@ -16,7 +16,7 @@ export function staffQrUrl(siteUrl: string, token: string): string {
 }
 
 export function isStaffQrToken(raw: unknown): raw is string {
-  return typeof raw === "string" && /^[A-Za-z0-9_-]{43}$/.test(raw);
+  return typeof raw === "string" && /^[0-9A-HJKMNP-TV-Z]{8}$/.test(raw);
 }
 
 export function parsePendingChoice(raw: unknown): PendingChoice | null {

@@ -9,7 +9,8 @@ import {
   staffQrUrl,
 } from "@/lib/tap-card/staff-qr";
 
-const TOKEN = "a".repeat(40) + "_-9";
+const TOKEN = "ABCD1234";
+const OLD_LONG_TOKEN = "a".repeat(40) + "_-9";
 const now = new Date("2026-11-18T20:00:00Z");
 const minutesAgo = (m: number) => new Date(now.getTime() - m * 60 * 1000).toISOString();
 
@@ -17,9 +18,9 @@ describe("staffQrUrl / isStaffQrToken", () => {
   it("is the site's /s/ link", () => {
     expect(staffQrUrl("https://example.org", TOKEN)).toBe(`https://example.org/s/${TOKEN}`);
   });
-  it("takes only a 43-character base64url token", () => {
+  it("takes only an 8-character code in the plate alphabet", () => {
     expect(isStaffQrToken(TOKEN)).toBe(true);
-    for (const bad of ["", "abc", TOKEN + "x", TOKEN.slice(0, 42) + "/", 42]) expect(isStaffQrToken(bad)).toBe(false);
+    for (const bad of ["", "abc", TOKEN + "X", "abcd1234", "ABCD123I", OLD_LONG_TOKEN, 42]) expect(isStaffQrToken(bad)).toBe(false);
   });
 });
 

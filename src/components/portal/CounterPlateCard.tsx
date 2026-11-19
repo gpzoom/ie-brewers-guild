@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { getCounterPlate, resetPlateLink, resetStaffQr, saveStaffCode, type CounterPlate } from "@/lib/tap-card/plate.server";
-import { SETUP_QR_SIZE, setupQrDataUrl } from "@/lib/tap-card/setup-qr";
+import { CAPTIONED_QR_HEIGHT, SETUP_QR_SIZE, captionedQrDataUrl, qrCaptionLines } from "@/lib/tap-card/setup-qr";
 
 const fieldClass =
   "h-11 w-full min-w-0 rounded-[9px] border border-canvas-border bg-white px-3 text-[14px] text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
@@ -36,21 +36,25 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
     setQr(null);
     if (!plate) return;
     let current = true;
-    setupQrDataUrl(plate.url).then((d) => current && setQr(d)).catch(() => undefined);
+    captionedQrDataUrl(plate.url, qrCaptionLines("plate", plate.printedCode))
+      .then((d) => current && setQr(d))
+      .catch(() => undefined);
     return () => {
       current = false;
     };
-  }, [plate?.url]);
+  }, [plate?.url, plate?.printedCode]);
 
   useEffect(() => {
     setStaffQr(null);
     if (!plate) return;
     let current = true;
-    setupQrDataUrl(plate.staffQrUrl).then((d) => current && setStaffQr(d)).catch(() => undefined);
+    captionedQrDataUrl(plate.staffQrUrl, qrCaptionLines("bartender", plate.staffQrPrinted))
+      .then((d) => current && setStaffQr(d))
+      .catch(() => undefined);
     return () => {
       current = false;
     };
-  }, [plate?.staffQrUrl]);
+  }, [plate?.staffQrUrl, plate?.staffQrPrinted]);
 
   async function onResetStaffQr() {
     if (!window.confirm("Make a new bartender QR code? The one you have now will stop working right away.")) return;
@@ -109,9 +113,9 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
             <img
               src={qr}
               width={SETUP_QR_SIZE}
-              height={SETUP_QR_SIZE}
-              alt="QR code for your counter plate"
-              className="size-[300px] max-w-full rounded-md border border-canvas-border bg-white"
+              height={CAPTIONED_QR_HEIGHT}
+              alt={`QR code for your counter plate, code ${plate.printedCode}`}
+              className="h-auto w-[300px] max-w-full rounded-md border border-canvas-border bg-white"
             />
           )}
           <div className="text-[13px] text-ink">
@@ -138,11 +142,14 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
             <img
               src={staffQr}
               width={SETUP_QR_SIZE}
-              height={SETUP_QR_SIZE}
-              alt="Bartender QR code"
-              className="size-[220px] max-w-full rounded-md border border-canvas-border bg-white"
+              height={CAPTIONED_QR_HEIGHT}
+              alt={`Bartender QR code, code ${plate.staffQrPrinted}`}
+              className="h-auto w-[220px] max-w-full rounded-md border border-canvas-border bg-white"
             />
           )}
+          <div className="text-[13px] text-ink">
+            Bartender code <span className="font-semibold">{plate.staffQrPrinted}</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             {staffQr && (
               <a href={staffQr} download="bartender-qr.png" className={outlineClass}>
