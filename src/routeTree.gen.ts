@@ -75,6 +75,7 @@ import { Route as PortalSetupIndexRouteImport } from './routes/portal.setup.inde
 import { Route as PortalSetupStepRouteImport } from './routes/portal.setup.$step'
 import { Route as PortalSectionsSectionRouteImport } from './routes/portal._sections.$section'
 import { Route as CardLoginTokenRouteImport } from './routes/card_.login.$token'
+import { Route as ApiZeffyWebhookRouteImport } from './routes/api.zeffy.webhook'
 import { Route as ApiUnsubscribeTokenRouteImport } from './routes/api.unsubscribe.$token'
 import { Route as ApiMemberMediaAssetIdRouteImport } from './routes/api.member-media.$assetId'
 import { Route as ApiConfirmHoursTokenRouteImport } from './routes/api.confirm-hours.$token'
@@ -410,6 +411,11 @@ const CardLoginTokenRoute = CardLoginTokenRouteImport.update({
   path: '/card/login/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiZeffyWebhookRoute = ApiZeffyWebhookRouteImport.update({
+  id: '/api/zeffy/webhook',
+  path: '/api/zeffy/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiUnsubscribeTokenRoute = ApiUnsubscribeTokenRouteImport.update({
   id: '/api/unsubscribe/$token',
   path: '/api/unsubscribe/$token',
@@ -498,6 +504,7 @@ export interface FileRoutesByFullPath {
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
   '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
+  '/api/zeffy/webhook': typeof ApiZeffyWebhookRoute
   '/card/login/$token': typeof CardLoginTokenRoute
   '/portal/$section': typeof PortalSectionsSectionRoute
   '/portal/setup/$step': typeof PortalSetupStepRoute
@@ -566,6 +573,7 @@ export interface FileRoutesByTo {
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
   '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
+  '/api/zeffy/webhook': typeof ApiZeffyWebhookRoute
   '/card/login/$token': typeof CardLoginTokenRoute
   '/portal/$section': typeof PortalSectionsSectionRoute
   '/portal/setup/$step': typeof PortalSetupStepRoute
@@ -639,6 +647,7 @@ export interface FileRoutesById {
   '/api/confirm-hours/$token': typeof ApiConfirmHoursTokenRoute
   '/api/member-media/$assetId': typeof ApiMemberMediaAssetIdRoute
   '/api/unsubscribe/$token': typeof ApiUnsubscribeTokenRoute
+  '/api/zeffy/webhook': typeof ApiZeffyWebhookRoute
   '/card_/login/$token': typeof CardLoginTokenRoute
   '/portal/_sections/$section': typeof PortalSectionsSectionRoute
   '/portal/setup/$step': typeof PortalSetupStepRoute
@@ -713,6 +722,7 @@ export interface FileRouteTypes {
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
     | '/api/unsubscribe/$token'
+    | '/api/zeffy/webhook'
     | '/card/login/$token'
     | '/portal/$section'
     | '/portal/setup/$step'
@@ -781,6 +791,7 @@ export interface FileRouteTypes {
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
     | '/api/unsubscribe/$token'
+    | '/api/zeffy/webhook'
     | '/card/login/$token'
     | '/portal/$section'
     | '/portal/setup/$step'
@@ -853,6 +864,7 @@ export interface FileRouteTypes {
     | '/api/confirm-hours/$token'
     | '/api/member-media/$assetId'
     | '/api/unsubscribe/$token'
+    | '/api/zeffy/webhook'
     | '/card_/login/$token'
     | '/portal/_sections/$section'
     | '/portal/setup/$step'
@@ -902,6 +914,7 @@ export interface RootRouteChildren {
   ApiConfirmHoursTokenRoute: typeof ApiConfirmHoursTokenRoute
   ApiMemberMediaAssetIdRoute: typeof ApiMemberMediaAssetIdRoute
   ApiUnsubscribeTokenRoute: typeof ApiUnsubscribeTokenRoute
+  ApiZeffyWebhookRoute: typeof ApiZeffyWebhookRoute
   CardLoginTokenRoute: typeof CardLoginTokenRoute
 }
 
@@ -1369,6 +1382,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CardLoginTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/zeffy/webhook': {
+      id: '/api/zeffy/webhook'
+      path: '/api/zeffy/webhook'
+      fullPath: '/api/zeffy/webhook'
+      preLoaderRoute: typeof ApiZeffyWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/unsubscribe/$token': {
       id: '/api/unsubscribe/$token'
       path: '/api/unsubscribe/$token'
@@ -1533,6 +1553,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConfirmHoursTokenRoute: ApiConfirmHoursTokenRoute,
   ApiMemberMediaAssetIdRoute: ApiMemberMediaAssetIdRoute,
   ApiUnsubscribeTokenRoute: ApiUnsubscribeTokenRoute,
+  ApiZeffyWebhookRoute: ApiZeffyWebhookRoute,
   CardLoginTokenRoute: CardLoginTokenRoute,
 }
 export const routeTree = rootRouteImport
