@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseZeffyPayment, passLines, webhookPaymentId } from "@/lib/tap-card/zeffy";
+import { parseZeffyPayment, passLines, paymentLookup, webhookPaymentId } from "@/lib/tap-card/zeffy";
 
 /** Shaped like a real Zeffy payment (2026-11-19), with made-up values. */
 function payment(over: Record<string, unknown> = {}) {
@@ -90,5 +90,16 @@ describe("webhookPaymentId", () => {
   });
   it("returns null for anything else", () => {
     for (const bad of [null, "x", {}, { data: {} }, { data: { id: 5 } }]) expect(webhookPaymentId(bad)).toBeNull();
+  });
+});
+
+describe("paymentLookup", () => {
+  it("treats Zeffy's 400 and 404 as 'no such payment', and anything else as a failure to retry", () => {
+    expect(paymentLookup(200)).toBe("found");
+    expect(paymentLookup(404)).toBe("missing");
+    expect(paymentLookup(400)).toBe("missing");
+    expect(paymentLookup(401)).toBe("error");
+    expect(paymentLookup(429)).toBe("error");
+    expect(paymentLookup(503)).toBe("error");
   });
 });

@@ -78,3 +78,9 @@ export function webhookPaymentId(body: unknown): string | null {
   const data = isObj(body.data) ? body.data : null;
   return str(data?.id) ?? (isObj(data?.object) ? str(data.object.id) : null) ?? (isObj(body.payment) ? str(body.payment.id) : null);
 }
+
+/** Zeffy answers an unknown (or deleted) payment id with 400 or 404; anything else that isn't 2xx is worth a retry. */
+export function paymentLookup(status: number): "found" | "missing" | "error" {
+  if (status >= 200 && status < 300) return "found";
+  return status === 400 || status === 404 ? "missing" : "error";
+}

@@ -1,5 +1,5 @@
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { parseZeffyPayment, type ZeffyPayment } from "@/lib/tap-card/zeffy";
+import { parseZeffyPayment, paymentLookup, type ZeffyPayment } from "@/lib/tap-card/zeffy";
 import { recordMissingPayment, recordZeffyPayment, type RecordResult } from "@/lib/tap-card/trail-pass-core";
 import { trailPassStore } from "@/lib/tap-card/trail-pass-store.server";
 
@@ -19,8 +19,9 @@ async function zeffyGet(path: string): Promise<Response> {
 
 export async function zeffyGetPayment(id: string): Promise<ZeffyPayment | null> {
   const res = await zeffyGet(`/payments/${encodeURIComponent(id)}`);
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`Zeffy payment lookup failed (${res.status}).`);
+  const outcome = paymentLookup(res.status);
+  if (outcome === "missing") return null;
+  if (outcome === "error") throw new Error(`Zeffy payment lookup failed (${res.status}).`);
   return parseZeffyPayment(await res.json());
 }
 
