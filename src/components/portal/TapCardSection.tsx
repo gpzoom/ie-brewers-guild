@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { TapCardOffersSection } from "@/components/portal/TapCardOffersSection";
 import { CounterPlateCard } from "@/components/portal/CounterPlateCard";
+import { TapCardPassesCard } from "@/components/portal/TapCardPassesCard";
 import {
   createScannerDevice,
   listScannerDevices,
@@ -216,6 +217,8 @@ export function TapCardSection({ memberId }: { memberId: string }) {
       </section>
 
       <CounterPlateCard memberId={memberId} />
+
+      <TapCardPassesCard memberId={memberId} />
 
       <TapCardOffersSection memberId={memberId} />
     </div>
