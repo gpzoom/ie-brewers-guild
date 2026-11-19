@@ -15,6 +15,8 @@ export type BarStore = {
   findVisit(holderId: string, memberId: string, day: string): Promise<{ id: string; redeemedYear: number | null } | null>;
   insertVisit(v: { holderId: string; memberId: string; cardId: string | null; deviceId: string | null; day: string }): Promise<"ok" | "duplicate">;
   countVisits(holderId: string, memberId: string): Promise<number>;
+  /** A paid, unrefunded Beer Trail Pass for that trail year (spec 2026-11-19). Loyalty never needs one. */
+  hasTrailPass(holderId: string, year: number): Promise<boolean>;
   trailRedeemedIn(holderId: string, memberId: string, year: number): Promise<{ visitId: string; day: string } | null>;
   setTrailRedeemed(visitId: string, year: number | null): Promise<"ok" | "duplicate">;
   liveOffers(memberId: string): Promise<LiveOffer[]>;
@@ -61,8 +63,13 @@ export async function barState(store: BarStore, input: VisitInput & { firstToday
   const used = today ? await usedOn(store, today) : null;
   const base = { visitNumber, firstToday: input.firstToday, used, newlyEarned: input.newlyEarned };
   if (used) return { ...base, featured: null, others: [] };
-  const [trail, banked] = await Promise.all([store.trailRedeemedIn(holderId, memberId, tapCardYear(at)), store.banked(holderId, memberId)]);
-  return { ...base, ...pickBarRewards({ trailAvailable: !trail, banked, now: at }) };
+  const year = tapCardYear(at);
+  const [pass, trail, banked] = await Promise.all([
+    store.hasTrailPass(holderId, year),
+    store.trailRedeemedIn(holderId, memberId, year),
+    store.banked(holderId, memberId),
+  ]);
+  return { ...base, ...pickBarRewards({ trailAvailable: pass && !trail, banked, now: at }) };
 }
 
 export async function checkInVisit(store: BarStore, input: VisitInput): Promise<BarState> {
@@ -99,6 +106,7 @@ export async function useBarReward(
   if (await usedOn(store, today)) return { outcome: "already-used-today", state: await state() };
 
   if (choice.kind === "trail") {
+    if (!(await store.hasTrailPass(holderId, tapCardYear(at)))) return { outcome: "not-available", state: await state() };
     if (await store.trailRedeemedIn(holderId, memberId, tapCardYear(at))) return { outcome: "not-available", state: await state() };
     const result = await store.setTrailRedeemed(today.id, tapCardYear(at));
     return { outcome: result === "ok" ? "used" : "not-available", state: await state() };

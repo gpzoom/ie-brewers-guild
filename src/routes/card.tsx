@@ -42,6 +42,7 @@ function CardPage() {
       <CardScanner />
       <SaveToHomeScreen />
       <Waiting view={view} />
+      <JoinTrail view={view} />
       <Progress view={view} />
       <Milestones view={view} />
       <StopList view={view} />
@@ -50,6 +51,19 @@ function CardPage() {
       <AddCard />
       <SignOut />
     </TapCardShell>
+  );
+}
+
+function JoinTrail({ view }: { view: HolderCardView }) {
+  if (!view.canJoinTrail) return null;
+  return (
+    <div className="flex flex-col gap-2 rounded-[14px] border border-canvas-border bg-white px-4 py-4">
+      <p className="text-[15px] font-semibold text-ink">Join the Beer Trail</p>
+      <p className="text-[14px] text-ink-muted">Get the Beer Trail offer at every stop and Guild rewards for visiting more. Your brewery rewards keep working either way.</p>
+      <a href="/trail/join" className={`${cardLinkClass} w-fit text-[14px]`}>
+        Get your Beer Trail Pass
+      </a>
+    </div>
   );
 }
 

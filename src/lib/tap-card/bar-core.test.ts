@@ -18,7 +18,9 @@ type Earned = {
   usedDeviceId: string | null;
 };
 
-function memoryStore(seed: { visits?: Visit[]; offers?: Record<string, LiveOffer[]>; expiry?: Record<string, number>; earned?: Earned[] } = {}) {
+function memoryStore(
+  seed: { visits?: Visit[]; offers?: Record<string, LiveOffer[]>; expiry?: Record<string, number>; earned?: Earned[]; passYears?: number[] } = {},
+) {
   const visits: Visit[] = seed.visits ?? [];
   const earned: Earned[] = seed.earned ?? [];
   let n = 0;
@@ -34,6 +36,9 @@ function memoryStore(seed: { visits?: Visit[]; offers?: Record<string, LiveOffer
     },
     async countVisits(holderId, memberId) {
       return visits.filter((x) => x.holderId === holderId && x.memberId === memberId).length;
+    },
+    async hasTrailPass(_holderId, year) {
+      return (seed.passYears ?? [2026]).includes(year);
     },
     async trailRedeemedIn(holderId, memberId, year) {
       const v = visits.find((x) => x.holderId === holderId && x.memberId === memberId && x.redeemedYear === year);
@@ -238,5 +243,31 @@ describe("undoBarReward", () => {
     const { store } = memoryStore({ visits: [earlier("2026-06-09", "old1", 2026)] });
     await checkInVisit(store, input);
     expect((await undoBarReward(store, input)).outcome).toBe("nothing-to-undo");
+  });
+});
+
+describe("without this year's Beer Trail Pass", () => {
+  it("never offers the Beer Trail offer, but loyalty still counts and earns", async () => {
+    const { store, visits, earned } = memoryStore({ passYears: [], visits: [earlier("2026-06-01")], offers: { m1: [pretzel] } });
+    const state = await checkInVisit(store, input);
+    expect(visits).toHaveLength(2);
+    expect(state.visitNumber).toBe(2);
+    expect(earned).toHaveLength(1);
+    expect(state.featured).toMatchObject({ kind: "member", reward: "Free soft pretzel" });
+    expect([state.featured, ...state.others].some((r) => r?.kind === "trail")).toBe(false);
+  });
+
+  it("refuses the Beer Trail offer", async () => {
+    const { store, visits } = memoryStore({ passYears: [] });
+    await checkInVisit(store, input);
+    const used = await useBarReward(store, { ...input, choice: { kind: "trail" } });
+    expect(used.outcome).toBe("not-available");
+    expect(visits[0].redeemedYear).toBeNull();
+  });
+
+  it("a pass for another year doesn't count", async () => {
+    const { store } = memoryStore({ passYears: [2027] });
+    const state = await checkInVisit(store, input);
+    expect(state.featured).toBeNull();
   });
 });

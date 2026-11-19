@@ -18,6 +18,8 @@ export type HolderViewInput = {
   allVisits: { memberId: string; memberName: string; visitDay: string }[];
   /** Unused, unexpired loyalty rewards. */
   waiting: WaitingReward[];
+  /** A Beer Trail Pass is on sale that this holder hasn't bought (spec 2026-11-19). */
+  canJoinTrail?: boolean;
 };
 
 export type WaitingReward = { memberName: string; reward: string; terms: string; expiresAt: string };
@@ -32,6 +34,7 @@ export type HolderCardView = {
   cards: string[];
   waiting: WaitingReward[];
   visitCounts: { memberId: string; name: string; count: number }[];
+  canJoinTrail: boolean;
 };
 
 export function buildHolderView(input: HolderViewInput): HolderCardView {
@@ -65,6 +68,7 @@ export function buildHolderView(input: HolderViewInput): HolderCardView {
     cards: input.cards.map(formatCardCode),
     waiting: [...input.waiting].sort((a, b) => a.expiresAt.localeCompare(b.expiresAt)),
     visitCounts: visitCounts(input.allVisits),
+    canJoinTrail: input.canJoinTrail ?? false,
   };
 }
 

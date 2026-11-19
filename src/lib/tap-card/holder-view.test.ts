@@ -27,6 +27,10 @@ const input = (over: Partial<HolderViewInput> = {}): HolderViewInput => ({
 });
 
 describe("buildHolderView", () => {
+  it("offers to join the Beer Trail only when told a pass is on sale and not yet bought", () => {
+    expect(buildHolderView(input()).canJoinTrail).toBe(false);
+    expect(buildHolderView({ ...input(), canJoinTrail: true }).canJoinTrail).toBe(true);
+  });
   it("uses the first name and formats the cards", () => {
     const view = buildHolderView(input());
     expect(view.firstName).toBe("Pat");

@@ -17,6 +17,16 @@ export async function distinctStopsInYear(service: SupabaseClient, holderId: str
 
 /** Records any milestone the holder just reached this year; returns the newly earned rewards. */
 export async function awardMilestones(service: SupabaseClient, holderId: string, year: number): Promise<Milestone[]> {
+  // Guild milestones are Beer Trail rewards: they need that year's pass (spec 2026-11-19).
+  const { data: pass, error: pError } = await service
+    .from("tap_card_trail_passes")
+    .select("id")
+    .eq("holder_id", holderId)
+    .eq("year", year)
+    .is("refunded_at", null)
+    .limit(1);
+  if (pError) throw new Error(pError.message);
+  if ((pass ?? []).length === 0) return [];
   const [{ data: milestones, error: mError }, { data: earned, error: eError }, stops] = await Promise.all([
     service.from("tap_card_milestones").select("id, stops_required, reward_text").eq("active", true),
     service.from("tap_card_rewards").select("milestone_id").eq("holder_id", holderId).eq("year", year),

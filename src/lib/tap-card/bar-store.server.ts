@@ -44,6 +44,17 @@ export function barStore(service: SupabaseClient): BarStore {
       fail(error);
       return count ?? 0;
     },
+    async hasTrailPass(holderId, year) {
+      const { data, error } = await service
+        .from("tap_card_trail_passes")
+        .select("id")
+        .eq("holder_id", holderId)
+        .eq("year", year)
+        .is("refunded_at", null)
+        .limit(1);
+      if (error) throw new Error(error.message);
+      return (data ?? []).length > 0;
+    },
     async trailRedeemedIn(holderId, memberId, year) {
       const { data, error } = await service
         .from("tap_card_visits")
