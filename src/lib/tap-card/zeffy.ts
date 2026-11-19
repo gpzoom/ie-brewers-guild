@@ -8,7 +8,10 @@ export type ZeffyPayment = {
   createdAt: Date;
   campaignId: string;
   succeeded: boolean;
+  /** Fully refunded: every pass in it is off. */
   refunded: boolean;
+  /** Some of it refunded: passes stay on; the Guild sorts it out by hand. */
+  partiallyRefunded: boolean;
   buyer: { email: string; name: string };
   items: { id: string; amountCents: number; email: string | null; name: string | null }[];
 };
@@ -25,6 +28,11 @@ function answer(questions: unknown, type: "name" | "email"): string | null {
   return null;
 }
 
+function refundKind(status: unknown): "none" | "partial" | "full" {
+  if (typeof status !== "string" || status === "none" || status === "") return "none";
+  return /partial/i.test(status) ? "partial" : "full";
+}
+
 export function parseZeffyPayment(raw: unknown): ZeffyPayment | null {
   if (!isObj(raw)) return null;
   const id = str(raw.id);
@@ -37,7 +45,8 @@ export function parseZeffyPayment(raw: unknown): ZeffyPayment | null {
     createdAt: new Date(raw.created * 1000),
     campaignId,
     succeeded: raw.status === "succeeded",
-    refunded: typeof raw.refund_status === "string" && raw.refund_status !== "none",
+    refunded: refundKind(raw.refund_status) === "full",
+    partiallyRefunded: refundKind(raw.refund_status) === "partial",
     buyer: {
       email: str(buyer.email) ?? "",
       name: [str(buyer.first_name), str(buyer.last_name)].filter(Boolean).join(" "),

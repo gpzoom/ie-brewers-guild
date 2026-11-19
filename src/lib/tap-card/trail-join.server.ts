@@ -9,7 +9,7 @@ import { passLines } from "@/lib/tap-card/zeffy";
 import { zeffyPaymentsSince } from "@/lib/tap-card/zeffy.server";
 import { decideJoinedView, recordZeffyPayment } from "@/lib/tap-card/trail-pass-core";
 import { validateTrailJoin } from "@/lib/tap-card/trail-join";
-import { activeCampaign, trailPassStore } from "@/lib/tap-card/trail-pass-store.server";
+import { activeCampaign, countOtherJoins, trailPassStore } from "@/lib/tap-card/trail-pass-store.server";
 
 /** Joining the Beer Trail (spec 2026-11-19): our page first (brewery + email + opt-in), then Zeffy. */
 
@@ -84,18 +84,30 @@ export const finishTrailJoin = createServerFn({ method: "POST" }).handler(async 
   if (!join) return { kind: "no-join" };
   const campaign = await activeCampaign(service);
   let recorded = null;
+  let claim = null;
   if (campaign) {
     const email = join.email.toLowerCase();
-    const payments = await zeffyPaymentsSince(campaign.zeffyCampaignId, new Date(join.createdAt.getTime() - 10 * 60_000));
+    // Only payments made after this sign-up (a little clock slack): never one someone else made earlier.
+    const payments = await zeffyPaymentsSince(campaign.zeffyCampaignId, new Date(join.createdAt.getTime() - 2 * 60_000));
     const mine = payments
       .filter((p) => p.succeeded && !p.refunded && passLines(p).some((l) => l.email.toLowerCase() === email))
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
     if (mine) {
       const result = await recordZeffyPayment(trailPassStore(service), mine, new Date());
-      if (result.kind === "recorded") recorded = result.passes;
+      if (result.kind === "recorded") {
+        recorded = result.passes;
+        const otherJoins = await countOtherJoins(
+          service,
+          email,
+          join.id,
+          new Date(mine.createdAt.getTime() - 2 * 60 * 60_000),
+          new Date(mine.createdAt.getTime() + 5 * 60_000),
+        );
+        claim = { paymentAt: mine.createdAt, otherJoins };
+      }
     }
   }
-  const view = decideJoinedView({ join, recorded });
+  const view = decideJoinedView({ join, recorded, claim, currentHolderId: await readHolderId() });
   if (view.kind === "signed-in") {
     await startHolderSession(view.holderId);
     clearTrailJoin();

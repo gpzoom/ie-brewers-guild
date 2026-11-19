@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decideJoinedView, hasTrailPass, recordZeffyPayment, type TrailPassStore } from "@/lib/tap-card/trail-pass-core";
+import { decideJoinedView, hasTrailPass, recordMissingPayment, recordZeffyPayment, type TrailPassStore } from "@/lib/tap-card/trail-pass-core";
 import type { ZeffyPayment } from "@/lib/tap-card/zeffy";
 
 const PAID = new Date("2027-03-01T20:00:00Z");
@@ -36,6 +36,9 @@ function fakeStore(init: { holders?: { id: string; email: string; createdAt: str
       passes.push({ ...p, refundedAt: null });
       return "ok";
     },
+    async hasPayment(paymentId) {
+      return passes.some((p) => p.paymentId === paymentId);
+    },
     async markRefunded(paymentId, at) {
       for (const p of passes) if (p.paymentId === paymentId && !p.refundedAt) p.refundedAt = at;
     },
@@ -56,6 +59,7 @@ function pay(over: Partial<ZeffyPayment> = {}): ZeffyPayment {
     campaignId: "camp_2027",
     succeeded: true,
     refunded: false,
+    partiallyRefunded: false,
     buyer: { email: "pat@example.test", name: "Pat Pass" },
     items: [{ id: "item_1", amountCents: 2000, email: "Pat@Example.test", name: "Pat Pass" }],
     ...over,
@@ -168,8 +172,9 @@ describe("hasTrailPass", () => {
 });
 
 describe("decideJoinedView", () => {
-  const joinRow = { email: "Pat@Example.test", memberId: "brewery_a", plateCode: "ABCD1234" };
-  const line = (over: Partial<{ email: string; holderExisted: boolean }> = {}) => ({
+  const JOINED = new Date("2027-03-01T19:55:00Z");
+  const joinRow = { email: "Pat@Example.test", memberId: "brewery_a", plateCode: "ABCD1234", createdAt: JOINED };
+  const line = (over: Partial<{ email: string; holderExisted: boolean; holderId: string }> = {}) => ({
     itemId: "item_1",
     holderId: "h1",
     email: "pat@example.test",
@@ -177,20 +182,59 @@ describe("decideJoinedView", () => {
     memberId: "brewery_a",
     ...over,
   });
+  const claim = (over: Partial<{ paymentAt: Date; otherJoins: number }> = {}) => ({ paymentAt: PAID_AFTER, otherJoins: 0, ...over });
+  const PAID_AFTER = new Date("2027-03-01T19:58:00Z");
+  const base = { join: joinRow, recorded: [line()], claim: claim(), currentHolderId: null };
+
   it("has nothing to finish without this browser's sign-up", () => {
-    expect(decideJoinedView({ join: null, recorded: null })).toEqual({ kind: "no-join" });
+    expect(decideJoinedView({ ...base, join: null })).toEqual({ kind: "no-join" });
   });
   it("waits while Zeffy hasn't shown the payment yet", () => {
-    expect(decideJoinedView({ join: joinRow, recorded: null })).toEqual({ kind: "waiting" });
+    expect(decideJoinedView({ ...base, recorded: null, claim: null })).toEqual({ kind: "waiting" });
   });
   it("signs a brand-new cardholder in and goes back to the brewery's plate", () => {
-    expect(decideJoinedView({ join: joinRow, recorded: [line()] })).toEqual({ kind: "signed-in", holderId: "h1", next: "/t/ABCD1234" });
-    expect(decideJoinedView({ join: { ...joinRow, plateCode: null }, recorded: [line()] })).toEqual({ kind: "signed-in", holderId: "h1", next: "/card" });
+    expect(decideJoinedView(base)).toEqual({ kind: "signed-in", holderId: "h1", next: "/t/ABCD1234" });
+    expect(decideJoinedView({ ...base, join: { ...joinRow, plateCode: null } })).toEqual({ kind: "signed-in", holderId: "h1", next: "/card" });
   });
   it("asks for the emailed code when that email already had a card", () => {
-    expect(decideJoinedView({ join: joinRow, recorded: [line({ holderExisted: true })] })).toEqual({ kind: "need-code", email: "Pat@Example.test", next: "/t/ABCD1234" });
+    expect(decideJoinedView({ ...base, recorded: [line({ holderExisted: true })] })).toEqual({ kind: "need-code", email: "Pat@Example.test", next: "/t/ABCD1234" });
   });
   it("never signs in someone else's pass from the same payment", () => {
-    expect(decideJoinedView({ join: joinRow, recorded: [line({ email: "other@example.test" })] })).toEqual({ kind: "need-code", email: "Pat@Example.test", next: "/t/ABCD1234" });
+    expect(decideJoinedView({ ...base, recorded: [line({ email: "other@example.test" })] }).kind).toBe("need-code");
+  });
+  it("won't open a card paid for before this sign-up (someone typed another person's email)", () => {
+    expect(decideJoinedView({ ...base, claim: claim({ paymentAt: new Date(JOINED.getTime() - 3 * 60_000) }) }).kind).toBe("need-code");
+  });
+  it("won't auto sign in when another sign-up used the same email around the payment", () => {
+    expect(decideJoinedView({ ...base, claim: claim({ otherJoins: 1 }) }).kind).toBe("need-code");
+  });
+  it("a cardholder already signed in on this phone who renews just goes back, no code", () => {
+    expect(decideJoinedView({ ...base, recorded: [line({ holderExisted: true })], currentHolderId: "h1" })).toEqual({
+      kind: "signed-in",
+      holderId: "h1",
+      next: "/t/ABCD1234",
+    });
+  });
+});
+
+describe("recordMissingPayment", () => {
+  it("revokes the passes of a payment Zeffy no longer has (deleted)", async () => {
+    const f = fakeStore();
+    await recordZeffyPayment(f.store, pay(), PAID);
+    expect(await recordMissingPayment(f.store, "pay_1", PAID)).toEqual({ kind: "refunded" });
+    expect(f.passes[0].refundedAt).toEqual(PAID);
+  });
+  it("ignores an id we never recorded", async () => {
+    const f = fakeStore();
+    expect(await recordMissingPayment(f.store, "pay_nope", PAID)).toEqual({ kind: "ignored" });
+  });
+});
+
+describe("partial refunds", () => {
+  it("don't cancel the payment's passes; the Guild handles them by hand", async () => {
+    const f = fakeStore();
+    await recordZeffyPayment(f.store, pay(), PAID);
+    expect(await recordZeffyPayment(f.store, pay({ partiallyRefunded: true }), PAID)).toMatchObject({ kind: "recorded" });
+    expect(f.passes[0].refundedAt).toBeNull();
   });
 });

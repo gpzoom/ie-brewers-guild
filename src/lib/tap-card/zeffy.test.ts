@@ -43,12 +43,15 @@ describe("parseZeffyPayment", () => {
       campaignId: "camp_1",
       succeeded: true,
       refunded: false,
+      partiallyRefunded: false,
       buyer: { email: "Buyer@Example.test", name: "Bea Buyer" },
       items: [{ id: "item_1", amountCents: 2000, email: "Pat@Example.test", name: "Pat Pass" }],
     });
   });
   it("sees a refund and a failed payment", () => {
     expect(parseZeffyPayment(payment({ refund_status: "full" }))?.refunded).toBe(true);
+    expect(parseZeffyPayment(payment({ refund_status: "partial" }))).toMatchObject({ refunded: false, partiallyRefunded: true });
+    expect(parseZeffyPayment(payment({ refund_status: "partially_refunded" }))).toMatchObject({ refunded: false, partiallyRefunded: true });
     expect(parseZeffyPayment(payment({ status: "failed" }))?.succeeded).toBe(false);
   });
   it("skips anything that isn't a ticket", () => {

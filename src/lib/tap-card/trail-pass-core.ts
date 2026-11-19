@@ -20,6 +20,7 @@ export type TrailPassStore = {
     amountCents: number;
     paidAt: Date;
   }): Promise<"ok" | "duplicate">;
+  hasPayment(paymentId: string): Promise<boolean>;
   markRefunded(paymentId: string, at: Date): Promise<void>;
   addSubscriber(memberId: string, holderId: string, at: Date): Promise<void>;
 };
@@ -65,6 +66,13 @@ export async function recordZeffyPayment(store: TrailPassStore, p: ZeffyPayment,
   return { kind: "recorded", passes };
 }
 
+/** Zeffy no longer has this payment (deleted): its passes are off. Only ever removes access. */
+export async function recordMissingPayment(store: TrailPassStore, paymentId: string, now: Date): Promise<{ kind: "ignored" } | { kind: "refunded" }> {
+  if (!(await store.hasPayment(paymentId))) return { kind: "ignored" };
+  await store.markRefunded(paymentId, now);
+  return { kind: "refunded" };
+}
+
 /** Beer Trail rewards need an unrefunded pass for that exact trail year. */
 export async function hasTrailPass(store: { passYears(holderId: string): Promise<number[]> }, holderId: string, year: number): Promise<boolean> {
   return (await store.passYears(holderId)).includes(year);
@@ -76,20 +84,28 @@ export type JoinedView =
   | { kind: "signed-in"; holderId: string; next: string }
   | { kind: "need-code"; email: string; next: string };
 
+/** Clock slack between our sign-up time and Zeffy's payment time. */
+const CLAIM_SLACK_MS = 2 * 60_000;
+
 /**
- * Back from Zeffy. A brand-new cardholder whose email is the one on this
- * browser's sign-up is signed in at once. Anyone else -- an email that already
- * had a card, or only someone else's pass in the payment -- confirms with the
- * emailed code, so paying with another person's email never opens their card.
+ * Back from Zeffy. This browser is signed in at once only when it is clearly
+ * the payer: the card is brand new, the payment came after this browser's
+ * sign-up, and no other sign-up used that email around the payment (someone
+ * who merely typed a new customer's email gets the emailed code instead).
+ * A cardholder already signed in to that card on this phone just goes back.
  */
 export function decideJoinedView(i: {
-  join: { email: string; memberId: string | null; plateCode: string | null } | null;
+  join: { email: string; memberId: string | null; plateCode: string | null; createdAt: Date } | null;
   recorded: RecordedPass[] | null;
+  claim: { paymentAt: Date; otherJoins: number } | null;
+  currentHolderId: string | null;
 }): JoinedView {
   if (!i.join) return { kind: "no-join" };
-  if (!i.recorded) return { kind: "waiting" };
+  if (!i.recorded || !i.claim) return { kind: "waiting" };
   const next = i.join.plateCode ? `/t/${i.join.plateCode}` : "/card";
   const mine = i.recorded.find((p) => p.email.toLowerCase() === i.join!.email.toLowerCase());
-  if (mine && !mine.holderExisted) return { kind: "signed-in", holderId: mine.holderId, next };
+  if (mine && i.currentHolderId === mine.holderId) return { kind: "signed-in", holderId: mine.holderId, next };
+  const paidAfterJoin = i.claim.paymentAt.getTime() >= i.join.createdAt.getTime() - CLAIM_SLACK_MS;
+  if (mine && !mine.holderExisted && paidAfterJoin && i.claim.otherJoins === 0) return { kind: "signed-in", holderId: mine.holderId, next };
   return { kind: "need-code", email: i.join.email, next };
 }

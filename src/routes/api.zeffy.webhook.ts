@@ -20,14 +20,15 @@ export const Route = createFileRoute("/api/zeffy/webhook")({
         } catch {
           return new Response("Bad request", { status: 400 });
         }
-        const type = typeof (body as { type?: unknown })?.type === "string" ? (body as { type: string }).type : "unknown";
+        const rawType = (body as { type?: unknown })?.type;
+        const type = typeof rawType === "string" && /^[a-z._]{1,40}$/.test(rawType) ? rawType : "unknown";
         // Until Zeffy's signature format is confirmed, note which headers it sends (names only).
         console.log(`zeffy webhook: ${type}; headers: ${[...request.headers.keys()].filter((k) => /sig|zeffy|webhook/i.test(k)).join(",") || "none"}`);
         const id = webhookPaymentId(body);
         if (!id) return new Response("ok", { status: 200 });
         try {
           const result = await recordPaymentById(id);
-          console.log(`zeffy webhook: ${type} -> ${result?.kind ?? "not-found"}`);
+          console.log(`zeffy webhook: ${type} -> ${result.kind}`);
           return new Response("ok", { status: 200 });
         } catch (err) {
           console.error(`zeffy webhook: ${type} failed: ${err instanceof Error ? err.message : "error"}`);

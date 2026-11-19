@@ -1,6 +1,6 @@
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { parseZeffyPayment, type ZeffyPayment } from "@/lib/tap-card/zeffy";
-import { recordZeffyPayment, type RecordResult } from "@/lib/tap-card/trail-pass-core";
+import { recordMissingPayment, recordZeffyPayment, type RecordResult } from "@/lib/tap-card/trail-pass-core";
 import { trailPassStore } from "@/lib/tap-card/trail-pass-store.server";
 
 /** Zeffy's read-only API, with the owner's key (Worker secret ZEFFY_API_KEY). Never logs buyer data. */
@@ -45,9 +45,11 @@ export async function zeffyPaymentsSince(campaignId: string, since: Date): Promi
 }
 
 /** Re-reads the payment from Zeffy (never trusting a webhook body) and records it. */
-export async function recordPaymentById(id: string): Promise<RecordResult | null> {
+export async function recordPaymentById(id: string): Promise<RecordResult> {
   const payment = await zeffyGetPayment(id);
-  if (!payment) return null;
   const service = await getSupabaseServiceRoleClient();
+  // Gone from Zeffy (deleted): turn its passes off. A forged id can't do harm -- a real payment is still found.
+  if (!payment) return recordMissingPayment(trailPassStore(service), id, new Date());
+  if (payment.partiallyRefunded) console.warn("zeffy: partial refund on a recorded payment -- Guild to review by hand");
   return recordZeffyPayment(trailPassStore(service), payment, new Date());
 }

@@ -62,6 +62,11 @@ export function trailPassStore(service: SupabaseClient): TrailPassStore & { pass
       if (error) throw new Error(error.message);
       return "ok";
     },
+    async hasPayment(paymentId) {
+      const { data, error } = await service.from("tap_card_trail_passes").select("id").eq("zeffy_payment_id", paymentId).limit(1);
+      if (error) throw new Error(error.message);
+      return (data ?? []).length > 0;
+    },
     async markRefunded(paymentId, at) {
       const { error } = await service
         .from("tap_card_trail_passes")
@@ -101,4 +106,17 @@ export async function canJoinTrail(service: SupabaseClient, holderId: string | n
   if (!campaign) return false;
   if (!holderId) return true;
   return !(await trailPassStore(service).passYears(holderId)).includes(campaign.year);
+}
+
+/** Other sign-ups (not this one) that used this email in a time window. */
+export async function countOtherJoins(service: SupabaseClient, email: string, excludeId: string, from: Date, to: Date): Promise<number> {
+  const { count, error } = await service
+    .from("tap_card_trail_joins")
+    .select("id", { count: "exact", head: true })
+    .eq("email_lower", email.trim().toLowerCase())
+    .neq("id", excludeId)
+    .gte("created_at", from.toISOString())
+    .lte("created_at", to.toISOString());
+  if (error) throw new Error(error.message);
+  return count ?? 0;
 }
