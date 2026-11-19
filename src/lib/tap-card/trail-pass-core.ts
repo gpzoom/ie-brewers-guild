@@ -69,3 +69,27 @@ export async function recordZeffyPayment(store: TrailPassStore, p: ZeffyPayment,
 export async function hasTrailPass(store: { passYears(holderId: string): Promise<number[]> }, holderId: string, year: number): Promise<boolean> {
   return (await store.passYears(holderId)).includes(year);
 }
+
+export type JoinedView =
+  | { kind: "no-join" }
+  | { kind: "waiting" }
+  | { kind: "signed-in"; holderId: string; next: string }
+  | { kind: "need-code"; email: string; next: string };
+
+/**
+ * Back from Zeffy. A brand-new cardholder whose email is the one on this
+ * browser's sign-up is signed in at once. Anyone else -- an email that already
+ * had a card, or only someone else's pass in the payment -- confirms with the
+ * emailed code, so paying with another person's email never opens their card.
+ */
+export function decideJoinedView(i: {
+  join: { email: string; memberId: string | null; plateCode: string | null } | null;
+  recorded: RecordedPass[] | null;
+}): JoinedView {
+  if (!i.join) return { kind: "no-join" };
+  if (!i.recorded) return { kind: "waiting" };
+  const next = i.join.plateCode ? `/t/${i.join.plateCode}` : "/card";
+  const mine = i.recorded.find((p) => p.email.toLowerCase() === i.join!.email.toLowerCase());
+  if (mine && !mine.holderExisted) return { kind: "signed-in", holderId: mine.holderId, next };
+  return { kind: "need-code", email: i.join.email, next };
+}

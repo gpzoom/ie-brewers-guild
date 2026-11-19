@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasTrailPass, recordZeffyPayment, type TrailPassStore } from "@/lib/tap-card/trail-pass-core";
+import { decideJoinedView, hasTrailPass, recordZeffyPayment, type TrailPassStore } from "@/lib/tap-card/trail-pass-core";
 import type { ZeffyPayment } from "@/lib/tap-card/zeffy";
 
 const PAID = new Date("2027-03-01T20:00:00Z");
@@ -164,5 +164,33 @@ describe("hasTrailPass", () => {
     expect(await hasTrailPass(f.store, "holder_1", 2026)).toBe(false);
     await recordZeffyPayment(f.store, pay({ refunded: true }), PAID);
     expect(await hasTrailPass(f.store, "holder_1", 2027)).toBe(false);
+  });
+});
+
+describe("decideJoinedView", () => {
+  const joinRow = { email: "Pat@Example.test", memberId: "brewery_a", plateCode: "ABCD1234" };
+  const line = (over: Partial<{ email: string; holderExisted: boolean }> = {}) => ({
+    itemId: "item_1",
+    holderId: "h1",
+    email: "pat@example.test",
+    holderExisted: false,
+    memberId: "brewery_a",
+    ...over,
+  });
+  it("has nothing to finish without this browser's sign-up", () => {
+    expect(decideJoinedView({ join: null, recorded: null })).toEqual({ kind: "no-join" });
+  });
+  it("waits while Zeffy hasn't shown the payment yet", () => {
+    expect(decideJoinedView({ join: joinRow, recorded: null })).toEqual({ kind: "waiting" });
+  });
+  it("signs a brand-new cardholder in and goes back to the brewery's plate", () => {
+    expect(decideJoinedView({ join: joinRow, recorded: [line()] })).toEqual({ kind: "signed-in", holderId: "h1", next: "/t/ABCD1234" });
+    expect(decideJoinedView({ join: { ...joinRow, plateCode: null }, recorded: [line()] })).toEqual({ kind: "signed-in", holderId: "h1", next: "/card" });
+  });
+  it("asks for the emailed code when that email already had a card", () => {
+    expect(decideJoinedView({ join: joinRow, recorded: [line({ holderExisted: true })] })).toEqual({ kind: "need-code", email: "Pat@Example.test", next: "/t/ABCD1234" });
+  });
+  it("never signs in someone else's pass from the same payment", () => {
+    expect(decideJoinedView({ join: joinRow, recorded: [line({ email: "other@example.test" })] })).toEqual({ kind: "need-code", email: "Pat@Example.test", next: "/t/ABCD1234" });
   });
 });

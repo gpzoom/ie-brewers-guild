@@ -34,6 +34,7 @@ import { Route as GuildIndexRouteImport } from './routes/guild.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as VisitTokenRouteImport } from './routes/visit.$token'
 import { Route as UnsubscribeTokenRouteImport } from './routes/unsubscribe.$token'
+import { Route as TrailJoinedRouteImport } from './routes/trail_.joined'
 import { Route as TrailJoinRouteImport } from './routes/trail_.join'
 import { Route as TCodeRouteImport } from './routes/t.$code'
 import { Route as SigninHelpRouteImport } from './routes/signin_.help'
@@ -205,6 +206,11 @@ const VisitTokenRoute = VisitTokenRouteImport.update({
 const UnsubscribeTokenRoute = UnsubscribeTokenRouteImport.update({
   id: '/unsubscribe/$token',
   path: '/unsubscribe/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrailJoinedRoute = TrailJoinedRouteImport.update({
+  id: '/trail_/joined',
+  path: '/trail/joined',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TrailJoinRoute = TrailJoinRouteImport.update({
@@ -502,6 +508,7 @@ export interface FileRoutesByFullPath {
   '/signin/help': typeof SigninHelpRoute
   '/t/$code': typeof TCodeRoute
   '/trail/join': typeof TrailJoinRoute
+  '/trail/joined': typeof TrailJoinedRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/visit/$token': typeof VisitTokenRoute
   '/admin/': typeof AdminIndexRoute
@@ -573,6 +580,7 @@ export interface FileRoutesByTo {
   '/signin/help': typeof SigninHelpRoute
   '/t/$code': typeof TCodeRoute
   '/trail/join': typeof TrailJoinRoute
+  '/trail/joined': typeof TrailJoinedRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/visit/$token': typeof VisitTokenRoute
   '/admin': typeof AdminIndexRoute
@@ -647,6 +655,7 @@ export interface FileRoutesById {
   '/signin_/help': typeof SigninHelpRoute
   '/t/$code': typeof TCodeRoute
   '/trail_/join': typeof TrailJoinRoute
+  '/trail_/joined': typeof TrailJoinedRoute
   '/unsubscribe/$token': typeof UnsubscribeTokenRoute
   '/visit/$token': typeof VisitTokenRoute
   '/admin/': typeof AdminIndexRoute
@@ -723,6 +732,7 @@ export interface FileRouteTypes {
     | '/signin/help'
     | '/t/$code'
     | '/trail/join'
+    | '/trail/joined'
     | '/unsubscribe/$token'
     | '/visit/$token'
     | '/admin/'
@@ -794,6 +804,7 @@ export interface FileRouteTypes {
     | '/signin/help'
     | '/t/$code'
     | '/trail/join'
+    | '/trail/joined'
     | '/unsubscribe/$token'
     | '/visit/$token'
     | '/admin'
@@ -867,6 +878,7 @@ export interface FileRouteTypes {
     | '/signin_/help'
     | '/t/$code'
     | '/trail_/join'
+    | '/trail_/joined'
     | '/unsubscribe/$token'
     | '/visit/$token'
     | '/admin/'
@@ -920,6 +932,7 @@ export interface RootRouteChildren {
   SigninHelpRoute: typeof SigninHelpRoute
   TCodeRoute: typeof TCodeRoute
   TrailJoinRoute: typeof TrailJoinRoute
+  TrailJoinedRoute: typeof TrailJoinedRoute
   UnsubscribeTokenRoute: typeof UnsubscribeTokenRoute
   VisitTokenRoute: typeof VisitTokenRoute
   PortalIndexRoute: typeof PortalIndexRoute
@@ -1106,6 +1119,13 @@ declare module '@tanstack/react-router' {
       path: '/unsubscribe/$token'
       fullPath: '/unsubscribe/$token'
       preLoaderRoute: typeof UnsubscribeTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trail_/joined': {
+      id: '/trail_/joined'
+      path: '/trail/joined'
+      fullPath: '/trail/joined'
+      preLoaderRoute: typeof TrailJoinedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trail_/join': {
@@ -1567,6 +1587,7 @@ const rootRouteChildren: RootRouteChildren = {
   SigninHelpRoute: SigninHelpRoute,
   TCodeRoute: TCodeRoute,
   TrailJoinRoute: TrailJoinRoute,
+  TrailJoinedRoute: TrailJoinedRoute,
   UnsubscribeTokenRoute: UnsubscribeTokenRoute,
   VisitTokenRoute: VisitTokenRoute,
   PortalIndexRoute: PortalIndexRoute,

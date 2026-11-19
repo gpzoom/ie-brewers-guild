@@ -4,9 +4,12 @@ import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { isHoneypotTripped } from "@/lib/contact/contact-form-validation";
 import { SOMETHING_WRONG, rateLimitMessage } from "@/lib/join/join-guards.server";
 import { normalizeCardCode } from "@/lib/tap-card/card-code";
-import { readHolderId, setTrailJoinCookie } from "@/lib/tap-card/tap-card-cookies.server";
+import { clearTrailJoin, readHolderId, readTrailJoin, setTrailJoinCookie, startHolderSession } from "@/lib/tap-card/tap-card-cookies.server";
+import { passLines } from "@/lib/tap-card/zeffy";
+import { zeffyPaymentsSince } from "@/lib/tap-card/zeffy.server";
+import { decideJoinedView, recordZeffyPayment } from "@/lib/tap-card/trail-pass-core";
 import { validateTrailJoin } from "@/lib/tap-card/trail-join";
-import { activeCampaign } from "@/lib/tap-card/trail-pass-store.server";
+import { activeCampaign, trailPassStore } from "@/lib/tap-card/trail-pass-store.server";
 
 /** Joining the Beer Trail (spec 2026-11-19): our page first (brewery + email + opt-in), then Zeffy. */
 
@@ -68,3 +71,35 @@ export const startTrailJoin = createServerFn({ method: "POST" })
       return { kind: "error", message: SOMETHING_WRONG };
     }
   });
+
+export type TrailJoinedResult = { kind: "no-join" } | { kind: "waiting" } | { kind: "signed-in"; next: string } | { kind: "need-code"; email: string; next: string };
+
+/**
+ * /trail/joined: finish this browser's sign-up. Doesn't wait for the webhook --
+ * looks the payment up in Zeffy itself and records it the same idempotent way.
+ */
+export const finishTrailJoin = createServerFn({ method: "POST" }).handler(async (): Promise<TrailJoinedResult> => {
+  const service = await getSupabaseServiceRoleClient();
+  const join = await readTrailJoin(service);
+  if (!join) return { kind: "no-join" };
+  const campaign = await activeCampaign(service);
+  let recorded = null;
+  if (campaign) {
+    const email = join.email.toLowerCase();
+    const payments = await zeffyPaymentsSince(campaign.zeffyCampaignId, new Date(join.createdAt.getTime() - 10 * 60_000));
+    const mine = payments
+      .filter((p) => p.succeeded && !p.refunded && passLines(p).some((l) => l.email.toLowerCase() === email))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+    if (mine) {
+      const result = await recordZeffyPayment(trailPassStore(service), mine, new Date());
+      if (result.kind === "recorded") recorded = result.passes;
+    }
+  }
+  const view = decideJoinedView({ join, recorded });
+  if (view.kind === "signed-in") {
+    await startHolderSession(view.holderId);
+    clearTrailJoin();
+    return { kind: "signed-in", next: view.next };
+  }
+  return view;
+});
