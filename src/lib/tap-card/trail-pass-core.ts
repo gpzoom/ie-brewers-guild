@@ -109,3 +109,11 @@ export function decideJoinedView(i: {
   if (mine && !mine.holderExisted && paidAfterJoin && i.claim.otherJoins === 0) return { kind: "signed-in", holderId: mine.holderId, next };
   return { kind: "need-code", email: i.join.email, next };
 }
+
+/**
+ * A pass counts in its own trail year -- or right now when the Guild has
+ * switched that year's campaign to "testing: offers work now".
+ */
+export function passCountsNow(passYears: number[], unlockedYears: number[], year: number): boolean {
+  return passYears.includes(year) || passYears.some((y) => unlockedYears.includes(y));
+}

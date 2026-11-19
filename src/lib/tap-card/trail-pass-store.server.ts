@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { TrailPassStore } from "@/lib/tap-card/trail-pass-core";
+import { passCountsNow, type TrailPassStore } from "@/lib/tap-card/trail-pass-core";
 import { activeCampaignYear } from "@/lib/tap-card/trail-join";
 import { tapCardYear } from "@/lib/tap-card/tap-card-time";
 
@@ -119,4 +119,19 @@ export async function countOtherJoins(service: SupabaseClient, email: string, ex
     .lte("created_at", to.toISOString());
   if (error) throw new Error(error.message);
   return count ?? 0;
+}
+
+/** Does this cardholder's pass unlock the Beer Trail in this year (see passCountsNow)? */
+export async function holderHasTrailPass(service: SupabaseClient, holderId: string, year: number): Promise<boolean> {
+  const [passes, unlocked] = await Promise.all([
+    service.from("tap_card_trail_passes").select("year").eq("holder_id", holderId).is("refunded_at", null),
+    service.from("tap_card_trail_campaigns").select("year").eq("unlock_now", true),
+  ]);
+  if (passes.error) throw new Error(passes.error.message);
+  if (unlocked.error) throw new Error(unlocked.error.message);
+  return passCountsNow(
+    (passes.data ?? []).map((p) => p.year as number),
+    (unlocked.data ?? []).map((c) => c.year as number),
+    year,
+  );
 }

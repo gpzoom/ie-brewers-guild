@@ -22,6 +22,7 @@ export function PassesPanel({ report, onYearChange }: { report: PassReport; onYe
     zeffyCampaignId: current?.zeffyCampaignId ?? "",
     formUrl: current?.formUrl ?? "",
     commissionPct: String(current?.commissionPct ?? 50),
+    unlockNow: current?.unlockNow ?? false,
   });
   const [assign, setAssign] = useState<Record<string, string>>({});
 
@@ -41,7 +42,13 @@ export function PassesPanel({ report, onYearChange }: { report: PassReport; onYe
     await run(
       () =>
         saveTrailCampaign({
-          data: { year: Number(form.year), zeffyCampaignId: form.zeffyCampaignId, formUrl: form.formUrl, commissionPct: Number(form.commissionPct) },
+          data: {
+            year: Number(form.year),
+            zeffyCampaignId: form.zeffyCampaignId,
+            formUrl: form.formUrl,
+            commissionPct: Number(form.commissionPct),
+            unlockNow: form.unlockNow,
+          },
         }),
       "Saved.",
     );
@@ -175,6 +182,16 @@ export function PassesPanel({ report, onYearChange }: { report: PassReport; onYe
             <input className={fieldClass} value={form.zeffyCampaignId} onChange={(e) => setForm({ ...form, zeffyCampaignId: e.target.value })} />
           </label>
         </div>
+        <label className="flex items-start gap-3 rounded-[10px] border border-[#E6E0D6] bg-[#FCFAF6] px-3 py-3 text-[13px] text-ink">
+          <input type="checkbox" className="mt-0.5 size-5" checked={form.unlockNow} onChange={(e) => setForm({ ...form, unlockNow: e.target.checked })} />
+          <span>
+            <span className="font-semibold">Testing: Beer Trail offers work now with this pass.</span> Normally a {form.year || "year"} pass
+            unlocks the Beer Trail offer and Guild rewards on January 1 of that year. Turn this off before the program goes live.
+          </span>
+        </label>
+        {current?.unlockNow && (
+          <p className="text-[13px] font-semibold text-[#B42318]">Testing switch is ON: {current.year} passes unlock Beer Trail offers now.</p>
+        )}
         <button type="submit" className={`${darkButtonClass} w-fit`}>
           Save
         </button>

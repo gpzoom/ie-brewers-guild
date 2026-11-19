@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { holderHasTrailPass } from "@/lib/tap-card/trail-pass-store.server";
 import type { BarStore } from "@/lib/tap-card/bar-core";
 import { DEFAULT_EXPIRY_DAYS, type LiveOffer, type OfferSlot } from "@/lib/tap-card/loyalty";
 
@@ -45,15 +46,7 @@ export function barStore(service: SupabaseClient): BarStore {
       return count ?? 0;
     },
     async hasTrailPass(holderId, year) {
-      const { data, error } = await service
-        .from("tap_card_trail_passes")
-        .select("id")
-        .eq("holder_id", holderId)
-        .eq("year", year)
-        .is("refunded_at", null)
-        .limit(1);
-      if (error) throw new Error(error.message);
-      return (data ?? []).length > 0;
+      return holderHasTrailPass(service, holderId, year);
     },
     async trailRedeemedIn(holderId, memberId, year) {
       const { data, error } = await service

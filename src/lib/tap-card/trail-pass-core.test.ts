@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decideJoinedView, hasTrailPass, recordMissingPayment, recordZeffyPayment, type TrailPassStore } from "@/lib/tap-card/trail-pass-core";
+import { decideJoinedView, hasTrailPass, passCountsNow, recordMissingPayment, recordZeffyPayment, type TrailPassStore } from "@/lib/tap-card/trail-pass-core";
 import type { ZeffyPayment } from "@/lib/tap-card/zeffy";
 
 const PAID = new Date("2027-03-01T20:00:00Z");
@@ -236,5 +236,17 @@ describe("partial refunds", () => {
     await recordZeffyPayment(f.store, pay(), PAID);
     expect(await recordZeffyPayment(f.store, pay({ partiallyRefunded: true }), PAID)).toMatchObject({ kind: "recorded" });
     expect(f.passes[0].refundedAt).toBeNull();
+  });
+});
+
+describe("passCountsNow", () => {
+  it("a pass counts in its own trail year", () => {
+    expect(passCountsNow([2027], [], 2027)).toBe(true);
+    expect(passCountsNow([2027], [], 2026)).toBe(false);
+  });
+  it("the Guild's testing switch lets that year's passes work now", () => {
+    expect(passCountsNow([2027], [2027], 2026)).toBe(true);
+    expect(passCountsNow([2027], [2028], 2026)).toBe(false);
+    expect(passCountsNow([], [2027], 2026)).toBe(false);
   });
 });

@@ -5,7 +5,7 @@ import { monthlyCommission, type CommissionRow, type PassRow } from "@/lib/tap-c
 
 /** Beer Trail Pass sales and commission (spec 2026-11-19). Guild sees everything; a brewery sees its own counts. */
 
-export type TrailCampaignRow = { year: number; zeffyCampaignId: string; formUrl: string; commissionPct: number };
+export type TrailCampaignRow = { year: number; zeffyCampaignId: string; formUrl: string; commissionPct: number; unlockNow: boolean };
 export type UnassignedPass = { id: string; paidAt: string; amountCents: number; holderName: string; holderEmail: string; refunded: boolean };
 export type PassReport = {
   campaigns: TrailCampaignRow[];
@@ -18,9 +18,9 @@ export type PassReport = {
 type Service = Awaited<ReturnType<typeof requireTapCardGuildAdmin>>["service"];
 
 async function campaigns(service: Service): Promise<TrailCampaignRow[]> {
-  const { data, error } = await service.from("tap_card_trail_campaigns").select("year, zeffy_campaign_id, form_url, commission_pct").order("year", { ascending: false });
+  const { data, error } = await service.from("tap_card_trail_campaigns").select("year, zeffy_campaign_id, form_url, commission_pct, unlock_now").order("year", { ascending: false });
   if (error) throw new Error(error.message);
-  return (data ?? []).map((c) => ({ year: c.year, zeffyCampaignId: c.zeffy_campaign_id, formUrl: c.form_url, commissionPct: c.commission_pct }));
+  return (data ?? []).map((c) => ({ year: c.year, zeffyCampaignId: c.zeffy_campaign_id, formUrl: c.form_url, commissionPct: c.commission_pct, unlockNow: c.unlock_now === true }));
 }
 
 export const getPassReport = createServerFn({ method: "GET" })
@@ -66,6 +66,7 @@ export const saveTrailCampaign = createServerFn({ method: "POST" })
     zeffyCampaignId: String(data?.zeffyCampaignId ?? "").trim(),
     formUrl: String(data?.formUrl ?? "").trim(),
     commissionPct: Number(data?.commissionPct),
+    unlockNow: data?.unlockNow === true,
   }))
   .handler(async ({ data }): Promise<{ ok: true }> => {
     const { service } = await requireTapCardGuildAdmin();
@@ -74,7 +75,7 @@ export const saveTrailCampaign = createServerFn({ method: "POST" })
     if (!/^https:\/\/www\.zeffy\.com\//.test(data.formUrl)) throw new Error("Enter the Zeffy form link (https://www.zeffy.com/...).");
     if (!Number.isInteger(data.commissionPct) || data.commissionPct < 0 || data.commissionPct > 100) throw new Error("Commission is a whole percent from 0 to 100.");
     const { error } = await service.from("tap_card_trail_campaigns").upsert(
-      { year: data.year, zeffy_campaign_id: data.zeffyCampaignId, form_url: data.formUrl, commission_pct: data.commissionPct },
+      { year: data.year, zeffy_campaign_id: data.zeffyCampaignId, form_url: data.formUrl, commission_pct: data.commissionPct, unlock_now: data.unlockNow },
       { onConflict: "year" },
     );
     if (error) throw new Error(error.code === "23505" ? "That Zeffy campaign is already used for another year." : error.message);
