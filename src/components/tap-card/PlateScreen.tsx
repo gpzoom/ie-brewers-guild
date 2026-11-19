@@ -3,12 +3,13 @@ import { choosePlateAction, confirmAtPlate, type PlateChoice, type PlateView } f
 import { requestHolderSignIn } from "@/lib/tap-card/holder.server";
 import type { BarReward } from "@/lib/tap-card/loyalty";
 import { PENDING_MINUTES } from "@/lib/tap-card/staff-qr";
-import { CanvasHeading, fieldErrorClass, inputClass, labelClass, leadClass, primaryButtonClass } from "@/components/public-forms/PublicFormParts";
+import { CanvasHeading, cardLinkClass, fieldErrorClass, inputClass, labelClass, leadClass, primaryButtonClass, secondaryButtonClass } from "@/components/public-forms/PublicFormParts";
 import { Eyebrow } from "@/components/tap-card/TapCardShell";
 import { useByDate } from "@/components/tap-card/CheckInScreen";
 import { PlateSuccess, StaffCodeForm, plateRefusal, type PlateOk } from "@/components/tap-card/PlateSuccess";
 import { SignInCodeForm } from "@/components/tap-card/SignInCodeForm";
 import { CardScanner } from "@/components/tap-card/CardScanner";
+import { joinPageUrl } from "@/lib/tap-card/trail-join";
 
 type Ready = Extract<PlateView, { view: "ready" }>;
 
@@ -105,6 +106,11 @@ function ReadyScreen({ view }: { view: Ready }) {
       <button type="submit" className={primaryButtonClass} disabled={busy}>
         {busy ? "One moment…" : waiting.length > 0 ? "Continue" : "Check in"}
       </button>
+      {view.canJoinTrail && (
+        <a href={joinPageUrl(view.code)} className={`${cardLinkClass} w-fit text-[14px]`}>
+          Join this year&rsquo;s Beer Trail
+        </a>
+      )}
       {error && (
         <p role="alert" className={fieldErrorClass}>
           {error}
@@ -114,11 +120,12 @@ function ReadyScreen({ view }: { view: Ready }) {
   );
 }
 
-function SignedOut({ code, memberName }: { code: string; memberName: string }) {
+function SignedOut({ code, memberName, canJoinTrail }: { code: string; memberName: string; canJoinTrail: boolean }) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [signingIn, setSigningIn] = useState(!canJoinTrail);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -138,8 +145,21 @@ function SignedOut({ code, memberName }: { code: string; memberName: string }) {
   return (
     <>
       <Eyebrow>{memberName}</Eyebrow>
-      <CanvasHeading size="md">Sign in to your Tap Card</CanvasHeading>
-      {sent ? (
+      {!signingIn ? (
+        <div className="flex flex-col gap-3">
+          <CanvasHeading size="md">Welcome to the Inland Tap Card</CanvasHeading>
+          <p className={leadClass}>Collect Beer Trail stops and earn rewards at {memberName} and every Guild brewery.</p>
+          <a href={joinPageUrl(code)} className={primaryButtonClass}>
+            Join the Beer Trail
+          </a>
+          <button type="button" className={secondaryButtonClass} onClick={() => setSigningIn(true)}>
+            I have a Tap Card: sign in
+          </button>
+        </div>
+      ) : (
+        <CanvasHeading size="md">Sign in to your Tap Card</CanvasHeading>
+      )}
+      {!signingIn ? null : sent ? (
         <SignInCodeForm email={email} onSignedIn={() => window.location.reload()} />
       ) : (
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
@@ -183,7 +203,7 @@ export function PlateScreen({ view }: { view: PlateView }) {
         </>
       );
     case "signed-out":
-      return <SignedOut code={view.code} memberName={view.memberName} />;
+      return <SignedOut code={view.code} memberName={view.memberName} canJoinTrail={view.canJoinTrail} />;
     case "ready":
       return <ReadyScreen view={view} />;
   }

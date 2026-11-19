@@ -19,7 +19,7 @@ type RateLimiter = { limit: (opts: { key: string }) => Promise<{ success: boolea
  * Returns a message to show, or null when the request may go ahead.
  */
 export async function rateLimitMessage(
-  namespace: "join-submit" | "join-search" | "tapcard-activate" | "tapcard-signin" | "tapcard-card",
+  namespace: "join-submit" | "join-search" | "tapcard-activate" | "tapcard-signin" | "tapcard-card" | "tapcard-join",
 ): Promise<string | null> {
   const { env } = await import("cloudflare:workers");
   const limiter = (env as { CREATOR_UPLOAD_RATE_LIMITER?: RateLimiter }).CREATOR_UPLOAD_RATE_LIMITER;

@@ -9,6 +9,9 @@ import {
 } from "@/lib/tap-card/tap-card-auth";
 import { isStagingSite } from "@/lib/email/build-email-content";
 import { currentRequestUrl } from "@/lib/request-url.server";
+import { TRAIL_JOIN_COOKIE } from "@/lib/tap-card/trail-join";
+import { normalizeCardCode } from "@/lib/tap-card/card-code";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { parsePendingChoice, sessionNeedsRenewal, type Pending, type PendingChoice } from "@/lib/tap-card/staff-qr";
 
 /**
@@ -171,4 +174,30 @@ export async function endHolderSession(): Promise<void> {
     await service.from("tap_card_sessions").delete().eq("token_hash", await hashUploadToken(raw));
   }
   setCookie(HOLDER_COOKIE, "", cookieOptions(0));
+}
+
+/** Names the Beer Trail sign-up this browser started (2 hours), so the return page from Zeffy can finish it. */
+export function setTrailJoinCookie(value: string): void {
+  setCookie(TRAIL_JOIN_COOKIE, value, { httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 2 * 60 * 60 });
+}
+
+/** The sign-up this browser started (cookie), if any. */
+export async function readTrailJoin(service: SupabaseClient): Promise<{ id: string; email: string; memberId: string | null; plateCode: string | null; createdAt: Date } | null> {
+  const raw = getCookie(TRAIL_JOIN_COOKIE);
+  const [id, plateCode] = (raw ?? "").split(".");
+  if (!id || !/^[0-9a-f-]{36}$/.test(id)) return null;
+  const { data, error } = await service.from("tap_card_trail_joins").select("id, email, member_id, created_at").eq("id", id).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return {
+    id: data.id as string,
+    email: data.email as string,
+    memberId: (data.member_id as string | null) ?? null,
+    plateCode: plateCode && normalizeCardCode(plateCode) ? normalizeCardCode(plateCode) : null,
+    createdAt: new Date(data.created_at as string),
+  };
+}
+
+export function clearTrailJoin(): void {
+  setCookie(TRAIL_JOIN_COOKIE, "", { httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 0 });
 }

@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TrailPassStore } from "@/lib/tap-card/trail-pass-core";
+import { activeCampaignYear } from "@/lib/tap-card/trail-join";
+import { tapCardYear } from "@/lib/tap-card/tap-card-time";
 
 /** TrailPassStore on Supabase (service role). */
 export function trailPassStore(service: SupabaseClient): TrailPassStore & { passYears(holderId: string): Promise<number[]> } {
@@ -80,4 +82,23 @@ export function trailPassStore(service: SupabaseClient): TrailPassStore & { pass
       return (data ?? []).map((r) => r.year as number);
     },
   };
+}
+
+export type TrailCampaign = { year: number; zeffyCampaignId: string; formUrl: string };
+
+/** The pass on sale now (see activeCampaignYear). */
+export async function activeCampaign(service: SupabaseClient, now = new Date()): Promise<TrailCampaign | null> {
+  const { data, error } = await service.from("tap_card_trail_campaigns").select("year, zeffy_campaign_id, form_url");
+  if (error) throw new Error(error.message);
+  const year = activeCampaignYear((data ?? []).map((c) => c.year as number), tapCardYear(now));
+  const row = (data ?? []).find((c) => c.year === year);
+  return row ? { year: row.year as number, zeffyCampaignId: row.zeffy_campaign_id as string, formUrl: row.form_url as string } : null;
+}
+
+/** True when a pass is on sale and this cardholder doesn't have it yet. */
+export async function canJoinTrail(service: SupabaseClient, holderId: string | null): Promise<boolean> {
+  const campaign = await activeCampaign(service);
+  if (!campaign) return false;
+  if (!holderId) return true;
+  return !(await trailPassStore(service).passYears(holderId)).includes(campaign.year);
 }

@@ -30,6 +30,9 @@ const OPEN_PREFIXES = [
   "/s",
   "/scanner",
   "/card",
+  // Joining the Beer Trail from a plate, and coming back from Zeffy.
+  "/trail/join",
+  "/trail/joined",
 ];
 
 export function showsMaintenance(

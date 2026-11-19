@@ -13,6 +13,7 @@ import { decideStaffQrView, isStaffQrToken, memberTakesCheckIns, parsePendingCho
 import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
 import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
 import { tapCardDay, tapCardYear } from "@/lib/tap-card/tap-card-time";
+import { canJoinTrail } from "@/lib/tap-card/trail-pass-store.server";
 import { PLATE_LOCK_MINUTES, plateUrl, staffCodeGate, validateStaffCode, type AttemptStore } from "@/lib/tap-card/plate";
 
 /**
@@ -98,8 +99,8 @@ function attemptStore(service: SupabaseClient, holderId: string, memberId: strin
 export type PlateView =
   | { view: "unknown" }
   | { view: "closed"; memberName: string }
-  | { view: "signed-out"; code: string; memberName: string }
-  | { view: "ready"; code: string; memberName: string; memberSlug: string; firstName: string; nextVisitNumber: number; checkedInToday: boolean; state: BarState };
+  | { view: "signed-out"; code: string; memberName: string; canJoinTrail: boolean }
+  | { view: "ready"; code: string; memberName: string; memberSlug: string; firstName: string; nextVisitNumber: number; checkedInToday: boolean; canJoinTrail: boolean; state: BarState };
 
 export const getPlateView = createServerFn({ method: "GET" })
   .inputValidator((data: { code: string }) => ({ code: String(data?.code ?? "") }))
@@ -110,10 +111,10 @@ export const getPlateView = createServerFn({ method: "GET" })
     if (!plate.open) return { view: "closed", memberName: plate.memberName };
     const code = normalizeCardCode(data.code)!;
     const holderId = await readHolderId();
-    if (!holderId) return { view: "signed-out", code, memberName: plate.memberName };
+    if (!holderId) return { view: "signed-out", code, memberName: plate.memberName, canJoinTrail: await canJoinTrail(service, null) };
     const { data: holder, error } = await service.from("tap_card_holders").select("name").eq("id", holderId).maybeSingle();
     if (error) throw new Error(error.message);
-    if (!holder) return { view: "signed-out", code, memberName: plate.memberName };
+    if (!holder) return { view: "signed-out", code, memberName: plate.memberName, canJoinTrail: await canJoinTrail(service, null) };
     const store = barStore(service);
     const at = new Date();
     const today = await store.findVisit(holderId, plate.memberId, tapCardDay(at));
@@ -126,6 +127,7 @@ export const getPlateView = createServerFn({ method: "GET" })
       firstName: firstNameOf(holder.name),
       nextVisitNumber: today ? state.visitNumber : state.visitNumber + 1,
       checkedInToday: today !== null,
+      canJoinTrail: await canJoinTrail(service, holderId),
       state,
     };
   });
