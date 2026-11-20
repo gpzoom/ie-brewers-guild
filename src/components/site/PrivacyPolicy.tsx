@@ -49,16 +49,18 @@ export function PrivacyPolicy() {
               give for credit.
             </>,
             <>
-              <strong>If you have an Inland Tap Card:</strong> your name and email address, your card's
-              code, which stop turned on your card and whether you or a staff member confirmed you're 21 or
-              older, each visit (which stop and when) and which bar device recorded each visit, when you use
-              a stop's offer, the Guild rewards you earn, how many times you've visited each brewery, and
-              which rewards you've earned from breweries and when you used them. When your card is tapped at a stop, the
-              staff member sees your first name, whether you've already used that stop's offer this year, and
-              any Guild reward you just earned, plus any loyalty rewards waiting for you there. If you check in
-              at a brewery's counter plate, your own phone shows the same, and the staff member enters a staff
-              code on it. If a staff member turns on your card for you, they type in your
-              name and email; otherwise breweries don't see your email address.
+              <strong>If you have an Inland Tap Card:</strong> your name and email address; which Guild
+              member's counter you signed up at, and whether you or a staff member confirmed you're 21 or
+              older; each visit (which Guild member and when, and the device or counter plate that recorded
+              it); when you use the Beer Trail offer or a member's reward; and the Guild and member rewards
+              you earn. If you buy a <strong>Beer Trail Pass</strong>, we also keep the pass, its year, the
+              amount paid and which Guild member's counter you bought it from. Zeffy handles the payment, and
+              we never see your card number. If you check the box to let a Guild member email you, we keep
+              that choice. When you check in, the staff member sees your first name, whether you've used that
+              stop's Beer Trail offer this year, and any rewards waiting for you there. Guild members see how
+              many passes were sold at their counter and how many customers agreed to their emails, but not
+              your name, email address or visits. If a staff member turns on your card for you, they type in
+              your name and email. A taproom's bar device or counter plate records your visits there.
             </>,
             <>
               <strong>Email:</strong> members' email addresses for Guild emails, and whether you have
@@ -78,7 +80,9 @@ export function PrivacyPolicy() {
           Our own cookies are only the ones the site needs. Sign-in cookies keep you signed in. When
           you confirm you're 21 or older, we save a cookie so we don't ask again for one year; it records
           only that you confirmed you're 21 or older. If you have an Inland Tap Card, a cookie keeps you
-          signed in to your Tap Card page for up to 90 days. A taproom's bar device keeps a cookie that
+          signed in to it for about 400 days, renewed each time you use it. While you're paying for a Beer
+          Trail Pass, a cookie remembers your sign-up for up to 2 hours so we can finish it when you come
+          back. A taproom's bar device keeps a cookie that
           lets it record Tap Card visits for that brewery. The Help
           button may remember your first name on your own device so you don't have to type it again. We
           don't add advertising, analytics or tracking tools to the site.
@@ -94,7 +98,8 @@ export function PrivacyPolicy() {
         <LegalList
           items={[
             "To run the member directory, events, jobs board and maps.",
-            "To run the Inland Tap Card: record visits and offers, show your progress, and give out Guild and brewery rewards.",
+            "To run the Inland Tap Card: record visits and offers, show your progress, and give out Guild and member rewards.",
+            "To sell the Beer Trail Pass and to pay Guild members their share of passes sold at their counter.",
             "To review applications to join and to set up and support member profiles.",
             "To answer your messages and help with sign-in problems.",
             "To send sign-in links, notices about your profile, and Guild emails to members.",
@@ -122,6 +127,12 @@ export function PrivacyPolicy() {
             <><strong>Cloudflare</strong> hosts the website, protects it from attacks, and routes our email.</>,
             <><strong>Supabase</strong> stores our database and uploaded photos.</>,
             <><strong>Resend</strong> sends the site's emails.</>,
+            <>
+              <strong>Zeffy</strong> takes payments for the Beer Trail Pass. You give your name, email and
+              payment details to Zeffy on its page, and Zeffy tells us your name, email and what you bought so
+              we can set up your pass. Zeffy's use is covered by the{" "}
+              <ExternalLink href="https://support.zeffy.com/privacy-policy-6d7zh">Zeffy Privacy Policy</ExternalLink>.
+            </>,
             <><strong>Google Fonts</strong> supplies the site's fonts.</>,
             <><strong>Livid</strong> hosts the help videos in the Member Portal.</>,
             <>
@@ -151,6 +162,11 @@ export function PrivacyPolicy() {
         <p>
           Every Guild email sent to a list includes an unsubscribe link. Emails you need to use the site,
           such as sign-in links and notices about your own profile, still go out.
+        </p>
+        <p>
+          If you have an Inland Tap Card and check the box to let a Guild member email you, we keep that
+          choice for that member. Their emails are sent through our site, and every one has an unsubscribe
+          link. We never give members your email address.
         </p>
       </LegalSection>
 
@@ -191,7 +207,7 @@ export function PrivacyPolicy() {
 
       <LegalSection title="Security">
         <p>
-          We sign people in with one-time email links instead of passwords, use secure connections, and
+          We sign people in with one-time email links or codes instead of passwords, use secure connections, and
           limit who can see member information. No system is perfectly secure, but we work to protect
           your information.
         </p>

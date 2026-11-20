@@ -111,17 +111,27 @@ export function TermsOfUse() {
 
       <LegalSection title="Inland Tap Card">
         <p>
-          The Inland Tap Card is for people 21 or older. The Beer Trail offer, set by the Guild, can be used
-          once per stop each calendar year (Pacific time), and only by the card's holder. A stop may refuse
-          service as the law requires. Guild rewards are for visiting different stops, not for how much you
-          drink. The Guild can change or end the program, its rewards and its stops at any time.
+          The Inland Tap Card is free and is for people 21 or older. You can use it at any Guild member that
+          takes Tap Card check-ins, to earn that member's loyalty rewards.
         </p>
         <p>
-          Breweries may also offer loyalty rewards for coming back. Each one is set by each brewery and
-          approved by the Guild, and the brewery honors it. A reward you earn waits on your card until you use
-          it, and rewards expire after the time the brewery shows. One reward per visit. Rewards have no cash
-          value and can't be transferred. At a brewery's counter plate, a check-in counts only when the
-          staff member enters the brewery's staff code.
+          The Beer Trail Pass is sold through Zeffy for one trail year (January 1 to December 31, Pacific
+          time). With a pass, you can use the Beer Trail offer, set by the Guild, once at each Beer Trail stop
+          that year. Only the card's holder can use it. Guild rewards are for visiting different stops, not
+          for how much you drink. Stops you visited earlier that year count once you have a pass. A pass
+          doesn't renew by itself; each year's trail is a new pass. Passes are non-refundable. If the Guild
+          refunds one anyway, that pass's Beer Trail benefits end.
+        </p>
+        <p>
+          Guild members may also offer loyalty rewards for coming back. Each one is set by the member and
+          approved by the Guild, and the member honors it. A reward you earn waits on your card until you use
+          it, and it expires after the time the member shows. One reward per visit. Rewards have no cash
+          value and can't be transferred. A check-in counts only when a staff member confirms it, with the
+          staff QR code or the staff code.
+        </p>
+        <p>
+          A stop may refuse service as the law requires. The Guild can change or end the program, its
+          rewards, its passes and its stops at any time.
         </p>
       </LegalSection>
 

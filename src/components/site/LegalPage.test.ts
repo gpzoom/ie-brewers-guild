@@ -42,20 +42,36 @@ describe("Privacy Policy", () => {
 
   it("describes the Inland Tap Card: what it stores, who sees it, its cookies", () => {
     expect(t).toContain("Inland Tap Card");
-    expect(t).toContain("each visit (which stop and when)");
+    expect(t).toContain("each visit (which Guild member and when, and the device or counter plate that recorded it)");
     expect(t).toContain("the staff member sees your first name");
-    expect(t).not.toContain("Breweries don't see your email address");
     expect(t).toContain("If a staff member turns on your card for you, they type in your name and email");
-    expect(t).toContain("which stop turned on your card");
-    expect(t).toContain("which bar device recorded each visit");
-    expect(t).toContain("any Guild reward you just earned");
+    expect(t).toContain("which Guild member's counter you signed up at");
     expect(t).toContain("bar device");
-    expect(t).toContain("signed in to your Tap Card");
+    expect(t).toContain("keeps you signed in to it for about 400 days, renewed each time you use it");
+    expect(t).not.toContain("up to 90 days");
+  });
+
+  it("covers the Beer Trail Pass and Zeffy", () => {
+    expect(t).toContain("Beer Trail Pass");
+    expect(t).toContain("we never see your card number");
+    expect(t).toContain("which Guild member's counter you bought it from");
+    expect(t).toContain("To sell the Beer Trail Pass and to pay Guild members their share of passes sold at their counter.");
+    expect(html).toContain('href="https://support.zeffy.com/privacy-policy-6d7zh"');
+    expect(t).toContain("remembers your sign-up for up to 2 hours");
+  });
+
+  it("member email opt-ins: kept per member, sent through the site, addresses never given out", () => {
+    expect(t).toContain("check the box to let a Guild member email you");
+    expect(t).toContain("We never give members your email address");
+    expect(t).toContain("how many customers agreed to their emails, but not your name, email address or visits");
+  });
+
+  it("sign-in works with email links or codes", () => {
+    expect(t).toContain("one-time email links or codes");
   });
 
   it("describes loyalty rewards and counter plates", () => {
-    expect(t).toContain("how many times you've visited each brewery");
-    expect(t).toContain("which rewards you've earned");
+    expect(t).toContain("the Guild and member rewards you earn");
     expect(t).toContain("counter plate");
   });
 
@@ -95,20 +111,26 @@ describe("Terms of Use", () => {
   });
 
   it("sets the Inland Tap Card rules", () => {
-    expect(t).toContain("Inland Tap Card");
-    expect(t).toContain("once per stop each calendar year");
+    expect(t).toContain("Inland Tap Card is free");
+    expect(t).toContain("once at each Beer Trail stop that year");
     expect(t).toContain("approved by the Guild");
     expect(t).toContain("21 or older");
     expect(t).toContain("can change or end the program");
   });
 
+  it("sets the Beer Trail Pass rules: one trail year, sold through Zeffy, non-refundable", () => {
+    expect(t).toContain("sold through Zeffy for one trail year (January 1 to December 31, Pacific time)");
+    expect(t).toContain("Passes are non-refundable.");
+    expect(t).toContain("each year's trail is a new pass");
+  });
+
   it("sets the loyalty reward rules", () => {
     expect(t).toContain("loyalty rewards");
-    expect(t).toContain("set by each brewery");
+    expect(t).toContain("set by the member");
     expect(t).toContain("expire");
     expect(t).toContain("One reward per visit");
     expect(t).toContain("no cash value");
-    expect(t).toContain("staff code");
+    expect(t).toContain("with the staff QR code or the staff code");
   });
 
   it("covers the jobs board, as-is information and limits of liability", () => {
