@@ -10,7 +10,8 @@ import { TemplatesPanel } from "@/components/guild/tap-card/TemplatesPanel";
 import { MilestonesPanel } from "@/components/guild/tap-card/MilestonesPanel";
 import { RewardsPanel } from "@/components/guild/tap-card/RewardsPanel";
 import { PassesPanel } from "@/components/guild/tap-card/PassesPanel";
-import { getPassReport } from "@/lib/tap-card/trail-pass-admin.server";
+import { getPassReport, listPasses } from "@/lib/tap-card/trail-pass-admin.server";
+import { RecentPasses } from "@/components/guild/tap-card/RecentPasses";
 import { TapCardTabs, isTapCardTab, type TapCardTab } from "@/components/guild/tap-card/TapCardTabs";
 
 type Search = { tab?: TapCardTab; show?: "all"; year?: number };
@@ -45,8 +46,10 @@ export const Route = createFileRoute("/guild/tap-card")({
         const year = tapCardYear(new Date());
         return { ...base, year, show: deps.show, rewards: await listEarnedRewards({ data: { year, show: deps.show } }) };
       }
-      case "passes":
-        return { ...base, report: await getPassReport({ data: { year: deps.year } }) };
+      case "passes": {
+        const report = await getPassReport({ data: { year: deps.year } });
+        return { ...base, report, passes: await listPasses({ data: { year: report.year } }) };
+      }
     }
   },
   component: TapCardRoute,
@@ -74,7 +77,10 @@ function TapCardRoute() {
       {data.tab === "templates" && "templates" in data && <TemplatesPanel templates={data.templates} />}
       {data.tab === "milestones" && "milestones" in data && <MilestonesPanel milestones={data.milestones} />}
       {data.tab === "passes" && "report" in data && (
-        <PassesPanel key={data.report.year} report={data.report} onYearChange={(year) => navigate({ search: { tab: "passes", year } })} />
+        <>
+          <PassesPanel key={data.report.year} report={data.report} onYearChange={(year) => navigate({ search: { tab: "passes", year } })} />
+          {"passes" in data && <RecentPasses passes={data.passes} />}
+        </>
       )}
       {data.tab === "rewards" && "rewards" in data && (
         <RewardsPanel

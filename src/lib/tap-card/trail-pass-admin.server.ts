@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
 import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
 import { monthlyCommission, type CommissionRow, type PassRow } from "@/lib/tap-card/trail-pass-report";
+import { emptyCard } from "@/lib/tap-card/trail-pass-core";
 
 /** Beer Trail Pass sales and commission (spec 2026-11-19). Guild sees everything; a brewery sees its own counts. */
 
@@ -122,4 +123,65 @@ export const getMemberPassSummary = createServerFn({ method: "GET" })
     const rows = [...byYear.entries()].flatMap(([year, list]) => monthlyCommission(list, pctOf.get(year) ?? 50));
     rows.sort((a, b) => b.month.localeCompare(a.month));
     return { rows, subscribers: subs.count ?? 0 };
+  });
+
+export type PassListRow = { id: string; paidAt: string; amountCents: number; holderName: string; holderEmail: string; memberName: string | null; refunded: boolean };
+
+/** The latest 100 passes for a trail year, for finding one to move. */
+export const listPasses = createServerFn({ method: "GET" })
+  .inputValidator((data: { year: number }) => ({ year: Number(data?.year) }))
+  .handler(async ({ data }): Promise<PassListRow[]> => {
+    const { service } = await requireTapCardGuildAdmin();
+    const { data: rows, error } = await service
+      .from("tap_card_trail_passes")
+      .select("id, paid_at, amount_cents, refunded_at, members(business_name), tap_card_holders(name, email)")
+      .eq("year", data.year)
+      .order("paid_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((p) => {
+      const h = p.tap_card_holders as unknown as { name: string; email: string } | null;
+      const m = p.members as unknown as { business_name: string } | null;
+      return { id: p.id, paidAt: p.paid_at, amountCents: p.amount_cents, holderName: h?.name ?? "", holderEmail: h?.email ?? "", memberName: m?.business_name ?? null, refunded: p.refunded_at !== null };
+    });
+  });
+
+/**
+ * A pass that landed on a new card by mistake (a different email on Zeffy):
+ * move it to the card with this email. The old card is removed only if it now
+ * has nothing on it.
+ */
+export const movePassToCard = createServerFn({ method: "POST" })
+  .inputValidator((data: { passId: string; email: string }) => ({ passId: String(data?.passId ?? ""), email: String(data?.email ?? "").trim().toLowerCase() }))
+  .handler(async ({ data }): Promise<{ ok: true; removedOldCard: boolean }> => {
+    const { service } = await requireTapCardGuildAdmin();
+    const [{ data: pass, error: pError }, { data: target, error: tError }] = await Promise.all([
+      service.from("tap_card_trail_passes").select("id, holder_id").eq("id", data.passId).maybeSingle(),
+      service.from("tap_card_holders").select("id").eq("email_lower", data.email).maybeSingle(),
+    ]);
+    if (pError) throw new Error(pError.message);
+    if (tError) throw new Error(tError.message);
+    if (!pass) throw new Error("That pass wasn't found.");
+    if (!target) throw new Error("No Tap Card uses that email.");
+    if (pass.holder_id === target.id) return { ok: true, removedOldCard: false };
+    const { error } = await service.from("tap_card_trail_passes").update({ holder_id: target.id }).eq("id", pass.id);
+    if (error) throw new Error(error.message);
+    const old = pass.holder_id as string | null;
+    if (!old) return { ok: true, removedOldCard: false };
+    const count = async (table: string) => {
+      const { count: n, error: e } = await service.from(table).select("holder_id", { count: "exact", head: true }).eq("holder_id", old);
+      if (e) throw new Error(e.message);
+      return n ?? 0;
+    };
+    const [visits, cards, passes, earned, milestones] = await Promise.all([
+      count("tap_card_visits"),
+      count("tap_cards"),
+      count("tap_card_trail_passes"),
+      count("tap_card_earned_rewards"),
+      count("tap_card_rewards"),
+    ]);
+    if (!emptyCard({ visits, cards, passes, earned, milestones })) return { ok: true, removedOldCard: false };
+    const { error: dError } = await service.from("tap_card_holders").delete().eq("id", old);
+    if (dError) throw new Error(dError.message);
+    return { ok: true, removedOldCard: true };
   });

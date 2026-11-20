@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decideJoinedView, hasTrailPass, passCountsNow, recordMissingPayment, recordZeffyPayment, type TrailPassStore } from "@/lib/tap-card/trail-pass-core";
+import { decideJoinedView, emptyCard, hasTrailPass, passCountsNow, recordMissingPayment, recordZeffyPayment, type TrailPassStore } from "@/lib/tap-card/trail-pass-core";
 import type { ZeffyPayment } from "@/lib/tap-card/zeffy";
 
 const PAID = new Date("2027-03-01T20:00:00Z");
@@ -248,5 +248,13 @@ describe("passCountsNow", () => {
     expect(passCountsNow([2027], [2027], 2026)).toBe(true);
     expect(passCountsNow([2027], [2028], 2026)).toBe(false);
     expect(passCountsNow([], [2027], 2026)).toBe(false);
+  });
+});
+
+describe("emptyCard", () => {
+  const zero = { visits: 0, cards: 0, passes: 0, earned: 0, milestones: 0 };
+  it("is empty only with nothing at all on it", () => {
+    expect(emptyCard(zero)).toBe(true);
+    for (const k of Object.keys(zero) as (keyof typeof zero)[]) expect(emptyCard({ ...zero, [k]: 1 })).toBe(false);
   });
 });

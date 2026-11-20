@@ -13,7 +13,8 @@ import { activeCampaign, countOtherJoins, plateMember, trailPassStore } from "@/
 
 /** Joining the Beer Trail (spec 2026-11-19): our page first (brewery + email + opt-in), then Zeffy. */
 
-export type TrailJoinPage = { open: boolean; year: number | null; memberName: string | null; plateCode: string | null; email: string };
+/** emailLocked: signed in -- the pass must go on this card, so the email is the card's own. */
+export type TrailJoinPage = { open: boolean; year: number | null; memberName: string | null; plateCode: string | null; email: string; emailLocked: boolean };
 
 export const getTrailJoinPage = createServerFn({ method: "GET" })
   .inputValidator((data: { plate?: string }) => ({ plate: typeof data?.plate === "string" ? data.plate : null }))
@@ -25,7 +26,7 @@ export const getTrailJoinPage = createServerFn({ method: "GET" })
       const { data: h } = await service.from("tap_card_holders").select("email").eq("id", holderId).maybeSingle();
       email = (h?.email as string | undefined) ?? "";
     }
-    return { open: campaign !== null, year: campaign?.year ?? null, memberName: plate?.memberName ?? null, plateCode: plate?.code ?? null, email };
+    return { open: campaign !== null, year: campaign?.year ?? null, memberName: plate?.memberName ?? null, plateCode: plate?.code ?? null, email, emailLocked: email !== "" };
   });
 
 export const startTrailJoin = createServerFn({ method: "POST" })
@@ -38,6 +39,13 @@ export const startTrailJoin = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }): Promise<{ kind: "go"; url: string } | { kind: "error"; message: string; field?: "email" | "ageConfirmed" }> => {
     try {
+      // Signed in: the pass goes on this card, whatever was typed.
+      const holderId = await readHolderId();
+      if (holderId) {
+        const service = await getSupabaseServiceRoleClient();
+        const { data: h } = await service.from("tap_card_holders").select("email").eq("id", holderId).maybeSingle();
+        if (h?.email) data = { ...data, email: h.email as string };
+      }
       const errors = validateTrailJoin(data);
       if (errors.email) return { kind: "error", message: errors.email, field: "email" };
       if (errors.ageConfirmed) return { kind: "error", message: errors.ageConfirmed, field: "ageConfirmed" };

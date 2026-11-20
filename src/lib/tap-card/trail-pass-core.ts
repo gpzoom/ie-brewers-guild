@@ -117,3 +117,8 @@ export function decideJoinedView(i: {
 export function passCountsNow(passYears: number[], unlockedYears: number[], year: number): boolean {
   return passYears.includes(year) || passYears.some((y) => unlockedYears.includes(y));
 }
+
+/** A card with nothing on it -- safe to remove after its pass moved to the right card. */
+export function emptyCard(c: { visits: number; cards: number; passes: number; earned: number; milestones: number }): boolean {
+  return c.visits === 0 && c.cards === 0 && c.passes === 0 && c.earned === 0 && c.milestones === 0;
+}

@@ -49,8 +49,18 @@ export function TrailJoinForm({ page }: { page: TrailJoinPage }) {
       </p>
       <label className="flex flex-col gap-1.5">
         <span className={labelClass}>Email</span>
-        <input className={inputClass} type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <span className="text-[13px] text-ink-muted">Use the same email on the payment page.</span>
+        <input
+          className={`${inputClass} ${page.emailLocked ? "bg-canvas-2" : ""}`}
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          readOnly={page.emailLocked}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <span className="text-[13px] text-ink-muted">
+          {page.emailLocked ? "This is your Tap Card's email. Use this same email on the payment page." : "Use the same email on the payment page."}
+        </span>
         {error?.field === "email" && <span className={fieldErrorClass}>{error.message}</span>}
       </label>
       <label className="hidden" aria-hidden="true">
