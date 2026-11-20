@@ -1,0 +1,296 @@
+[
+  {
+    "id": "w0",
+    "text": "Job",
+    "start": 0.0,
+    "end": 0.372
+  },
+  {
+    "id": "w1",
+    "text": "one",
+    "start": 0.488,
+    "end": 0.894
+  },
+  {
+    "id": "w2",
+    "text": "is",
+    "start": 1.01,
+    "end": 1.207
+  },
+  {
+    "id": "w3",
+    "text": "the",
+    "start": 1.265,
+    "end": 1.335
+  },
+  {
+    "id": "w4",
+    "text": "Beer",
+    "start": 1.382,
+    "end": 1.567
+  },
+  {
+    "id": "w5",
+    "text": "Trail.",
+    "start": 1.637,
+    "end": 2.125
+  },
+  {
+    "id": "w6",
+    "text": "Customers",
+    "start": 2.635,
+    "end": 3.17
+  },
+  {
+    "id": "w7",
+    "text": "buy",
+    "start": 3.239,
+    "end": 3.471
+  },
+  {
+    "id": "w8",
+    "text": "a",
+    "start": 3.518,
+    "end": 3.553
+  },
+  {
+    "id": "w9",
+    "text": "pass",
+    "start": 3.622,
+    "end": 3.982
+  },
+  {
+    "id": "w10",
+    "text": "for",
+    "start": 4.052,
+    "end": 4.156
+  },
+  {
+    "id": "w11",
+    "text": "the",
+    "start": 4.203,
+    "end": 4.272
+  },
+  {
+    "id": "w12",
+    "text": "year.",
+    "start": 4.342,
+    "end": 4.748
+  },
+  {
+    "id": "w13",
+    "text": "At",
+    "start": 5.132,
+    "end": 5.294
+  },
+  {
+    "id": "w14",
+    "text": "every",
+    "start": 5.352,
+    "end": 5.55
+  },
+  {
+    "id": "w15",
+    "text": "stop",
+    "start": 5.619,
+    "end": 5.933
+  },
+  {
+    "id": "w16",
+    "text": "on",
+    "start": 6.002,
+    "end": 6.072
+  },
+  {
+    "id": "w17",
+    "text": "the",
+    "start": 6.118,
+    "end": 6.188
+  },
+  {
+    "id": "w18",
+    "text": "trail,",
+    "start": 6.235,
+    "end": 6.757
+  },
+  {
+    "id": "w19",
+    "text": "their",
+    "start": 6.931,
+    "end": 7.14
+  },
+  {
+    "id": "w20",
+    "text": "first",
+    "start": 7.198,
+    "end": 7.442
+  },
+  {
+    "id": "w21",
+    "text": "beer",
+    "start": 7.5,
+    "end": 7.721
+  },
+  {
+    "id": "w22",
+    "text": "is",
+    "start": 7.802,
+    "end": 7.883
+  },
+  {
+    "id": "w23",
+    "text": "just",
+    "start": 7.964,
+    "end": 8.185
+  },
+  {
+    "id": "w24",
+    "text": "a",
+    "start": 8.243,
+    "end": 8.266
+  },
+  {
+    "id": "w25",
+    "text": "nickel,",
+    "start": 8.382,
+    "end": 8.847
+  },
+  {
+    "id": "w26",
+    "text": "and",
+    "start": 9.021,
+    "end": 9.172
+  },
+  {
+    "id": "w27",
+    "text": "they",
+    "start": 9.218,
+    "end": 9.358
+  },
+  {
+    "id": "w28",
+    "text": "earn",
+    "start": 9.439,
+    "end": 9.683
+  },
+  {
+    "id": "w29",
+    "text": "Guild",
+    "start": 9.799,
+    "end": 10.101
+  },
+  {
+    "id": "w30",
+    "text": "rewards",
+    "start": 10.17,
+    "end": 10.646
+  },
+  {
+    "id": "w31",
+    "text": "as",
+    "start": 10.693,
+    "end": 10.786
+  },
+  {
+    "id": "w32",
+    "text": "they",
+    "start": 10.844,
+    "end": 10.983
+  },
+  {
+    "id": "w33",
+    "text": "hit",
+    "start": 11.041,
+    "end": 11.227
+  },
+  {
+    "id": "w34",
+    "text": "milestones.",
+    "start": 11.32,
+    "end": 12.249
+  },
+  {
+    "id": "w35",
+    "text": "It",
+    "start": 12.852,
+    "end": 12.992
+  },
+  {
+    "id": "w36",
+    "text": "gives",
+    "start": 13.038,
+    "end": 13.247
+  },
+  {
+    "id": "w37",
+    "text": "people",
+    "start": 13.317,
+    "end": 13.607
+  },
+  {
+    "id": "w38",
+    "text": "a",
+    "start": 13.653,
+    "end": 13.688
+  },
+  {
+    "id": "w39",
+    "text": "reason",
+    "start": 13.781,
+    "end": 14.106
+  },
+  {
+    "id": "w40",
+    "text": "to",
+    "start": 14.176,
+    "end": 14.269
+  },
+  {
+    "id": "w41",
+    "text": "walk",
+    "start": 14.385,
+    "end": 14.652
+  },
+  {
+    "id": "w42",
+    "text": "into",
+    "start": 14.71,
+    "end": 14.861
+  },
+  {
+    "id": "w43",
+    "text": "taprooms",
+    "start": 14.942,
+    "end": 15.511
+  },
+  {
+    "id": "w44",
+    "text": "they've",
+    "start": 15.546,
+    "end": 15.755
+  },
+  {
+    "id": "w45",
+    "text": "never",
+    "start": 15.801,
+    "end": 16.022
+  },
+  {
+    "id": "w46",
+    "text": "visited,",
+    "start": 16.091,
+    "end": 16.602
+  },
+  {
+    "id": "w47",
+    "text": "including",
+    "start": 16.718,
+    "end": 17.276
+  },
+  {
+    "id": "w48",
+    "text": "yours.",
+    "start": 17.334,
+    "end": 18.019
+  }
+]

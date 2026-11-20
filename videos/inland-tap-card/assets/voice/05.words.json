@@ -1,0 +1,356 @@
+[
+  {
+    "id": "w0",
+    "text": "Job",
+    "start": 0.0,
+    "end": 0.348
+  },
+  {
+    "id": "w1",
+    "text": "two",
+    "start": 0.418,
+    "end": 0.639
+  },
+  {
+    "id": "w2",
+    "text": "is",
+    "start": 0.789,
+    "end": 0.987
+  },
+  {
+    "id": "w3",
+    "text": "loyalty.",
+    "start": 1.068,
+    "end": 1.776
+  },
+  {
+    "id": "w4",
+    "text": "Every",
+    "start": 2.218,
+    "end": 2.554
+  },
+  {
+    "id": "w5",
+    "text": "Tap",
+    "start": 2.647,
+    "end": 2.937
+  },
+  {
+    "id": "w6",
+    "text": "Card",
+    "start": 3.007,
+    "end": 3.274
+  },
+  {
+    "id": "w7",
+    "text": "is",
+    "start": 3.332,
+    "end": 3.413
+  },
+  {
+    "id": "w8",
+    "text": "also",
+    "start": 3.483,
+    "end": 3.808
+  },
+  {
+    "id": "w9",
+    "text": "a",
+    "start": 3.878,
+    "end": 3.913
+  },
+  {
+    "id": "w10",
+    "text": "loyalty",
+    "start": 3.982,
+    "end": 4.423
+  },
+  {
+    "id": "w11",
+    "text": "card,",
+    "start": 4.493,
+    "end": 4.934
+  },
+  {
+    "id": "w12",
+    "text": "at",
+    "start": 5.085,
+    "end": 5.248
+  },
+  {
+    "id": "w13",
+    "text": "every",
+    "start": 5.317,
+    "end": 5.573
+  },
+  {
+    "id": "w14",
+    "text": "Guild",
+    "start": 5.631,
+    "end": 5.909
+  },
+  {
+    "id": "w15",
+    "text": "member,",
+    "start": 5.956,
+    "end": 6.304
+  },
+  {
+    "id": "w16",
+    "text": "not",
+    "start": 6.351,
+    "end": 6.548
+  },
+  {
+    "id": "w17",
+    "text": "just",
+    "start": 6.606,
+    "end": 6.803
+  },
+  {
+    "id": "w18",
+    "text": "breweries.",
+    "start": 6.85,
+    "end": 7.558
+  },
+  {
+    "id": "w19",
+    "text": "You",
+    "start": 7.883,
+    "end": 8.034
+  },
+  {
+    "id": "w20",
+    "text": "choose",
+    "start": 8.15,
+    "end": 8.522
+  },
+  {
+    "id": "w21",
+    "text": "the",
+    "start": 8.557,
+    "end": 8.626
+  },
+  {
+    "id": "w22",
+    "text": "rewards.",
+    "start": 8.696,
+    "end": 9.427
+  },
+  {
+    "id": "w23",
+    "text": "A",
+    "start": 9.752,
+    "end": 9.845
+  },
+  {
+    "id": "w24",
+    "text": "free",
+    "start": 9.961,
+    "end": 10.205
+  },
+  {
+    "id": "w25",
+    "text": "pretzel",
+    "start": 10.275,
+    "end": 10.728
+  },
+  {
+    "id": "w26",
+    "text": "on",
+    "start": 10.809,
+    "end": 10.948
+  },
+  {
+    "id": "w27",
+    "text": "visit",
+    "start": 11.029,
+    "end": 11.331
+  },
+  {
+    "id": "w28",
+    "text": "three.",
+    "start": 11.389,
+    "end": 11.9
+  },
+  {
+    "id": "w29",
+    "text": "Two",
+    "start": 12.283,
+    "end": 12.469
+  },
+  {
+    "id": "w30",
+    "text": "dollars",
+    "start": 12.527,
+    "end": 12.864
+  },
+  {
+    "id": "w31",
+    "text": "off",
+    "start": 12.922,
+    "end": 13.084
+  },
+  {
+    "id": "w32",
+    "text": "every",
+    "start": 13.154,
+    "end": 13.34
+  },
+  {
+    "id": "w33",
+    "text": "fifth",
+    "start": 13.421,
+    "end": 13.653
+  },
+  {
+    "id": "w34",
+    "text": "visit.",
+    "start": 13.711,
+    "end": 14.211
+  },
+  {
+    "id": "w35",
+    "text": "Whatever",
+    "start": 14.536,
+    "end": 14.93
+  },
+  {
+    "id": "w36",
+    "text": "fits",
+    "start": 15.0,
+    "end": 15.221
+  },
+  {
+    "id": "w37",
+    "text": "your",
+    "start": 15.256,
+    "end": 15.36
+  },
+  {
+    "id": "w38",
+    "text": "business.",
+    "start": 15.395,
+    "end": 15.987
+  },
+  {
+    "id": "w39",
+    "text": "And",
+    "start": 16.161,
+    "end": 16.324
+  },
+  {
+    "id": "w40",
+    "text": "it",
+    "start": 16.382,
+    "end": 16.44
+  },
+  {
+    "id": "w41",
+    "text": "costs",
+    "start": 16.498,
+    "end": 16.812
+  },
+  {
+    "id": "w42",
+    "text": "you",
+    "start": 16.846,
+    "end": 16.939
+  },
+  {
+    "id": "w43",
+    "text": "nothing.",
+    "start": 17.009,
+    "end": 17.497
+  },
+  {
+    "id": "w44",
+    "text": "Visits",
+    "start": 17.822,
+    "end": 18.216
+  },
+  {
+    "id": "w45",
+    "text": "never",
+    "start": 18.286,
+    "end": 18.518
+  },
+  {
+    "id": "w46",
+    "text": "reset,",
+    "start": 18.588,
+    "end": 19.099
+  },
+  {
+    "id": "w47",
+    "text": "so",
+    "start": 19.134,
+    "end": 19.238
+  },
+  {
+    "id": "w48",
+    "text": "when",
+    "start": 19.284,
+    "end": 19.401
+  },
+  {
+    "id": "w49",
+    "text": "the",
+    "start": 19.435,
+    "end": 19.505
+  },
+  {
+    "id": "w50",
+    "text": "trail",
+    "start": 19.54,
+    "end": 19.819
+  },
+  {
+    "id": "w51",
+    "text": "year",
+    "start": 19.888,
+    "end": 20.039
+  },
+  {
+    "id": "w52",
+    "text": "ends,",
+    "start": 20.109,
+    "end": 20.492
+  },
+  {
+    "id": "w53",
+    "text": "the",
+    "start": 20.643,
+    "end": 20.747
+  },
+  {
+    "id": "w54",
+    "text": "card",
+    "start": 20.805,
+    "end": 21.049
+  },
+  {
+    "id": "w55",
+    "text": "keeps",
+    "start": 21.096,
+    "end": 21.351
+  },
+  {
+    "id": "w56",
+    "text": "right",
+    "start": 21.421,
+    "end": 21.63
+  },
+  {
+    "id": "w57",
+    "text": "on",
+    "start": 21.676,
+    "end": 21.769
+  },
+  {
+    "id": "w58",
+    "text": "working.",
+    "start": 21.827,
+    "end": 22.477
+  }
+]

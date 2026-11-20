@@ -1,0 +1,440 @@
+[
+  {
+    "id": "w0",
+    "text": "Now",
+    "start": 0.0,
+    "end": 1.103
+  },
+  {
+    "id": "w1",
+    "text": "here's",
+    "start": 1.219,
+    "end": 1.486
+  },
+  {
+    "id": "w2",
+    "text": "where",
+    "start": 1.521,
+    "end": 1.695
+  },
+  {
+    "id": "w3",
+    "text": "YOU",
+    "start": 1.765,
+    "end": 1.916
+  },
+  {
+    "id": "w4",
+    "text": "come",
+    "start": 1.997,
+    "end": 2.194
+  },
+  {
+    "id": "w5",
+    "text": "in.",
+    "start": 2.241,
+    "end": 2.566
+  },
+  {
+    "id": "w6",
+    "text": "Every",
+    "start": 3.17,
+    "end": 3.529
+  },
+  {
+    "id": "w7",
+    "text": "business",
+    "start": 3.611,
+    "end": 4.075
+  },
+  {
+    "id": "w8",
+    "text": "that",
+    "start": 4.122,
+    "end": 4.272
+  },
+  {
+    "id": "w9",
+    "text": "joins",
+    "start": 4.331,
+    "end": 4.679
+  },
+  {
+    "id": "w10",
+    "text": "the",
+    "start": 4.737,
+    "end": 4.807
+  },
+  {
+    "id": "w11",
+    "text": "Guild",
+    "start": 4.876,
+    "end": 5.259
+  },
+  {
+    "id": "w12",
+    "text": "makes",
+    "start": 5.584,
+    "end": 5.84
+  },
+  {
+    "id": "w13",
+    "text": "the",
+    "start": 5.886,
+    "end": 5.968
+  },
+  {
+    "id": "w14",
+    "text": "Tap",
+    "start": 6.049,
+    "end": 6.304
+  },
+  {
+    "id": "w15",
+    "text": "Card",
+    "start": 6.385,
+    "end": 6.629
+  },
+  {
+    "id": "w16",
+    "text": "worth",
+    "start": 6.711,
+    "end": 7.001
+  },
+  {
+    "id": "w17",
+    "text": "more",
+    "start": 7.094,
+    "end": 7.384
+  },
+  {
+    "id": "w18",
+    "text": "to",
+    "start": 7.454,
+    "end": 7.546
+  },
+  {
+    "id": "w19",
+    "text": "customers",
+    "start": 7.639,
+    "end": 8.22
+  },
+  {
+    "id": "w20",
+    "text": "and",
+    "start": 8.464,
+    "end": 8.673
+  },
+  {
+    "id": "w21",
+    "text": "to",
+    "start": 8.719,
+    "end": 8.766
+  },
+  {
+    "id": "w22",
+    "text": "every",
+    "start": 8.835,
+    "end": 9.067
+  },
+  {
+    "id": "w23",
+    "text": "one",
+    "start": 9.125,
+    "end": 9.265
+  },
+  {
+    "id": "w24",
+    "text": "of",
+    "start": 9.288,
+    "end": 9.346
+  },
+  {
+    "id": "w25",
+    "text": "us.",
+    "start": 9.416,
+    "end": 9.81
+  },
+  {
+    "id": "w26",
+    "text": "Every",
+    "start": 10.252,
+    "end": 10.507
+  },
+  {
+    "id": "w27",
+    "text": "new",
+    "start": 10.577,
+    "end": 10.704
+  },
+  {
+    "id": "w28",
+    "text": "producer",
+    "start": 10.762,
+    "end": 11.331
+  },
+  {
+    "id": "w29",
+    "text": "is",
+    "start": 11.447,
+    "end": 11.587
+  },
+  {
+    "id": "w30",
+    "text": "another",
+    "start": 11.645,
+    "end": 11.947
+  },
+  {
+    "id": "w31",
+    "text": "stop",
+    "start": 12.028,
+    "end": 12.353
+  },
+  {
+    "id": "w32",
+    "text": "on",
+    "start": 12.423,
+    "end": 12.492
+  },
+  {
+    "id": "w33",
+    "text": "the",
+    "start": 12.539,
+    "end": 12.608
+  },
+  {
+    "id": "w34",
+    "text": "trail.",
+    "start": 12.643,
+    "end": 13.177
+  },
+  {
+    "id": "w35",
+    "text": "Every",
+    "start": 13.688,
+    "end": 13.944
+  },
+  {
+    "id": "w36",
+    "text": "new",
+    "start": 14.002,
+    "end": 14.106
+  },
+  {
+    "id": "w37",
+    "text": "member",
+    "start": 14.199,
+    "end": 14.524
+  },
+  {
+    "id": "w38",
+    "text": "is",
+    "start": 14.64,
+    "end": 14.791
+  },
+  {
+    "id": "w39",
+    "text": "another",
+    "start": 14.861,
+    "end": 15.174
+  },
+  {
+    "id": "w40",
+    "text": "place",
+    "start": 15.244,
+    "end": 15.592
+  },
+  {
+    "id": "w41",
+    "text": "the",
+    "start": 15.627,
+    "end": 15.708
+  },
+  {
+    "id": "w42",
+    "text": "card",
+    "start": 15.766,
+    "end": 16.045
+  },
+  {
+    "id": "w43",
+    "text": "works.",
+    "start": 16.115,
+    "end": 16.753
+  },
+  {
+    "id": "w44",
+    "text": "So",
+    "start": 17.194,
+    "end": 17.322
+  },
+  {
+    "id": "w45",
+    "text": "think",
+    "start": 17.38,
+    "end": 17.543
+  },
+  {
+    "id": "w46",
+    "text": "about",
+    "start": 17.589,
+    "end": 17.81
+  },
+  {
+    "id": "w47",
+    "text": "that",
+    "start": 17.856,
+    "end": 18.007
+  },
+  {
+    "id": "w48",
+    "text": "brewery",
+    "start": 18.065,
+    "end": 18.448
+  },
+  {
+    "id": "w49",
+    "text": "down",
+    "start": 18.518,
+    "end": 18.727
+  },
+  {
+    "id": "w50",
+    "text": "the",
+    "start": 18.762,
+    "end": 18.831
+  },
+  {
+    "id": "w51",
+    "text": "road,",
+    "start": 18.889,
+    "end": 19.261
+  },
+  {
+    "id": "w52",
+    "text": "or",
+    "start": 19.412,
+    "end": 19.551
+  },
+  {
+    "id": "w53",
+    "text": "the",
+    "start": 19.598,
+    "end": 19.667
+  },
+  {
+    "id": "w54",
+    "text": "food",
+    "start": 19.714,
+    "end": 19.934
+  },
+  {
+    "id": "w55",
+    "text": "truck",
+    "start": 19.969,
+    "end": 20.225
+  },
+  {
+    "id": "w56",
+    "text": "out",
+    "start": 20.283,
+    "end": 20.422
+  },
+  {
+    "id": "w57",
+    "text": "back.",
+    "start": 20.48,
+    "end": 21.003
+  },
+  {
+    "id": "w58",
+    "text": "Tell",
+    "start": 21.606,
+    "end": 21.827
+  },
+  {
+    "id": "w59",
+    "text": "them",
+    "start": 21.885,
+    "end": 22.036
+  },
+  {
+    "id": "w60",
+    "text": "about",
+    "start": 22.094,
+    "end": 22.338
+  },
+  {
+    "id": "w61",
+    "text": "the",
+    "start": 22.372,
+    "end": 22.442
+  },
+  {
+    "id": "w62",
+    "text": "Tap",
+    "start": 22.5,
+    "end": 22.721
+  },
+  {
+    "id": "w63",
+    "text": "Card,",
+    "start": 22.802,
+    "end": 23.185
+  },
+  {
+    "id": "w64",
+    "text": "and",
+    "start": 23.232,
+    "end": 23.394
+  },
+  {
+    "id": "w65",
+    "text": "send",
+    "start": 23.475,
+    "end": 23.673
+  },
+  {
+    "id": "w66",
+    "text": "them",
+    "start": 23.719,
+    "end": 23.847
+  },
+  {
+    "id": "w67",
+    "text": "our",
+    "start": 23.905,
+    "end": 24.021
+  },
+  {
+    "id": "w68",
+    "text": "way.",
+    "start": 24.091,
+    "end": 24.52
+  },
+  {
+    "id": "w69",
+    "text": "Let's",
+    "start": 24.903,
+    "end": 25.136
+  },
+  {
+    "id": "w70",
+    "text": "grow",
+    "start": 25.194,
+    "end": 25.379
+  },
+  {
+    "id": "w71",
+    "text": "this",
+    "start": 25.426,
+    "end": 25.554
+  },
+  {
+    "id": "w72",
+    "text": "together.",
+    "start": 25.612,
+    "end": 26.378
+  }
+]

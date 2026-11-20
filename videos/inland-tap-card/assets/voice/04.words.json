@@ -1,0 +1,392 @@
+[
+  {
+    "id": "w0",
+    "text": "Here's",
+    "start": 0.0,
+    "end": 0.325
+  },
+  {
+    "id": "w1",
+    "text": "the",
+    "start": 0.36,
+    "end": 0.43
+  },
+  {
+    "id": "w2",
+    "text": "part",
+    "start": 0.476,
+    "end": 0.743
+  },
+  {
+    "id": "w3",
+    "text": "I'm",
+    "start": 0.813,
+    "end": 0.975
+  },
+  {
+    "id": "w4",
+    "text": "most",
+    "start": 1.057,
+    "end": 1.277
+  },
+  {
+    "id": "w5",
+    "text": "excited",
+    "start": 1.324,
+    "end": 1.73
+  },
+  {
+    "id": "w6",
+    "text": "about.",
+    "start": 1.765,
+    "end": 2.241
+  },
+  {
+    "id": "w7",
+    "text": "When",
+    "start": 2.937,
+    "end": 3.111
+  },
+  {
+    "id": "w8",
+    "text": "a",
+    "start": 3.146,
+    "end": 3.17
+  },
+  {
+    "id": "w9",
+    "text": "customer",
+    "start": 3.239,
+    "end": 3.646
+  },
+  {
+    "id": "w10",
+    "text": "joins",
+    "start": 3.762,
+    "end": 4.133
+  },
+  {
+    "id": "w11",
+    "text": "the",
+    "start": 4.203,
+    "end": 4.272
+  },
+  {
+    "id": "w12",
+    "text": "Beer",
+    "start": 4.354,
+    "end": 4.574
+  },
+  {
+    "id": "w13",
+    "text": "Trail",
+    "start": 4.656,
+    "end": 4.957
+  },
+  {
+    "id": "w14",
+    "text": "at",
+    "start": 5.016,
+    "end": 5.085
+  },
+  {
+    "id": "w15",
+    "text": "your",
+    "start": 5.132,
+    "end": 5.248
+  },
+  {
+    "id": "w16",
+    "text": "counter,",
+    "start": 5.306,
+    "end": 5.863
+  },
+  {
+    "id": "w17",
+    "text": "that",
+    "start": 6.188,
+    "end": 6.444
+  },
+  {
+    "id": "w18",
+    "text": "sale",
+    "start": 6.536,
+    "end": 6.943
+  },
+  {
+    "id": "w19",
+    "text": "is",
+    "start": 7.012,
+    "end": 7.14
+  },
+  {
+    "id": "w20",
+    "text": "credited",
+    "start": 7.233,
+    "end": 7.709
+  },
+  {
+    "id": "w21",
+    "text": "to",
+    "start": 7.755,
+    "end": 7.825
+  },
+  {
+    "id": "w22",
+    "text": "you,",
+    "start": 7.906,
+    "end": 8.29
+  },
+  {
+    "id": "w23",
+    "text": "and",
+    "start": 8.44,
+    "end": 8.615
+  },
+  {
+    "id": "w24",
+    "text": "you",
+    "start": 8.673,
+    "end": 8.754
+  },
+  {
+    "id": "w25",
+    "text": "earn",
+    "start": 8.835,
+    "end": 8.998
+  },
+  {
+    "id": "w26",
+    "text": "a",
+    "start": 9.044,
+    "end": 9.067
+  },
+  {
+    "id": "w27",
+    "text": "share",
+    "start": 9.137,
+    "end": 9.474
+  },
+  {
+    "id": "w28",
+    "text": "of",
+    "start": 9.543,
+    "end": 9.636
+  },
+  {
+    "id": "w29",
+    "text": "every",
+    "start": 9.752,
+    "end": 10.043
+  },
+  {
+    "id": "w30",
+    "text": "pass",
+    "start": 10.124,
+    "end": 10.449
+  },
+  {
+    "id": "w31",
+    "text": "you",
+    "start": 10.495,
+    "end": 10.588
+  },
+  {
+    "id": "w32",
+    "text": "sell.",
+    "start": 10.658,
+    "end": 11.122
+  },
+  {
+    "id": "w33",
+    "text": "Sell",
+    "start": 11.819,
+    "end": 12.086
+  },
+  {
+    "id": "w34",
+    "text": "enough",
+    "start": 12.144,
+    "end": 12.388
+  },
+  {
+    "id": "w35",
+    "text": "of",
+    "start": 12.423,
+    "end": 12.481
+  },
+  {
+    "id": "w36",
+    "text": "them",
+    "start": 12.539,
+    "end": 12.748
+  },
+  {
+    "id": "w37",
+    "text": "and",
+    "start": 12.957,
+    "end": 13.154
+  },
+  {
+    "id": "w38",
+    "text": "your",
+    "start": 13.201,
+    "end": 13.317
+  },
+  {
+    "id": "w39",
+    "text": "commission",
+    "start": 13.375,
+    "end": 13.909
+  },
+  {
+    "id": "w40",
+    "text": "can",
+    "start": 14.06,
+    "end": 14.257
+  },
+  {
+    "id": "w41",
+    "text": "offset",
+    "start": 14.338,
+    "end": 14.768
+  },
+  {
+    "id": "w42",
+    "text": "your",
+    "start": 14.826,
+    "end": 14.942
+  },
+  {
+    "id": "w43",
+    "text": "dues,",
+    "start": 15.0,
+    "end": 15.65
+  },
+  {
+    "id": "w44",
+    "text": "or",
+    "start": 15.859,
+    "end": 16.01
+  },
+  {
+    "id": "w45",
+    "text": "even",
+    "start": 16.091,
+    "end": 16.358
+  },
+  {
+    "id": "w46",
+    "text": "cover",
+    "start": 16.567,
+    "end": 16.834
+  },
+  {
+    "id": "w47",
+    "text": "them",
+    "start": 16.881,
+    "end": 17.008
+  },
+  {
+    "id": "w48",
+    "text": "completely.",
+    "start": 17.066,
+    "end": 17.705
+  },
+  {
+    "id": "w49",
+    "text": "You'll",
+    "start": 18.146,
+    "end": 18.402
+  },
+  {
+    "id": "w50",
+    "text": "see",
+    "start": 18.448,
+    "end": 18.599
+  },
+  {
+    "id": "w51",
+    "text": "your",
+    "start": 18.645,
+    "end": 18.773
+  },
+  {
+    "id": "w52",
+    "text": "passes",
+    "start": 18.843,
+    "end": 19.377
+  },
+  {
+    "id": "w53",
+    "text": "and",
+    "start": 19.423,
+    "end": 19.505
+  },
+  {
+    "id": "w54",
+    "text": "your",
+    "start": 19.551,
+    "end": 19.667
+  },
+  {
+    "id": "w55",
+    "text": "commission,",
+    "start": 19.737,
+    "end": 20.34
+  },
+  {
+    "id": "w56",
+    "text": "month",
+    "start": 20.724,
+    "end": 20.967
+  },
+  {
+    "id": "w57",
+    "text": "by",
+    "start": 21.037,
+    "end": 21.176
+  },
+  {
+    "id": "w58",
+    "text": "month,",
+    "start": 21.258,
+    "end": 21.687
+  },
+  {
+    "id": "w59",
+    "text": "right",
+    "start": 21.896,
+    "end": 22.152
+  },
+  {
+    "id": "w60",
+    "text": "on",
+    "start": 22.21,
+    "end": 22.303
+  },
+  {
+    "id": "w61",
+    "text": "your",
+    "start": 22.349,
+    "end": 22.453
+  },
+  {
+    "id": "w62",
+    "text": "Tap",
+    "start": 22.512,
+    "end": 22.721
+  },
+  {
+    "id": "w63",
+    "text": "Card",
+    "start": 22.779,
+    "end": 23.022
+  },
+  {
+    "id": "w64",
+    "text": "page.",
+    "start": 23.08,
+    "end": 23.777
+  }
+]
