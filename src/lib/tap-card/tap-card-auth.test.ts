@@ -37,11 +37,11 @@ describe("resolveScannerDevice", () => {
     });
   });
 
-  it("an unpublished brewery or one off the trail is blocked", async () => {
+  it("an unpublished member is blocked; a member off the trail still takes loyalty check-ins", async () => {
     const hash = await hashUploadToken("raw-token");
     const expected = { kind: "blocked", device: { id: "d1", memberId: "m1", memberName: "Sample Brewery", label: "Bar iPad" } };
     expect(await resolveScannerDevice(deviceStore({ ...device, memberPublished: false }, hash), "raw-token")).toEqual(expected);
-    expect(await resolveScannerDevice(deviceStore({ ...device, trailEligible: false }, hash), "raw-token")).toEqual(expected);
+    expect((await resolveScannerDevice(deviceStore({ ...device, trailEligible: false }, hash), "raw-token")).kind).toBe("ok");
   });
 });
 

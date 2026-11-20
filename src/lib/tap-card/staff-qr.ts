@@ -48,11 +48,15 @@ export function sessionNeedsRenewal(expiresAt: string, now: Date, maxAgeMs: numb
 }
 
 /**
- * Whether a brewery takes plate and bar-device check-ins: a published
- * producer on the trail -- or, on the staging site only, a draft one, so
- * the Sample Brewery can be tested without going public.
+ * Whether a Guild member takes plate and bar-device check-ins (universal
+ * card, spec 2026-11-19): any published member, of any type -- or, on the
+ * staging site only, a draft one, so test members work without going public.
  */
-export function memberTakesCheckIns(m: { status: string; memberType: string; trailEligible: boolean }, stagingSite: boolean): boolean {
-  const statusOk = m.status === "published" || (stagingSite && m.status === "draft");
-  return statusOk && m.memberType === "producer" && m.trailEligible;
+export function memberTakesCheckIns(m: { status: string; memberType?: string; trailEligible?: boolean }, stagingSite: boolean): boolean {
+  return m.status === "published" || (stagingSite && m.status === "draft");
+}
+
+/** A Beer Trail stop: a producer on the trail. Only trail stops give the Beer Trail offer and count toward milestones. */
+export function isTrailStop(m: { memberType: string; trailEligible: boolean }): boolean {
+  return m.memberType === "producer" && m.trailEligible;
 }

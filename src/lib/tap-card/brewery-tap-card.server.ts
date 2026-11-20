@@ -13,12 +13,13 @@ import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
  */
 
 /** For the /admin menu: is this member a Tap Card stop? (Reads the member's own row.) */
-export const isTapCardStop = createServerFn({ method: "GET" })
+/** Universal card: every Guild member has the Tap Card tab (trail stops also get the Beer Trail parts). */
+export const hasTapCardTab = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => ({ memberId: String(data?.memberId ?? "") }))
   .handler(async ({ data }): Promise<boolean> => {
     const supabase = await getSupabaseServerClientForRequest();
-    const { data: row } = await supabase.from("members").select("member_type, trail_eligible").eq("id", data.memberId).maybeSingle();
-    return !!row && row.member_type === "producer" && row.trail_eligible === true;
+    const { data: row } = await supabase.from("members").select("id").eq("id", data.memberId).maybeSingle();
+    return !!row;
   });
 
 export type ScannerDeviceSummary = { id: string; label: string; createdAt: string; lastUsedAt: string | null };

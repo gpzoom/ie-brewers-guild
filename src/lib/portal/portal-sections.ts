@@ -70,7 +70,6 @@ export function canOpenPortalSection(
   viewer: { role: PortalRole; memberType: MemberType; isBusinessManager?: boolean; trailEligible?: boolean },
 ): boolean {
   if (section === "discount" && viewer.memberType !== "allied") return false;
-  if (section === "tap-card" && !(viewer.memberType === "producer" && viewer.trailEligible === true)) return false;
   if (section === "food" && viewer.memberType !== "producer") return false;
   if (viewer.role === "media_events") return MEDIA_EVENTS_SECTIONS.includes(section);
   if (section === "people") return isOwnerLevel(viewer.role) || viewer.isBusinessManager === true;

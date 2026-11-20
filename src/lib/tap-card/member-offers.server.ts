@@ -33,6 +33,8 @@ async function loadRows(service: SupabaseClient, memberId: string): Promise<TapC
 
 export type MemberOffersData = {
   trailOffer: string;
+  /** A Beer Trail stop: shows the Guild's Beer Trail offer; others have loyalty only. */
+  trailStop: boolean;
   slots: SlotView[];
   expiryDays: number;
   templates: { id: string; title: string; reward: string; terms: string }[];
@@ -41,7 +43,7 @@ export type MemberOffersData = {
 export const getMemberOffers = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => ({ memberId: String(data?.memberId ?? "") }))
   .handler(async ({ data }): Promise<MemberOffersData> => {
-    const { service } = await requireTapCardEditor(data.memberId);
+    const { service, trailStop } = await requireTapCardEditor(data.memberId);
     const [rows, settings, templates] = await Promise.all([
       loadRows(service, data.memberId),
       service.from("tap_card_member_settings").select("reward_expiry_days").eq("member_id", data.memberId).maybeSingle(),
@@ -51,6 +53,7 @@ export const getMemberOffers = createServerFn({ method: "GET" })
     if (templates.error) throw new Error(templates.error.message);
     return {
       trailOffer: STANDARD_OFFER,
+      trailStop,
       slots: slotViews(rows),
       expiryDays: settings.data?.reward_expiry_days ?? DEFAULT_EXPIRY_DAYS,
       templates: templates.data ?? [],

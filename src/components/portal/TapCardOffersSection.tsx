@@ -178,6 +178,7 @@ export function TapCardOffersSection({ memberId }: { memberId: string }) {
         <p className="text-[13px] text-ink-muted">{error ?? "Loading…"}</p>
       ) : (
         <>
+          {data.trailStop && (
           <div className="flex flex-col gap-2">
             <div className={eyebrowClass}>Guild Offers</div>
             <div className="rounded-xl border border-canvas-border bg-canvas px-4 py-3">
@@ -186,6 +187,7 @@ export function TapCardOffersSection({ memberId }: { memberId: string }) {
               <div className="mt-1 text-[13px] text-ink-muted">Set by the Guild. Once per customer each calendar year.</div>
             </div>
           </div>
+          )}
 
           <div className="flex flex-col gap-2">
             <div className={eyebrowClass}>Member Offers</div>

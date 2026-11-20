@@ -20,10 +20,11 @@ describe("portalSectionsFor", () => {
     expect(PORTAL_SECTION_LABELS["tap-card"]).toEqual({ label: "Tap Card", short: "Tap Card" });
   });
 
-  it("no Tap Card section off the trail, for other member types, or for a Photos & events editor", () => {
-    expect(portalSectionsFor({ role: "owner", memberType: "producer" })).not.toContain("tap-card");
-    expect(portalSectionsFor({ role: "owner", memberType: "producer", trailEligible: false })).not.toContain("tap-card");
-    expect(portalSectionsFor({ role: "owner", memberType: "mobile", trailEligible: true })).not.toContain("tap-card");
+  it("every member type gets the Tap Card section (universal card), but not a Photos & events editor", () => {
+    expect(portalSectionsFor({ role: "owner", memberType: "producer" })).toContain("tap-card");
+    expect(portalSectionsFor({ role: "owner", memberType: "producer", trailEligible: false })).toContain("tap-card");
+    expect(portalSectionsFor({ role: "owner", memberType: "mobile" })).toContain("tap-card");
+    expect(portalSectionsFor({ role: "owner", memberType: "allied" })).toContain("tap-card");
     expect(portalSectionsFor({ role: "media_events", memberType: "producer", trailEligible: true })).not.toContain("tap-card");
   });
 
@@ -36,6 +37,7 @@ describe("portalSectionsFor", () => {
       "food",
       "links",
       "jobs",
+      "tap-card",
       "theme",
       "people",
     ]);
@@ -76,7 +78,7 @@ describe("portalSectionsFor", () => {
 });
 
 describe("Jobs section", () => {
-  it("opens for every member type and every role, between Links and Discount", () => {
+  it("opens for every member type and every role, between Links and the Tap Card", () => {
     for (const memberType of ["producer", "mobile", "allied"] as const) {
       for (const role of ["owner", "co_owner", "editor", "media_events"] as const) {
         expect(canOpenPortalSection("jobs", { role, memberType })).toBe(true);
@@ -84,7 +86,8 @@ describe("Jobs section", () => {
     }
     const sections = portalSectionsFor({ role: "owner", memberType: "allied" });
     expect(sections.indexOf("jobs")).toBe(sections.indexOf("links") + 1);
-    expect(sections.indexOf("discount")).toBe(sections.indexOf("jobs") + 1);
+    expect(sections.indexOf("tap-card")).toBe(sections.indexOf("jobs") + 1);
+    expect(sections.indexOf("discount")).toBe(sections.indexOf("tap-card") + 1);
   });
 });
 

@@ -32,7 +32,8 @@ export async function resolveScannerDevice(
     memberName: record.memberName,
     label: record.label,
   };
-  return record.memberPublished && record.trailEligible ? { kind: "ok", device } : { kind: "blocked", device };
+  // Universal card: any published member takes check-ins; the trail only decides the Beer Trail offer.
+  return record.memberPublished ? { kind: "ok", device } : { kind: "blocked", device };
 }
 
 export async function resolveHolderSession(

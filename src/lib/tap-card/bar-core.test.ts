@@ -19,7 +19,14 @@ type Earned = {
 };
 
 function memoryStore(
-  seed: { visits?: Visit[]; offers?: Record<string, LiveOffer[]>; expiry?: Record<string, number>; earned?: Earned[]; passYears?: number[] } = {},
+  seed: {
+    visits?: Visit[];
+    offers?: Record<string, LiveOffer[]>;
+    expiry?: Record<string, number>;
+    earned?: Earned[];
+    passYears?: number[];
+    nonTrail?: string[];
+  } = {},
 ) {
   const visits: Visit[] = seed.visits ?? [];
   const earned: Earned[] = seed.earned ?? [];
@@ -36,6 +43,9 @@ function memoryStore(
     },
     async countVisits(holderId, memberId) {
       return visits.filter((x) => x.holderId === holderId && x.memberId === memberId).length;
+    },
+    async isTrailStop(memberId) {
+      return !(seed.nonTrail ?? []).includes(memberId);
     },
     async hasTrailPass(_holderId, year) {
       return (seed.passYears ?? [2026]).includes(year);
@@ -269,5 +279,18 @@ describe("without this year's Beer Trail Pass", () => {
     const { store } = memoryStore({ passYears: [2027] });
     const state = await checkInVisit(store, input);
     expect(state.featured).toBeNull();
+  });
+});
+
+describe("at a Guild member that isn't a Beer Trail stop", () => {
+  it("a pass holder gets loyalty, never the Beer Trail offer", async () => {
+    const { store, visits, earned } = memoryStore({ nonTrail: ["m1"], visits: [earlier("2026-06-01")], offers: { m1: [pretzel] } });
+    const state = await checkInVisit(store, input);
+    expect(visits).toHaveLength(2);
+    expect(earned).toHaveLength(1);
+    expect([state.featured, ...state.others].some((r) => r?.kind === "trail")).toBe(false);
+    const used = await useBarReward(store, { ...input, choice: { kind: "trail" } });
+    expect(used.outcome).toBe("not-available");
+    expect(visits.every((v) => v.redeemedYear === null)).toBe(true);
   });
 });

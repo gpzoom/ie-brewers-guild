@@ -1,4 +1,5 @@
 import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { isTrailStop } from "@/lib/tap-card/staff-qr";
 
 /**
  * A brewery's own Tap Card screens (Portal > Tap Card and /admin/tap-card).
@@ -17,8 +18,7 @@ export async function requireTapCardEditor(memberId: string) {
   if (allowed !== true) throw new Error("Only the owner or a full editor can manage the Tap Card.");
   const service = await getSupabaseServiceRoleClient();
   const { data: member } = await service.from("members").select("member_type, trail_eligible").eq("id", memberId).maybeSingle();
-  if (!member || member.member_type !== "producer" || !member.trail_eligible) {
-    throw new Error("This member isn't a stop on the Inland Tap Card trail.");
-  }
-  return { userId: auth.user.id, service };
+  if (!member) throw new Error("Member not found.");
+  // Universal card: every member has the Tap Card; trailStop decides the Beer Trail parts.
+  return { userId: auth.user.id, service, trailStop: isTrailStop({ memberType: member.member_type, trailEligible: member.trail_eligible === true }) };
 }

@@ -1,4 +1,4 @@
-import { isTapCardStop } from "@/lib/tap-card/brewery-tap-card.server";
+import { hasTapCardTab } from "@/lib/tap-card/brewery-tap-card.server";
 import { Fragment, useMemo } from "react";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { requireMemberSession } from "@/lib/auth/require-member-session.server";
@@ -48,7 +48,7 @@ export const Route = createFileRoute("/admin")({
       getMemberDisplayName({ data: { memberId: context.memberId } }),
       getDraftStatus({ data: { memberId: context.memberId } }),
       getNotificationSummary({ data: { surface: "admin" } }),
-      isTapCardStop({ data: { memberId: context.memberId } }),
+      hasTapCardTab({ data: { memberId: context.memberId } }),
     ]);
     return { publishGateData, memberName, draftStatus, notifications, tapCardStop };
   },

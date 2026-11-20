@@ -1,19 +1,27 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { newlyEarned, type Milestone } from "@/lib/tap-card/milestones";
+import { isTrailStop } from "@/lib/tap-card/staff-qr";
 import { holderHasTrailPass } from "@/lib/tap-card/trail-pass-store.server";
 
 /** Guild milestone helpers (no createServerFn here). */
 
-/** Distinct stops this holder visited in a calendar year. */
+/** Distinct Beer Trail stops this holder visited in a calendar year (other Guild members don't count). */
 export async function distinctStopsInYear(service: SupabaseClient, holderId: string, year: number): Promise<number> {
   const { data, error } = await service
     .from("tap_card_visits")
-    .select("member_id")
+    .select("member_id, members!inner(member_type, trail_eligible)")
     .eq("holder_id", holderId)
     .gte("visit_day", `${year}-01-01`)
     .lte("visit_day", `${year}-12-31`);
   if (error) throw new Error(error.message);
-  return new Set((data ?? []).map((v) => v.member_id)).size;
+  return new Set(
+    (data ?? [])
+      .filter((v) => {
+        const m = v.members as unknown as { member_type: string; trail_eligible: boolean };
+        return isTrailStop({ memberType: m.member_type, trailEligible: m.trail_eligible === true });
+      })
+      .map((v) => v.member_id),
+  ).size;
 }
 
 /** Records any milestone the holder just reached this year; returns the newly earned rewards. */

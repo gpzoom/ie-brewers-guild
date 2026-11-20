@@ -3,6 +3,7 @@ import {
   PENDING_MINUTES,
   decideStaffQrView,
   isStaffQrToken,
+  isTrailStop,
   memberTakesCheckIns,
   parsePendingChoice,
   sessionNeedsRenewal,
@@ -77,17 +78,27 @@ describe("sessionNeedsRenewal", () => {
 });
 
 describe("memberTakesCheckIns", () => {
-  it("takes published trail producers anywhere", () => {
-    expect(memberTakesCheckIns({ status: "published", memberType: "producer", trailEligible: true }, false)).toBe(true);
+  it("takes every published Guild member, of any type (universal card)", () => {
+    for (const memberType of ["producer", "mobile", "allied"]) {
+      expect(memberTakesCheckIns({ status: "published", memberType, trailEligible: false }, false)).toBe(true);
+    }
   });
-  it("takes a draft trail producer on the staging site only", () => {
-    const draft = { status: "draft", memberType: "producer", trailEligible: true };
+  it("takes a draft member on the staging site only", () => {
+    const draft = { status: "draft", memberType: "allied", trailEligible: false };
     expect(memberTakesCheckIns(draft, true)).toBe(true);
     expect(memberTakesCheckIns(draft, false)).toBe(false);
   });
-  it("never takes members off the trail, other member types, or archived members", () => {
-    expect(memberTakesCheckIns({ status: "published", memberType: "producer", trailEligible: false }, true)).toBe(false);
-    expect(memberTakesCheckIns({ status: "published", memberType: "affiliate", trailEligible: true }, true)).toBe(false);
+  it("never takes archived or suspended members", () => {
     expect(memberTakesCheckIns({ status: "archived", memberType: "producer", trailEligible: true }, true)).toBe(false);
+    expect(memberTakesCheckIns({ status: "suspended", memberType: "producer", trailEligible: true }, true)).toBe(false);
+  });
+});
+
+describe("isTrailStop", () => {
+  it("is a producer on the trail only", () => {
+    expect(isTrailStop({ memberType: "producer", trailEligible: true })).toBe(true);
+    expect(isTrailStop({ memberType: "producer", trailEligible: false })).toBe(false);
+    expect(isTrailStop({ memberType: "allied", trailEligible: true })).toBe(false);
+    expect(isTrailStop({ memberType: "mobile", trailEligible: true })).toBe(false);
   });
 });
