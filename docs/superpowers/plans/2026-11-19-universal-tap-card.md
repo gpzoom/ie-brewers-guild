@@ -90,3 +90,20 @@ export function emptyCard(c: { visits: number; cards: number; passes: number; ea
 **Files:** Modify `src/routes/card.tsx` (when `canJoinTrail` and no pass this trail year: Join box replaces progress, milestones and stops list; visits and waiting rewards stay), `holder-view.ts` (+ `hasTrailPass: boolean` input/view) + test.
 - [ ] Step 1: Test: view passes `hasTrailPass` through (default false). Steps 2–4. Step 5: commit.
 - [ ] Build, push staging (after Task 2's migration), confirm deploy by behavior. Owner walkthrough: an allied test member (draft) with a plate → free card → visit-1 reward → upgrade to pass at Sample Brewery → trail offer later at the first stop; pass holder at the allied plate sees no Beer Trail offer.
+
+## Deferred minors (final reviews, 2026-11-19)
+
+Beer Trail join via Zeffy:
+- Sells the soonest campaign year; next year can't be sold while this year's row exists (add a "sale opens" date).
+- Unauthenticated webhook calls each hit the Zeffy API (rate-limit risk); remove the header-name log once Zeffy's signature header is known.
+- `finishTrailJoin` isn't rate limited and pages up to 1000 payments.
+- Webhook-created cards are stamped `age_confirmed_via: customer` (gift passes never saw our 21+ box).
+- `plateMember` doesn't require a published brewery.
+- `assignPassToMember` doesn't confirm a row changed or validate the member id.
+
+Universal card:
+- `movePassToCard` isn't atomic (an error after the pass moved).
+- `startFreeCard` doesn't refuse a signed-in caller on the server.
+- The free-card form reveals that an email already has a card (spec-implied).
+- A ticked opt-in is dropped on the existing-email path.
+- Moving a pass onto a card that already has that year's pass gives it two passes.
