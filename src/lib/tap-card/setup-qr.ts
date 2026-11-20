@@ -16,9 +16,9 @@ export function setupQrFilename(label: string): string {
   return slug ? `bar-device-${slug}-qr.png` : "bar-device-qr.png";
 }
 
-/** The two lines printed under a counter plate or bartender QR image. */
-export function qrCaptionLines(kind: "plate" | "bartender", printed: string): [string, string] {
-  return [kind === "plate" ? "Counter plate" : "Bartender QR", printed];
+/** The two lines printed under a counter plate or staff QR image. */
+export function qrCaptionLines(kind: "plate" | "staff", printed: string): [string, string] {
+  return [kind === "plate" ? "Counter plate" : "Staff QR", printed];
 }
 
 export const CAPTIONED_QR_HEIGHT = 370;

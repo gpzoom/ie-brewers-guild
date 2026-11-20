@@ -97,7 +97,7 @@ function CardBody({ view }: { view: CardView }) {
       return (
         <>
           <CanvasHeading size="md">This Inland Tap Card is active</CanvasHeading>
-          <p className={leadClass}>Have the bartender tap it at every new taproom on the trail.</p>
+          <p className={leadClass}>Have a staff member tap it at every new taproom on the trail.</p>
           <a href="/card" className={primaryButtonClass}>
             See my card
           </a>

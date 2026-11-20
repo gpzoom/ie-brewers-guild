@@ -23,7 +23,7 @@ export const HOLDER_COOKIE = "iebg_tapcard";
 export const LOGIN_TOKEN_TTL_MINUTES = 60;
 const SCANNER_MAX_AGE = 400 * 24 * 60 * 60; // browsers cap cookies at 400 days
 // Card sessions last as long as browsers allow and are renewed when used
-// (spec 2026-11-18 bartender QR), so a regular never sees the email again.
+// (spec 2026-11-18 staff QR), so a regular never sees the email again.
 const HOLDER_MAX_AGE = 400 * 24 * 60 * 60;
 
 const cookieOptions = (maxAge: number) => ({ httpOnly: true, secure: true, sameSite: "lax" as const, path: "/", maxAge });
@@ -103,7 +103,7 @@ export async function readHolderId(): Promise<string | null> {
   return holderId;
 }
 
-/** The plate choice this phone is waiting to confirm with the bartender QR (on its session row). */
+/** The plate choice this phone is waiting to confirm with the staff QR (on its session row). */
 export async function setPlatePending(p: { memberId: string; plateCode: string; choice: PendingChoice }): Promise<boolean> {
   const raw = getCookie(HOLDER_COOKIE);
   if (!raw) return false;
@@ -120,7 +120,7 @@ export async function setPlatePending(p: { memberId: string; plateCode: string; 
 /**
  * The person's newest waiting plate choice, from any of their signed-in
  * browsers -- so the plate scanned with the phone's camera (browser) and the
- * bartender QR scanned from a Home Screen card still go together.
+ * staff QR scanned from a Home Screen card still go together.
  */
 export async function readPlatePending(holderId: string): Promise<(Pending & { sessionId: string }) | null> {
   const service = await getSupabaseServiceRoleClient();
@@ -141,7 +141,7 @@ export async function readPlatePending(holderId: string): Promise<(Pending & { s
 
 /**
  * Takes the waiting choice that was read (matched by its time), so one
- * bartender scan confirms one choice even if the page sends twice. False
+ * staff member scan confirms one choice even if the page sends twice. False
  * when another request already took it.
  */
 export async function claimPlatePending(pending: { sessionId: string; at: string }): Promise<boolean> {

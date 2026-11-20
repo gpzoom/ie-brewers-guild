@@ -6,8 +6,8 @@ import { PlateSuccess, plateRefusal, type PlateOk } from "@/components/tap-card/
 import { CardScanner } from "@/components/tap-card/CardScanner";
 
 /**
- * /s/<token>: the customer scanned the bartender's QR code. A plain check-in
- * records at once; using a reward asks first (spec 2026-11-18 bartender QR).
+ * /s/<token>: the customer scanned the staff QR code. A plain check-in
+ * records at once; using a reward asks first (spec 2026-11-18 staff QR).
  */
 export function StaffQrScreen({ token, view }: { token: string; view: StaffQrPage }) {
   const [done, setDone] = useState<PlateOk | null>(null);
@@ -41,7 +41,7 @@ export function StaffQrScreen({ token, view }: { token: string; view: StaffQrPag
     return (
       <>
         <CanvasHeading size="md">Inland Tap Card</CanvasHeading>
-        <p className={leadClass}>This code isn&rsquo;t working any more. Ask your bartender for the current one.</p>
+        <p className={leadClass}>This code isn&rsquo;t working any more. Ask a staff member for the current one.</p>
       </>
     );
   }
@@ -52,7 +52,7 @@ export function StaffQrScreen({ token, view }: { token: string; view: StaffQrPag
   return (
     <div className="flex flex-col gap-4">
       <Eyebrow>{view.memberName}</Eyebrow>
-      {view.view === "closed" && <CanvasHeading size="md">Ask your bartender to tap your card.</CanvasHeading>}
+      {view.view === "closed" && <CanvasHeading size="md">Ask a staff member to tap your card.</CanvasHeading>}
       {view.view === "scan-plate-first" && (
         <>
           <CanvasHeading size="md">Scan the counter plate first</CanvasHeading>
@@ -71,7 +71,7 @@ export function StaffQrScreen({ token, view }: { token: string; view: StaffQrPag
         <>
           <CanvasHeading size="md">Use your reward now?</CanvasHeading>
           <p className="text-[20px] font-semibold text-ink">{view.rewardText}</p>
-          <p className={leadClass}>This can&rsquo;t be undone without the bartender.</p>
+          <p className={leadClass}>This can&rsquo;t be undone without a staff member.</p>
           <button type="button" className={primaryButtonClass} disabled={busy} onClick={() => confirm(false)}>
             {busy ? "Saving…" : "Yes, use it"}
           </button>

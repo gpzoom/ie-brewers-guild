@@ -19,7 +19,7 @@ import { PLATE_LOCK_MINUTES, plateUrl, staffCodeGate, validateStaffCode, type At
 /**
  * Counter plate (/t/<code>): the customer's own phone, signed in to their
  * Tap Card, checks in at a brewery with no bar device -- but nothing is
- * recorded until the bartender types the brewery's staff code. Opening the
+ * recorded until the staff member types the brewery's staff code. Opening the
  * page only looks.
  */
 
@@ -42,7 +42,7 @@ async function loadPlate(service: SupabaseClient, rawCode: string): Promise<Plat
     memberSlug: m.slug,
     staffCode: data.staff_code,
     trailStop: isTrailStop({ memberType: m.member_type, trailEligible: m.trail_eligible === true }),
-    // The staff code still turns the plate on (it's the backup to the bartender QR).
+    // The staff code still turns the plate on (it's the backup to the staff QR).
     open: memberTakesCheckIns({ status: m.status, memberType: m.member_type, trailEligible: m.trail_eligible }, onStagingSite()) && data.staff_code !== null,
   };
 }
@@ -54,7 +54,7 @@ async function ensurePlate(service: SupabaseClient, memberId: string): Promise<{
     if (error) throw new Error(error.message);
     if (data?.staff_qr) return { code: data.code, staffCode: data.staff_code, staffQr: data.staff_qr };
     if (data) {
-      // A plate made before the bartender QR (or before 8-character codes): give it one now.
+      // A plate made before the staff QR (or before 8-character codes): give it one now.
       const { error: qrError } = await service
         .from("tap_card_plates")
         .update({ staff_qr: generateCardCode() })
@@ -185,9 +185,9 @@ async function recordVisit(
   return { kind: "ok", state, milestoneRewards, outcome: used.outcome };
 }
 
-// ---- The bartender QR (/s/<token>) ----
+// ---- The staff QR (/s/<token>) ----
 
-/** The plate's Continue: hold the customer's choice for the bartender QR. */
+/** The plate's Continue: hold the customer's choice for the staff QR. */
 export const choosePlateAction = createServerFn({ method: "POST" })
   .inputValidator((data: { code: string; choice: PendingChoice }) => ({
     code: String(data?.code ?? ""),
@@ -255,7 +255,7 @@ export const getStaffQrView = createServerFn({ method: "GET" })
     return { view: "confirm", memberName, memberSlug, plateCode: decided.plateCode, rewardText: reward.reward };
   });
 
-/** The customer confirmed on the bartender QR page: record the waiting choice once. */
+/** The customer confirmed on the staff QR page: record the waiting choice once. */
 export const confirmByStaffQr = createServerFn({ method: "POST" })
   .inputValidator((data: { token: string; skipReward?: boolean }) => ({ token: String(data?.token ?? ""), skipReward: data?.skipReward === true }))
   .handler(async ({ data }): Promise<PlateResult | { kind: "scan-plate-first" }> => {
@@ -297,7 +297,7 @@ export const getCounterPlate = createServerFn({ method: "GET" })
     return counterPlate(await ensurePlate(service, data.memberId));
   });
 
-/** A copied or lost bartender QR: a new one; the old one stops working at once. */
+/** A copied or lost staff QR: a new one; the old one stops working at once. */
 export const resetStaffQr = createServerFn({ method: "POST" })
   .inputValidator((data: { memberId: string }) => ({ memberId: String(data?.memberId ?? "") }))
   .handler(async ({ data }): Promise<CounterPlate> => {

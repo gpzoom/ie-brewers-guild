@@ -50,14 +50,14 @@ export function PrivacyPolicy() {
             </>,
             <>
               <strong>If you have an Inland Tap Card:</strong> your name and email address, your card's
-              code, which stop turned on your card and whether you or a bartender confirmed you're 21 or
+              code, which stop turned on your card and whether you or a staff member confirmed you're 21 or
               older, each visit (which stop and when) and which bar device recorded each visit, when you use
               a stop's offer, the Guild rewards you earn, how many times you've visited each brewery, and
               which rewards you've earned from breweries and when you used them. When your card is tapped at a stop, the
-              bartender sees your first name, whether you've already used that stop's offer this year, and
+              staff member sees your first name, whether you've already used that stop's offer this year, and
               any Guild reward you just earned, plus any loyalty rewards waiting for you there. If you check in
-              at a brewery's counter plate, your own phone shows the same, and the bartender enters a staff
-              code on it. If a bartender turns on your card for you, they type in your
+              at a brewery's counter plate, your own phone shows the same, and the staff member enters a staff
+              code on it. If a staff member turns on your card for you, they type in your
               name and email; otherwise breweries don't see your email address.
             </>,
             <>

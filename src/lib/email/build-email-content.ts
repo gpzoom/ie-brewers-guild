@@ -620,7 +620,7 @@ ${signInUrl}`,
     case "tap_card_welcome": {
       const first = payload.name.split(" ")[0] || payload.name;
       const hi = `Hi ${first},`;
-      const body = "Your Inland Tap Card is ready. Have the bartender tap it at every taproom on the trail to record your visit and get that stop's first-beer offer. See your progress any time:";
+      const body = "Your Inland Tap Card is ready. Have a staff member tap it at every taproom on the trail to record your visit and get that stop's first-beer offer. See your progress any time:";
       const trail = `The stops and their offers: ${siteUrl}/trail`;
       const legal = `The Tap Card is covered by our Terms of Use (${siteUrl}/terms) and Privacy Policy (${siteUrl}/privacy).`;
       return {

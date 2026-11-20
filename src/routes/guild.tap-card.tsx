@@ -63,7 +63,7 @@ function TapCardRoute() {
       <div className="flex max-w-[640px] flex-col gap-1.5">
         <h1 className="font-display text-[28px] font-bold leading-tight tracking-[-0.01em] text-ink">Inland Tap Card</h1>
         <p className="text-pretty text-[13px] text-[#564E45]">
-          Cards that bartenders tap to record visits, the Beer Trail offer, and each stop's loyalty rewards.
+          Cards that staff members tap to record visits, the Beer Trail offer, and each stop's loyalty rewards.
         </p>
       </div>
       <TapCardTabs

@@ -121,7 +121,7 @@ export function TermsOfUse() {
           approved by the Guild, and the brewery honors it. A reward you earn waits on your card until you use
           it, and rewards expire after the time the brewery shows. One reward per visit. Rewards have no cash
           value and can't be transferred. At a brewery's counter plate, a check-in counts only when the
-          bartender enters the brewery's staff code.
+          staff member enters the brewery's staff code.
         </p>
       </LegalSection>
 

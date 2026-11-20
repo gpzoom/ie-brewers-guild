@@ -2,7 +2,7 @@
  * Counter plate (spec 2026-11-17 offers & loyalty, "Counter plate"): a
  * plate at the bar with a QR code and NFC chip holding `/t/<code>`. The
  * customer taps it with their own phone (signed in to their Tap Card); the
- * bartender types the brewery's 4-digit staff code on that phone, and only
+ * staff member types the brewery's 4-digit staff code on that phone, and only
  * then is anything recorded. After 5 wrong codes the plate locks for that
  * customer at that brewery for 15 minutes.
  */

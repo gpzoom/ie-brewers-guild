@@ -52,7 +52,7 @@ describe("decideStaffQrView", () => {
     const stale = { ...pending, at: minutesAgo(PENDING_MINUTES + 1) };
     expect(decideStaffQrView({ qrMemberId: "m1", signedIn: true, pending: stale, now })).toEqual({ kind: "scan-plate-first" });
   });
-  it("refuses another brewery's bartender QR", () => {
+  it("refuses another brewery's staff QR", () => {
     expect(decideStaffQrView({ qrMemberId: "m2", signedIn: true, pending, now })).toEqual({ kind: "wrong-brewery" });
   });
   it("records a plain check-in straight away", () => {

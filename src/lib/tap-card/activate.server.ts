@@ -12,7 +12,7 @@ import { sendHolderSignInLink } from "@/lib/tap-card/holder-signin.server";
 
 /**
  * Turning on a card, by the customer on their own phone (public, rate
- * limited, starts their session) or by the bartender on a bar device (after
+ * limited, starts their session) or by the staff member on a bar device (after
  * checking ID). Both send the welcome email; a failed email never undoes
  * the activation.
  */

@@ -4,7 +4,7 @@ import { homeScreenKind, scannedTapCardPath, successLinks } from "@/lib/tap-card
 const TOKEN = "ABCD1234";
 
 describe("scannedTapCardPath", () => {
-  it("opens a counter plate or a bartender QR code, on this site", () => {
+  it("opens a counter plate or a staff QR code, on this site", () => {
     expect(scannedTapCardPath("https://iscbrewersguild.org/t/ABCD2345")).toBe("/t/ABCD2345");
     expect(scannedTapCardPath(`https://ie-brewers-guild-staging.boblelle77.workers.dev/s/${TOKEN}`)).toBe(`/s/${TOKEN}`);
     expect(scannedTapCardPath("/t/ABCD2345")).toBe("/t/ABCD2345");

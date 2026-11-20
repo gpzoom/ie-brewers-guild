@@ -4,9 +4,9 @@ import { TapCardShell } from "@/components/tap-card/TapCardShell";
 import { StaffQrScreen } from "@/components/tap-card/StaffQrScreen";
 
 /**
- * /s/<token>: a brewery's bartender QR code, kept behind the counter. The
+ * /s/<token>: a brewery's staff QR code, kept behind the counter. The
  * customer scans it after choosing at the counter plate; opening the page
- * only looks, the screen itself confirms. (spec 2026-11-18 bartender QR)
+ * only looks, the screen itself confirms. (spec 2026-11-18 staff QR)
  */
 export const Route = createFileRoute("/s/$token")({
   staleTime: 0,

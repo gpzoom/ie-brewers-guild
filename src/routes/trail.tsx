@@ -37,7 +37,7 @@ function TrailPage() {
           ? `Get an Inland Tap Card at any stop — about ${formatPrice(cardPriceCents)}.`
           : "Get an Inland Tap Card at any stop.",
     },
-    { title: "Tap it at every new taproom", body: "Have the bartender tap your card. Your visit counts, and you get that stop's offer once a year." },
+    { title: "Tap it at every new taproom", body: "Have a staff member tap your card. Your visit counts, and you get that stop's offer once a year." },
     { title: "Earn Guild rewards", body: "Visit more stops to earn rewards from the Guild. Visits count — not how much you drink." },
   ];
 

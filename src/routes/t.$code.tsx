@@ -5,7 +5,7 @@ import { PlateScreen } from "@/components/tap-card/PlateScreen";
 
 /**
  * /t/<code>: a brewery's counter plate. The customer taps or scans it with
- * their own phone; the bartender confirms with the staff code. Opening the
+ * their own phone; the staff member confirms with the staff code. Opening the
  * page records nothing. (spec 2026-11-17 offers & loyalty)
  */
 export const Route = createFileRoute("/t/$code")({

@@ -48,7 +48,7 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
     setStaffQr(null);
     if (!plate) return;
     let current = true;
-    captionedQrDataUrl(plate.staffQrUrl, qrCaptionLines("bartender", plate.staffQrPrinted))
+    captionedQrDataUrl(plate.staffQrUrl, qrCaptionLines("staff", plate.staffQrPrinted))
       .then((d) => current && setStaffQr(d))
       .catch(() => undefined);
     return () => {
@@ -57,7 +57,7 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
   }, [plate?.staffQrUrl, plate?.staffQrPrinted]);
 
   async function onResetStaffQr() {
-    if (!window.confirm("Make a new bartender QR code? The one you have now will stop working right away.")) return;
+    if (!window.confirm("Make a new staff QR code? The one you have now will stop working right away.")) return;
     setBusy(true);
     setError(null);
     try {
@@ -105,7 +105,7 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
       </h2>
       <p className="text-[13px] text-ink-muted">
         Customers with a smartphone tap or scan this plate at your bar and choose a check-in or a reward. Then they scan
-        your bartender QR code (below) to confirm. Customers with only a plastic card still need a bar device.
+        your staff QR code (below) to confirm. Customers with only a plastic card still need a bar device.
       </p>
       {plate && (
         <>
@@ -132,10 +132,10 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
               Make a new plate link
             </button>
           </div>
-          <h3 className="mt-2 font-display text-[16px] font-bold text-ink">Bartender QR code</h3>
+          <h3 className="mt-2 font-display text-[16px] font-bold text-ink">Staff QR code</h3>
           <p className="text-[13px] text-ink-muted">
             Print this and keep it behind the counter, out of customers&rsquo; reach. After a customer chooses at the plate, your
-            bartender holds it up and the customer scans it to confirm. If you think someone has copied it, make a new one: the old
+            staff member holds it up and the customer scans it to confirm. If you think someone has copied it, make a new one: the old
             one stops working right away.
           </p>
           {staffQr && (
@@ -143,26 +143,26 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
               src={staffQr}
               width={SETUP_QR_SIZE}
               height={CAPTIONED_QR_HEIGHT}
-              alt={`Bartender QR code, code ${plate.staffQrPrinted}`}
+              alt={`Staff QR code, code ${plate.staffQrPrinted}`}
               className="h-auto w-[220px] max-w-full rounded-md border border-canvas-border bg-white"
             />
           )}
           <div className="text-[13px] text-ink">
-            Bartender code <span className="font-semibold">{plate.staffQrPrinted}</span>
+            Staff QR code <span className="font-semibold">{plate.staffQrPrinted}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {staffQr && (
-              <a href={staffQr} download="bartender-qr.png" className={outlineClass}>
-                Download bartender QR
+              <a href={staffQr} download="staff-qr.png" className={outlineClass}>
+                Download staff QR
               </a>
             )}
             <button type="button" className={outlineClass} disabled={busy} onClick={onResetStaffQr}>
-              Make a new bartender QR
+              Make a new staff QR
             </button>
           </div>
           <h3 className="mt-2 font-display text-[16px] font-bold text-ink">Staff code (backup)</h3>
           <p className="text-[13px] text-ink-muted">
-            If the bartender QR code isn&rsquo;t handy, your bartender can type this code on the customer&rsquo;s phone instead. It&rsquo;s
+            If the staff QR code isn&rsquo;t handy, a staff member can type this code on the customer&rsquo;s phone instead. It&rsquo;s
             also needed to undo a reward.
           </p>
           <form onSubmit={onSave} className="flex flex-col gap-2 sm:flex-row sm:items-end">

@@ -3,7 +3,7 @@ import { normalizeCardCode } from "@/lib/tap-card/card-code";
 /**
  * Turning on a new card: name + email + the 21+ check (spec: name and email
  * are required). The customer can do it on their own phone, or the
- * bartender can do it on the bar device after checking ID.
+ * staff member can do it on the bar device after checking ID.
  *
  * An email that already has a Tap Card never gets the card here: typing an
  * address proves nothing about owning it (final review, Critical #1). The

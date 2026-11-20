@@ -33,6 +33,6 @@ describe("setupQrFilename", () => {
 describe("qrCaptionLines", () => {
   it("names the QR and shows its code", () => {
     expect(qrCaptionLines("plate", "ABCD-1234")).toEqual(["Counter plate", "ABCD-1234"]);
-    expect(qrCaptionLines("bartender", "WXYZ-5678")).toEqual(["Bartender QR", "WXYZ-5678"]);
+    expect(qrCaptionLines("staff", "WXYZ-5678")).toEqual(["Staff QR", "WXYZ-5678"]);
   });
 });

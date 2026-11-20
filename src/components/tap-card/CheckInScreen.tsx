@@ -53,7 +53,7 @@ function RewardText({ reward }: { reward: BarReward }) {
 const choiceOf = (r: BarReward) =>
   r.kind === "trail" ? { kind: "trail" as const } : r.kind === "earn" ? { kind: "earn" as const, slot: r.slot } : { kind: "member" as const, id: r.id };
 
-/** The bartender's screen for an active card: opening it records the visit; at most one button press after that. */
+/** The staff member's screen for an active card: opening it records the visit; at most one button press after that. */
 export function CheckInScreen({ view }: { view: CheckInView }) {
   const [result, setResult] = useState<BarResult | null>(null);
   const [milestones, setMilestones] = useState<string[]>([]);

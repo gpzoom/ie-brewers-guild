@@ -8,7 +8,7 @@ const STAFF_QR_PATH = /^\/s\/[0-9A-HJKMNP-TV-Z]{8}$/;
 
 /**
  * The page a scanned code should open -- only a counter plate or a
- * bartender QR code, and always on this site (the host is dropped).
+ * staff QR code, and always on this site (the host is dropped).
  */
 export function scannedTapCardPath(text: string): string | null {
   let path: string;

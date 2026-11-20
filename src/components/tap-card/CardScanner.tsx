@@ -33,7 +33,7 @@ async function makeReader(): Promise<(video: HTMLVideoElement, canvas: HTMLCanva
 
 /**
  * Scan: the camera inside the card page. Reads only the Tap Card's own codes
- * (counter plate, bartender QR) and opens them here, so a card saved to the
+ * (counter plate, staff QR) and opens them here, so a card saved to the
  * Home Screen never has to hand off to the browser.
  */
 export function CardScanner({ label = "Scan a Tap Card code" }: { label?: string }) {
@@ -75,7 +75,7 @@ export function CardScanner({ label = "Scan a Tap Card code" }: { label?: string
             }
             if (text !== lastWrong) {
               lastWrong = text;
-              setMessage("That isn't a Tap Card code. Point at the counter plate or the bartender's QR code.");
+              setMessage("That isn't a Tap Card code. Point at the counter plate or the staff QR code.");
             }
           }
         } catch {
@@ -113,7 +113,7 @@ export function CardScanner({ label = "Scan a Tap Card code" }: { label?: string
       <video ref={videoRef} className="aspect-square w-full max-w-[420px] rounded-[18px] bg-black object-cover" playsInline muted />
       <canvas ref={canvasRef} className="hidden" />
       <p className="max-w-[420px] text-center text-[15px] text-white" aria-live="polite">
-        {message ?? "Point your camera at the counter plate or the bartender's QR code."}
+        {message ?? "Point your camera at the counter plate or the staff QR code."}
       </p>
       <button type="button" className={`${secondaryButtonClass} max-w-[420px]`} onClick={() => setOpen(false)}>
         Close

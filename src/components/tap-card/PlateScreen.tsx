@@ -31,8 +31,8 @@ const choiceOf = (key: string): PlateChoice =>
         : { kind: "member", id: key };
 
 /**
- * The customer picks, taps Continue, then scans the bartender's QR code
- * (spec 2026-11-18 bartender QR). The staff code is the backup.
+ * The customer picks, taps Continue, then scans the staff QR code
+ * (spec 2026-11-18 staff QR). The staff code is the backup.
  */
 function ReadyScreen({ view }: { view: Ready }) {
   const waiting = view.state.used ? [] : [view.state.featured, ...view.state.others].filter((r): r is BarReward => r !== null);
@@ -65,13 +65,13 @@ function ReadyScreen({ view }: { view: Ready }) {
     return (
       <div className="flex flex-col gap-4">
         <Eyebrow>{view.memberName}</Eyebrow>
-        <CanvasHeading size="md">Now scan the bartender&rsquo;s QR code</CanvasHeading>
+        <CanvasHeading size="md">Now scan the staff QR code</CanvasHeading>
         <p className={leadClass}>
-          Ask your bartender for the Tap Card QR code they keep behind the counter, and scan it with your camera within {PENDING_MINUTES}{" "}
+          Ask a staff member for the Tap Card QR code they keep behind the counter, and scan it with your camera within {PENDING_MINUTES}{" "}
           minutes.
         </p>
         <p className="rounded-xl border border-canvas-border bg-white px-4 py-3 text-[15px] text-ink">{picked}</p>
-        {step === "scan" && <CardScanner label="Scan the bartender's QR code" />}
+        {step === "scan" && <CardScanner label="Scan the staff QR code" />}
         {step === "code" ? (
           <StaffCodeForm
             label="Confirm"
@@ -216,14 +216,14 @@ export function PlateScreen({ view }: { view: PlateView }) {
       return (
         <>
           <CanvasHeading size="md">Inland Tap Card</CanvasHeading>
-          <p className={leadClass}>We don&rsquo;t recognize this plate. Ask your bartender to tap your card.</p>
+          <p className={leadClass}>We don&rsquo;t recognize this plate. Ask a staff member to tap your card.</p>
         </>
       );
     case "closed":
       return (
         <>
           <Eyebrow>{view.memberName}</Eyebrow>
-          <CanvasHeading size="md">Ask your bartender to tap your card.</CanvasHeading>
+          <CanvasHeading size="md">Ask a staff member to tap your card.</CanvasHeading>
         </>
       );
     case "signed-out":

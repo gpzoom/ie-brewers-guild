@@ -115,7 +115,7 @@ function Waiting({ view }: { view: HolderCardView }) {
           </li>
         ))}
       </ul>
-      <p className={hintClass}>Ask the bartender for it on your next visit. One reward per visit.</p>
+      <p className={hintClass}>Ask a staff member for it on your next visit. One reward per visit.</p>
     </section>
   );
 }

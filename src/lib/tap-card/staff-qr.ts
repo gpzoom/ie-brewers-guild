@@ -2,7 +2,7 @@ import { OFFER_SLOTS, type OfferSlot } from "@/lib/tap-card/loyalty";
 import type { RewardChoice } from "@/lib/tap-card/bar-core";
 
 /**
- * The bartender QR (spec 2026-11-18-tap-card-bartender-qr-design.md): a
+ * The staff QR (spec 2026-11-18-tap-card-bartender-qr-design.md): a
  * brewery's second, secret QR kept behind the counter, holding `/s/<token>`.
  * The customer picks at the counter plate, then scans this to confirm --
  * nothing is recorded by either scan alone.

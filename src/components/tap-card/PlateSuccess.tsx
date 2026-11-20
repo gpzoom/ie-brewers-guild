@@ -27,20 +27,20 @@ export function plateRefusal(result: Exclude<PlateResult, PlateOk> | { kind: "sc
     case "wrong-code":
       return `That code isn't right. ${result.triesLeft} ${result.triesLeft === 1 ? "try" : "tries"} left.`;
     case "locked":
-      return "Too many tries. Ask your bartender to try again in 15 minutes.";
+      return "Too many tries. Ask a staff member to try again in 15 minutes.";
     case "signed-out":
       return "You've been signed out. Scan the counter plate again to sign in.";
     case "closed":
-      return "This plate isn't taking check-ins right now. Ask your bartender to tap your card.";
+      return "This plate isn't taking check-ins right now. Ask a staff member to tap your card.";
     case "scan-plate-first":
-      return "Scan the counter plate first, then the bartender's QR code.";
+      return "Scan the counter plate first, then the staff QR code.";
   }
 }
 
 function StaffCodeField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <label className={`${labelClass} flex flex-col gap-1.5`}>
-      Bartender: staff code
+      Staff member: staff code
       <input
         className={`${inputClass} max-w-[160px] text-center text-[22px] tracking-[0.3em]`}
         type="password"
@@ -56,7 +56,7 @@ function StaffCodeField({ value, onChange }: { value: string; onChange: (v: stri
   );
 }
 
-/** The bartender's 4-digit staff code, then the call (the backup to the bartender QR). */
+/** The staff member's 4-digit staff code, then the call (the backup to the staff QR). */
 export function StaffCodeForm({ label, onSubmit }: { label: string; onSubmit: (staffCode: string) => Promise<PlateResult> }) {
   const [staffCode, setStaffCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -92,7 +92,7 @@ export function StaffCodeForm({ label, onSubmit }: { label: string; onSubmit: (s
   );
 }
 
-/** The green screen the customer shows the bartender. */
+/** The green screen the customer shows the staff member. */
 export function PlateSuccess({
   memberName,
   memberSlug,
@@ -119,7 +119,7 @@ export function PlateSuccess({
         <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#05603A]">{memberName}</p>
         <CanvasHeading size="md">{state.firstToday ? `Visit #${state.visitNumber} recorded` : `Checked in today — visit #${state.visitNumber}`}</CanvasHeading>
         {state.used && <p className="text-[22px] font-bold text-ink">{state.used.reward}</p>}
-        {state.used && <p className="text-[14px] text-ink">Used just now. Bartender: please pour.</p>}
+        {state.used && <p className="text-[14px] text-ink">Used just now. Staff member: please pour.</p>}
         <LiveClock />
         <p className="text-[12px] text-ink-muted">Confirmed at {clock(confirmedAt)}</p>
       </div>
@@ -145,7 +145,7 @@ export function PlateSuccess({
           />
         ) : (
           <button type="button" className="w-fit text-[14px] font-medium text-brand underline underline-offset-2" onClick={() => setUndoing(true)}>
-            Undo (bartender&rsquo;s code)
+            Undo (staff code)
           </button>
         ))}
       <nav aria-label="Where to next" className="mt-2 flex flex-col gap-2">

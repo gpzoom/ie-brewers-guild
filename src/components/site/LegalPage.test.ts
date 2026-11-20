@@ -43,9 +43,9 @@ describe("Privacy Policy", () => {
   it("describes the Inland Tap Card: what it stores, who sees it, its cookies", () => {
     expect(t).toContain("Inland Tap Card");
     expect(t).toContain("each visit (which stop and when)");
-    expect(t).toContain("the bartender sees your first name");
+    expect(t).toContain("the staff member sees your first name");
     expect(t).not.toContain("Breweries don't see your email address");
-    expect(t).toContain("If a bartender turns on your card for you, they type in your name and email");
+    expect(t).toContain("If a staff member turns on your card for you, they type in your name and email");
     expect(t).toContain("which stop turned on your card");
     expect(t).toContain("which bar device recorded each visit");
     expect(t).toContain("any Guild reward you just earned");
