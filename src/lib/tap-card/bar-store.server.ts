@@ -115,13 +115,13 @@ export function barStore(service: SupabaseClient): BarStore {
     async banked(holderId, memberId) {
       const { data, error } = await service
         .from("tap_card_earned_rewards")
-        .select("id, reward, terms, expires_at, earned_at")
+        .select("id, reward, terms, expires_at, earned_at, slot, earned_visit_id")
         .eq("holder_id", holderId)
         .eq("member_id", memberId)
         .is("used_at", null)
         .order("expires_at");
       fail(error);
-      return (data ?? []).map((r) => ({ id: r.id, reward: r.reward, terms: r.terms, expiresAt: r.expires_at, earnedAt: r.earned_at }));
+      return (data ?? []).map((r) => ({ id: r.id, reward: r.reward, terms: r.terms, expiresAt: r.expires_at, earnedAt: r.earned_at, slot: r.slot, visitId: r.earned_visit_id }));
     },
     async memberRewardUsedOn(visitId) {
       const { data, error } = await service

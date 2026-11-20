@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkInVisit, undoBarReward, useBarReward, type BarStore, type VisitInput } from "@/lib/tap-card/bar-core";
+import { barState, checkInVisit, undoBarReward, useBarReward, type BarStore, type VisitInput } from "@/lib/tap-card/bar-core";
 import type { LiveOffer, OfferSlot } from "@/lib/tap-card/loyalty";
 import { STANDARD_OFFER } from "@/lib/tap-card/tap-card-copy";
 
@@ -92,7 +92,7 @@ function memoryStore(
     async banked(holderId, memberId) {
       return earned
         .filter((e) => e.holderId === holderId && e.memberId === memberId && e.usedVisitId === null)
-        .map((e) => ({ id: e.id, reward: e.reward, terms: e.terms, expiresAt: e.expiresAt, earnedAt: e.earnedAt }));
+        .map((e) => ({ id: e.id, reward: e.reward, terms: e.terms, expiresAt: e.expiresAt, earnedAt: e.earnedAt, slot: e.slot, visitId: e.visitId }));
     },
     async memberRewardUsedOn(visitId) {
       const e = earned.find((x) => x.usedVisitId === visitId);
@@ -292,5 +292,43 @@ describe("at a Guild member that isn't a Beer Trail stop", () => {
     const used = await useBarReward(store, { ...input, choice: { kind: "trail" } });
     expect(used.outcome).toBe("not-available");
     expect(visits.every((v) => v.redeemedYear === null)).toBe(true);
+  });
+});
+
+describe("a reward today's visit earns is usable right away (owner, 2026-11-19)", () => {
+  const welcome: LiveOffer = { slot: "step1", visitNumber: 1, reward: "Free churro", terms: "" };
+
+  it("before check-in, the screen offers what this visit will earn", async () => {
+    const { store } = memoryStore({ nonTrail: ["m1"], offers: { m1: [welcome] } });
+    const state = await barState(store, { ...input, firstToday: false, newlyEarned: [] });
+    expect(state.featured).toEqual({ kind: "earn", slot: "step1", reward: "Free churro", terms: "" });
+  });
+
+  it("choosing it records the visit and uses the reward in one go", async () => {
+    const { store, visits, earned } = memoryStore({ nonTrail: ["m1"], offers: { m1: [welcome] } });
+    await checkInVisit(store, input);
+    const used = await useBarReward(store, { ...input, choice: { kind: "earn", slot: "step1" } });
+    expect(used.outcome).toBe("used");
+    expect(earned[0].usedVisitId).toBe(visits[0].id);
+    expect(used.state.used).toMatchObject({ kind: "member", reward: "Free churro" });
+  });
+
+  it("works for a later step too (visit 2's pretzel), after the Beer Trail offer in the list", async () => {
+    const { store } = memoryStore({ visits: [earlier("2026-06-01")], offers: { m1: [pretzel] } });
+    const state = await barState(store, { ...input, firstToday: false, newlyEarned: [] });
+    expect(state.featured).toEqual({ kind: "trail", reward: STANDARD_OFFER });
+    expect(state.others).toEqual([{ kind: "earn", slot: "step1", reward: "Free soft pretzel", terms: "Food only" }]);
+  });
+
+  it("once checked in, it shows as a normal waiting reward, not twice", async () => {
+    const { store } = memoryStore({ nonTrail: ["m1"], offers: { m1: [welcome] } });
+    const state = await checkInVisit(store, input);
+    expect([state.featured, ...state.others].map((r) => r?.kind)).toEqual(["member"]);
+  });
+
+  it("an 'earn' choice with nothing earned today is refused", async () => {
+    const { store } = memoryStore({ nonTrail: ["m1"] });
+    await checkInVisit(store, input);
+    expect((await useBarReward(store, { ...input, choice: { kind: "earn", slot: "step1" } })).outcome).toBe("not-available");
   });
 });

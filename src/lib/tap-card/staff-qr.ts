@@ -1,3 +1,4 @@
+import { OFFER_SLOTS, type OfferSlot } from "@/lib/tap-card/loyalty";
 import type { RewardChoice } from "@/lib/tap-card/bar-core";
 
 /**
@@ -21,8 +22,11 @@ export function isStaffQrToken(raw: unknown): raw is string {
 
 export function parsePendingChoice(raw: unknown): PendingChoice | null {
   if (!raw || typeof raw !== "object") return null;
-  const r = raw as { kind?: unknown; id?: unknown };
+  const r = raw as { kind?: unknown; id?: unknown; slot?: unknown };
   if (r.kind === "none" || r.kind === "trail") return { kind: r.kind };
+  if (r.kind === "earn" && typeof r.slot === "string" && (OFFER_SLOTS as readonly string[]).includes(r.slot)) {
+    return { kind: "earn", slot: r.slot as OfferSlot };
+  }
   if (r.kind === "member" && typeof r.id === "string" && r.id) return { kind: "member", id: r.id };
   return null;
 }

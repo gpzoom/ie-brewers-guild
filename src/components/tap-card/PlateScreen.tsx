@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { choosePlateAction, confirmAtPlate, type PlateChoice, type PlateView } from "@/lib/tap-card/plate.server";
 import { requestHolderSignIn } from "@/lib/tap-card/holder.server";
-import type { BarReward } from "@/lib/tap-card/loyalty";
+import type { BarReward, OfferSlot } from "@/lib/tap-card/loyalty";
 import { PENDING_MINUTES } from "@/lib/tap-card/staff-qr";
 import { CanvasHeading, cardLinkClass, fieldErrorClass, inputClass, labelClass, leadClass, primaryButtonClass, secondaryButtonClass } from "@/components/public-forms/PublicFormParts";
 import { Eyebrow } from "@/components/tap-card/TapCardShell";
@@ -16,10 +16,19 @@ import { signedOutButtons, type SignUpChoice } from "@/lib/tap-card/plate";
 type Ready = Extract<PlateView, { view: "ready" }>;
 
 function rewardLine(r: BarReward): string {
-  return r.kind === "trail" ? `Use my Beer Trail offer: ${r.reward}` : `Use my reward: ${r.reward} (use by ${useByDate(r.expiresAt)})`;
+  if (r.kind === "trail") return `Use my Beer Trail offer: ${r.reward}`;
+  if (r.kind === "earn") return `Use my reward: ${r.reward} (earned with this visit)`;
+  return `Use my reward: ${r.reward} (use by ${useByDate(r.expiresAt)})`;
 }
-const keyOf = (r: BarReward) => (r.kind === "trail" ? "trail" : r.id);
-const choiceOf = (key: string): PlateChoice => (key === "none" ? { kind: "none" } : key === "trail" ? { kind: "trail" } : { kind: "member", id: key });
+const keyOf = (r: BarReward) => (r.kind === "trail" ? "trail" : r.kind === "earn" ? `earn:${r.slot}` : r.id);
+const choiceOf = (key: string): PlateChoice =>
+  key === "none"
+    ? { kind: "none" }
+    : key === "trail"
+      ? { kind: "trail" }
+      : key.startsWith("earn:")
+        ? { kind: "earn", slot: key.slice(5) as OfferSlot }
+        : { kind: "member", id: key };
 
 /**
  * The customer picks, taps Continue, then scans the bartender's QR code

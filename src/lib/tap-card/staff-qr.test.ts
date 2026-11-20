@@ -28,6 +28,8 @@ describe("staffQrUrl / isStaffQrToken", () => {
 describe("parsePendingChoice", () => {
   it("keeps only the three shapes a plate can send", () => {
     expect(parsePendingChoice({ kind: "none" })).toEqual({ kind: "none" });
+    expect(parsePendingChoice({ kind: "earn", slot: "step1" })).toEqual({ kind: "earn", slot: "step1" });
+    expect(parsePendingChoice({ kind: "earn", slot: "nope" })).toBeNull();
     expect(parsePendingChoice({ kind: "trail" })).toEqual({ kind: "trail" });
     expect(parsePendingChoice({ kind: "member", id: "r1", extra: 1 })).toEqual({ kind: "member", id: "r1" });
     for (const bad of [null, "none", { kind: "member" }, { kind: "member", id: "" }, { kind: "other" }]) expect(parsePendingChoice(bad)).toBeNull();

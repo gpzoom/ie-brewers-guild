@@ -45,12 +45,13 @@ function RewardText({ reward }: { reward: BarReward }) {
     <>
       <span className="text-[18px] font-semibold text-ink">{reward.reward}</span>
       {reward.terms && <span className="text-[13px] text-ink-muted">{reward.terms}</span>}
-      <span className="text-[13px] text-ink-muted">Use by {useByDate(reward.expiresAt)}</span>
+      {reward.kind === "member" && <span className="text-[13px] text-ink-muted">Use by {useByDate(reward.expiresAt)}</span>}
     </>
   );
 }
 
-const choiceOf = (r: BarReward) => (r.kind === "trail" ? { kind: "trail" as const } : { kind: "member" as const, id: r.id });
+const choiceOf = (r: BarReward) =>
+  r.kind === "trail" ? { kind: "trail" as const } : r.kind === "earn" ? { kind: "earn" as const, slot: r.slot } : { kind: "member" as const, id: r.id };
 
 /** The bartender's screen for an active card: opening it records the visit; at most one button press after that. */
 export function CheckInScreen({ view }: { view: CheckInView }) {
@@ -168,7 +169,7 @@ export function CheckInScreen({ view }: { view: CheckInView }) {
           </button>
           {showOthers &&
             state.others.map((r) => (
-              <div key={r.kind === "trail" ? "trail" : r.id} className="flex flex-col gap-1 rounded-xl border border-canvas-border bg-white px-4 py-3">
+              <div key={r.kind === "trail" ? "trail" : r.kind === "earn" ? `earn:${r.slot}` : r.id} className="flex flex-col gap-1 rounded-xl border border-canvas-border bg-white px-4 py-3">
                 <RewardText reward={r} />
                 <button
                   type="button"

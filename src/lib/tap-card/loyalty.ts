@@ -95,21 +95,30 @@ export function expiresAt(earnedAt: Date, days: number): Date {
 
 export type BarReward =
   | { kind: "trail"; reward: string }
-  | { kind: "member"; id: string; reward: string; terms: string; expiresAt: string };
+  | { kind: "member"; id: string; reward: string; terms: string; expiresAt: string }
+  /** Earned by the visit being checked in now -- usable right away (owner, 2026-11-19). */
+  | { kind: "earn"; slot: OfferSlot; reward: string; terms: string };
 
 export type BankedReward = { id: string; reward: string; terms: string; expiresAt: string; earnedAt: string };
 
-/** The one reward the bar screen features: the Beer Trail offer first, then the soonest to expire. */
+export const OFFER_SLOTS: readonly OfferSlot[] = ["step1", "step2", "step3", "repeat"];
+
+/**
+ * The one reward the bar screen features: the Beer Trail offer first, then
+ * what this visit earns (before check-in), then the soonest to expire.
+ */
 export function pickBarRewards(input: {
   trailAvailable: boolean;
   banked: BankedReward[];
   now: Date;
+  earnNow?: { slot: OfferSlot; reward: string; terms: string }[];
 }): { featured: BarReward | null; others: BarReward[] } {
   const waiting: BarReward[] = input.banked
     .filter((r) => new Date(r.expiresAt).getTime() > input.now.getTime())
     .sort((a, b) => a.expiresAt.localeCompare(b.expiresAt) || a.earnedAt.localeCompare(b.earnedAt))
     .map((r) => ({ kind: "member", id: r.id, reward: r.reward, terms: r.terms, expiresAt: r.expiresAt }));
-  const all: BarReward[] = input.trailAvailable ? [{ kind: "trail", reward: STANDARD_OFFER }, ...waiting] : waiting;
+  const earn: BarReward[] = (input.earnNow ?? []).map((e) => ({ kind: "earn", slot: e.slot, reward: e.reward, terms: e.terms }));
+  const all: BarReward[] = [...(input.trailAvailable ? [{ kind: "trail" as const, reward: STANDARD_OFFER }] : []), ...earn, ...waiting];
   return { featured: all[0] ?? null, others: all.slice(1) };
 }
 

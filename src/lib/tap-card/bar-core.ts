@@ -34,7 +34,10 @@ export type BarStore = {
     earnedAt: Date;
     expiresAt: Date;
   }): Promise<"ok" | "duplicate">;
-  banked(holderId: string, memberId: string): Promise<{ id: string; reward: string; terms: string; expiresAt: string; earnedAt: string }[]>;
+  banked(
+    holderId: string,
+    memberId: string,
+  ): Promise<{ id: string; reward: string; terms: string; expiresAt: string; earnedAt: string; slot: OfferSlot; visitId: string }[]>;
   memberRewardUsedOn(visitId: string): Promise<{ id: string; reward: string; terms: string; expiresAt: string } | null>;
   markUsed(rewardId: string, visitId: string, deviceId: string | null, at: Date): Promise<"ok" | "taken">;
   clearUse(rewardId: string, visitId: string): Promise<void>;
@@ -51,7 +54,8 @@ export type BarState = {
 
 /** cardId/deviceId are null at a counter plate (the customer's own phone). */
 export type VisitInput = { holderId: string; memberId: string; cardId: string | null; deviceId: string | null; at: Date };
-export type RewardChoice = { kind: "trail" } | { kind: "member"; id: string };
+/** "earn": the reward this very visit earns, used right away (picked before check-in). */
+export type RewardChoice = { kind: "trail" } | { kind: "member"; id: string } | { kind: "earn"; slot: OfferSlot };
 
 async function usedOn(store: BarStore, visit: { id: string; redeemedYear: number | null }): Promise<BarReward | null> {
   if (visit.redeemedYear !== null) return { kind: "trail", reward: STANDARD_OFFER };
@@ -72,7 +76,13 @@ export async function barState(store: BarStore, input: VisitInput & { firstToday
     store.trailRedeemedIn(holderId, memberId, year),
     store.banked(holderId, memberId),
   ]);
-  return { ...base, ...pickBarRewards({ trailAvailable: stop && pass && !trail, banked, now: at }) };
+  // Not checked in yet: also offer what this visit will earn, so it can be used right away.
+  let earnNow: { slot: OfferSlot; reward: string; terms: string }[] = [];
+  if (!today) {
+    const [live, steps] = await Promise.all([store.liveOffers(memberId), store.stepsEarned(holderId, memberId)]);
+    earnNow = earnedOnVisit(visitNumber + 1, live, steps);
+  }
+  return { ...base, ...pickBarRewards({ trailAvailable: stop && pass && !trail, banked, now: at, earnNow }) };
 }
 
 export async function checkInVisit(store: BarStore, input: VisitInput): Promise<BarState> {
@@ -116,7 +126,9 @@ export async function useBarReward(
     return { outcome: result === "ok" ? "used" : "not-available", state: await state() };
   }
 
-  const reward = (await store.banked(holderId, memberId)).find((r) => r.id === choice.id);
+  const bankedNow = await store.banked(holderId, memberId);
+  // "earn": the reward today's visit just earned (recorded at check-in a moment ago).
+  const reward = choice.kind === "earn" ? bankedNow.find((r) => r.slot === choice.slot && r.visitId === today.id) : bankedNow.find((r) => r.id === choice.id);
   if (!reward || new Date(reward.expiresAt).getTime() <= at.getTime()) return { outcome: "not-available", state: await state() };
   const result = await store.markUsed(reward.id, today.id, deviceId, at);
   return { outcome: result === "ok" ? "used" : "already-used-today", state: await state() };
@@ -132,6 +144,6 @@ export async function undoBarReward(
   const used = today ? await usedOn(store, today) : null;
   if (!today || !used) return { outcome: "nothing-to-undo", state: await state() };
   if (used.kind === "trail") await store.setTrailRedeemed(today.id, null);
-  else await store.clearUse(used.id, today.id);
+  else if (used.kind === "member") await store.clearUse(used.id, today.id);
   return { outcome: "undone", state: await state() };
 }

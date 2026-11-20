@@ -242,7 +242,13 @@ export const getStaffQrView = createServerFn({ method: "GET" })
     });
     const wanted = decided.choice;
     const reward = [state.featured, ...state.others].find(
-      (r) => r !== null && (wanted.kind === "trail" ? r.kind === "trail" : r.kind === "member" && r.id === wanted.id),
+      (r) =>
+        r !== null &&
+        (wanted.kind === "trail"
+          ? r.kind === "trail"
+          : wanted.kind === "earn"
+            ? r.kind === "earn" && r.slot === wanted.slot
+            : r.kind === "member" && r.id === wanted.id),
     );
     // The reward is gone (used or expired since the plate): a plain check-in is still fine.
     if (!reward || state.used) return { view: "check-in", memberName, memberSlug, plateCode: decided.plateCode };
