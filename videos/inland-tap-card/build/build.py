@@ -646,7 +646,7 @@ def scene9(s, d):
   <div class="pb">
     <svg data-layout-allow-overflow style="position:absolute; left:0; top:0; width:1920px; height:1080px" viewBox="0 0 1920 1080">{lines}</svg>
     {dots}
-    <div class="hub" style="position:absolute; left:{cx - 120}px; top:{cy - 120}px; width:240px; height:240px; border-radius:50%; background:#211C17; border:4px solid #E8913A; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px"><span style="font:700 18px 'Chivo'; letter-spacing:0.2em; color:#E8913A">INLAND</span><span style="font-family:'Bricolage Grotesque'; font-weight:800; font-size:44px">SCAN PASS</span></div>
+    <div class="hub" style="position:absolute; left:{cx - 120}px; top:{cy - 120}px; width:240px; height:240px; border-radius:50%; background:#211C17; border:4px solid #E8913A; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px"><span style="font:700 18px 'Chivo'; letter-spacing:0.2em; padding-left:0.2em; color:#E8913A">INLAND</span><span style="font-family:'Bricolage Grotesque'; font-weight:800; font-size:44px; line-height:0.95; text-align:center">SCAN<br>PASS</span></div>
     <div style="position:absolute; left:120px; top:220px; width:780px; display:flex; flex-direction:column; gap:40px">
       <div class="h b1" style="font-size:72px">More members. <span class="accent">More value.</span></div>
       <div class="chip quiet b2">New producer <span class="accent">→</span> another trail stop</div>
