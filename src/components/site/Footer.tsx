@@ -52,7 +52,10 @@ export function Footer() {
             </Link>
           </span>
         </div>
-        <div className="flex flex-col items-center sm:items-end">
+        <div className="flex flex-col items-center sm:flex-row sm:gap-4">
+          <Link to="/card" className="min-h-11 py-2 hover:text-primary">
+            My Scan Pass
+          </Link>
           <Link to="/signin" search={{ next: "/portal" }} className="min-h-11 py-2 hover:text-primary">
             Member Portal
           </Link>

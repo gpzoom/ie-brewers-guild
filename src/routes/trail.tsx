@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { getTrailPage } from "@/lib/tap-card/trail.server";
 import { SectionHeader } from "@/components/site/SectionHeader";
 import { MembersMap } from "@/components/site/MembersMap";
+import { Button } from "@/components/ui/button";
 
 /**
  * /trail: the Inland Scan Pass for the public -- how it works, the stops on a
@@ -55,12 +56,12 @@ function TrailPage() {
             </li>
           ))}
         </ol>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Already have a pass?{" "}
-          <Link to="/card" className="font-medium text-primary underline underline-offset-2">
-            See your progress
-          </Link>
-        </p>
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <p className="text-sm text-muted-foreground">Already have a pass?</p>
+          <Button asChild size="lg" variant="outline">
+            <Link to="/card">Sign in to your pass</Link>
+          </Button>
+        </div>
       </section>
 
       {members.length > 0 && (
