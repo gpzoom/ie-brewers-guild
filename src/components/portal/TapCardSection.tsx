@@ -14,8 +14,8 @@ export function TapCardSection({ memberId }: { memberId: string }) {
       <header className="flex flex-col gap-1.5">
         <h1 className="font-display text-[24px] font-bold leading-[1.15] text-ink md:text-[27px]">Scan Pass</h1>
         <p className="text-pretty text-[13px] text-ink-muted">
-          You&rsquo;re a stop on the Inland Scan Pass trail. Customers scan your counter plate and your staff QR code with
-          their phones to record each visit and collect rewards.
+          Customers scan your counter plate and your staff QR code with their phones to record each visit and collect
+          rewards.
         </p>
       </header>
 

@@ -57,3 +57,6 @@ scripts/geocoded-members.json
 # Browser-check screenshots
 .playwright-mcp/
 .claude/settings.local.json
+
+# Scan Pass demo kit print sheet (scripts/demo-kit.mjs print)
+.demo-kit/
