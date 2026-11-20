@@ -10,6 +10,8 @@ import { PlateSuccess, StaffCodeForm, plateRefusal, type PlateOk } from "@/compo
 import { SignInCodeForm } from "@/components/tap-card/SignInCodeForm";
 import { CardScanner } from "@/components/tap-card/CardScanner";
 import { joinPageUrl } from "@/lib/tap-card/trail-join";
+import { freeCardUrl } from "@/lib/tap-card/free-card";
+import { signedOutButtons, type SignUpChoice } from "@/lib/tap-card/plate";
 
 type Ready = Extract<PlateView, { view: "ready" }>;
 
@@ -120,12 +122,16 @@ function ReadyScreen({ view }: { view: Ready }) {
   );
 }
 
-function SignedOut({ code, memberName, canJoinTrail }: { code: string; memberName: string; canJoinTrail: boolean }) {
+function SignedOut({ code, memberName, canJoinTrail, trailStop }: { code: string; memberName: string; canJoinTrail: boolean; trailStop: boolean }) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [signingIn, setSigningIn] = useState(!canJoinTrail);
+  const [signingIn, setSigningIn] = useState(false);
+  const buttons = signedOutButtons({ trailStop, canJoinTrail });
+  const href = (c: SignUpChoice) => (c === "join-trail" ? joinPageUrl(code) : freeCardUrl(code));
+  const primaryLabel: Record<SignUpChoice, string> = { "join-trail": "Join the Beer Trail", "free-card": "Get your free Tap Card" };
+  const secondaryLabel: Record<SignUpChoice, string> = { "join-trail": "Join the Beer Trail", "free-card": "Just get the free loyalty card" };
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -148,10 +154,19 @@ function SignedOut({ code, memberName, canJoinTrail }: { code: string; memberNam
       {!signingIn ? (
         <div className="flex flex-col gap-3">
           <CanvasHeading size="md">Welcome to the Inland Tap Card</CanvasHeading>
-          <p className={leadClass}>Collect Beer Trail stops and earn rewards at {memberName} and every Guild brewery.</p>
-          <a href={joinPageUrl(code)} className={primaryButtonClass}>
-            Join the Beer Trail
+          <p className={leadClass}>
+            {trailStop
+              ? `Collect Beer Trail stops and earn rewards at ${memberName} and every Guild member.`
+              : `Earn rewards at ${memberName} and every Guild member. The card is free.`}
+          </p>
+          <a href={href(buttons.primary)} className={primaryButtonClass}>
+            {primaryLabel[buttons.primary]}
           </a>
+          {buttons.secondary.map((c) => (
+            <a key={c} href={href(c)} className={`${cardLinkClass} w-fit text-[15px]`}>
+              {secondaryLabel[c]}
+            </a>
+          ))}
           <button type="button" className={secondaryButtonClass} onClick={() => setSigningIn(true)}>
             I have a Tap Card: sign in
           </button>
@@ -203,7 +218,7 @@ export function PlateScreen({ view }: { view: PlateView }) {
         </>
       );
     case "signed-out":
-      return <SignedOut code={view.code} memberName={view.memberName} canJoinTrail={view.canJoinTrail} />;
+      return <SignedOut code={view.code} memberName={view.memberName} canJoinTrail={view.canJoinTrail} trailStop={view.trailStop} />;
     case "ready":
       return <ReadyScreen view={view} />;
   }

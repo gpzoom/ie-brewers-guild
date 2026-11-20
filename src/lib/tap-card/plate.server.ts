@@ -9,7 +9,7 @@ import { barState, checkInVisit, undoBarReward, useBarReward, type BarState, typ
 import { barStore } from "@/lib/tap-card/bar-store.server";
 import { awardMilestones } from "@/lib/tap-card/tap-card-store.server";
 import { claimPlatePending, onStagingSite, readHolderId, readPlatePending, setPlatePending } from "@/lib/tap-card/tap-card-cookies.server";
-import { decideStaffQrView, isStaffQrToken, memberTakesCheckIns, parsePendingChoice, staffQrUrl, type PendingChoice } from "@/lib/tap-card/staff-qr";
+import { decideStaffQrView, isStaffQrToken, isTrailStop, memberTakesCheckIns, parsePendingChoice, staffQrUrl, type PendingChoice } from "@/lib/tap-card/staff-qr";
 import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
 import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
 import { tapCardDay, tapCardYear } from "@/lib/tap-card/tap-card-time";
@@ -23,7 +23,7 @@ import { PLATE_LOCK_MINUTES, plateUrl, staffCodeGate, validateStaffCode, type At
  * page only looks.
  */
 
-type Plate = { memberId: string; memberName: string; memberSlug: string; staffCode: string | null; open: boolean };
+type Plate = { memberId: string; memberName: string; memberSlug: string; staffCode: string | null; open: boolean; trailStop: boolean };
 
 async function loadPlate(service: SupabaseClient, rawCode: string): Promise<Plate | null> {
   const code = normalizeCardCode(rawCode);
@@ -41,6 +41,7 @@ async function loadPlate(service: SupabaseClient, rawCode: string): Promise<Plat
     memberName: m.business_name,
     memberSlug: m.slug,
     staffCode: data.staff_code,
+    trailStop: isTrailStop({ memberType: m.member_type, trailEligible: m.trail_eligible === true }),
     // The staff code still turns the plate on (it's the backup to the bartender QR).
     open: memberTakesCheckIns({ status: m.status, memberType: m.member_type, trailEligible: m.trail_eligible }, onStagingSite()) && data.staff_code !== null,
   };
@@ -99,8 +100,8 @@ function attemptStore(service: SupabaseClient, holderId: string, memberId: strin
 export type PlateView =
   | { view: "unknown" }
   | { view: "closed"; memberName: string }
-  | { view: "signed-out"; code: string; memberName: string; canJoinTrail: boolean }
-  | { view: "ready"; code: string; memberName: string; memberSlug: string; firstName: string; nextVisitNumber: number; checkedInToday: boolean; canJoinTrail: boolean; state: BarState };
+  | { view: "signed-out"; code: string; memberName: string; canJoinTrail: boolean; trailStop: boolean }
+  | { view: "ready"; code: string; memberName: string; memberSlug: string; firstName: string; nextVisitNumber: number; checkedInToday: boolean; canJoinTrail: boolean; trailStop: boolean; state: BarState };
 
 export const getPlateView = createServerFn({ method: "GET" })
   .inputValidator((data: { code: string }) => ({ code: String(data?.code ?? "") }))
@@ -111,10 +112,10 @@ export const getPlateView = createServerFn({ method: "GET" })
     if (!plate.open) return { view: "closed", memberName: plate.memberName };
     const code = normalizeCardCode(data.code)!;
     const holderId = await readHolderId();
-    if (!holderId) return { view: "signed-out", code, memberName: plate.memberName, canJoinTrail: await canJoinTrail(service, null) };
+    if (!holderId) return { view: "signed-out", code, memberName: plate.memberName, canJoinTrail: await canJoinTrail(service, null), trailStop: plate.trailStop };
     const { data: holder, error } = await service.from("tap_card_holders").select("name").eq("id", holderId).maybeSingle();
     if (error) throw new Error(error.message);
-    if (!holder) return { view: "signed-out", code, memberName: plate.memberName, canJoinTrail: await canJoinTrail(service, null) };
+    if (!holder) return { view: "signed-out", code, memberName: plate.memberName, canJoinTrail: await canJoinTrail(service, null), trailStop: plate.trailStop };
     const store = barStore(service);
     const at = new Date();
     const today = await store.findVisit(holderId, plate.memberId, tapCardDay(at));
@@ -128,6 +129,7 @@ export const getPlateView = createServerFn({ method: "GET" })
       nextVisitNumber: today ? state.visitNumber : state.visitNumber + 1,
       checkedInToday: today !== null,
       canJoinTrail: await canJoinTrail(service, holderId),
+      trailStop: plate.trailStop,
       state,
     };
   });

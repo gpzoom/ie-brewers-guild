@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   PLATE_MAX_MISSES,
+  signedOutButtons,
   plateUrl,
   safeHolderNext,
   staffCodeGate,
@@ -97,5 +98,18 @@ describe("staffCodeGate", () => {
   it("refuses everything when the brewery has no code", async () => {
     const { store } = attempts();
     expect(await staffCodeGate(store, "0420", null)).toEqual({ kind: "wrong-code", triesLeft: 4 });
+  });
+});
+
+describe("signedOutButtons", () => {
+  it("a trail stop leads with the Beer Trail, then the free card", () => {
+    expect(signedOutButtons({ trailStop: true, canJoinTrail: true })).toEqual({ primary: "join-trail", secondary: ["free-card"] });
+  });
+  it("other members lead with the free card, then the Beer Trail", () => {
+    expect(signedOutButtons({ trailStop: false, canJoinTrail: true })).toEqual({ primary: "free-card", secondary: ["join-trail"] });
+  });
+  it("with no pass on sale, only the free card", () => {
+    expect(signedOutButtons({ trailStop: true, canJoinTrail: false })).toEqual({ primary: "free-card", secondary: [] });
+    expect(signedOutButtons({ trailStop: false, canJoinTrail: false })).toEqual({ primary: "free-card", secondary: [] });
   });
 });

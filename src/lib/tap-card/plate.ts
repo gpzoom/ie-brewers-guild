@@ -60,3 +60,16 @@ export async function staffCodeGate(
   const left = triesLeft(tries);
   return left === 0 ? { kind: "locked" } : { kind: "wrong-code", triesLeft: left };
 }
+
+export type SignUpChoice = "join-trail" | "free-card";
+export type SignedOutButtons = { primary: SignUpChoice; secondary: SignUpChoice[] };
+
+/**
+ * The plate's sign-up buttons for someone not signed in (universal card): a
+ * Beer Trail stop leads with the pass; any other member with the free card.
+ * With no pass on sale, only the free card.
+ */
+export function signedOutButtons(i: { trailStop: boolean; canJoinTrail: boolean }): SignedOutButtons {
+  if (!i.canJoinTrail) return { primary: "free-card", secondary: [] };
+  return i.trailStop ? { primary: "join-trail", secondary: ["free-card"] } : { primary: "free-card", secondary: ["join-trail"] };
+}
