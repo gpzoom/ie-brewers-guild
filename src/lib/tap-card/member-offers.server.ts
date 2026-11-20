@@ -69,9 +69,9 @@ export const submitMemberOffer = createServerFn({ method: "POST" })
     terms: String(data?.terms ?? ""),
   }))
   .handler(async ({ data }): Promise<{ ok: true }> => {
-    const { userId, service } = await requireTapCardEditor(data.memberId);
+    const { userId, service, trailStop } = await requireTapCardEditor(data.memberId);
     const views = slotViews(await loadRows(service, data.memberId));
-    const checked = validateMemberOffer(data, otherStepNumbers(views, data.slot, "live-and-draft"));
+    const checked = validateMemberOffer(data, otherStepNumbers(views, data.slot, "live-and-draft"), { trailStop });
     if (!checked.ok) throw new Error(checked.message);
     const draft = {
       draft_visit_number: checked.value.visitNumber,

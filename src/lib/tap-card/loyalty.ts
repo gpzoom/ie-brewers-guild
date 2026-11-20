@@ -33,17 +33,22 @@ function checkRewardAndTerms(rewardRaw: string, termsRaw: string): { ok: true; r
   return { ok: true, reward, terms };
 }
 
-/** otherStepNumbers: visit numbers the brewery's other steps already use (ignored for the repeating reward). */
+/**
+ * otherStepNumbers: visit numbers the member's other steps already use (ignored for the repeating reward).
+ * A Beer Trail stop's steps start at visit 2 (visit 1 is the Beer Trail offer); other members may reward visit 1.
+ */
 export function validateMemberOffer(
   input: OfferInput,
   otherStepNumbers: number[],
+  opts: { trailStop: boolean } = { trailStop: true },
 ): { ok: true; value: OfferInput } | { ok: false; message: string } {
   const n = Number(input.visitNumber);
   if (!Number.isInteger(n)) return { ok: false, message: "Use a whole number." };
   if (input.slot === "repeat") {
     if (n < 2) return { ok: false, message: "Pick every 2 visits or more." };
   } else {
-    if (n < 2) return { ok: false, message: "Visit numbers start at 2 — visit 1 is the Beer Trail offer." };
+    if (opts.trailStop && n < 2) return { ok: false, message: "Visit numbers start at 2 — visit 1 is the Beer Trail offer." };
+    if (n < 1) return { ok: false, message: "Visit numbers start at 1." };
     if (otherStepNumbers.includes(n)) return { ok: false, message: `Another step already uses visit ${n}.` };
   }
   const text = checkRewardAndTerms(input.reward, input.terms);

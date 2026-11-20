@@ -138,3 +138,22 @@ describe("offerLabel", () => {
     expect(offerLabel("repeat", 5)).toBe("Every 5 visits");
   });
 });
+
+describe("visit-1 welcome reward (universal card)", () => {
+  it("a member that isn't a Beer Trail stop may reward visit 1", () => {
+    expect(validateMemberOffer(offer({ visitNumber: 1 }), [], { trailStop: false })).toEqual({ ok: true, value: offer({ visitNumber: 1 }) });
+  });
+  it("a trail stop still starts at visit 2", () => {
+    expect(validateMemberOffer(offer({ visitNumber: 1 }), [], { trailStop: true })).toEqual({
+      ok: false,
+      message: "Visit numbers start at 2 — visit 1 is the Beer Trail offer.",
+    });
+  });
+  it("the repeating reward needs every 2 visits or more for everyone", () => {
+    expect(validateMemberOffer(offer({ slot: "repeat", visitNumber: 1 }), [], { trailStop: false }).ok).toBe(false);
+  });
+  it("visit 1 earns the welcome reward", () => {
+    const welcome = { slot: "step1" as const, visitNumber: 1, reward: "10% off", terms: "" };
+    expect(earnedOnVisit(1, [welcome], new Set())).toEqual([{ slot: "step1", reward: "10% off", terms: "" }]);
+  });
+});

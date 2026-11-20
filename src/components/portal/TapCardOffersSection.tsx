@@ -43,7 +43,9 @@ function OfferForm({
   busy,
   onSubmit,
   onCancel,
+  trailStop,
 }: {
+  trailStop: boolean;
   form: Form;
   setForm: (f: Form) => void;
   templates: MemberOffersData["templates"];
@@ -78,7 +80,7 @@ function OfferForm({
         <input
           className={`${fieldClass} max-w-[120px]`}
           type="number"
-          min={2}
+          min={repeat || trailStop ? 2 : 1}
           step={1}
           inputMode="numeric"
           required
@@ -202,7 +204,15 @@ export function TapCardOffersSection({ memberId }: { memberId: string }) {
                 return (
                   <li key={v.slot} className="flex flex-col gap-2 py-3">
                     {form?.slot === v.slot ? (
-                      <OfferForm form={form} setForm={setForm} templates={data.templates} busy={busy} onSubmit={onSubmit} onCancel={() => setForm(null)} />
+                      <OfferForm
+                        form={form}
+                        setForm={setForm}
+                        templates={data.templates}
+                        busy={busy}
+                        onSubmit={onSubmit}
+                        onCancel={() => setForm(null)}
+                        trailStop={data.trailStop}
+                      />
                     ) : shown ? (
                       <>
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
