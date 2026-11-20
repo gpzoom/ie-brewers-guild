@@ -46,7 +46,8 @@ describe("buildHolderView", () => {
     const view = buildHolderView(input());
     expect(view.totalStops).toBe(3);
     // "gone" (no longer a stop) still counts toward this year's distinct stops.
-    expect(view.visitedCount).toBe(2);
+    // Only listed Beer Trail stops count (a visit at another Guild member, or a former stop, doesn't).
+    expect(view.visitedCount).toBe(1);
     expect(view.stops.map((s) => s.memberId)).toEqual(["b", "c", "a"]);
     expect(view.stops.find((s) => s.memberId === "a")).toMatchObject({ visited: true, redeemedOn: "2026-03-01" });
     expect(view.stops.find((s) => s.memberId === "b")).toMatchObject({ visited: false, redeemedOn: null });
@@ -89,5 +90,18 @@ describe("loyalty on the card page", () => {
       { memberId: "b", name: "Alpha Ales", count: 1 },
       { memberId: "c", name: "Mid Brewing", count: 1 },
     ]);
+  });
+});
+
+describe("holder view: universal card", () => {
+  it("visits at Guild members that aren't trail stops never count as stops", () => {
+    const view = buildHolderView(
+      input({ visits: [{ memberId: "a", visitDay: "2026-03-01", redeemedYear: null }, { memberId: "taco", visitDay: "2026-03-02", redeemedYear: null }] }),
+    );
+    expect(view.visitedCount).toBe(1);
+  });
+  it("shows next year's pass until it starts", () => {
+    expect(buildHolderView(input()).upcomingPassYear).toBeNull();
+    expect(buildHolderView(input({ upcomingPassYear: 2027 })).upcomingPassYear).toBe(2027);
   });
 });

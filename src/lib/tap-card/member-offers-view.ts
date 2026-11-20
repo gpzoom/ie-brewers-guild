@@ -1,3 +1,4 @@
+import { validateMemberOffer } from "@/lib/tap-card/loyalty";
 import type { TapCardMemberOfferRow } from "@/lib/supabase/types";
 import type { OfferSlot } from "@/lib/tap-card/loyalty";
 
@@ -65,5 +66,18 @@ export function sameDraft(row: TapCardMemberOfferRow, seen: SeenDraft): boolean 
     (row.draft_terms ?? "") === seen.terms &&
     row.draft_submitted_at !== null &&
     new Date(row.draft_submitted_at).getTime() === new Date(seen.submittedAt).getTime()
+  );
+}
+
+/** The Guild approving a waiting change: the same rules as saving, for this member's kind (trail stop or not). */
+export function checkDraftForApproval(
+  row: { slot: OfferSlot; draft_visit_number: number | null; draft_reward: string | null; draft_terms: string | null },
+  otherNumbers: number[],
+  opts: { trailStop: boolean },
+) {
+  return validateMemberOffer(
+    { slot: row.slot, visitNumber: row.draft_visit_number ?? NaN, reward: row.draft_reward ?? "", terms: row.draft_terms ?? "" },
+    otherNumbers,
+    opts,
   );
 }

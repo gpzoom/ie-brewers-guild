@@ -181,6 +181,16 @@ export const movePassToCard = createServerFn({ method: "POST" })
       count("tap_card_rewards"),
     ]);
     if (!emptyCard({ visits, cards, passes, earned, milestones })) return { ok: true, removedOldCard: false };
+    // Keep any "email me" opt-ins: they belong to the person, now on the right card.
+    const { data: subs, error: sError } = await service.from("tap_card_member_subscribers").select("member_id, opted_in_at").eq("holder_id", old);
+    if (sError) throw new Error(sError.message);
+    if ((subs ?? []).length > 0) {
+      const { error: uError } = await service.from("tap_card_member_subscribers").upsert(
+        (subs ?? []).map((s) => ({ member_id: s.member_id, holder_id: target.id, opted_in_at: s.opted_in_at })),
+        { onConflict: "member_id,holder_id", ignoreDuplicates: true },
+      );
+      if (uError) throw new Error(uError.message);
+    }
     const { error: dError } = await service.from("tap_card_holders").delete().eq("id", old);
     if (dError) throw new Error(dError.message);
     return { ok: true, removedOldCard: true };

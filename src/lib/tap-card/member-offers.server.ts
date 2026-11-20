@@ -1,3 +1,4 @@
+import { isTrailStop } from "@/lib/tap-card/staff-qr";
 import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TapCardMemberOfferRow } from "@/lib/supabase/types";
@@ -5,7 +6,7 @@ import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
 import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
 import { DEFAULT_EXPIRY_DAYS, EXPIRY_CHOICES, offerLabel, validateMemberOffer, type OfferSlot } from "@/lib/tap-card/loyalty";
 import { sendTransactionalEmail } from "@/lib/email/send";
-import { SLOT_ORDER, otherStepNumbers, sameDraft, slotViews, type OfferVersion, type SeenDraft, type SlotView } from "@/lib/tap-card/member-offers-view";
+import { SLOT_ORDER, checkDraftForApproval, otherStepNumbers, sameDraft, slotViews, type OfferVersion, type SeenDraft, type SlotView } from "@/lib/tap-card/member-offers-view";
 import { STANDARD_OFFER } from "@/lib/tap-card/tap-card-copy";
 
 /**
@@ -223,10 +224,10 @@ export const reviewMemberOffer = createServerFn({ method: "POST" })
       return { ok: true };
     }
     const views = slotViews(await loadRows(service, row.member_id));
-    const checked = validateMemberOffer(
-      { slot: row.slot, visitNumber: row.draft_visit_number, reward: row.draft_reward, terms: row.draft_terms ?? "" },
-      otherStepNumbers(views, row.slot, "live"),
-    );
+    const { data: m, error: mError } = await service.from("members").select("member_type, trail_eligible").eq("id", row.member_id).maybeSingle();
+    if (mError) throw new Error(mError.message);
+    const trailStop = m ? isTrailStop({ memberType: m.member_type, trailEligible: m.trail_eligible === true }) : true;
+    const checked = checkDraftForApproval(row, otherStepNumbers(views, row.slot, "live"), { trailStop });
     if (!checked.ok) throw new Error(checked.message);
     const { data: approved, error: approveError } = await service
       .from("tap_card_member_offers")

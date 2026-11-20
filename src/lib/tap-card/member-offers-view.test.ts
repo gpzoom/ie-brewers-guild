@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TapCardMemberOfferRow } from "@/lib/supabase/types";
-import { otherStepNumbers, sameDraft, slotViews } from "@/lib/tap-card/member-offers-view";
+import { checkDraftForApproval, otherStepNumbers, sameDraft, slotViews } from "@/lib/tap-card/member-offers-view";
 
 function row(o: Partial<TapCardMemberOfferRow>): TapCardMemberOfferRow {
   return {
@@ -107,5 +107,18 @@ describe("sameDraft", () => {
   });
   it("refuses when nothing is waiting", () => {
     expect(sameDraft({ ...waiting, draft_status: "declined" }, seen)).toBe(false);
+  });
+});
+
+describe("checkDraftForApproval", () => {
+  const draft = { slot: "step1" as const, draft_visit_number: 1, draft_reward: "10% off", draft_terms: null };
+  it("approves a visit-1 welcome reward for a member that isn't a trail stop", () => {
+    expect(checkDraftForApproval(draft, [], { trailStop: false })).toEqual({
+      ok: true,
+      value: { slot: "step1", visitNumber: 1, reward: "10% off", terms: "" },
+    });
+  });
+  it("refuses it once the member is a trail stop", () => {
+    expect(checkDraftForApproval(draft, [], { trailStop: true }).ok).toBe(false);
   });
 });

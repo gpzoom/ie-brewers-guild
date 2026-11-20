@@ -20,6 +20,8 @@ export type TrailPassStore = {
     amountCents: number;
     paidAt: Date;
   }): Promise<"ok" | "duplicate">;
+  /** The card a recorded pass is on now (it may have been moved by the Guild). */
+  passHolder(paymentId: string, itemId: string): Promise<string | null>;
   hasPayment(paymentId: string): Promise<boolean>;
   markRefunded(paymentId: string, at: Date): Promise<void>;
   addSubscriber(memberId: string, holderId: string, at: Date): Promise<void>;
@@ -55,6 +57,12 @@ export async function recordZeffyPayment(store: TrailPassStore, p: ZeffyPayment,
 
   const passes: RecordedPass[] = [];
   for (const line of lines) {
+    // Already recorded (webhook retry or the return page): keep it on the card it's on now.
+    const recordedOn = await store.passHolder(p.id, line.itemId);
+    if (recordedOn) {
+      passes.push({ itemId: line.itemId, holderId: recordedOn, email: line.email, holderExisted: true, memberId });
+      continue;
+    }
     const found = await store.findHolderByEmail(line.email);
     const holderId = found?.id ?? (await store.createHolder({ name: line.name || line.email, email: line.email })).id;
     const holderExisted = found !== null && new Date(found.createdAt).getTime() < p.createdAt.getTime();

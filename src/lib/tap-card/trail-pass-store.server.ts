@@ -63,6 +63,16 @@ export function trailPassStore(service: SupabaseClient): TrailPassStore & { pass
       if (error) throw new Error(error.message);
       return "ok";
     },
+    async passHolder(paymentId, itemId) {
+      const { data, error } = await service
+        .from("tap_card_trail_passes")
+        .select("holder_id")
+        .eq("zeffy_payment_id", paymentId)
+        .eq("zeffy_item_id", itemId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data?.holder_id as string | null | undefined) ?? null;
+    },
     async hasPayment(paymentId) {
       const { data, error } = await service.from("tap_card_trail_passes").select("id").eq("zeffy_payment_id", paymentId).limit(1);
       if (error) throw new Error(error.message);

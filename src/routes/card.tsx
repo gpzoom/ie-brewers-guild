@@ -43,6 +43,12 @@ function CardPage() {
       <SaveToHomeScreen />
       <Waiting view={view} />
       <JoinTrail view={view} />
+      {view.upcomingPassYear && (
+        <p className="rounded-[14px] border border-canvas-border bg-white px-4 py-4 text-[15px] text-ink">
+          <span className="font-semibold">Your {view.upcomingPassYear} Beer Trail Pass is ready.</span> It starts January 1,{" "}
+          {view.upcomingPassYear}. Your brewery rewards work now.
+        </p>
+      )}
       {view.hasTrailPass && (
         <>
           <Progress view={view} />

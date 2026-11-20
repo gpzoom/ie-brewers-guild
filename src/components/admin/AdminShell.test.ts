@@ -7,8 +7,15 @@ describe("adminNavItemsFor: Tap Card", () => {
     expect(paths.indexOf("/admin/tap-card")).toBe(paths.indexOf("/admin/jobs") + 1);
   });
 
-  it("leaves it out otherwise", () => {
+  it("adds it after Jobs for every member type (universal card)", () => {
+    for (const type of ["mobile", "allied"] as const) {
+      const paths = adminNavItemsFor(type, { tapCard: true }).map((i) => i.to);
+      expect(paths.indexOf("/admin/tap-card")).toBe(paths.indexOf("/admin/jobs") + 1);
+    }
+  });
+
+  it("leaves it out when not asked for", () => {
     expect(adminNavItemsFor("producer").map((i) => i.to)).not.toContain("/admin/tap-card");
-    expect(adminNavItemsFor("mobile", { tapCard: true }).map((i) => i.to)).not.toContain("/admin/tap-card");
+    expect(adminNavItemsFor("mobile").map((i) => i.to)).not.toContain("/admin/tap-card");
   });
 });

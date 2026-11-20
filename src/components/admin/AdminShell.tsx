@@ -53,7 +53,7 @@ const FOOD_NAV_ITEM: ShellNavItem = {
 
 // /admin has no People page of its own; this goes to the portal's, which
 // opens for the owner and for a Guild admin editing as the member.
-// Inland Tap Card: producers on the trail only, after Jobs.
+// Inland Tap Card: every member (universal card), after Jobs.
 const TAP_CARD_NAV_ITEM: ShellNavItem = {
   to: "/admin/tap-card",
   label: "Tap Card",
@@ -80,10 +80,11 @@ export function adminNavItemsFor(
   if (memberType === "producer") {
     const events = NAV_ITEMS.findIndex((item) => item.to === "/admin/events");
     items = [...NAV_ITEMS.slice(0, events + 1), FOOD_NAV_ITEM, ...NAV_ITEMS.slice(events + 1)];
-    if (tapCard) {
-      const jobs = items.findIndex((item) => item.to === "/admin/jobs");
-      items = [...items.slice(0, jobs + 1), TAP_CARD_NAV_ITEM, ...items.slice(jobs + 1)];
-    }
+  }
+  // Universal card: every member type gets the Tap Card.
+  if (tapCard) {
+    const jobs = items.findIndex((item) => item.to === "/admin/jobs");
+    items = [...items.slice(0, jobs + 1), TAP_CARD_NAV_ITEM, ...items.slice(jobs + 1)];
   }
   return people ? [...items, PEOPLE_NAV_ITEM] : items;
 }

@@ -22,6 +22,8 @@ export type HolderViewInput = {
   canJoinTrail?: boolean;
   /** The Beer Trail is unlocked on this card this year (a pass, or the Guild's testing switch). */
   hasTrailPass?: boolean;
+  /** A pass bought for a trail year that hasn't started yet (shown as "starts January 1"). */
+  upcomingPassYear?: number | null;
 };
 
 export type WaitingReward = { memberName: string; reward: string; terms: string; expiresAt: string };
@@ -38,6 +40,7 @@ export type HolderCardView = {
   visitCounts: { memberId: string; name: string; count: number }[];
   canJoinTrail: boolean;
   hasTrailPass: boolean;
+  upcomingPassYear: number | null;
 };
 
 export function buildHolderView(input: HolderViewInput): HolderCardView {
@@ -65,7 +68,8 @@ export function buildHolderView(input: HolderViewInput): HolderCardView {
     firstName: firstNameOf(input.holderName),
     year: input.year,
     stops,
-    visitedCount: visited.size,
+    // Listed Beer Trail stops only: visits at other Guild members don't count as stops.
+    visitedCount: stops.filter((s) => s.visited).length,
     totalStops: input.stops.length,
     milestones,
     cards: input.cards.map(formatCardCode),
@@ -73,6 +77,7 @@ export function buildHolderView(input: HolderViewInput): HolderCardView {
     visitCounts: visitCounts(input.allVisits),
     canJoinTrail: input.canJoinTrail ?? false,
     hasTrailPass: input.hasTrailPass ?? false,
+    upcomingPassYear: input.upcomingPassYear ?? null,
   };
 }
 

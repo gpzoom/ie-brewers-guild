@@ -36,6 +36,9 @@ function fakeStore(init: { holders?: { id: string; email: string; createdAt: str
       passes.push({ ...p, refundedAt: null });
       return "ok";
     },
+    async passHolder(paymentId, itemId) {
+      return passes.find((p) => p.paymentId === paymentId && p.itemId === itemId)?.holderId ?? null;
+    },
     async hasPayment(paymentId) {
       return passes.some((p) => p.paymentId === paymentId);
     },
@@ -256,5 +259,18 @@ describe("emptyCard", () => {
   it("is empty only with nothing at all on it", () => {
     expect(emptyCard(zero)).toBe(true);
     for (const k of Object.keys(zero) as (keyof typeof zero)[]) expect(emptyCard({ ...zero, [k]: 1 })).toBe(false);
+  });
+});
+
+describe("a pass moved to another card", () => {
+  it("stays there when Zeffy's payment is recorded again, and no card is made for the old email", async () => {
+    const f = fakeStore({ holders: [{ id: "right", email: "right@example.test", createdAt: "2026-01-01T00:00:00Z" }] });
+    await recordZeffyPayment(f.store, pay(), PAID);
+    // The Guild moves it to the right card; the empty wrong card is removed.
+    f.passes[0].holderId = "right";
+    f.holders.splice(f.holders.findIndex((h) => h.id === "holder_1"), 1);
+    const again = await recordZeffyPayment(f.store, pay(), PAID);
+    expect(again.kind === "recorded" && again.passes[0]).toMatchObject({ holderId: "right", holderExisted: true });
+    expect(f.holders.map((h) => h.id)).toEqual(["right"]);
   });
 });
