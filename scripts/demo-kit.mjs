@@ -4,7 +4,7 @@
 //
 //   node scripts/demo-kit.mjs                 status: the cast, plates, rewards, demo data
 //   node scripts/demo-kit.mjs setup [--yes]   plates + staff code 2468 + demo rewards (approved)
-//   node scripts/demo-kit.mjs print           print sheet: counter plates + staff QR codes (staging links)
+//   node scripts/demo-kit.mjs print           print sheet: one 6x4 stand card per member, counter plate + staff QR (staging links)
 //   node scripts/demo-kit.mjs reset [--yes]   between demos: clear visits and rewards at the Sample members
 //   node scripts/demo-kit.mjs teardown [--yes] [--passes]
 //                                             reset, plus demo customers, sign-ups and email opt-ins;
@@ -250,50 +250,63 @@ async function print() {
   const missing = members.filter((m) => !p[m.id]?.staff_qr);
   if (missing.length) throw new Error(`Run setup first: no plate for ${missing.map((m) => m.business_name).join(", ")}`);
   const qr = (url) => QRCode.toString(url, { type: "svg", margin: 1, errorCorrectionLevel: "M" });
-  let cards = "";
+  const cards = [];
   for (const m of members) {
     const plate = p[m.id];
     const plateSvg = await qr(`${STAGING_SITE}/t/${plate.code}`);
     const staffSvg = await qr(`${STAGING_SITE}/s/${plate.staff_qr}`);
     const tag = m.trailStop ? "Beer Trail stop" : m.member_type === "mobile" ? "Food truck · loyalty only" : "Loyalty only (not on the trail)";
-    cards += `
-<section class="pair">
-  <div class="card plate">
-    <div class="eb">Inland Scan Pass</div>
+    // One 6" x 4" landscape card per brewery for a 4x6 acrylic stand (owner,
+    // 2026-11-20): counter plate on the left, staff QR on the right.
+    cards.push(`
+<section class="card">
+  <header>
+    <div class="eb">Inland Scan Pass · demo</div>
     <div class="name">${m.business_name}</div>
     <div class="tag">${tag}</div>
-    <div class="qr">${plateSvg}</div>
-    <div class="cta">Scan to check in</div>
-    <div class="code">Counter plate · ${printed(plate.code)}</div>
+  </header>
+  <div class="cols">
+    <div class="col plate">
+      <div class="who">Customers</div>
+      <div class="qr">${plateSvg}</div>
+      <div class="cta">Scan to check in</div>
+      <div class="code">Counter plate · ${printed(plate.code)}</div>
+    </div>
+    <div class="col staff">
+      <div class="who">Staff</div>
+      <div class="qr">${staffSvg}</div>
+      <div class="cta">Staff scans to confirm</div>
+      <div class="code">${printed(plate.staff_qr)} · staff code ${plate.staff_code ?? "—"}</div>
+    </div>
   </div>
-  <div class="card staff">
-    <div class="eb">Staff only · keep behind the counter</div>
-    <div class="name">${m.business_name}</div>
-    <div class="qr">${staffSvg}</div>
-    <div class="cta">Staff QR code</div>
-    <div class="code">${printed(plate.staff_qr)} · staff code ${plate.staff_code ?? "—"}</div>
-  </div>
-</section>`;
+</section>`);
   }
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Scan Pass demo kit — print sheet</title>
+  // Two cards per letter page, stacked.
+  const pages = [];
+  for (let i = 0; i < cards.length; i += 2) pages.push(`<div class="page">${cards.slice(i, i + 2).join("")}</div>`);
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Scan Pass demo kit — 4x6 stand cards</title>
 <style>
-  @page { size: letter; margin: 0.5in; }
-  body { font-family: system-ui, sans-serif; color: #241F1A; margin: 0; }
-  h1 { font-size: 16pt; margin: 0 0 4pt; } p.note { font-size: 9pt; color: #6B6156; margin: 0 0 12pt; }
-  .pair { display: flex; gap: 0.3in; break-inside: avoid; margin-bottom: 0.3in; }
-  .card { flex: 1; border: 2px dashed #B6AC9D; border-radius: 12px; padding: 14pt; text-align: center; }
-  .plate { border-color: #E8913A; }
-  .eb { font-size: 8pt; letter-spacing: 0.14em; text-transform: uppercase; color: #B3591F; font-weight: 700; }
-  .staff .eb { color: #6B6156; }
-  .name { font-size: 18pt; font-weight: 800; margin-top: 4pt; }
-  .tag { font-size: 9pt; color: #6B6156; margin-top: 2pt; }
-  .qr svg { width: 2.4in; height: 2.4in; margin: 8pt auto 4pt; display: block; }
-  .cta { font-size: 13pt; font-weight: 700; }
-  .code { font: 600 10pt ui-monospace, Consolas, monospace; color: #6B6156; margin-top: 4pt; }
+  @page { size: letter portrait; margin: 0; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, "Segoe UI", sans-serif; color: #241F1A; margin: 0; background: #fff; }
+  .page { width: 8.5in; height: 11in; padding-top: 0.75in; display: flex; flex-direction: column; align-items: center; gap: 0.75in; break-after: page; }
+  .page:last-child { break-after: auto; }
+  /* Exactly 6in x 4in; the thin line on the edge is the cut line. */
+  .card { width: 6in; height: 4in; border: 0.5pt solid #9A9083; padding: 0.2in 0.25in; display: flex; flex-direction: column; }
+  header { text-align: center; }
+  .eb { font-size: 7.5pt; letter-spacing: 0.16em; text-transform: uppercase; color: #B3591F; font-weight: 700; }
+  .name { font-size: 17pt; font-weight: 800; line-height: 1.15; margin-top: 2pt; }
+  .tag { font-size: 8.5pt; color: #6B6156; }
+  .cols { flex: 1; display: flex; margin-top: 0.08in; }
+  .col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .staff { border-left: 1pt dashed #B6AC9D; }
+  .who { font-size: 8pt; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 800; padding: 1.5pt 8pt; border-radius: 99px; color: #fff; background: #E8913A; }
+  .staff .who { background: #4A433C; }
+  .qr svg { width: 1.95in; height: 1.95in; display: block; margin: 4pt auto 3pt; }
+  .cta { font-size: 11pt; font-weight: 700; }
+  .code { font: 600 8pt ui-monospace, Consolas, monospace; color: #6B6156; margin-top: 1pt; }
 </style></head><body>
-<h1>Scan Pass demo kit — counter plates and staff QR codes</h1>
-<p class="note">Demo members only (drafts). These codes point at the STAGING site, the only place draft members take check-ins. Cut along the dashed lines; keep each staff QR away from its plate.</p>
-${cards}
+${pages.join("\n")}
 </body></html>`;
   fs.mkdirSync(PRINT_DIR, { recursive: true });
   const out = path.join(PRINT_DIR, "print-sheet.html");
