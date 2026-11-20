@@ -10,10 +10,10 @@ import { SLOT_ORDER, checkDraftForApproval, otherStepNumbers, sameDraft, slotVie
 import { STANDARD_OFFER } from "@/lib/tap-card/tap-card-copy";
 
 /**
- * Offers (Portal/Admin > Tap Card): the Guild's Beer Trail offer, which
+ * Offers (Portal/Admin > Scan Pass): the Guild's Beer Trail offer, which
  * breweries can't change, and the brewery's own loyalty rewards -- up to 3
  * steps and one repeating reward. Every reward and every change waits for a
- * Guild admin (Guild > Tap Card > Offers); the approved version stays live
+ * Guild admin (Guild > Scan Pass > Offers); the approved version stays live
  * while a change waits. Removing a reward needs no approval; rewards customers
  * already earned stay on their cards.
  */

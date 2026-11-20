@@ -7,7 +7,7 @@ import { Eyebrow, TapCardShell } from "@/components/tap-card/TapCardShell";
 export const Route = createFileRoute("/scanner")({
   staleTime: 0,
   loader: () => getScannerStatus(),
-  head: () => ({ meta: [{ title: "Bar device — Inland Tap Card" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({ meta: [{ title: "Bar device — Inland Scan Pass" }, { name: "robots", content: "noindex, nofollow" }] }),
   component: ScannerRoute,
 });
 
@@ -19,7 +19,7 @@ function ScannerRoute() {
         <>
           <CanvasHeading size="md">This device isn&rsquo;t set up</CanvasHeading>
           <p className={leadClass}>
-            Make a bar-device link on your Tap Card page in the Member Portal, then open it on this phone or tablet in its
+            Make a bar-device link on your Scan Pass page in the Member Portal, then open it on this phone or tablet in its
             usual web browser.
           </p>
         </>
@@ -31,7 +31,7 @@ function ScannerRoute() {
           </CanvasHeading>
           <p className={leadClass}>
             {status.kind === "ok"
-              ? `This device is ready to check in Tap Cards for ${status.memberName}. Tap a card on this phone, or scan its QR code with the camera app.`
+              ? `This device is ready to check in Scan Passes for ${status.memberName}. Tap a pass on this phone, or scan its QR code with the camera app.`
               : `${status.memberName} isn’t on the trail at the moment, so nothing can be recorded.`}
           </p>
         </>

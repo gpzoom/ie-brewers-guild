@@ -40,13 +40,13 @@ describe("Privacy Policy", () => {
     expect(t).toContain("We never add you to an email list without your OK");
   });
 
-  it("describes the Inland Tap Card: what it stores, who sees it, its cookies", () => {
-    expect(t).toContain("Inland Tap Card");
-    expect(t).toContain("each visit (which Guild member and when, and the device or counter plate that recorded it)");
+  it("describes the Inland Scan Pass: what it stores, who sees it, its cookies", () => {
+    expect(t).toContain("Inland Scan Pass");
+    expect(t).toContain("each visit (which Guild member and when, and the counter plate that recorded it)");
     expect(t).toContain("the staff member sees your first name");
-    expect(t).toContain("If a staff member turns on your card for you, they type in your name and email");
+    expect(t).not.toContain("If a staff member turns on your pass for you");
     expect(t).toContain("which Guild member's counter you signed up at");
-    expect(t).toContain("bar device");
+    expect(t).not.toContain("bar device");
     expect(t).toContain("keeps you signed in to it for about 400 days, renewed each time you use it");
     expect(t).not.toContain("up to 90 days");
   });
@@ -110,8 +110,8 @@ describe("Terms of Use", () => {
     expect(t).toContain("Photos sent to you through a sharing link are shown only on your profile");
   });
 
-  it("sets the Inland Tap Card rules", () => {
-    expect(t).toContain("Inland Tap Card is free");
+  it("sets the Inland Scan Pass rules", () => {
+    expect(t).toContain("Inland Scan Pass is free");
     expect(t).toContain("once at each Beer Trail stop that year");
     expect(t).toContain("approved by the Guild");
     expect(t).toContain("21 or older");

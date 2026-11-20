@@ -32,11 +32,11 @@ async function makeReader(): Promise<(video: HTMLVideoElement, canvas: HTMLCanva
 }
 
 /**
- * Scan: the camera inside the card page. Reads only the Tap Card's own codes
+ * Scan: the camera inside the card page. Reads only the Scan Pass's own codes
  * (counter plate, staff QR) and opens them here, so a card saved to the
  * Home Screen never has to hand off to the browser.
  */
-export function CardScanner({ label = "Scan a Tap Card code" }: { label?: string }) {
+export function CardScanner({ label = "Scan the QR code" }: { label?: string }) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -75,7 +75,7 @@ export function CardScanner({ label = "Scan a Tap Card code" }: { label?: string
             }
             if (text !== lastWrong) {
               lastWrong = text;
-              setMessage("That isn't a Tap Card code. Point at the counter plate or the staff QR code.");
+              setMessage("That isn't a Scan Pass code. Point at the counter plate or the staff QR code.");
             }
           }
         } catch {
@@ -109,7 +109,7 @@ export function CardScanner({ label = "Scan a Tap Card code" }: { label?: string
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/90 p-4" role="dialog" aria-label="Scan a Tap Card code">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/90 p-4" role="dialog" aria-label="Scan the QR code">
       <video ref={videoRef} className="aspect-square w-full max-w-[420px] rounded-[18px] bg-black object-cover" playsInline muted />
       <canvas ref={canvasRef} className="hidden" />
       <p className="max-w-[420px] text-center text-[15px] text-white" aria-live="polite">

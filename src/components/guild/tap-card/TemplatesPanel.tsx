@@ -72,7 +72,7 @@ function TemplateForm({ initial, onDone, onCancel }: { initial: Draft; onDone: (
   );
 }
 
-/** Guild > Tap Card > Templates: starting points for breweries' loyalty rewards. */
+/** Guild > Scan Pass > Templates: starting points for breweries' loyalty rewards. */
 export function TemplatesPanel({ templates }: { templates: OfferTemplate[] }) {
   const router = useRouter();
   const [editing, setEditing] = useState<string | null>(null);

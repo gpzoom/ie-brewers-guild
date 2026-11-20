@@ -7,218 +7,218 @@
   },
   {
     "id": "w1",
-    "text": "Tap",
-    "start": 0.232,
-    "end": 0.476
+    "text": "Scan",
+    "start": 0.244,
+    "end": 0.592
   },
   {
     "id": "w2",
-    "text": "Card",
-    "start": 0.546,
-    "end": 0.778
+    "text": "Pass",
+    "start": 0.673,
+    "end": 1.091
   },
   {
     "id": "w3",
     "text": "lives",
-    "start": 0.848,
-    "end": 1.091
+    "start": 1.335,
+    "end": 1.579
   },
   {
     "id": "w4",
     "text": "on",
-    "start": 1.138,
-    "end": 1.219
+    "start": 1.625,
+    "end": 1.707
   },
   {
     "id": "w5",
     "text": "your",
-    "start": 1.265,
-    "end": 1.358
+    "start": 1.753,
+    "end": 1.869
   },
   {
     "id": "w6",
     "text": "customer's",
-    "start": 1.405,
-    "end": 1.869
+    "start": 1.927,
+    "end": 2.392
   },
   {
     "id": "w7",
     "text": "phone.",
-    "start": 1.916,
-    "end": 2.392
+    "start": 2.438,
+    "end": 2.879
   },
   {
     "id": "w8",
     "text": "There's",
-    "start": 2.833,
-    "end": 3.111
+    "start": 3.204,
+    "end": 3.46
   },
   {
     "id": "w9",
     "text": "no",
-    "start": 3.17,
-    "end": 3.332
+    "start": 3.506,
+    "end": 3.599
   },
   {
     "id": "w10",
     "text": "app",
-    "start": 3.448,
-    "end": 3.692
+    "start": 3.715,
+    "end": 3.959
   },
   {
     "id": "w11",
     "text": "to",
-    "start": 3.762,
-    "end": 3.82
+    "start": 4.005,
+    "end": 4.075
   },
   {
     "id": "w12",
     "text": "download",
-    "start": 3.901,
-    "end": 4.458
+    "start": 4.145,
+    "end": 4.609
   },
   {
     "id": "w13",
     "text": "and",
-    "start": 4.54,
-    "end": 4.679
+    "start": 4.667,
+    "end": 4.748
   },
   {
     "id": "w14",
     "text": "no",
-    "start": 4.748,
-    "end": 4.876
+    "start": 4.818,
+    "end": 4.934
   },
   {
     "id": "w15",
     "text": "plastic",
-    "start": 4.957,
-    "end": 5.445
+    "start": 5.016,
+    "end": 5.422
   },
   {
     "id": "w16",
     "text": "to",
-    "start": 5.492,
-    "end": 5.55
+    "start": 5.48,
+    "end": 5.538
   },
   {
     "id": "w17",
     "text": "lose.",
-    "start": 5.631,
-    "end": 6.188
+    "start": 5.619,
+    "end": 6.072
   },
   {
     "id": "w18",
     "text": "And",
-    "start": 6.629,
-    "end": 6.78
+    "start": 6.513,
+    "end": 6.676
   },
   {
     "id": "w19",
     "text": "it",
-    "start": 6.838,
-    "end": 6.885
+    "start": 6.722,
+    "end": 6.78
   },
   {
     "id": "w20",
     "text": "does",
-    "start": 6.931,
-    "end": 7.117
+    "start": 6.827,
+    "end": 7.012
   },
   {
     "id": "w21",
     "text": "two",
-    "start": 7.175,
-    "end": 7.361
+    "start": 7.082,
+    "end": 7.279
   },
   {
     "id": "w22",
     "text": "jobs.",
-    "start": 7.43,
-    "end": 7.999
+    "start": 7.361,
+    "end": 7.93
   },
   {
     "id": "w23",
     "text": "It's",
-    "start": 8.382,
-    "end": 8.591
+    "start": 8.173,
+    "end": 8.382
   },
   {
     "id": "w24",
     "text": "a",
-    "start": 8.626,
-    "end": 8.661
+    "start": 8.417,
+    "end": 8.44
   },
   {
     "id": "w25",
     "text": "Beer",
-    "start": 8.731,
-    "end": 8.951
+    "start": 8.533,
+    "end": 8.754
   },
   {
     "id": "w26",
     "text": "Trail",
-    "start": 9.033,
-    "end": 9.311
+    "start": 8.847,
+    "end": 9.149
   },
   {
     "id": "w27",
     "text": "pass,",
-    "start": 9.381,
-    "end": 9.985
+    "start": 9.23,
+    "end": 9.776
   },
   {
     "id": "w28",
     "text": "and",
-    "start": 10.31,
-    "end": 10.461
+    "start": 9.927,
+    "end": 10.101
   },
   {
     "id": "w29",
     "text": "it's",
-    "start": 10.519,
-    "end": 10.646
+    "start": 10.147,
+    "end": 10.263
   },
   {
     "id": "w30",
     "text": "a",
-    "start": 10.681,
-    "end": 10.704
+    "start": 10.298,
+    "end": 10.321
   },
   {
     "id": "w31",
     "text": "loyalty",
-    "start": 10.762,
-    "end": 11.18
+    "start": 10.391,
+    "end": 10.82
   },
   {
     "id": "w32",
-    "text": "card",
-    "start": 11.25,
-    "end": 11.529
+    "text": "pass",
+    "start": 10.89,
+    "end": 11.192
   },
   {
     "id": "w33",
     "text": "at",
-    "start": 11.564,
-    "end": 11.645
+    "start": 11.238,
+    "end": 11.331
   },
   {
     "id": "w34",
     "text": "every",
-    "start": 11.761,
-    "end": 12.051
+    "start": 11.413,
+    "end": 11.68
   },
   {
     "id": "w35",
     "text": "Guild",
-    "start": 12.121,
-    "end": 12.365
+    "start": 11.749,
+    "end": 11.993
   },
   {
     "id": "w36",
     "text": "member.",
-    "start": 12.423,
-    "end": 13.05
+    "start": 12.04,
+    "end": 12.632
   }
 ]

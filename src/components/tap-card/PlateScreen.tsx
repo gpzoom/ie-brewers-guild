@@ -67,7 +67,7 @@ function ReadyScreen({ view }: { view: Ready }) {
         <Eyebrow>{view.memberName}</Eyebrow>
         <CanvasHeading size="md">Now scan the staff QR code</CanvasHeading>
         <p className={leadClass}>
-          Ask a staff member for the Tap Card QR code they keep behind the counter, and scan it with your camera within {PENDING_MINUTES}{" "}
+          Ask a staff member for the Scan Pass QR code they keep behind the counter, and scan it with your camera within {PENDING_MINUTES}{" "}
           minutes.
         </p>
         <p className="rounded-xl border border-canvas-border bg-white px-4 py-3 text-[15px] text-ink">{picked}</p>
@@ -139,8 +139,8 @@ function SignedOut({ code, memberName, canJoinTrail, trailStop }: { code: string
   const [signingIn, setSigningIn] = useState(false);
   const buttons = signedOutButtons({ trailStop, canJoinTrail });
   const href = (c: SignUpChoice) => (c === "join-trail" ? joinPageUrl(code) : freeCardUrl(code));
-  const primaryLabel: Record<SignUpChoice, string> = { "join-trail": "Join the Beer Trail", "free-card": "Get your free Tap Card" };
-  const secondaryLabel: Record<SignUpChoice, string> = { "join-trail": "Join the Beer Trail", "free-card": "Just get the free loyalty card" };
+  const primaryLabel: Record<SignUpChoice, string> = { "join-trail": "Join the Beer Trail", "free-card": "Get your free Scan Pass" };
+  const secondaryLabel: Record<SignUpChoice, string> = { "join-trail": "Join the Beer Trail", "free-card": "Just get the free loyalty pass" };
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -162,11 +162,11 @@ function SignedOut({ code, memberName, canJoinTrail, trailStop }: { code: string
       <Eyebrow>{memberName}</Eyebrow>
       {!signingIn ? (
         <div className="flex flex-col gap-3">
-          <CanvasHeading size="md">Welcome to the Inland Tap Card</CanvasHeading>
+          <CanvasHeading size="md">Welcome to the Inland Scan Pass</CanvasHeading>
           <p className={leadClass}>
             {trailStop
               ? `Collect Beer Trail stops and earn rewards at ${memberName} and every Guild member.`
-              : `Earn rewards at ${memberName} and every Guild member. The card is free.`}
+              : `Earn rewards at ${memberName} and every Guild member. The pass is free.`}
           </p>
           <a href={href(buttons.primary)} className={primaryButtonClass}>
             {primaryLabel[buttons.primary]}
@@ -177,18 +177,18 @@ function SignedOut({ code, memberName, canJoinTrail, trailStop }: { code: string
             </a>
           ))}
           <button type="button" className={secondaryButtonClass} onClick={() => setSigningIn(true)}>
-            I have a Tap Card: sign in
+            I have a Scan Pass: sign in
           </button>
         </div>
       ) : (
-        <CanvasHeading size="md">Sign in to your Tap Card</CanvasHeading>
+        <CanvasHeading size="md">Sign in to your Scan Pass</CanvasHeading>
       )}
       {!signingIn ? null : sent ? (
         <SignInCodeForm email={email} onSignedIn={() => window.location.reload()} />
       ) : (
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
           <p className={leadClass}>
-            Enter the email you used for your card. We&rsquo;ll email you a sign-in code. You&rsquo;ll only need to do this once on this
+            Enter the email you used for your pass. We&rsquo;ll email you a sign-in code. You&rsquo;ll only need to do this once on this
             phone.
           </p>
           <label className={`${labelClass} flex flex-col gap-1.5`}>
@@ -215,15 +215,15 @@ export function PlateScreen({ view }: { view: PlateView }) {
     case "unknown":
       return (
         <>
-          <CanvasHeading size="md">Inland Tap Card</CanvasHeading>
-          <p className={leadClass}>We don&rsquo;t recognize this plate. Ask a staff member to tap your card.</p>
+          <CanvasHeading size="md">Inland Scan Pass</CanvasHeading>
+          <p className={leadClass}>We don&rsquo;t recognize this plate. Ask a staff member for help.</p>
         </>
       );
     case "closed":
       return (
         <>
           <Eyebrow>{view.memberName}</Eyebrow>
-          <CanvasHeading size="md">Ask a staff member to tap your card.</CanvasHeading>
+          <CanvasHeading size="md">This taproom isn&rsquo;t taking Scan Pass check-ins right now.</CanvasHeading>
         </>
       );
     case "signed-out":

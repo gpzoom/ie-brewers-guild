@@ -12,7 +12,7 @@ export function monthName(month: string): string {
 const thClass = "px-3 py-3 font-semibold first:pl-5 last:pr-5";
 const tdClass = "px-3 py-3 first:pl-5 last:pr-5";
 
-/** Guild > Tap Card > Passes: Beer Trail Pass sales, commission owed per brewery, and the Zeffy campaign for each year. */
+/** Guild > Scan Pass > Passes: Beer Trail Pass sales, commission owed per brewery, and the Zeffy campaign for each year. */
 export function PassesPanel({ report, onYearChange }: { report: PassReport; onYearChange: (year: number) => void }) {
   const router = useRouter();
   const [message, setMessage] = useState<Message>(null);

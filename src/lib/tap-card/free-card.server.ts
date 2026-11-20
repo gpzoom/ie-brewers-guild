@@ -7,7 +7,7 @@ import { plateMember } from "@/lib/tap-card/trail-pass-store.server";
 import { validateFreeCard } from "@/lib/tap-card/free-card";
 
 /**
- * The free loyalty-only Tap Card (universal card, spec 2026-11-19). A new email
+ * The free loyalty-only Scan Pass (universal card, spec 2026-11-19). A new email
  * gets a card and this phone is signed in; an email that already has a card
  * gets nothing new -- the emailed 6-digit code instead.
  */

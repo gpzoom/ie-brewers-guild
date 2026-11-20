@@ -1,10 +1,10 @@
-"""Builds the HyperFrames compositions for "The Inland Tap Card: one card, two jobs".
+"""Builds the HyperFrames compositions for "The Inland Scan Pass: one pass, two jobs".
 
 Writes compositions/frames/NN-*.html (one sub-composition per scene),
 compositions/captions.html and index.html from the voice clips' real
 lengths and word timings (assets/voice/NN.wav + NN.words.json).
 
-Phone screens and portal panels are rebuilt from the site's own Tap Card
+Phone screens and portal panels are rebuilt from the site's own Scan Pass
 components, with their real wording (PlateScreen, PlateSuccess, TrailJoinForm,
 TapCardPassesCard, CounterPlateCard, TapCardOffersSection).
 
@@ -186,18 +186,34 @@ def phone(cls, view_html, style):
 </div></div>"""
 
 
-def tap_card(cls, style, name="Alex R."):
-    """The hero prop: a Tap Card, both jobs printed on it."""
-    return f"""<div class="{cls}" style="position:absolute; width:600px; height:376px; border-radius:30px; background:#211C17; border:3px solid #E8913A; box-shadow:0 30px 70px rgba(0,0,0,0.55); padding:38px 42px; display:flex; flex-direction:column; justify-content:space-between; {style}">
-  <div style="display:flex; justify-content:space-between; align-items:flex-start">
-    <div style="display:flex; flex-direction:column; gap:8px"><span style="font:700 20px 'Chivo'; letter-spacing:0.22em; color:#E8913A">INLAND</span><span style="font-family:'Bricolage Grotesque'; font-weight:800; font-size:58px; line-height:0.95; color:#F7F3EC">TAP CARD</span></div>
-    <div style="border-radius:12px; overflow:hidden">{qr_svg(7, 112)}</div>
-  </div>
-  <div style="display:flex; justify-content:space-between; align-items:flex-end">
-    <span style="font:600 28px 'Chivo'; color:#F7F3EC">{name}</span>
-    <div style="display:flex; gap:10px"><span class="j1" style="font:700 16px 'Chivo'; letter-spacing:0.12em; color:#171410; background:#E8913A; border-radius:99px; padding:8px 14px">BEER TRAIL</span><span class="j2" style="font:700 16px 'Chivo'; letter-spacing:0.12em; color:#F7F3EC; border:2px solid #B6AC9D; border-radius:99px; padding:6px 14px">LOYALTY</span></div>
-  </div>
-</div>"""
+def hero_phone(cls, style):
+    """The hero prop: the Scan Pass on a phone. Camera view scans a QR code, then the green screen."""
+    br = "position:absolute; width:46px; height:46px; border-color:#E8913A; border-style:solid; border-width:0"
+    cam = f"""<div class="cam" style="position:absolute; inset:0; background:radial-gradient(circle at 50% 45%, #3A332C, #0D0B09 75%)">
+    <div style="position:absolute; left:0; right:0; top:120px; text-align:center; font:600 19px 'Chivo'; color:#F7F3EC">Scan the QR code</div>
+    <div class="qrbox" style="position:absolute; left:84px; top:250px; width:220px; height:220px">
+      <div class="qrimg" style="position:absolute; inset:14px; border-radius:8px; overflow:hidden">{qr_svg(11, 192)}</div>
+      <div class="bk" style="{br}; left:0; top:0; border-top-width:6px; border-left-width:6px; border-top-left-radius:14px"></div>
+      <div class="bk" style="{br}; right:0; top:0; border-top-width:6px; border-right-width:6px; border-top-right-radius:14px"></div>
+      <div class="bk" style="{br}; left:0; bottom:0; border-bottom-width:6px; border-left-width:6px; border-bottom-left-radius:14px"></div>
+      <div class="bk" style="{br}; right:0; bottom:0; border-bottom-width:6px; border-right-width:6px; border-bottom-right-radius:14px"></div>
+      <div class="scanline" style="position:absolute; left:16px; right:16px; top:16px; height:4px; background:#E8913A; box-shadow:0 0 16px #E8913A"></div>
+    </div>
+  </div>"""
+    done = """<div class="view done"><div class="canvas" style="gap:14px; padding:16px">
+    <div class="green" style="height:580px; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; border:3px solid #12B76A; background:#ECFDF3; border-radius:18px; padding:34px 18px; text-align:center">
+      <span class="tick" style="width:96px; height:96px; border-radius:50%; background:#12B76A; color:#fff; display:flex; align-items:center; justify-content:center; font:700 52px 'Chivo'">✓</span>
+      <span style="font:600 14px 'Chivo'; letter-spacing:0.08em; text-transform:uppercase; color:#05603A">Sample Brewery</span>
+      <div class="ch">Visit #1 recorded</div>
+      <span style="font:400 14px 'Chivo'; color:#6B6156">Confirmed at 4:32:10 PM</span>
+    </div>
+  </div></div>"""
+    return f"""<div class="phone {cls}" style="{style}"><div class="screen"><div class="notch"></div>
+  {cam}
+  <div class="brand bar" style="position:relative; z-index:2"><i></i>ISC BREWERS GUILD</div>
+  {done}
+  <div class="flash" style="position:absolute; inset:0; background:#fff; opacity:0; z-index:4"></div>
+</div></div>"""
 
 
 # ---------------------------------------------------------------- scenes
@@ -210,29 +226,42 @@ def scene1(s, d):
     <div class="eyebrow">ISC Brewers Guild · For members</div>
     <div class="h" style="font-size:96px"><div class="l1">What if your membership</div><div class="l2">paid for itself?</div></div>
     <div class="l3" style="font:500 40px/1.35 'Chivo'; color:#B6AC9D">And a loyalty program came with it. <span style="color:#F7F3EC; font-weight:700">Free.</span></div>
-    <div class="h l4 accent" style="font-size:84px; margin-top:20px">The Inland Tap Card.</div>
+    <div class="h l4 accent" style="font-size:84px; margin-top:20px">The Inland Scan Pass.</div>
   </div>
-  {tap_card("tc", "right:150px; top:330px")}
+  {hero_phone("tc", "left:1330px; top:150px")}
 </div>"""
     js = common_js(s, d)
     js += slide(f"#{s} .eyebrow", 0.3)
     js += rise(f"#{s} .l1", c("What"), 50)
     js += rise(f"#{s} .l2", c("paid"), 50)
     js += rise(f"#{s} .l3", c("And"), 30)
-    js += f'tl.fromTo("#{s} .tc", {{ opacity: 0, y: 90, rotation: 0 }}, {{ opacity: 1, y: 0, rotation: -5, duration: 0.9, ease: "power3.out" }}, {c("Inland") - 0.5:.2f});\n'
+    # the phone arrives with its camera open, scans a QR code, then flips to the green screen
+    t0 = c("That's") - 0.6
+    js += f'tl.fromTo("#{s} .tc", {{ opacity: 0, y: 110, rotation: 0 }}, {{ opacity: 1, y: 0, rotation: -4, duration: 0.8, ease: "power3.out" }}, {t0:.2f});\n'
+    js += hide(f"#{s} .tc .done") + hide(f"#{s} .tc .bar")
+    js += f'tl.fromTo("#{s} .qrbox", {{ scale: 1.25 }}, {{ scale: 1, duration: 0.6, ease: "power2.out" }}, {t0 + 0.3:.2f});\n'
+    js += f'tl.fromTo("#{s} .scanline", {{ y: 0 }}, {{ y: 184, duration: 0.45, ease: "sine.inOut", yoyo: true, repeat: 2, immediateRender: false }}, {t0 + 0.7:.2f});\n'
+    lock = t0 + 0.7 + 0.45 * 3
+    js += f'tl.to("#{s} .bk", {{ borderColor: "#12B76A", duration: 0.15 }}, {lock:.2f});\n'
+    js += f'tl.to("#{s} .scanline", {{ opacity: 0, duration: 0.1 }}, {lock:.2f});\n'
+    js += f'tl.fromTo("#{s} .qrbox", {{ scale: 1 }}, {{ scale: 0.9, duration: 0.15, yoyo: true, repeat: 1, ease: "power1.inOut", immediateRender: false }}, {lock:.2f});\n'
+    js += f'tl.fromTo("#{s} .flash", {{ opacity: 0 }}, {{ opacity: 0.85, duration: 0.08, yoyo: true, repeat: 1, immediateRender: false }}, {lock + 0.3:.2f});\n'
+    js += fade(f"#{s} .cam", lock + 0.38, 0, 1, 0.05)
+    js += fade(f"#{s} .bar", lock + 0.38, 1, 0, 0.05) + fade(f"#{s} .done", lock + 0.38, 1, 0, 0.05)
+    js += f'tl.fromTo("#{s} .tick", {{ scale: 0.3 }}, {{ scale: 1, duration: 0.5, ease: "back.out(2.6)", immediateRender: false }}, {lock + 0.4:.2f});\n'
+    js += pulse_js(s, ".green", lock + 0.55, "18,183,106")
     js += rise(f"#{s} .l4", c("Inland"), 50)
-    js += pulse_js(s, ".tc", c("Card") + 0.2)
     return html, js
 
 
 def welcome_view(member="Sample Brewery"):
     return f"""<div class="view"><div class="canvas">
     <span class="eb">{member}</span>
-    <div class="ch">Welcome to the Inland Tap Card</div>
+    <div class="ch">Welcome to the Inland Scan Pass</div>
     <div class="lead">Collect Beer Trail stops and earn rewards at {member} and every Guild member.</div>
     <div class="pbtn join">Join the Beer Trail</div>
-    <span class="lnk">Just get the free loyalty card</span>
-    <div class="sbtn">I have a Tap Card: sign in</div>
+    <span class="lnk">Just get the free loyalty pass</span>
+    <div class="sbtn">I have a Scan Pass: sign in</div>
   </div></div>"""
 
 
@@ -253,10 +282,10 @@ def scene2(s, d):
     <div class="chip quiet n2"><span class="accent">✕</span> No plastic to lose</div>
   </div>
   <div class="gb" style="position:absolute; left:720px; top:150px; width:1080px; display:flex; flex-direction:column; gap:40px">
-    <div class="h" style="font-size:88px">One card. <span class="accent">Two jobs.</span></div>
+    <div class="h" style="font-size:88px">One pass. <span class="accent">Two jobs.</span></div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:36px">
       {job(1, "Beer Trail pass", "Paid, for the year. You earn on every one sold at your counter.")}
-      {job(2, "Loyalty card", "Free, at every Guild member. Your rewards, your regulars.")}
+      {job(2, "Loyalty pass", "Free, at every Guild member. Your rewards, your regulars.")}
     </div>
   </div>
 </div>"""
@@ -396,7 +425,7 @@ def scene5(s, d):
       <div style="width:64px; height:64px; border-radius:14px; background:{color}; display:flex; align-items:center; justify-content:center; font:800 26px 'Chivo'; color:#fff">{name[0]}</div>
       <div style="font:700 30px/1.2 'Chivo'">{name}</div>
       <div style="font:700 16px 'Chivo'; letter-spacing:0.14em; color:#B6AC9D">{tag}</div>
-      <div style="font:600 21px 'Chivo'; color:#E8913A">✓ Tap Card works here</div>
+      <div style="font:600 21px 'Chivo'; color:#E8913A">✓ Scan Pass works here</div>
     </div>"""
     step = lambda k, label, text: f"""<div class="os os{k}" style="display:flex; align-items:center; gap:22px; border:2px solid #DED7CB; background:#fff; border-radius:14px; padding:20px 24px">
       <span style="flex-shrink:0; font:700 17px 'Chivo'; letter-spacing:0.1em; color:#8F4416; background:#FCE7D2; border-radius:99px; padding:7px 14px">{label}</span>
@@ -421,7 +450,7 @@ def scene5(s, d):
   <div class="panel tb" style="left:720px; top:190px; width:1080px; padding:36px 40px; display:flex; flex-direction:column; gap:20px">
     <span class="caps">Member Offers</span>
     <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:34px">Your loyalty rewards</div>
-    {step(1, "VISIT 3", "Free soft pretzel")}
+    {step(1, "VISIT 3", "Free snack")}
     {step(2, "EVERY 5 VISITS", "$2 off")}
     <span class="add" style="align-self:flex-start; font:600 22px 'Chivo'; color:#B3591F; border:2px dashed #D3CBBD; border-radius:12px; padding:14px 22px">+ Add a step</span>
   </div>
@@ -497,7 +526,7 @@ def scene7(s, d):
     scan = """<div class="view v2"><div class="canvas" style="gap:14px">
     <span class="eb">Sample Brewery</span>
     <div class="ch">Now scan the staff QR code</div>
-    <div class="lead" style="font-size:17px">Ask a staff member for the Tap Card QR code they keep behind the counter, and scan it with your camera within 10 minutes.</div>
+    <div class="lead" style="font-size:17px">Ask a staff member for the Scan Pass QR code they keep behind the counter, and scan it with your camera within 10 minutes.</div>
     <div style="border:2px solid #DED7CB; background:#fff; border-radius:12px; padding:12px 16px; font:400 16px/1.35 'Chivo'">Use my Beer Trail offer: Your first beer for a nickel</div>
     <div style="height:170px; border-radius:14px; background:#241F1A; position:relative; overflow:hidden"><div class="scanline" style="position:absolute; left:20px; right:20px; top:20px; height:3px; background:#E8913A; box-shadow:0 0 12px #E8913A"></div></div>
   </div></div>"""
@@ -524,7 +553,7 @@ def scene7(s, d):
     {rows}
   </div>
   <div class="plate" style="position:absolute; left:720px; top:300px; width:300px; display:flex; flex-direction:column; align-items:center; gap:12px; background:#211C17; border:3px solid #3A332C; border-radius:24px; padding:26px 22px">
-    <span style="font:700 16px 'Chivo'; letter-spacing:0.18em; color:#E8913A">INLAND TAP CARD</span>
+    <span style="font:700 16px 'Chivo'; letter-spacing:0.18em; color:#E8913A">INLAND SCAN PASS</span>
     <div style="border-radius:10px; overflow:hidden">{qr_svg(11, 220)}</div>
     <span style="font:600 20px ui-monospace, Consolas, monospace; color:#B6AC9D">ABCD-1234</span>
     <span style="font:700 15px 'Chivo'; letter-spacing:0.14em; color:#B6AC9D">COUNTER PLATE</span>
@@ -562,8 +591,8 @@ def scene7(s, d):
 def scene8(s, d):
     c = lambda w, o=1: cue(8, w, o)
     side = "".join(
-        f'<div class="{"navtc" if n == "Tap Card" else ""}" style="padding:10px 15px; border-radius:10px;{" background:#241F1A; color:#F9F6F0; font-weight:600;" if n == "Tap Card" else ""}">{n}</div>'
-        for n in ["Notifications", "Basics &amp; hours", "Logo, Photos &amp; Cover", "Theme", "Links &amp; contact", "Events", "Food", "Jobs", "Tap Card", "Discount", "People"])
+        f'<div class="{"navtc" if n == "Scan Pass" else ""}" style="padding:10px 15px; border-radius:10px;{" background:#241F1A; color:#F9F6F0; font-weight:600;" if n == "Scan Pass" else ""}">{n}</div>'
+        for n in ["Notifications", "Basics &amp; hours", "Logo, Photos &amp; Cover", "Theme", "Links &amp; contact", "Events", "Food", "Jobs", "Scan Pass", "Discount", "People"])
     card = lambda cls, title, body: f'<div class="{cls}" style="background:#fff; border:2px solid #DED7CB; border-radius:16px; padding:24px 26px; display:flex; flex-direction:column; gap:14px">' \
                                     f'<div style="font-family:\'Bricolage Grotesque\'; font-weight:700; font-size:24px">{title}</div>{body}</div>'
     html = f"""
@@ -575,7 +604,7 @@ def scene8(s, d):
     <div style="display:flex; height:642px">
       <div style="width:300px; border-right:2px solid #EFEAE1; padding:24px 19px; display:flex; flex-direction:column; gap:3px; font:400 19px 'Chivo'">{side}</div>
       <div style="flex:1; padding:30px 40px; display:flex; flex-direction:column; gap:22px">
-        <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:44px">Tap Card</div>
+        <div style="font-family:'Bricolage Grotesque'; font-weight:700; font-size:44px">Scan Pass</div>
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:22px; align-items:start">
           {card("k1", "Staff code (backup)", '<div class="small" style="font-size:17px">A staff member can type this on the customer&rsquo;s phone if the staff QR code isn&rsquo;t handy.</div><div class="code" style="height:56px; width:170px; border:2px solid #DED7CB; border-radius:10px; display:flex; align-items:center; justify-content:center; font:700 28px Chivo; letter-spacing:0.3em"><span class="pin"></span></div><span class="btn" style="align-self:flex-start; height:48px; background:#241F1A; color:#fff; border-color:#241F1A">Save</span>')}
           {card("k2", "Counter plate", f'<div style="align-self:center; border:2px solid #EFEAE1; border-radius:10px; overflow:hidden">{qr_svg(11, 170)}</div><span class="btn b2" style="height:48px">Download QR code</span>')}
@@ -617,11 +646,11 @@ def scene9(s, d):
   <div class="pb">
     <svg data-layout-allow-overflow style="position:absolute; left:0; top:0; width:1920px; height:1080px" viewBox="0 0 1920 1080">{lines}</svg>
     {dots}
-    <div class="hub" style="position:absolute; left:{cx - 120}px; top:{cy - 120}px; width:240px; height:240px; border-radius:50%; background:#211C17; border:4px solid #E8913A; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px"><span style="font:700 18px 'Chivo'; letter-spacing:0.2em; color:#E8913A">INLAND</span><span style="font-family:'Bricolage Grotesque'; font-weight:800; font-size:44px">TAP CARD</span></div>
+    <div class="hub" style="position:absolute; left:{cx - 120}px; top:{cy - 120}px; width:240px; height:240px; border-radius:50%; background:#211C17; border:4px solid #E8913A; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px"><span style="font:700 18px 'Chivo'; letter-spacing:0.2em; color:#E8913A">INLAND</span><span style="font-family:'Bricolage Grotesque'; font-weight:800; font-size:44px">SCAN PASS</span></div>
     <div style="position:absolute; left:120px; top:220px; width:780px; display:flex; flex-direction:column; gap:40px">
       <div class="h b1" style="font-size:72px">More members. <span class="accent">More value.</span></div>
       <div class="chip quiet b2">New producer <span class="accent">→</span> another trail stop</div>
-      <div class="chip quiet b3">New member <span class="accent">→</span> another place the card works</div>
+      <div class="chip quiet b3">New member <span class="accent">→</span> another place the pass works</div>
     </div>
   </div>
   <div class="pc" style="position:absolute; left:120px; top:170px; width:1680px; display:flex; flex-direction:column; gap:40px">
@@ -629,7 +658,7 @@ def scene9(s, d):
       <div class="c1" style="background:#211C17; border:3px solid #3A332C; border-radius:24px; padding:36px 40px; display:flex; flex-direction:column; gap:10px"><span style="font:700 18px 'Chivo'; letter-spacing:0.18em; color:#B6AC9D">THINK ABOUT</span><span style="font:700 46px/1.15 'Chivo'">That brewery down the road</span></div>
       <div class="c2" style="background:#211C17; border:3px solid #3A332C; border-radius:24px; padding:36px 40px; display:flex; flex-direction:column; gap:10px"><span style="font:700 18px 'Chivo'; letter-spacing:0.18em; color:#B6AC9D">THINK ABOUT</span><span style="font:700 46px/1.15 'Chivo'">The food truck out back</span></div>
     </div>
-    <div class="h f1" style="font-size:92px; margin-top:30px">Tell them about the Tap Card.</div>
+    <div class="h f1" style="font-size:92px; margin-top:30px">Tell them about the Scan Pass.</div>
     <div class="h f2 accent" style="font-size:92px">Let's grow this together.</div>
     <div class="mark" style="margin-top:20px; font:700 21px 'Chivo'; letter-spacing:0.22em; color:#B6AC9D">ISC BREWERS GUILD</div>
   </div>
@@ -783,7 +812,7 @@ def write_index(paths):
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=1920, height=1080" />
-    <title>The Inland Tap Card — ISC Brewers Guild</title>
+    <title>The Inland Scan Pass — ISC Brewers Guild</title>
     <!-- generated by build/build.py -- edit there, not here -->
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
     <style>

@@ -1,95 +1,20 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { listCardBatches } from "@/lib/tap-card/batches.server";
-import { listPendingMemberOffers } from "@/lib/tap-card/member-offers.server";
-import { listOfferTemplates } from "@/lib/tap-card/offer-templates.server";
-import { listEarnedRewards, listMilestones } from "@/lib/tap-card/milestones.server";
-import { tapCardYear } from "@/lib/tap-card/tap-card-time";
-import { CardBatchesPanel } from "@/components/guild/tap-card/CardBatchesPanel";
-import { OfferApprovalsPanel } from "@/components/guild/tap-card/OfferApprovalsPanel";
-import { TemplatesPanel } from "@/components/guild/tap-card/TemplatesPanel";
-import { MilestonesPanel } from "@/components/guild/tap-card/MilestonesPanel";
-import { RewardsPanel } from "@/components/guild/tap-card/RewardsPanel";
-import { PassesPanel } from "@/components/guild/tap-card/PassesPanel";
-import { getPassReport, listPasses } from "@/lib/tap-card/trail-pass-admin.server";
-import { RecentPasses } from "@/components/guild/tap-card/RecentPasses";
-import { TapCardTabs, isTapCardTab, type TapCardTab } from "@/components/guild/tap-card/TapCardTabs";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { isTapCardTab, type TapCardTab } from "@/components/guild/tap-card/TapCardTabs";
 
 type Search = { tab?: TapCardTab; show?: "all"; year?: number };
 
-/** /guild/tap-card: the Inland Tap Card program (every Guild admin). ?tab=cards|offers|templates|milestones|rewards */
+/**
+ * The Inland Tap Card was renamed the Inland Scan Pass (2026-11-20). This
+ * route stays only so old links and bookmarks (and emails already sent with
+ * /guild/tap-card?tab=offers) land on /guild/scan-pass, keeping the tab.
+ */
 export const Route = createFileRoute("/guild/tap-card")({
   validateSearch: (search: Record<string, unknown>): Search => ({
-    ...(isTapCardTab(search.tab) && search.tab !== "cards" ? { tab: search.tab } : {}),
+    ...(isTapCardTab(search.tab) && search.tab !== "offers" ? { tab: search.tab } : {}),
     ...(search.show === "all" ? { show: "all" as const } : {}),
     ...(typeof search.year === "number" && Number.isInteger(search.year) ? { year: search.year } : {}),
   }),
-  loaderDeps: ({ search }) => ({
-    tab: search.tab ?? ("cards" as TapCardTab),
-    show: search.show === "all" ? ("all" as const) : ("waiting" as const),
-    year: search.year,
-  }),
-  staleTime: 0,
-  loader: async ({ deps }) => {
-    const pending = await listPendingMemberOffers();
-    const base = { tab: deps.tab, pendingCount: pending.length };
-    switch (deps.tab) {
-      case "cards": {
-        return { ...base, batches: await listCardBatches() };
-      }
-      case "offers":
-        return { ...base, pending };
-      case "templates":
-        return { ...base, templates: await listOfferTemplates() };
-      case "milestones":
-        return { ...base, milestones: await listMilestones() };
-      case "rewards": {
-        const year = tapCardYear(new Date());
-        return { ...base, year, show: deps.show, rewards: await listEarnedRewards({ data: { year, show: deps.show } }) };
-      }
-      case "passes": {
-        const report = await getPassReport({ data: { year: deps.year } });
-        return { ...base, report, passes: await listPasses({ data: { year: report.year } }) };
-      }
-    }
+  beforeLoad: ({ search }) => {
+    throw redirect({ to: "/guild/scan-pass", search, replace: true });
   },
-  component: TapCardRoute,
 });
-
-function TapCardRoute() {
-  const data = Route.useLoaderData();
-  const navigate = Route.useNavigate();
-  return (
-    <div className="flex flex-col gap-[22px]">
-      <div className="flex max-w-[640px] flex-col gap-1.5">
-        <h1 className="font-display text-[28px] font-bold leading-tight tracking-[-0.01em] text-ink">Inland Tap Card</h1>
-        <p className="text-pretty text-[13px] text-[#564E45]">
-          Cards that staff members tap to record visits, the Beer Trail offer, and each stop's loyalty rewards.
-        </p>
-      </div>
-      <TapCardTabs
-        tab={data.tab}
-        badges={{ offers: data.pendingCount }}
-        alerts={{ offers: data.pendingCount > 0 }}
-        onChange={(t) => navigate({ search: t === "cards" ? {} : { tab: t } })}
-      />
-      {data.tab === "cards" && "batches" in data && <CardBatchesPanel batches={data.batches} />}
-      {data.tab === "offers" && "pending" in data && <OfferApprovalsPanel pending={data.pending} />}
-      {data.tab === "templates" && "templates" in data && <TemplatesPanel templates={data.templates} />}
-      {data.tab === "milestones" && "milestones" in data && <MilestonesPanel milestones={data.milestones} />}
-      {data.tab === "passes" && "report" in data && (
-        <>
-          <PassesPanel key={data.report.year} report={data.report} onYearChange={(year) => navigate({ search: { tab: "passes", year } })} />
-          {"passes" in data && <RecentPasses passes={data.passes} />}
-        </>
-      )}
-      {data.tab === "rewards" && "rewards" in data && (
-        <RewardsPanel
-          rewards={data.rewards}
-          year={data.year}
-          show={data.show}
-          onShowChange={(show) => navigate({ search: { tab: "rewards", ...(show === "all" ? { show: "all" } : {}) } })}
-        />
-      )}
-    </div>
-  );
-}

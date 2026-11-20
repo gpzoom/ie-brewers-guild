@@ -1,5 +1,5 @@
 /**
- * Inland Tap Card codes. Each card's NFC chip and QR code hold
+ * Inland Scan Pass codes. Each card's NFC chip and QR code hold
  * `${site}/p/<code>`, and the code is printed on the card as XXXX-XXXX.
  * Crockford base32: no I, L, O or U, so a code read aloud or typed from the
  * card can't be confused. 8 characters = 40 random bits.

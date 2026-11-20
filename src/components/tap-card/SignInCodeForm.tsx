@@ -26,7 +26,7 @@ export function SignInCodeForm({ email, onSignedIn }: { email: string; onSignedI
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3">
       <p className={leadClass}>
-        Check your email. If that address has a Tap Card, we sent a 6-digit code and a link. Type the code here, or open the link on
+        Check your email. If that address has a Scan Pass, we sent a 6-digit code and a link. Type the code here, or open the link on
         this phone. Both work once, for 60 minutes.
       </p>
       <label className={`${labelClass} flex flex-col gap-1.5`}>

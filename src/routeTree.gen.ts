@@ -49,6 +49,7 @@ import { Route as MembersSlugRouteImport } from './routes/members_.$slug'
 import { Route as JoinFinishRouteImport } from './routes/join_.finish'
 import { Route as GuildTapCardRouteImport } from './routes/guild.tap-card'
 import { Route as GuildSettingsRouteImport } from './routes/guild.settings'
+import { Route as GuildScanPassRouteImport } from './routes/guild.scan-pass'
 import { Route as GuildRosterRouteImport } from './routes/guild.roster'
 import { Route as GuildInquiriesRouteImport } from './routes/guild.inquiries'
 import { Route as GuildHelpRouteImport } from './routes/guild.help'
@@ -65,6 +66,7 @@ import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminPreviewRouteImport } from './routes/admin_.preview'
 import { Route as AdminThemeRouteImport } from './routes/admin.theme'
 import { Route as AdminTapCardRouteImport } from './routes/admin.tap-card'
+import { Route as AdminScanPassRouteImport } from './routes/admin.scan-pass'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminLinksRouteImport } from './routes/admin.links'
@@ -284,6 +286,11 @@ const GuildSettingsRoute = GuildSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => GuildRoute,
 } as any)
+const GuildScanPassRoute = GuildScanPassRouteImport.update({
+  id: '/scan-pass',
+  path: '/scan-pass',
+  getParentRoute: () => GuildRoute,
+} as any)
 const GuildRosterRoute = GuildRosterRouteImport.update({
   id: '/roster',
   path: '/roster',
@@ -362,6 +369,11 @@ const AdminThemeRoute = AdminThemeRouteImport.update({
 const AdminTapCardRoute = AdminTapCardRouteImport.update({
   id: '/tap-card',
   path: '/tap-card',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminScanPassRoute = AdminScanPassRouteImport.update({
+  id: '/scan-pass',
+  path: '/scan-pass',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
@@ -485,6 +497,7 @@ export interface FileRoutesByFullPath {
   '/admin/links': typeof AdminLinksRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/scan-pass': typeof AdminScanPassRoute
   '/admin/tap-card': typeof AdminTapCardRoute
   '/admin/theme': typeof AdminThemeRoute
   '/admin/preview': typeof AdminPreviewRoute
@@ -501,6 +514,7 @@ export interface FileRoutesByFullPath {
   '/guild/help': typeof GuildHelpRoute
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
+  '/guild/scan-pass': typeof GuildScanPassRoute
   '/guild/settings': typeof GuildSettingsRoute
   '/guild/tap-card': typeof GuildTapCardRoute
   '/join/finish': typeof JoinFinishRoute
@@ -559,6 +573,7 @@ export interface FileRoutesByTo {
   '/admin/links': typeof AdminLinksRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/scan-pass': typeof AdminScanPassRoute
   '/admin/tap-card': typeof AdminTapCardRoute
   '/admin/theme': typeof AdminThemeRoute
   '/admin/preview': typeof AdminPreviewRoute
@@ -575,6 +590,7 @@ export interface FileRoutesByTo {
   '/guild/help': typeof GuildHelpRoute
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
+  '/guild/scan-pass': typeof GuildScanPassRoute
   '/guild/settings': typeof GuildSettingsRoute
   '/guild/tap-card': typeof GuildTapCardRoute
   '/join/finish': typeof JoinFinishRoute
@@ -634,6 +650,7 @@ export interface FileRoutesById {
   '/admin/links': typeof AdminLinksRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/scan-pass': typeof AdminScanPassRoute
   '/admin/tap-card': typeof AdminTapCardRoute
   '/admin/theme': typeof AdminThemeRoute
   '/admin_/preview': typeof AdminPreviewRoute
@@ -650,6 +667,7 @@ export interface FileRoutesById {
   '/guild/help': typeof GuildHelpRoute
   '/guild/inquiries': typeof GuildInquiriesRoute
   '/guild/roster': typeof GuildRosterRoute
+  '/guild/scan-pass': typeof GuildScanPassRoute
   '/guild/settings': typeof GuildSettingsRoute
   '/guild/tap-card': typeof GuildTapCardRoute
   '/join_/finish': typeof JoinFinishRoute
@@ -712,6 +730,7 @@ export interface FileRouteTypes {
     | '/admin/links'
     | '/admin/media'
     | '/admin/notifications'
+    | '/admin/scan-pass'
     | '/admin/tap-card'
     | '/admin/theme'
     | '/admin/preview'
@@ -728,6 +747,7 @@ export interface FileRouteTypes {
     | '/guild/help'
     | '/guild/inquiries'
     | '/guild/roster'
+    | '/guild/scan-pass'
     | '/guild/settings'
     | '/guild/tap-card'
     | '/join/finish'
@@ -786,6 +806,7 @@ export interface FileRouteTypes {
     | '/admin/links'
     | '/admin/media'
     | '/admin/notifications'
+    | '/admin/scan-pass'
     | '/admin/tap-card'
     | '/admin/theme'
     | '/admin/preview'
@@ -802,6 +823,7 @@ export interface FileRouteTypes {
     | '/guild/help'
     | '/guild/inquiries'
     | '/guild/roster'
+    | '/guild/scan-pass'
     | '/guild/settings'
     | '/guild/tap-card'
     | '/join/finish'
@@ -860,6 +882,7 @@ export interface FileRouteTypes {
     | '/admin/links'
     | '/admin/media'
     | '/admin/notifications'
+    | '/admin/scan-pass'
     | '/admin/tap-card'
     | '/admin/theme'
     | '/admin_/preview'
@@ -876,6 +899,7 @@ export interface FileRouteTypes {
     | '/guild/help'
     | '/guild/inquiries'
     | '/guild/roster'
+    | '/guild/scan-pass'
     | '/guild/settings'
     | '/guild/tap-card'
     | '/join_/finish'
@@ -1239,6 +1263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuildSettingsRouteImport
       parentRoute: typeof GuildRoute
     }
+    '/guild/scan-pass': {
+      id: '/guild/scan-pass'
+      path: '/scan-pass'
+      fullPath: '/guild/scan-pass'
+      preLoaderRoute: typeof GuildScanPassRouteImport
+      parentRoute: typeof GuildRoute
+    }
     '/guild/roster': {
       id: '/guild/roster'
       path: '/roster'
@@ -1349,6 +1380,13 @@ declare module '@tanstack/react-router' {
       path: '/tap-card'
       fullPath: '/admin/tap-card'
       preLoaderRoute: typeof AdminTapCardRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/scan-pass': {
+      id: '/admin/scan-pass'
+      path: '/scan-pass'
+      fullPath: '/admin/scan-pass'
+      preLoaderRoute: typeof AdminScanPassRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/notifications': {
@@ -1490,6 +1528,7 @@ interface AdminRouteChildren {
   AdminLinksRoute: typeof AdminLinksRoute
   AdminMediaRoute: typeof AdminMediaRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
+  AdminScanPassRoute: typeof AdminScanPassRoute
   AdminTapCardRoute: typeof AdminTapCardRoute
   AdminThemeRoute: typeof AdminThemeRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -1505,6 +1544,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLinksRoute: AdminLinksRoute,
   AdminMediaRoute: AdminMediaRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
+  AdminScanPassRoute: AdminScanPassRoute,
   AdminTapCardRoute: AdminTapCardRoute,
   AdminThemeRoute: AdminThemeRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -1522,6 +1562,7 @@ interface GuildRouteChildren {
   GuildHelpRoute: typeof GuildHelpRoute
   GuildInquiriesRoute: typeof GuildInquiriesRoute
   GuildRosterRoute: typeof GuildRosterRoute
+  GuildScanPassRoute: typeof GuildScanPassRoute
   GuildSettingsRoute: typeof GuildSettingsRoute
   GuildTapCardRoute: typeof GuildTapCardRoute
   GuildIndexRoute: typeof GuildIndexRoute
@@ -1537,6 +1578,7 @@ const GuildRouteChildren: GuildRouteChildren = {
   GuildHelpRoute: GuildHelpRoute,
   GuildInquiriesRoute: GuildInquiriesRoute,
   GuildRosterRoute: GuildRosterRoute,
+  GuildScanPassRoute: GuildScanPassRoute,
   GuildSettingsRoute: GuildSettingsRoute,
   GuildTapCardRoute: GuildTapCardRoute,
   GuildIndexRoute: GuildIndexRoute,

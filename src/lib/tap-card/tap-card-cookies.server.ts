@@ -15,8 +15,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { parsePendingChoice, sessionNeedsRenewal, type Pending, type PendingChoice } from "@/lib/tap-card/staff-qr";
 
 /**
- * The Tap Card cookies (no createServerFn here -- these helpers are called
- * from inside the Tap Card server functions only).
+ * The Scan Pass cookies (no createServerFn here -- these helpers are called
+ * from inside the Scan Pass server functions only).
  */
 export const SCANNER_COOKIE = "iebg_scanner";
 export const HOLDER_COOKIE = "iebg_tapcard";

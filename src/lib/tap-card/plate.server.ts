@@ -18,7 +18,7 @@ import { PLATE_LOCK_MINUTES, plateUrl, staffCodeGate, validateStaffCode, type At
 
 /**
  * Counter plate (/t/<code>): the customer's own phone, signed in to their
- * Tap Card, checks in at a brewery with no bar device -- but nothing is
+ * Scan Pass, checks in at a brewery with no bar device -- but nothing is
  * recorded until the staff member types the brewery's staff code. Opening the
  * page only looks.
  */
@@ -281,7 +281,7 @@ export const undoAtPlate = createServerFn({ method: "POST" })
     return { kind: "ok", state, milestoneRewards: [], outcome };
   });
 
-// ---- The brewery's Counter plate box (Portal/Admin > Tap Card) ----
+// ---- The brewery's Counter plate box (Portal/Admin > Scan Pass) ----
 
 export type CounterPlate = { url: string; printedCode: string; staffCode: string | null; staffQrUrl: string; staffQrPrinted: string };
 
@@ -345,7 +345,7 @@ export const resetPlateLink = createServerFn({ method: "POST" })
     throw new Error("Couldn't make a new plate link. Try again.");
   });
 
-/** Guild > Tap Card > Cards: every trail stop's plate link, for the printer (plates are made as needed). */
+/** Guild > Scan Pass > Cards: every trail stop's plate link, for the printer (plates are made as needed). */
 export const downloadPlateLinksCsv = createServerFn({ method: "POST" }).handler(async (): Promise<{ filename: string; csv: string }> => {
   const { service } = await requireTapCardGuildAdmin();
   const { data: members, error } = await service
@@ -363,5 +363,5 @@ export const downloadPlateLinksCsv = createServerFn({ method: "POST" }).handler(
     const plate = await ensurePlate(service, m.id);
     rows.push([quote(m.business_name), plate.code, formatCardCode(plate.code), plateUrl(site, plate.code)].join(","));
   }
-  return { filename: "tap-card-counter-plates.csv", csv: rows.join("\n") + "\n" };
+  return { filename: "scan-pass-counter-plates.csv", csv: rows.join("\n") + "\n" };
 });

@@ -27,7 +27,7 @@ function saveFile(filename: string, text: string) {
   URL.revokeObjectURL(url);
 }
 
-/** Guild > Tap Card > Cards: make a print run, download it for the printer, clean up test cards. */
+/** Guild > Scan Pass > Cards: make a print run, download it for the printer, clean up test cards. */
 export function CardBatchesPanel({ batches }: { batches: CardBatchSummary[] }) {
   const router = useRouter();
   const [label, setLabel] = useState("");
@@ -71,7 +71,7 @@ export function CardBatchesPanel({ batches }: { batches: CardBatchSummary[] }) {
   }
 
   async function onDelete(batch: CardBatchSummary) {
-    if (!window.confirm(`Delete the test batch "${batch.label}", its cards, and the test card holders on it?`)) return;
+    if (!window.confirm(`Delete the test batch "${batch.label}", its passes, and the test pass holders on it?`)) return;
     try {
       await deleteTestBatch({ data: { batchId: batch.id } });
       await router.invalidate();
@@ -83,10 +83,10 @@ export function CardBatchesPanel({ batches }: { batches: CardBatchSummary[] }) {
   return (
     <div className="flex flex-col gap-[22px]">
       <form onSubmit={onCreate} className={cardClass}>
-        <h2 className="font-display text-[18px] font-bold text-ink">Make a batch of cards</h2>
+        <h2 className="font-display text-[18px] font-bold text-ink">Make a batch of passes</h2>
         <p className="text-[13px] text-ink-muted">
-          Each card gets its own code. The file you download has the link for each card's chip and QR code, and the code to
-          print on the card. Every card works at every stop on the trail. Make real print runs on the live site so the links
+          Each pass gets its own code. The file you download has the link for each pass's chip and QR code, and the code to
+          print on the pass. Every pass works at every stop on the trail. Make real print runs on the live site so the links
           point there.
         </p>
         <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink">
@@ -94,16 +94,16 @@ export function CardBatchesPanel({ batches }: { batches: CardBatchSummary[] }) {
           <input className={fieldClass} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Spring 2027 print run" required maxLength={80} />
         </label>
         <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink">
-          Number of cards
+          Number of passes
           <input className={fieldClass} type="number" min={1} max={MAX_BATCH} value={count} onChange={(e) => setCount(e.target.value)} required />
         </label>
         <label className="flex min-h-11 items-center gap-2 text-[13px] text-ink">
           <input type="checkbox" checked={isTest} onChange={(e) => setIsTest(e.target.checked)} className="size-4" />
-          Test cards (for trying things out; can be deleted with everything recorded on them)
+          Test passes (for trying things out; can be deleted with everything recorded on them)
         </label>
         <div>
           <button type="submit" disabled={busy} className={darkButtonClass}>
-            {busy ? "Making cards…" : "Make cards"}
+            {busy ? "Making passes…" : "Make passes"}
           </button>
         </div>
         <StatusMessage message={message} />
@@ -122,7 +122,7 @@ export function CardBatchesPanel({ batches }: { batches: CardBatchSummary[] }) {
             {batches.length === 0 && (
               <tr>
                 <td colSpan={3} className="px-5 py-6 text-ink-muted">
-                  No cards yet.
+                  No passes yet.
                 </td>
               </tr>
             )}

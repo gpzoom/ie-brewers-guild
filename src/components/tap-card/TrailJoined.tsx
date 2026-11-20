@@ -91,7 +91,7 @@ export function TrailJoined() {
       <>
         <CanvasHeading size="md">Finishing up…</CanvasHeading>
         <p className={leadClass} role="status">
-          Thanks for joining the Beer Trail! We&rsquo;re setting up your Tap Card. This takes a few seconds.
+          Thanks for joining the Beer Trail! We&rsquo;re setting up your Scan Pass. This takes a few seconds.
         </p>
       </>
     );
@@ -103,7 +103,7 @@ export function TrailJoined() {
         <CodeSignIn
           initialEmail={state.email}
           next={state.next}
-          intro="This email already has a Tap Card. To open it on this phone, we'll email you a 6-digit sign-in code."
+          intro="This email already has a Scan Pass. To open it on this phone, we'll email you a 6-digit sign-in code."
         />
       </>
     );

@@ -11,7 +11,7 @@ import { PlateScreen } from "@/components/tap-card/PlateScreen";
 export const Route = createFileRoute("/t/$code")({
   staleTime: 0,
   loader: ({ params }) => getPlateView({ data: { code: params.code } }),
-  head: () => ({ meta: [{ title: "Check in — Inland Tap Card" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({ meta: [{ title: "Check in — Inland Scan Pass" }, { name: "robots", content: "noindex, nofollow" }] }),
   component: PlateRoute,
 });
 

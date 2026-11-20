@@ -5,7 +5,7 @@ import { normalizeCardCode } from "@/lib/tap-card/card-code";
  * are required). The customer can do it on their own phone, or the
  * staff member can do it on the bar device after checking ID.
  *
- * An email that already has a Tap Card never gets the card here: typing an
+ * An email that already has a Scan Pass never gets the card here: typing an
  * address proves nothing about owning it (final review, Critical #1). The
  * caller emails that address a sign-in link instead; once signed in, the
  * holder adds the new card from their card page ("Lost your card?").

@@ -3,11 +3,11 @@ import { OFFERS_REVIEW_PATH, alertBadgeCount, pendingOffersText } from "@/lib/ta
 
 describe("pendingOffersText", () => {
   it("counts one or many", () => {
-    expect(pendingOffersText(1)).toBe("Tap Card: 1 loyalty offer is waiting for your approval.");
-    expect(pendingOffersText(2)).toBe("Tap Card: 2 loyalty offers are waiting for your approval.");
+    expect(pendingOffersText(1)).toBe("Scan Pass: 1 loyalty offer is waiting for your approval.");
+    expect(pendingOffersText(2)).toBe("Scan Pass: 2 loyalty offers are waiting for your approval.");
   });
   it("links to the Offers tab", () => {
-    expect(OFFERS_REVIEW_PATH).toBe("/guild/tap-card?tab=offers");
+    expect(OFFERS_REVIEW_PATH).toBe("/guild/scan-pass?tab=offers");
   });
 });
 

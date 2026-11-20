@@ -9,7 +9,7 @@ export const Route = createFileRoute("/trail_/join")({
   validateSearch: (search: Record<string, unknown>): { plate?: string } => (typeof search.plate === "string" ? { plate: search.plate } : {}),
   loaderDeps: ({ search }) => ({ plate: search.plate }),
   loader: ({ deps }) => getTrailJoinPage({ data: { plate: deps.plate } }),
-  head: () => ({ meta: [{ title: "Join the Beer Trail — Inland Tap Card" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({ meta: [{ title: "Join the Beer Trail — Inland Scan Pass" }, { name: "robots", content: "noindex, nofollow" }] }),
   component: TrailJoinRoute,
 });
 

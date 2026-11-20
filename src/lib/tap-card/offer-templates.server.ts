@@ -3,7 +3,7 @@ import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
 import { validateTemplate } from "@/lib/tap-card/loyalty";
 
 /**
- * Guild > Tap Card > Templates. Starting points for breweries' loyalty
+ * Guild > Scan Pass > Templates. Starting points for breweries' loyalty
  * rewards. A brewery copies one into its own offer and can change every word;
  * nothing links back, so editing or hiding a template never changes an offer.
  */

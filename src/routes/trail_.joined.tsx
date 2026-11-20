@@ -4,7 +4,7 @@ import { TrailJoined } from "@/components/tap-card/TrailJoined";
 
 /** /trail/joined: Zeffy's thank-you redirect after buying a Beer Trail Pass (spec 2026-11-19). */
 export const Route = createFileRoute("/trail_/joined")({
-  head: () => ({ meta: [{ title: "Welcome to the Beer Trail — Inland Tap Card" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({ meta: [{ title: "Welcome to the Beer Trail — Inland Scan Pass" }, { name: "robots", content: "noindex, nofollow" }] }),
   component: () => (
     <TapCardShell>
       <TrailJoined />

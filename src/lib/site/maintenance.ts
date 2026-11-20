@@ -23,7 +23,7 @@ const OPEN_PREFIXES = [
   // Join the Guild, step 2: a signed-in applicant's page, reached from the
   // emailed link (the public /join form itself stays closed).
   "/join/finish",
-  // Inland Tap Card: bars keep checking cards in, and customers keep their own
+  // Inland Scan Pass: bars keep checking cards in, and customers keep their own
   // card pages, during maintenance. The public /trail page stays closed.
   "/p",
   "/t",

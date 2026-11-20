@@ -109,22 +109,22 @@ export function TermsOfUse() {
         </p>
       </LegalSection>
 
-      <LegalSection title="Inland Tap Card">
+      <LegalSection title="Inland Scan Pass">
         <p>
-          The Inland Tap Card is free and is for people 21 or older. You can use it at any Guild member that
-          takes Tap Card check-ins, to earn that member's loyalty rewards.
+          The Inland Scan Pass is free and is for people 21 or older. You can use it at any Guild member that
+          takes Scan Pass check-ins, to earn that member's loyalty rewards.
         </p>
         <p>
           The Beer Trail Pass is sold through Zeffy for one trail year (January 1 to December 31, Pacific
           time). With a pass, you can use the Beer Trail offer, set by the Guild, once at each Beer Trail stop
-          that year. Only the card's holder can use it. Guild rewards are for visiting different stops, not
+          that year. Only the Scan Pass holder can use it. Guild rewards are for visiting different stops, not
           for how much you drink. Stops you visited earlier that year count once you have a pass. A pass
           doesn't renew by itself; each year's trail is a new pass. Passes are non-refundable. If the Guild
           refunds one anyway, that pass's Beer Trail benefits end.
         </p>
         <p>
           Guild members may also offer loyalty rewards for coming back. Each one is set by the member and
-          approved by the Guild, and the member honors it. A reward you earn waits on your card until you use
+          approved by the Guild, and the member honors it. A reward you earn waits on your Scan Pass until you use
           it, and it expires after the time the member shows. One reward per visit. Rewards have no cash
           value and can't be transferred. A check-in counts only when a staff member confirms it, with the
           staff QR code or the staff code.

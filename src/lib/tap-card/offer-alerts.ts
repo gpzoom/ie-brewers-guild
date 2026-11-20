@@ -4,12 +4,12 @@
  * the Guild inbox on every submit. Worked out from the waiting offers
  * themselves, so it clears once each is approved or declined.
  */
-export const OFFERS_REVIEW_PATH = "/guild/tap-card?tab=offers";
+export const OFFERS_REVIEW_PATH = "/guild/scan-pass?tab=offers";
 
 export function pendingOffersText(count: number): string {
   return count === 1
-    ? "Tap Card: 1 loyalty offer is waiting for your approval."
-    : `Tap Card: ${count} loyalty offers are waiting for your approval.`;
+    ? "Scan Pass: 1 loyalty offer is waiting for your approval."
+    : `Scan Pass: ${count} loyalty offers are waiting for your approval.`;
 }
 
 /** The Member alerts sidebar count: open member alerts plus waiting offers; null only when neither loaded. */

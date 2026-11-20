@@ -4,7 +4,7 @@ import { money, monthName } from "@/components/guild/tap-card/PassesPanel";
 
 const colHeading = "text-[12px] font-semibold uppercase tracking-[0.06em] text-ink-muted";
 
-/** Portal/Admin > Tap Card: Beer Trail Passes sold at this brewery's counter, commission, and email opt-ins (counts only). */
+/** Portal/Admin > Scan Pass: Beer Trail Passes sold at this brewery's counter, commission, and email opt-ins (counts only). */
 export function TapCardPassesCard({ memberId }: { memberId: string }) {
   const [summary, setSummary] = useState<MemberPassSummary | null>(null);
   const [error, setError] = useState<string | null>(null);

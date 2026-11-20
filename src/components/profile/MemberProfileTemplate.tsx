@@ -20,12 +20,12 @@ import { getZonedNow } from "@/lib/hours/open-now";
 import { isHttpUrl } from "@/lib/links/url-safety";
 
 
-/** "On the Inland Tap Card" -- a trail stop's offer, linking to the Trail page. */
+/** "On the Inland Scan Pass" -- a trail stop's offer, linking to the Trail page. */
 function TapCardStopNote({ tapCard }: { tapCard: StopTapCard }) {
   return (
     <div className="flex flex-col gap-1 rounded-xl border border-canvas-border bg-white px-4 py-3">
       <a href="/trail" className="flex flex-col gap-0.5 no-underline hover:text-primary">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">On the Inland Tap Card</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">On the Inland Scan Pass</span>
         <span className="text-[15px] font-semibold text-ink">{tapCard.trailOffer}</span>
       </a>
       {tapCard.memberOffers.length > 0 && (
@@ -54,7 +54,7 @@ type MemberProfileTemplateProps = {
    * data.isPreview, so the portal/admin draft previews keep both.
    */
   hideVisitorControls?: boolean;
-  /** Inland Tap Card: this stop's Beer Trail offer and loyalty rewards (published trail stops only, from the public page's loader). */
+  /** Inland Scan Pass: this stop's Beer Trail offer and loyalty rewards (published trail stops only, from the public page's loader). */
   tapCard?: StopTapCard | null;
 };
 

@@ -76,19 +76,19 @@
           const tl = gsap.timeline({ paused: true });
 
 tl.fromTo("#s06 .stage", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power1.out" }, 0);
-tl.fromTo("#s06 .stage", { opacity: 1 }, { opacity: 0, duration: 0.4, ease: "power1.in", immediateRender: false }, 12.19);
+tl.fromTo("#s06 .stage", { opacity: 1 }, { opacity: 0, duration: 0.4, ease: "power1.in", immediateRender: false }, 11.73);
 tl.fromTo("#s06 .glow", { scale: 1 }, { scale: 1.12, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: 2 }, 0);
 tl.fromTo("#s06 .eyebrow", { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 0.30);
 tl.fromTo("#s06 .head", { opacity: 0, x: -50 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 0.50);
-tl.fromTo("#s06 .s1", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 1.97);
+tl.fromTo("#s06 .s1", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 1.83);
 tl.fromTo("#s06 .ph", { opacity: 0, y: 90 }, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out" }, 0.30);
 tl.set("#s06 .tick", { opacity: 0 }, 0);
-tl.fromTo("#s06 .optin", { boxShadow: "0 0 0 0px #E8913A" }, { boxShadow: "0 0 0 5px #E8913A", duration: 0.3, immediateRender: false }, 3.22);
-tl.fromTo("#s06 .tick", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2.2)" }, 3.70);
-tl.fromTo("#s06 .el", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 1.77);
+tl.fromTo("#s06 .optin", { boxShadow: "0 0 0 0px #E8913A" }, { boxShadow: "0 0 0 5px #E8913A", duration: 0.3, immediateRender: false }, 2.88);
+tl.fromTo("#s06 .tick", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2.2)" }, 3.33);
+tl.fromTo("#s06 .el", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 1.63);
 (function () { const el = document.querySelector("#s06 .num"); const p = { v: 0 };
-  tl.fromTo(p, { v: 0 }, { v: 48, duration: 4.55, ease: "power1.inOut", immediateRender: false,
-    onUpdate() { el.textContent = String(Math.round(p.v)); } }, 6.78);
+  tl.fromTo(p, { v: 0 }, { v: 48, duration: 4.34, ease: "power1.inOut", immediateRender: false,
+    onUpdate() { el.textContent = String(Math.round(p.v)); } }, 6.65);
   tl.set(el, { textContent: "0" }, 0); })();
 
           window.__timelines["s06"] = tl;

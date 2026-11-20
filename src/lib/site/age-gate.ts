@@ -33,9 +33,9 @@ const OPEN_PREFIXES = [
   "/maintenance",
   "/terms",
   "/privacy",
-  // Inland Tap Card bar-device setup (staff, not a public page).
+  // Inland Scan Pass bar-device setup (staff, not a public page).
   "/scanner",
-  // The Tap Card holder's emailed sign-in link.
+  // The Scan Pass holder's emailed sign-in link.
   "/card/login",
 ];
 

@@ -4,7 +4,7 @@ import { movePassToCard, type PassListRow } from "@/lib/tap-card/trail-pass-admi
 import { StatusMessage, cardClass, errorText, fieldClass, outlineButtonClass, type Message } from "@/components/guild/settings-ui";
 import { money } from "@/components/guild/tap-card/PassesPanel";
 
-/** Guild > Tap Card > Passes: the latest passes, and Move to another card for one that landed on the wrong card. */
+/** Guild > Scan Pass > Passes: the latest passes, and Move to another card for one that landed on the wrong card. */
 export function RecentPasses({ passes }: { passes: PassListRow[] }) {
   const router = useRouter();
   const [moving, setMoving] = useState<string | null>(null);
@@ -15,7 +15,7 @@ export function RecentPasses({ passes }: { passes: PassListRow[] }) {
     setMessage(null);
     try {
       const result = await movePassToCard({ data: { passId, email } });
-      setMessage({ kind: "ok", text: result.removedOldCard ? "Moved. The empty card it was on was removed." : "Moved." });
+      setMessage({ kind: "ok", text: result.removedOldCard ? "Moved. The empty Scan Pass it was on was removed." : "Moved." });
       setMoving(null);
       setEmail("");
       await router.invalidate();
@@ -28,8 +28,8 @@ export function RecentPasses({ passes }: { passes: PassListRow[] }) {
     <section className={cardClass}>
       <h2 className="font-display text-[16px] font-bold text-ink">Recent passes</h2>
       <p className="text-[13px] text-ink-muted">
-        If someone paid with a different email than their Tap Card&rsquo;s, their pass landed on a new card. Move it to the card they
-        already have.
+        If someone paid with a different email than their Scan Pass&rsquo;s, their Beer Trail Pass landed on a new Scan Pass. Move it to the
+        Scan Pass they already have.
       </p>
       {passes.length === 0 ? (
         <p className="text-[13px] text-ink-muted">No passes yet.</p>
@@ -52,14 +52,14 @@ export function RecentPasses({ passes }: { passes: PassListRow[] }) {
                       setEmail("");
                     }}
                   >
-                    Move to another card
+                    Move to another Scan Pass
                   </button>
                 )}
               </div>
               {moving === p.id && (
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
                   <label className="flex flex-col gap-1.5 font-medium">
-                    Email of the right Tap Card
+                    Email of the right Scan Pass
                     <input className={fieldClass} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
                   </label>
                   <button type="button" className={outlineButtonClass} disabled={!email.trim()} onClick={() => onMove(p.id)}>

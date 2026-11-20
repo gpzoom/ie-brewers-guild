@@ -5,7 +5,7 @@ import { hashUploadToken } from "@/lib/media/upload-tokens";
  * tokens; only their SHA-256 hashes are stored (the upload-token pattern).
  *
  *  - Scanner device (brewery staff): created on the brewery's Portal/Admin
- *    "Tap Card" screen, claimed once on the bar phone or tablet. A device
+ *    "Scan Pass" screen, claimed once on the bar phone or tablet. A device
  *    whose brewery is unpublished or off the trail is "blocked": it's still
  *    recognized (so staff see why) but can't record anything.
  *  - Holder session (customer): started by activating a card or by the

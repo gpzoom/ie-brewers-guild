@@ -133,7 +133,7 @@ export type TransactionalEmailPayload =
       existingLogin: boolean;
     }
   | {
-      /** Tap Card: a brewery sent a loyalty offer (or a change) for approval; to the Guild. */
+      /** Scan Pass: a brewery sent a loyalty offer (or a change) for approval; to the Guild. */
       trigger: "tap_card_offer_submitted";
       memberId: string;
       businessName: string;
@@ -166,14 +166,14 @@ export type TransactionalEmailPayload =
       profileUrl: string;
     }
   | {
-      /** Inland Tap Card: a card was activated; to the holder. */
+      /** Inland Scan Pass: a card was activated; to the holder. */
       trigger: "tap_card_welcome";
       email: string;
       name: string;
       cardUrl: string;
     }
   | {
-      /** Inland Tap Card: the one-time sign-in link; to the holder. */
+      /** Inland Scan Pass: the one-time sign-in link; to the holder. */
       trigger: "tap_card_signin_link";
       email: string;
       link: string;
@@ -592,7 +592,7 @@ ${signInUrl}`,
     }
 
     case "tap_card_offer_submitted": {
-      const reviewUrl = `${siteUrl}/guild/tap-card?tab=offers`;
+      const reviewUrl = `${siteUrl}/guild/scan-pass?tab=offers`;
       const what = payload.change ? "a change to a loyalty offer" : "a loyalty offer";
       const lines = [
         `${payload.businessName} sent ${what} for approval.`,
@@ -600,7 +600,7 @@ ${signInUrl}`,
         ...(payload.terms ? [`Terms: ${payload.terms}`] : []),
       ];
       return {
-        subject: `Tap Card: ${payload.businessName} sent ${what} for approval`,
+        subject: `Scan Pass: ${payload.businessName} sent ${what} for approval`,
         text: `${lines.join("\n")}\n\nReview offers: ${reviewUrl}`,
         html: wrapHtml([...lines.map(escapeHtml), `<a href="${reviewUrl}">Review offers</a>`]),
       };
@@ -620,11 +620,11 @@ ${signInUrl}`,
     case "tap_card_welcome": {
       const first = payload.name.split(" ")[0] || payload.name;
       const hi = `Hi ${first},`;
-      const body = "Your Inland Tap Card is ready. Have a staff member tap it at every taproom on the trail to record your visit and get that stop's first-beer offer. See your progress any time:";
+      const body = "Your Inland Scan Pass is ready. At every taproom on the trail, scan the counter plate with your phone to record your visit and get that stop's first-beer offer. See your progress any time:";
       const trail = `The stops and their offers: ${siteUrl}/trail`;
-      const legal = `The Tap Card is covered by our Terms of Use (${siteUrl}/terms) and Privacy Policy (${siteUrl}/privacy).`;
+      const legal = `The Scan Pass is covered by our Terms of Use (${siteUrl}/terms) and Privacy Policy (${siteUrl}/privacy).`;
       return {
-        subject: "Your Inland Tap Card is ready",
+        subject: "Your Inland Scan Pass is ready",
         text: `${hi}
 
 ${body} ${payload.cardUrl}
@@ -647,7 +647,7 @@ ${legal}`,
       const body = "Or open this link on the same phone:";
       const note = "The code and the link work once and expire in 60 minutes. If you didn't ask for them, you can ignore this email.";
       return {
-        subject: `Your Inland Tap Card sign-in code: ${payload.code}`,
+        subject: `Your Inland Scan Pass sign-in code: ${payload.code}`,
         text: `${codeLine}
 ${codeHelp}
 

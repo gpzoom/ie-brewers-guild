@@ -162,7 +162,7 @@ export const movePassToCard = createServerFn({ method: "POST" })
     if (pError) throw new Error(pError.message);
     if (tError) throw new Error(tError.message);
     if (!pass) throw new Error("That pass wasn't found.");
-    if (!target) throw new Error("No Tap Card uses that email.");
+    if (!target) throw new Error("No Scan Pass uses that email.");
     if (pass.holder_id === target.id) return { ok: true, removedOldCard: false };
     const { error } = await service.from("tap_card_trail_passes").update({ holder_id: target.id }).eq("id", pass.id);
     if (error) throw new Error(error.message);

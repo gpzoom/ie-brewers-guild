@@ -4,7 +4,7 @@ import { SectionHeader } from "@/components/site/SectionHeader";
 import { MembersMap } from "@/components/site/MembersMap";
 
 /**
- * /trail: the Inland Tap Card for the public -- how it works, the stops on a
+ * /trail: the Inland Scan Pass for the public -- how it works, the stops on a
  * map, and each stop's offer. Published trail stops only.
  */
 export const Route = createFileRoute("/trail")({
@@ -12,32 +12,28 @@ export const Route = createFileRoute("/trail")({
   loader: () => getTrailPage(),
   head: () => ({
     meta: [
-      { title: "Inland Tap Card — Inland Southern California Brewers Guild" },
+      { title: "Inland Scan Pass — Inland Southern California Brewers Guild" },
       {
         name: "description",
-        content: "Pick up an Inland Tap Card, have it tapped at every new taproom on the trail, and get each stop's first-beer offer.",
+        content: "Get an Inland Scan Pass on your phone, scan in at every new taproom on the trail, and get each stop's first-beer offer.",
       },
-      { property: "og:title", content: "Inland Tap Card" },
+      { property: "og:title", content: "Inland Scan Pass" },
     ],
   }),
   component: TrailPage,
 });
 
-export function formatPrice(cents: number): string {
-  return cents % 100 === 0 ? `$${cents / 100}` : `$${(cents / 100).toFixed(2)}`;
-}
-
 function TrailPage() {
-  const { members, stops, cardPriceCents } = Route.useLoaderData();
+  const { members, stops } = Route.useLoaderData();
   const steps = [
     {
-      title: "Pick up a card",
-      body:
-        cardPriceCents > 0
-          ? `Get an Inland Tap Card at any stop — about ${formatPrice(cardPriceCents)}.`
-          : "Get an Inland Tap Card at any stop.",
+      title: "Get your pass",
+      body: "Scan the QR code at any stop's counter to get an Inland Scan Pass on your phone and join the Beer Trail.",
     },
-    { title: "Tap it at every new taproom", body: "Have a staff member tap your card. Your visit counts, and you get that stop's offer once a year." },
+    {
+      title: "Scan in at every new taproom",
+      body: "Scan the counter plate, then the staff QR code. Your visit counts, and you get that stop's offer once a year.",
+    },
     { title: "Earn Guild rewards", body: "Visit more stops to earn rewards from the Guild. Visits count — not how much you drink." },
   ];
 
@@ -45,9 +41,9 @@ function TrailPage() {
     <div className="pb-20">
       <section className="mx-auto max-w-7xl px-4 pt-16 md:px-6">
         <SectionHeader
-          eyebrow="Inland Tap Card"
+          eyebrow="Inland Scan Pass"
           title="Your first beer for a nickel."
-          subtitle="One card for every independent taproom on the trail. Discover a brewery you've never been to."
+          subtitle="One pass for every independent taproom on the trail. Discover a brewery you've never been to."
           align="center"
         />
         <ol className="mx-auto mt-10 grid max-w-5xl gap-4 md:grid-cols-3">
@@ -60,7 +56,7 @@ function TrailPage() {
           ))}
         </ol>
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Already have a card?{" "}
+          Already have a pass?{" "}
           <Link to="/card" className="font-medium text-primary underline underline-offset-2">
             See your progress
           </Link>

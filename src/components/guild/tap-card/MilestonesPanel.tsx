@@ -11,7 +11,7 @@ import {
   type Message,
 } from "@/components/guild/settings-ui";
 
-/** Guild > Tap Card > Milestones: rewards for visiting a number of different stops in a calendar year. */
+/** Guild > Scan Pass > Milestones: rewards for visiting a number of different stops in a calendar year. */
 export function MilestonesPanel({ milestones }: { milestones: MilestoneSummary[] }) {
   const router = useRouter();
   const [stops, setStops] = useState("5");
@@ -38,7 +38,7 @@ export function MilestonesPanel({ milestones }: { milestones: MilestoneSummary[]
   return (
     <div className="flex flex-col gap-[22px]">
       <p className="max-w-[640px] text-[13px] text-ink-muted">
-        Card holders earn a milestone by visiting that many different stops in one calendar year. Visits count; beers
+        Pass holders earn a milestone by visiting that many different stops in one calendar year. Visits count; beers
         bought don&rsquo;t. Earned rewards show on the Rewards tab for you to hand out.
       </p>
       <div className="overflow-x-auto rounded-[14px] border border-canvas-border bg-white">

@@ -3,7 +3,7 @@ import { useRouter } from "@tanstack/react-router";
 import { markRewardHandedOut, type EarnedReward } from "@/lib/tap-card/milestones.server";
 import { StatusMessage, errorText, outlineButtonClass, type Message } from "@/components/guild/settings-ui";
 
-/** Guild > Tap Card > Rewards: who earned a milestone this year, and whether they've received it. */
+/** Guild > Scan Pass > Rewards: who earned a milestone this year, and whether they've received it. */
 export function RewardsPanel({
   rewards,
   year,
@@ -41,7 +41,7 @@ export function RewardsPanel({
         <table className="w-full min-w-[640px] text-left text-[13px] text-ink">
           <thead className="border-b border-[#E6E0D6] bg-[#FCFAF6] text-[11px] uppercase tracking-[0.06em] text-ink-muted">
             <tr>
-              <th className="px-5 py-3 font-semibold">Card holder</th>
+              <th className="px-5 py-3 font-semibold">Pass holder</th>
               <th className="px-3 py-3 font-semibold">Reward</th>
               <th className="px-3 py-3 font-semibold">Earned</th>
               <th className="px-5 py-3" />

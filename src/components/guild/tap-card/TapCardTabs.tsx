@@ -1,8 +1,7 @@
-export const TAP_CARD_TABS = ["cards", "offers", "templates", "milestones", "rewards", "passes"] as const;
+export const TAP_CARD_TABS = ["offers", "templates", "milestones", "rewards", "passes"] as const;
 export type TapCardTab = (typeof TAP_CARD_TABS)[number];
 
 const LABELS: Record<TapCardTab, string> = {
-  cards: "Cards",
   offers: "Offers",
   templates: "Templates",
   milestones: "Milestones",
@@ -15,7 +14,7 @@ export function isTapCardTab(value: unknown): value is TapCardTab {
 }
 
 /**
- * Guild > Tap Card tab strip (same look as Categories). A tab in `alerts`
+ * Guild > Scan Pass tab strip (same look as Categories). A tab in `alerts`
  * gets the red pulsing border the member portal's alert banner uses (Offers,
  * while loyalty offers wait for approval).
  */
@@ -31,7 +30,7 @@ export function TapCardTabs({
   alerts?: Partial<Record<TapCardTab, boolean>>;
 }) {
   return (
-    <div role="tablist" aria-label="Tap Card" className="flex flex-wrap gap-2">
+    <div role="tablist" aria-label="Scan Pass" className="flex flex-wrap gap-2">
       {TAP_CARD_TABS.map((value) => {
         const active = value === tab;
         const badge = badges?.[value];

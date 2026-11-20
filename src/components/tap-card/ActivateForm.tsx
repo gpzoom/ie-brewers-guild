@@ -21,13 +21,13 @@ export function activateMessage(result: ActivateResult, mode: "customer" | "staf
     case "error":
       return result.message;
     case "unknown-card":
-      return "We don't recognize this card.";
+      return "We don't recognize this pass.";
     case "already-active":
-      return "This card is already in use.";
+      return "This pass is already in use.";
     case "existing-email":
       return mode === "customer"
-        ? "That email already has an Inland Tap Card. We emailed it a sign-in link. Open it, then add this card under “Lost your card? Add a new one.”"
-        : "That email already has an Inland Tap Card. We emailed the customer a sign-in link; they can add this card from their card page.";
+        ? "That email already has an Inland Scan Pass. We emailed it a sign-in link. Open it, then add this pass under “Lost your pass? Add a new one.”"
+        : "That email already has an Inland Scan Pass. We emailed the customer a sign-in link; they can add this pass from their pass page.";
   }
 }
 
@@ -77,10 +77,10 @@ export function ActivateForm({
     <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
       <p className={leadClass}>
         {mode === "customer"
-          ? "Add your name and email to turn on this card. We'll email you a link to see your progress."
-          : "Type the customer's name and email to turn on this card."}
+          ? "Add your name and email to turn on this pass. We'll email you a link to see your progress."
+          : "Type the customer's name and email to turn on this pass."}
       </p>
-      <p className={hintClass}>Card {formatCardCode(code)}</p>
+      <p className={hintClass}>Pass {formatCardCode(code)}</p>
       <label className="flex flex-col gap-1.5">
         <span className={labelClass}>Name</span>
         <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} autoComplete={mode === "customer" ? "name" : "off"} maxLength={80} />
@@ -110,7 +110,7 @@ export function ActivateForm({
       </label>
       {errors.ageConfirmed && <span className={fieldErrorClass}>{errors.ageConfirmed}</span>}
       <button type="submit" disabled={busy} className={primaryButtonClass}>
-        {busy ? "Turning it on…" : "Activate card"}
+        {busy ? "Turning it on…" : "Activate pass"}
       </button>
       {message && (
         <p role="alert" className={fieldErrorClass}>

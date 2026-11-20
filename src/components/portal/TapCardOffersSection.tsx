@@ -113,7 +113,7 @@ function OfferForm({
   );
 }
 
-/** Portal/Admin > Tap Card > Offers: the Guild's Beer Trail offer, and this brewery's loyalty rewards. */
+/** Portal/Admin > Scan Pass > Offers: the Guild's Beer Trail offer, and this brewery's loyalty rewards. */
 export function TapCardOffersSection({ memberId }: { memberId: string }) {
   const [data, setData] = useState<MemberOffersData | null>(null);
   const [form, setForm] = useState<Form | null>(null);

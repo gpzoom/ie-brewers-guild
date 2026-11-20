@@ -14,7 +14,7 @@ export type GuildShellSummary = {
    * admin (the table's select policy would show them nothing anyway).
    */
   waitingHelpCount: number | null;
-  /** Open member problems (all types) plus Tap Card offers waiting for approval -- the "Member alerts" sidebar badge. */
+  /** Open member problems (all types) plus Scan Pass offers waiting for approval -- the "Member alerts" sidebar badge. */
   openMemberAlerts: number | null;
 };
 

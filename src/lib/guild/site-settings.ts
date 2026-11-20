@@ -72,8 +72,6 @@ export type SiteSettingsView = {
   heroImagePath: string | null;
   /** The public sees the maintenance page (src/lib/site/maintenance.ts). */
   maintenanceMode: boolean;
-  /** Inland Tap Card: the suggested price taprooms charge for a card, in cents. */
-  tapCardPriceCents: number;
   updatedAt: string | null;
 };
 
@@ -83,12 +81,8 @@ export type SiteSettingsRow = {
   carousel_dwell_seconds?: number | null;
   hero_image_path?: string | null;
   maintenance_mode?: boolean | null;
-  tap_card_price_cents?: number | null;
   updated_at: string | null;
 };
-
-export const DEFAULT_TAP_CARD_PRICE_CENTS = 500;
-export const MAX_TAP_CARD_PRICE_CENTS = 10000;
 
 export function toSiteSettingsView(row: SiteSettingsRow | null): SiteSettingsView {
   const interval = row?.calendar_sync_interval_minutes;
@@ -105,14 +99,12 @@ export function toSiteSettingsView(row: SiteSettingsRow | null): SiteSettingsVie
         ? row.hero_image_path
         : null,
     maintenanceMode: row?.maintenance_mode === true,
-    tapCardPriceCents:
-      typeof row?.tap_card_price_cents === "number" ? row.tap_card_price_cents : DEFAULT_TAP_CARD_PRICE_CENTS,
     updatedAt: row?.updated_at ?? null,
   };
 }
 
 export const SITE_SETTINGS_COLUMNS =
-  "calendar_sync_interval_minutes, calendar_sync_last_run_at, carousel_dwell_seconds, hero_image_path, maintenance_mode, tap_card_price_cents, updated_at";
+  "calendar_sync_interval_minutes, calendar_sync_last_run_at, carousel_dwell_seconds, hero_image_path, maintenance_mode, updated_at";
 
 /** Reads the settings as the super admin (the table's select policy allows no one else). */
 export async function getSiteSettingsCore(
@@ -191,19 +183,6 @@ export async function saveMaintenanceModeCore(
   const actor = await requireSuperAdmin(sessionClient, "change the site settings");
   if (typeof enabled !== "boolean") throw new Error("Choose on or off.");
   return updateSiteSettings(sessionClient, actor.userId, { maintenance_mode: enabled }, now);
-}
-
-/** Saves the suggested Tap Card price (whole cents, $0 to $100). */
-export async function saveTapCardPriceCore(
-  sessionClient: SupabaseClient,
-  cents: unknown,
-  now: Date,
-): Promise<SiteSettingsView> {
-  const actor = await requireSuperAdmin(sessionClient, "change the site settings");
-  if (typeof cents !== "number" || !Number.isInteger(cents) || cents < 0 || cents > MAX_TAP_CARD_PRICE_CENTS) {
-    throw new Error("Enter a price from $0 to $100.");
-  }
-  return updateSiteSettings(sessionClient, actor.userId, { tap_card_price_cents: cents }, now);
 }
 
 /**

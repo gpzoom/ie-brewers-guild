@@ -6,7 +6,7 @@ import { batchCsv } from "@/lib/tap-card/batch-csv";
 import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
 
 /**
- * Guild > Tap Card > Cards. A batch is a print run: N fresh codes. Cards are
+ * Guild > Scan Pass > Cards. A batch is a print run: N fresh codes. Cards are
  * not tied to a brewery -- every card works at every stop, and the Guild
  * invoices breweries for cards outside the site (owner, 2026-11-17). The
  * tap_card_batches.member_id column is left unused. The CSV links use the
@@ -62,7 +62,7 @@ export const createCardBatch = createServerFn({ method: "POST" })
     const { userId, service } = await requireTapCardGuildAdmin();
     if (!data.label) throw new Error("Give the batch a name.");
     if (!Number.isInteger(data.count) || data.count < 1 || data.count > MAX_BATCH) {
-      throw new Error(`A batch is 1 to ${MAX_BATCH} cards.`);
+      throw new Error(`A batch is 1 to ${MAX_BATCH} passes.`);
     }
     const { data: batch, error } = await service
       .from("tap_card_batches")
@@ -109,7 +109,7 @@ export const downloadBatchCsv = createServerFn({ method: "POST" })
     if (cardsError) throw new Error(cardsError.message);
     const slug = batch.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "batch";
     return {
-      filename: `tap-cards-${slug}.csv`,
+      filename: `scan-passes-${slug}.csv`,
       csv: batchCsv(resolveEmailSiteUrl(currentRequestUrl()), (cards ?? []).map((c) => c.code)),
     };
   });

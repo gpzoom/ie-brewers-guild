@@ -150,7 +150,7 @@ const ADMIN_PATHS: Record<string, string> = {
   links: "/admin/links",
   jobs: "/admin/jobs",
   discount: "/admin/discount",
-  "tap-card": "/admin/tap-card",
+  "tap-card": "/admin/scan-pass",
   theme: "/admin/theme",
   notifications: "/admin/notifications",
 };

@@ -131,7 +131,7 @@ Strip EXIF from uploaded photos. Phone photos carry GPS coordinates, and a membe
 
 ## The Guild Trail
 
-**Built as the Inland Tap Card (phase 1, 2026-11-17)** — see `docs/superpowers/specs/2026-11-17-inland-tap-card-design.md`. Plastic NFC/QR cards tapped by brewery staff on a bar device record visits and the once-a-year offer; holders see their progress at `/card`; the public Trail page is `/trail`; a trail stop's profile shows its offer. **Offers & loyalty (2026-11-18)** — see `docs/superpowers/specs/2026-11-17-tap-card-offers-loyalty-design.md`: the Beer Trail offer is the Guild's (breweries can't change it); each brewery adds up to 3 visit-number steps + 1 repeating loyalty reward, from Guild templates or scratch, approved by the Guild; earned rewards are banked and expire; a tap on the bar device records the visit and shows one reward (**Use it**, **Undo**); a **counter plate** (`/t/<code>`) lets a customer's own phone check in once the bartender enters a 4-digit staff code. The profile progress strip described below is still not built.
+**Built as the Inland Tap Card, renamed the Inland Scan Pass on 2026-11-20 (phase 1, 2026-11-17)** — see `docs/superpowers/specs/2026-11-17-inland-tap-card-design.md`. Plastic NFC/QR passes tapped by brewery staff on a bar device record visits and the once-a-year offer; holders see their progress at `/card`; the public Trail page is `/trail`; a trail stop's profile shows its offer. **Offers & loyalty (2026-11-18)** — see `docs/superpowers/specs/2026-11-17-tap-card-offers-loyalty-design.md`: the Beer Trail offer is the Guild's (breweries can't change it); each brewery adds up to 3 visit-number steps + 1 repeating loyalty reward, from Guild templates or scratch, approved by the Guild; earned rewards are banked and expire; a tap on the bar device records the visit and shows one reward (**Use it**, **Undo**); a **counter plate** (`/t/<code>`) lets a customer's own phone check in once the bartender enters a 4-digit staff code. The profile progress strip described below is still not built.
 
 Two mechanisms that look alike and must not be conflated.
 
@@ -1110,7 +1110,7 @@ Unique on (calendar\_connection\_id, external\_event\_id). **A re-sync reconcile
 
 `categories` holds member categories as `(id, name, slug, sort_order, member_type)`, where `member_type` is `allied` (supply categories) or `mobile` (Entertainment, Food Truck, Pop-up Food Vendor, …), checked in (`allied`, `mobile`). A member may pick any number of categories of their own type. The Guild Categories page has Affiliate and Mobile tabs; `member_categories` joins `(member_id, category_id)`. A join table rather than a text array, so the directory can filter by category later without a migration.
 
-### Inland Tap Card tables
+### Inland Scan Pass tables
 
 Built 2026-11-17 (migration `20261120100000_inland_tap_card.sql`), replacing the `trail_visits` sketch. `members.trail_eligible` still decides who is a stop (with `status = 'published'` and `member_type = 'producer'`). All tables are server-only (RLS on, no client grants); the Worker checks the caller:
 

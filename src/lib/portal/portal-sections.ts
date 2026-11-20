@@ -54,7 +54,7 @@ export const PORTAL_SECTION_LABELS: Record<PortalSection, { label: string; short
   food: { label: "Food", short: "Food" },
   links: { label: "Links & contact", short: "Links" },
   jobs: { label: "Jobs", short: "Jobs" },
-  "tap-card": { label: "Tap Card", short: "Tap Card" },
+  "tap-card": { label: "Scan Pass", short: "Scan Pass" },
   discount: { label: "Discount & supplies", short: "Discount" },
   theme: { label: "Theme", short: "Theme" },
   people: { label: "People", short: "People" },

@@ -14,7 +14,7 @@ export function newlyEarned(milestones: Milestone[], distinctStopsThisYear: numb
 export const MILESTONE_MAX_STOPS = 100;
 export const REWARD_TEXT_MAX = 140;
 
-/** A Guild milestone as typed on Guild > Tap Card > Milestones. */
+/** A Guild milestone as typed on Guild > Scan Pass > Milestones. */
 export function validateMilestone(input: { stopsRequired: unknown; rewardText: unknown }):
   | { ok: true; value: { stopsRequired: number; rewardText: string } }
   | { ok: false; message: string } {

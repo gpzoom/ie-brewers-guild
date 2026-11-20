@@ -1,7 +1,7 @@
 {
-  "name": "Inland Tap Card",
-  "short_name": "Tap Card",
-  "description": "Your Inland Tap Card: Beer Trail progress, rewards, and check-ins.",
+  "name": "Inland Scan Pass",
+  "short_name": "Scan Pass",
+  "description": "Your Inland Scan Pass: Beer Trail progress, rewards, and check-ins.",
   "id": "/card",
   "start_url": "/card",
   "scope": "/",

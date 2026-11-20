@@ -539,7 +539,7 @@ export default defineConfig(async ({ command, mode }) => {
             // saveAnnouncement, uploadGalleryImage, ...), called from the
             // Settings screen. Session client only, after the super admin check.
             "src/lib/guild/homepage-sections.server.ts",
-            // Inland Tap Card (2026-11-17): RPC files of createServerFn only. Each
+            // Inland Scan Pass (2026-11-17): RPC files of createServerFn only. Each
             // handler checks its own caller (Guild admin session, member
             // session, scanner-device cookie or holder-session cookie) before
             // touching the server-only tap_card_* tables. The plain helpers

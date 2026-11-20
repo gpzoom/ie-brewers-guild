@@ -4,7 +4,7 @@ import { reviewMemberOffer, type PendingMemberOffer } from "@/lib/tap-card/membe
 import { offerLabel } from "@/lib/tap-card/loyalty";
 import { StatusMessage, darkButtonClass, errorText, fieldClass, outlineButtonClass, type Message } from "@/components/guild/settings-ui";
 
-/** Guild > Tap Card > Offers: breweries' loyalty rewards (and changes) waiting for an OK. */
+/** Guild > Scan Pass > Offers: breweries' loyalty rewards (and changes) waiting for an OK. */
 export function OfferApprovalsPanel({ pending }: { pending: PendingMemberOffer[] }) {
   const router = useRouter();
   const [message, setMessage] = useState<Message>(null);

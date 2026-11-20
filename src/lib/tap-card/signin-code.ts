@@ -1,7 +1,7 @@
 import { hashUploadToken } from "@/lib/media/upload-tokens";
 
 /**
- * The 6-digit code in the Tap Card sign-in email (beside the link). It works
+ * The 6-digit code in the Scan Pass sign-in email (beside the link). It works
  * anywhere the link can't -- e.g. inside a card saved to an iPhone's Home
  * Screen, which keeps its own sign-in apart from the browser. Same 60-minute,
  * one-use life as the link; 5 wrong tries end it.

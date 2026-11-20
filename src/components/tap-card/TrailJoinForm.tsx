@@ -59,7 +59,7 @@ export function TrailJoinForm({ page }: { page: TrailJoinPage }) {
           onChange={(e) => setEmail(e.target.value)}
         />
         <span className="text-[13px] text-ink-muted">
-          {page.emailLocked ? "This is your Tap Card's email. Use this same email on the payment page." : "Use the same email on the payment page."}
+          {page.emailLocked ? "This is your Scan Pass's email. Use this same email on the payment page." : "Use the same email on the payment page."}
         </span>
         {error?.field === "email" && <span className={fieldErrorClass}>{error.message}</span>}
       </label>

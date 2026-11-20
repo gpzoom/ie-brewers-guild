@@ -113,7 +113,7 @@ export function CheckInScreen({ view }: { view: CheckInView }) {
       <>
         {header}
         <CanvasHeading size="md">
-          {result.kind === "not-allowed" ? "This device can’t record visits right now." : "We don’t recognize this card."}
+          {result.kind === "not-allowed" ? "This device can’t record visits right now." : "We don’t recognize this pass."}
         </CanvasHeading>
       </>
     );
@@ -194,7 +194,7 @@ export function CheckInScreen({ view }: { view: CheckInView }) {
           {error}
         </p>
       )}
-      <p className={leadClass}>Tap the next card to check someone else in.</p>
+      <p className={leadClass}>Tap the next pass to check someone else in.</p>
     </>
   );
 }

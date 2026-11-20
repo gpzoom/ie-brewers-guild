@@ -49,9 +49,9 @@ export function PrivacyPolicy() {
               give for credit.
             </>,
             <>
-              <strong>If you have an Inland Tap Card:</strong> your name and email address; which Guild
+              <strong>If you have an Inland Scan Pass:</strong> your name and email address; which Guild
               member's counter you signed up at, and whether you or a staff member confirmed you're 21 or
-              older; each visit (which Guild member and when, and the device or counter plate that recorded
+              older; each visit (which Guild member and when, and the counter plate that recorded
               it); when you use the Beer Trail offer or a member's reward; and the Guild and member rewards
               you earn. If you buy a <strong>Beer Trail Pass</strong>, we also keep the pass, its year, the
               amount paid and which Guild member's counter you bought it from. Zeffy handles the payment, and
@@ -59,8 +59,7 @@ export function PrivacyPolicy() {
               that choice. When you check in, the staff member sees your first name, whether you've used that
               stop's Beer Trail offer this year, and any rewards waiting for you there. Guild members see how
               many passes were sold at their counter and how many customers agreed to their emails, but not
-              your name, email address or visits. If a staff member turns on your card for you, they type in
-              your name and email. A taproom's bar device or counter plate records your visits there.
+              your name, email address or visits. A taproom's counter plate records your visits there.
             </>,
             <>
               <strong>Email:</strong> members' email addresses for Guild emails, and whether you have
@@ -79,11 +78,10 @@ export function PrivacyPolicy() {
         <p>
           Our own cookies are only the ones the site needs. Sign-in cookies keep you signed in. When
           you confirm you're 21 or older, we save a cookie so we don't ask again for one year; it records
-          only that you confirmed you're 21 or older. If you have an Inland Tap Card, a cookie keeps you
+          only that you confirmed you're 21 or older. If you have an Inland Scan Pass, a cookie keeps you
           signed in to it for about 400 days, renewed each time you use it. While you're paying for a Beer
           Trail Pass, a cookie remembers your sign-up for up to 2 hours so we can finish it when you come
-          back. A taproom's bar device keeps a cookie that
-          lets it record Tap Card visits for that brewery. The Help
+          back. The Help
           button may remember your first name on your own device so you don't have to type it again. We
           don't add advertising, analytics or tracking tools to the site.
         </p>
@@ -98,7 +96,7 @@ export function PrivacyPolicy() {
         <LegalList
           items={[
             "To run the member directory, events, jobs board and maps.",
-            "To run the Inland Tap Card: record visits and offers, show your progress, and give out Guild and member rewards.",
+            "To run the Inland Scan Pass: record visits and offers, show your progress, and give out Guild and member rewards.",
             "To sell the Beer Trail Pass and to pay Guild members their share of passes sold at their counter.",
             "To review applications to join and to set up and support member profiles.",
             "To answer your messages and help with sign-in problems.",
@@ -164,7 +162,7 @@ export function PrivacyPolicy() {
           such as sign-in links and notices about your own profile, still go out.
         </p>
         <p>
-          If you have an Inland Tap Card and check the box to let a Guild member email you, we keep that
+          If you have an Inland Scan Pass and check the box to let a Guild member email you, we keep that
           choice for that member. Their emails are sent through our site, and every one has an unsubscribe
           link. We never give members your email address.
         </p>
@@ -191,7 +189,7 @@ export function PrivacyPolicy() {
         <p>
           We keep member information while you are a member and for a reasonable time afterward. Messages
           and applications are kept as long as we need them to respond and to keep a record of our
-          decisions. Inland Tap Card information is kept while the program runs, or until you ask us to
+          decisions. Inland Scan Pass information is kept while the program runs, or until you ask us to
           delete it. Server logs are kept only briefly.
         </p>
       </LegalSection>

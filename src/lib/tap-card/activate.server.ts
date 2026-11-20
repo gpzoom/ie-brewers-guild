@@ -46,7 +46,7 @@ function activateStore(service: SupabaseClient): ActivateStore {
         const { data: again } = await service.from("tap_card_holders").select("id").eq("email_lower", h.email.toLowerCase()).maybeSingle();
         if (again) return again.id;
       }
-      throw new Error(error?.message ?? "Could not save the card holder.");
+      throw new Error(error?.message ?? "Could not save the pass holder.");
     },
     async linkCard(cardId, holderId) {
       const { data, error } = await service
@@ -66,7 +66,7 @@ async function sendWelcome(email: string, name: string) {
     const siteUrl = resolveEmailSiteUrl(currentRequestUrl());
     await sendTransactionalEmail({ trigger: "tap_card_welcome", email, name, cardUrl: `${siteUrl}/card` });
   } catch (err) {
-    console.error("tap card welcome email failed", err instanceof Error ? err.message : String(err));
+    console.error("scan pass welcome email failed", err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -77,7 +77,7 @@ export type ActivateResult =
   | { kind: "error"; message: string };
 
 /**
- * Runs the activation. An email that already has a Tap Card gets a sign-in
+ * Runs the activation. An email that already has a Scan Pass gets a sign-in
  * link instead (never a session, never this card), so only the person who
  * can open that inbox can add the card.
  */
@@ -131,7 +131,7 @@ export const activateCardAsStaff = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<ActivateResult> => {
     try {
       const device = await readScannerDevice();
-      if (device.kind !== "ok") return { kind: "error", message: "This device can't activate cards right now." };
+      if (device.kind !== "ok") return { kind: "error", message: "This device can't activate passes right now." };
       return forPage(
         await runActivation({
           code: data.code,

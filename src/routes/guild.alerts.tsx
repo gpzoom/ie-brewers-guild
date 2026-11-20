@@ -8,7 +8,7 @@ export const Route = createFileRoute("/guild/alerts")({
   loader: async () => {
     const [alerts, pending] = await Promise.all([
       getMemberAlerts(),
-      // A failed count only hides the Tap Card box, never the page.
+      // A failed count only hides the Scan Pass box, never the page.
       listPendingMemberOffers().catch(() => []),
     ]);
     return { alerts, pendingOffers: pending.length };
@@ -27,7 +27,7 @@ function MemberAlertsRoute() {
         >
           <span aria-hidden="true">⚠</span>
           <span className="min-w-0 flex-1 text-pretty">{pendingOffersText(pendingOffers)}</span>
-          <Link to="/guild/tap-card" search={{ tab: "offers" }} className="font-semibold text-[#B42318] underline underline-offset-2">
+          <Link to="/guild/scan-pass" search={{ tab: "offers" }} className="font-semibold text-[#B42318] underline underline-offset-2">
             Review offers →
           </Link>
         </div>

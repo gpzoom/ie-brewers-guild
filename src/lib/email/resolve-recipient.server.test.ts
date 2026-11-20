@@ -234,7 +234,7 @@ describe("resolveRecipient: Join application emails", () => {
     ).resolves.toEqual([STAGING_GUILD_NOTIFICATION_EMAIL]);
   });
 
-  it("a submitted Tap Card offer goes to the Guild inbox (the test inbox from staging)", async () => {
+  it("a submitted Scan Pass offer goes to the Guild inbox (the test inbox from staging)", async () => {
     const supabase = fakeSupabase({ memberUser: null, userEmail: null });
     const payload = { trigger: "tap_card_offer_submitted" as const, memberId: "m", businessName: "B", label: "Visit 2", reward: "R", terms: "", change: false };
     await expect(resolveRecipient(payload, supabase)).resolves.toEqual([GUILD_NOTIFICATION_EMAIL]);

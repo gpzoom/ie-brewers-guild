@@ -17,6 +17,6 @@ describe("validateFreeCard", () => {
     expect(validateFreeCard({ ...ok, name: "  " })).toEqual({ name: "Enter your name." });
     expect(validateFreeCard({ ...ok, name: "x".repeat(81) })).toEqual({ name: "Keep your name to 80 characters or fewer." });
     expect(validateFreeCard({ ...ok, email: "nope" })).toEqual({ email: "Enter a valid email address." });
-    expect(validateFreeCard({ ...ok, ageConfirmed: false })).toEqual({ ageConfirmed: "You must be 21 or older to get a Tap Card." });
+    expect(validateFreeCard({ ...ok, ageConfirmed: false })).toEqual({ ageConfirmed: "You must be 21 or older to get a Scan Pass." });
   });
 });

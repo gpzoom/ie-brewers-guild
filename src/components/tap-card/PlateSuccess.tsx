@@ -31,7 +31,7 @@ export function plateRefusal(result: Exclude<PlateResult, PlateOk> | { kind: "sc
     case "signed-out":
       return "You've been signed out. Scan the counter plate again to sign in.";
     case "closed":
-      return "This plate isn't taking check-ins right now. Ask a staff member to tap your card.";
+      return "This plate isn't taking check-ins right now. Ask a staff member for help.";
     case "scan-plate-first":
       return "Scan the counter plate first, then the staff QR code.";
   }
@@ -129,7 +129,7 @@ export function PlateSuccess({
         </p>
       ))}
       {outcomeMessage(done.outcome) && <p className={leadClass}>{outcomeMessage(done.outcome)}</p>}
-      {done.outcome === "undone" && <p className={leadClass}>Put back on your card.</p>}
+      {done.outcome === "undone" && <p className={leadClass}>Put back on your pass.</p>}
       {state.used &&
         (undoing ? (
           <StaffCodeForm

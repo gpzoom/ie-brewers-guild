@@ -8,7 +8,7 @@ import { ActivateForm } from "@/components/tap-card/ActivateForm";
 import { CheckInScreen } from "@/components/tap-card/CheckInScreen";
 
 /**
- * /p/<code>: the link on every Inland Tap Card's chip and QR code. A bar
+ * /p/<code>: the link on every Inland Scan Pass's chip and QR code. A bar
  * device sees the check-in screen; the card's holder goes to their card
  * page; anyone else can turn on a new card. (spec 2026-11-17)
  */
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/p/$code")({
     if (view.view === "customer-own") throw redirect({ to: "/card" });
     return view;
   },
-  head: () => ({ meta: [{ title: "Inland Tap Card" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({ meta: [{ title: "Inland Scan Pass" }, { name: "robots", content: "noindex, nofollow" }] }),
   component: CardRoute,
 });
 
@@ -40,14 +40,14 @@ function CardBody({ view }: { view: CardView }) {
     case "unknown":
       return (
         <>
-          <CanvasHeading size="md">Inland Tap Card</CanvasHeading>
-          <p className={leadClass}>We don&rsquo;t recognize this card. Check the code printed on it, or ask the taproom.</p>
+          <CanvasHeading size="md">Inland Scan Pass</CanvasHeading>
+          <p className={leadClass}>We don&rsquo;t recognize this pass. Ask the taproom for help.</p>
         </>
       );
     case "throttled":
       return (
         <>
-          <CanvasHeading size="md">Inland Tap Card</CanvasHeading>
+          <CanvasHeading size="md">Inland Scan Pass</CanvasHeading>
           <p className={leadClass}>{view.message}</p>
         </>
       );
@@ -57,7 +57,7 @@ function CardBody({ view }: { view: CardView }) {
           <Eyebrow>{view.memberName}</Eyebrow>
           <CanvasHeading size="md">This device can&rsquo;t record visits right now</CanvasHeading>
           <p className={leadClass}>
-            {view.memberName} isn&rsquo;t on the Inland Tap Card trail at the moment (its page isn&rsquo;t published, or the Guild
+            {view.memberName} isn&rsquo;t on the Inland Scan Pass trail at the moment (its page isn&rsquo;t published, or the Guild
             has it off the trail). Ask the Guild if that&rsquo;s a surprise.
           </p>
         </>
@@ -66,10 +66,10 @@ function CardBody({ view }: { view: CardView }) {
       return (
         <>
           <Eyebrow>{view.memberName}</Eyebrow>
-          <CanvasHeading size="md">New card</CanvasHeading>
+          <CanvasHeading size="md">New pass</CanvasHeading>
           {activatedName ? (
             <>
-              <p className="text-[20px] font-semibold text-ink">Card activated — checking them in…</p>
+              <p className="text-[20px] font-semibold text-ink">Pass activated — checking them in…</p>
             </>
           ) : (
             <ActivateForm
@@ -86,20 +86,26 @@ function CardBody({ view }: { view: CardView }) {
     case "staff-check-in":
       return <CheckInScreen view={view} />;
     case "customer-activate":
+      // Turning on a printed pass is hidden: passes live on customers' phones (get one at /card/join).
       return (
         <>
-          <CanvasHeading size="md">Turn on your Inland Tap Card</CanvasHeading>
-          <ActivateForm code={view.code} mode="customer" onActivated={() => window.location.assign("/card")} />
+          <CanvasHeading size="md">Inland Scan Pass</CanvasHeading>
+          <p className={leadClass}>
+            Get your Inland Scan Pass on your phone: scan the counter plate at any stop on the trail.
+          </p>
+          <a href="/trail" className={cardLinkClass}>
+            See the stops and their offers
+          </a>
         </>
       );
     case "customer-active":
     case "customer-own":
       return (
         <>
-          <CanvasHeading size="md">This Inland Tap Card is active</CanvasHeading>
-          <p className={leadClass}>Have a staff member tap it at every new taproom on the trail.</p>
+          <CanvasHeading size="md">This Inland Scan Pass is active</CanvasHeading>
+          <p className={leadClass}>Scan the counter plate at every new taproom on the trail.</p>
           <a href="/card" className={primaryButtonClass}>
-            See my card
+            See my pass
           </a>
           <a href="/trail" className={cardLinkClass}>
             See the stops and their offers

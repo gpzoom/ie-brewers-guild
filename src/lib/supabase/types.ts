@@ -449,7 +449,7 @@ export type BusinessRow = {
   updated_at: string;
 };
 
-// Inland Tap Card (spec 2026-11-17). Server-only tables: no client session
+// Inland Scan Pass (spec 2026-11-17). Server-only tables: no client session
 // can read them, so these types are used only with the service-role client.
 
 export type TapCardBatchRow = {

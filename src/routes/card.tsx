@@ -1,17 +1,7 @@
-import { useState, type FormEvent } from "react";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { addReplacementCard, getHolderCard, signOutHolder, turnOffCard } from "@/lib/tap-card/holder.server";
+import { getHolderCard, signOutHolder } from "@/lib/tap-card/holder.server";
 import type { HolderCardView } from "@/lib/tap-card/holder-view";
-import {
-  CanvasHeading,
-  cardLinkClass,
-  fieldErrorClass,
-  hintClass,
-  inputClass,
-  labelClass,
-  leadClass,
-  secondaryButtonClass,
-} from "@/components/public-forms/PublicFormParts";
+import { CanvasHeading, cardLinkClass, hintClass, leadClass } from "@/components/public-forms/PublicFormParts";
 import { Eyebrow, TapCardShell } from "@/components/tap-card/TapCardShell";
 import { useByDate } from "@/components/tap-card/CheckInScreen";
 import { CardScanner } from "@/components/tap-card/CardScanner";
@@ -27,7 +17,7 @@ export const Route = createFileRoute("/card")({
     return view;
   },
   head: () => ({
-    meta: [{ title: "My Inland Tap Card" }, { name: "robots", content: "noindex, nofollow" }, ...CARD_APP_HEAD_META],
+    meta: [{ title: "My Inland Scan Pass" }, { name: "robots", content: "noindex, nofollow" }, ...CARD_APP_HEAD_META],
     links: CARD_APP_HEAD_LINKS,
   }),
   component: CardPage,
@@ -37,8 +27,8 @@ function CardPage() {
   const view = Route.useLoaderData();
   return (
     <TapCardShell>
-      <Eyebrow>Inland Tap Card · {view.year}</Eyebrow>
-      <CanvasHeading size="md">{view.firstName}&rsquo;s Inland Tap Card</CanvasHeading>
+      <Eyebrow>Inland Scan Pass · {view.year}</Eyebrow>
+      <CanvasHeading size="md">{view.firstName}&rsquo;s Inland Scan Pass</CanvasHeading>
       <CardScanner />
       <SaveToHomeScreen />
       <Waiting view={view} />
@@ -57,8 +47,6 @@ function CardPage() {
         </>
       )}
       <YourVisits view={view} />
-      <MyCards cards={view.cards} />
-      <AddCard />
       <SignOut />
     </TapCardShell>
   );
@@ -180,93 +168,6 @@ function StopList({ view }: { view: HolderCardView }) {
         ))}
       </ul>
     </section>
-  );
-}
-
-/** Your cards, each with "Turn off" for a lost one (it then stops working everywhere). */
-function MyCards({ cards }: { cards: string[] }) {
-  const [error, setError] = useState<string | null>(null);
-  async function turnOff(code: string) {
-    if (!window.confirm(`Turn off card ${code}? It will stop working at every stop. This can't be undone.`)) return;
-    setError(null);
-    try {
-      const result = await turnOffCard({ data: { code } });
-      if (result.kind === "signed-out") window.location.assign("/card/signin");
-      else if (result.kind === "turned-off") window.location.reload();
-      else setError("That card isn't on your account.");
-    } catch {
-      setError("Something went wrong. Try again in a moment.");
-    }
-  }
-  if (cards.length === 0) return null;
-  return (
-    <section className="flex flex-col gap-2" aria-label="Your cards">
-      <h2 className="text-[15px] font-semibold text-ink">Your {cards.length === 1 ? "card" : "cards"}</h2>
-      <ul className="flex flex-col gap-1.5">
-        {cards.map((code) => (
-          <li key={code} className="flex items-center justify-between gap-3 text-[14px] text-ink">
-            <span className="font-mono">{code}</span>
-            <button type="button" className={cardLinkClass} onClick={() => turnOff(code)}>
-              Lost it? Turn off
-            </button>
-          </li>
-        ))}
-      </ul>
-      {error && (
-        <p role="alert" className={fieldErrorClass}>
-          {error}
-        </p>
-      )}
-    </section>
-  );
-}
-
-function AddCard() {
-  const [open, setOpen] = useState(false);
-  const [code, setCode] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  async function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    setBusy(true);
-    setMessage(null);
-    try {
-      const result = await addReplacementCard({ data: { code } });
-      if (result.kind === "added") window.location.reload();
-      else if (result.kind === "already-active") setMessage("That card is already in use.");
-      else if (result.kind === "signed-out") window.location.assign("/card/signin");
-      else setMessage("We don't recognize that code. Check the code printed on the card.");
-    } catch {
-      setMessage("Something went wrong. Try again in a moment.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  if (!open) {
-    return (
-      <button type="button" className={`${cardLinkClass} text-left`} onClick={() => setOpen(true)}>
-        Lost your card? Add a new one
-      </button>
-    );
-  }
-  return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-2">
-      <label className="flex flex-col gap-1.5">
-        <span className={labelClass}>Code printed on your new card</span>
-        <input className={inputClass} value={code} onChange={(e) => setCode(e.target.value)} placeholder="ABCD-2345" autoCapitalize="characters" />
-      </label>
-      <p className={hintClass}>Your visits and rewards stay with you.</p>
-      <button type="submit" className={secondaryButtonClass} disabled={busy}>
-        Add this card
-      </button>
-      {message && (
-        <p role="alert" className={fieldErrorClass}>
-          {message}
-        </p>
-      )}
-    </form>
   );
 }
 

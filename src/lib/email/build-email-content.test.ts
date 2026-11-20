@@ -281,16 +281,16 @@ describe("buildEmailContent: Join application emails", () => {
       },
       site,
     );
-    expect(content.subject).toBe("Tap Card: Sample Brewery sent a loyalty offer for approval");
+    expect(content.subject).toBe("Scan Pass: Sample Brewery sent a loyalty offer for approval");
     expect(content.text).toContain("Visit 2: Free soft pretzel");
     expect(content.text).toContain("Terms: One per visit. Food only.");
-    expect(content.text).toContain(`${site}/guild/tap-card?tab=offers`);
-    expect(content.html).toContain(`href="${site}/guild/tap-card?tab=offers"`);
+    expect(content.text).toContain(`${site}/guild/scan-pass?tab=offers`);
+    expect(content.html).toContain(`href="${site}/guild/scan-pass?tab=offers"`);
     const change = buildEmailContent(
       { trigger: "tap_card_offer_submitted", memberId: "m1", businessName: "Sample <b>", label: "Every 3 visits", reward: "$1 off", terms: "", change: true },
       site,
     );
-    expect(change.subject).toBe("Tap Card: Sample <b> sent a change to a loyalty offer for approval");
+    expect(change.subject).toBe("Scan Pass: Sample <b> sent a change to a loyalty offer for approval");
     expect(change.text).not.toContain("Terms:");
     expect(change.html).toContain("Sample &lt;b&gt;");
   });
@@ -313,7 +313,7 @@ describe("buildEmailContent: Join application emails", () => {
       { trigger: "tap_card_welcome", email: "pat@example.com", name: "Pat Tester", cardUrl: `${site}/card` },
       site,
     );
-    expect(content.subject).toBe("Your Inland Tap Card is ready");
+    expect(content.subject).toBe("Your Inland Scan Pass is ready");
     expect(content.text).toContain("Hi Pat,");
     expect(content.text).toContain(`${site}/card`);
     expect(content.text).toContain(`${site}/trail`);
@@ -325,7 +325,7 @@ describe("buildEmailContent: Join application emails", () => {
       { trigger: "tap_card_signin_link", email: "pat@example.com", link: "https://x.test/card/login/abc", code: "042137" },
       site,
     );
-    expect(content.subject).toBe("Your Inland Tap Card sign-in code: 042137");
+    expect(content.subject).toBe("Your Inland Scan Pass sign-in code: 042137");
     expect(content.text).toContain("Your sign-in code: 042137");
     expect(content.text).toContain("https://x.test/card/login/abc");
     expect(content.text).toContain("work once and expire in 60 minutes");

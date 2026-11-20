@@ -5,14 +5,14 @@ import { CanvasHeading, fieldErrorClass, leadClass, primaryButtonClass } from "@
 import { Eyebrow, TapCardShell } from "@/components/tap-card/TapCardShell";
 
 /**
- * A brewery's bar-device setup link (made on Portal/Admin > Tap Card, often
+ * A brewery's bar-device setup link (made on Portal/Admin > Scan Pass, often
  * printed as a QR code). Opening it only looks; the button uses it up, so a
  * message app previewing the link can't spend it.
  */
 export const Route = createFileRoute("/scanner_/$token")({
   staleTime: 0,
   loader: ({ params }) => checkScannerLink({ data: { token: params.token } }),
-  head: () => ({ meta: [{ title: "Bar device setup — Inland Tap Card" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({ meta: [{ title: "Bar device setup — Inland Scan Pass" }, { name: "robots", content: "noindex, nofollow" }] }),
   component: ScannerSetup,
 });
 
@@ -21,7 +21,7 @@ function DeadLink() {
     <>
       <CanvasHeading size="md">This setup link doesn&rsquo;t work</CanvasHeading>
       <p className={leadClass}>
-        Each setup link works once, and it may already have been used or turned off. Make a new one on your Tap Card page
+        Each setup link works once, and it may already have been used or turned off. Make a new one on your Scan Pass page
         in the Member Portal.
       </p>
     </>
@@ -59,7 +59,7 @@ function ScannerSetup() {
           <Eyebrow>{link.memberName}</Eyebrow>
           <CanvasHeading size="md">Set up this device for the bar</CanvasHeading>
           <p className={leadClass}>
-            Do this on the phone or tablet your staff will use to check in Tap Cards, in its usual web browser. This link
+            Do this on the phone or tablet your staff will use to check in Scan Passes, in its usual web browser. This link
             works once.
           </p>
           <div>

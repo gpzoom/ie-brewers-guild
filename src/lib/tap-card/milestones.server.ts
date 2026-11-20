@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
 import { validateMilestone } from "@/lib/tap-card/milestones";
 
-/** Guild > Tap Card > Milestones and Rewards (every Guild admin). */
+/** Guild > Scan Pass > Milestones and Rewards (every Guild admin). */
 
 export type MilestoneSummary = { id: string; stopsRequired: number; rewardText: string; active: boolean; earnedCount: number };
 

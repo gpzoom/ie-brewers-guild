@@ -6,7 +6,7 @@ import { LegalNotice } from "@/components/site/LegalNotice";
 import { CodeSignIn } from "@/components/tap-card/TrailJoined";
 import { FREE_CARD_NAME_MAX } from "@/lib/tap-card/free-card";
 
-/** /card/join: the free loyalty-only Tap Card (universal card). */
+/** /card/join: the free loyalty-only Scan Pass (universal card). */
 export function FreeCardForm({ page }: { page: FreeCardPage }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -21,9 +21,9 @@ export function FreeCardForm({ page }: { page: FreeCardPage }) {
   if (page.signedIn) {
     return (
       <>
-        <CanvasHeading size="md">You already have a Tap Card</CanvasHeading>
+        <CanvasHeading size="md">You already have a Scan Pass</CanvasHeading>
         <a href={back} className={primaryButtonClass}>
-          {page.memberName ? `Back to ${page.memberName}` : "Open my card"}
+          {page.memberName ? `Back to ${page.memberName}` : "Open my pass"}
         </a>
       </>
     );
@@ -31,7 +31,7 @@ export function FreeCardForm({ page }: { page: FreeCardPage }) {
   if (needCode) {
     return (
       <>
-        <CanvasHeading size="md">This email already has a Tap Card</CanvasHeading>
+        <CanvasHeading size="md">This email already has a Scan Pass</CanvasHeading>
         <CodeSignIn initialEmail={needCode.email} next={needCode.next} intro="To open it on this phone, we'll email you a 6-digit sign-in code." />
       </>
     );
@@ -61,7 +61,7 @@ export function FreeCardForm({ page }: { page: FreeCardPage }) {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
       {page.memberName && <Eyebrow>{page.memberName}</Eyebrow>}
-      <CanvasHeading size="md">Get your free Tap Card</CanvasHeading>
+      <CanvasHeading size="md">Get your free Scan Pass</CanvasHeading>
       <p className={leadClass}>
         Earn rewards for coming back to {page.memberName ?? "Guild members"} and every Inland Southern California Brewers Guild member.
         It&rsquo;s free.
@@ -92,7 +92,7 @@ export function FreeCardForm({ page }: { page: FreeCardPage }) {
         </label>
       )}
       <button type="submit" className={primaryButtonClass} disabled={busy}>
-        {busy ? "One moment…" : "Get my free card"}
+        {busy ? "One moment…" : "Get my free pass"}
       </button>
       {error && !error.field && (
         <p role="alert" className={fieldErrorClass}>

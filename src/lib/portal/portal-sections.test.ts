@@ -11,16 +11,16 @@ import {
 } from "@/lib/portal/portal-sections";
 
 describe("portalSectionsFor", () => {
-  it("gives trail-stop producers a Tap Card section, after Jobs", () => {
+  it("gives trail-stop producers a Scan Pass section, after Jobs", () => {
     const sections = portalSectionsFor({ role: "owner", memberType: "producer", trailEligible: true });
     expect(sections).toContain("tap-card");
     expect(sections.indexOf("tap-card")).toBe(sections.indexOf("jobs") + 1);
     expect(portalSectionsFor({ role: "co_owner", memberType: "producer", trailEligible: true })).toContain("tap-card");
     expect(portalSectionsFor({ role: "editor", memberType: "producer", trailEligible: true })).toContain("tap-card");
-    expect(PORTAL_SECTION_LABELS["tap-card"]).toEqual({ label: "Tap Card", short: "Tap Card" });
+    expect(PORTAL_SECTION_LABELS["tap-card"]).toEqual({ label: "Scan Pass", short: "Scan Pass" });
   });
 
-  it("every member type gets the Tap Card section (universal card), but not a Photos & events editor", () => {
+  it("every member type gets the Scan Pass section (universal card), but not a Photos & events editor", () => {
     expect(portalSectionsFor({ role: "owner", memberType: "producer" })).toContain("tap-card");
     expect(portalSectionsFor({ role: "owner", memberType: "producer", trailEligible: false })).toContain("tap-card");
     expect(portalSectionsFor({ role: "owner", memberType: "mobile" })).toContain("tap-card");
@@ -78,7 +78,7 @@ describe("portalSectionsFor", () => {
 });
 
 describe("Jobs section", () => {
-  it("opens for every member type and every role, between Links and the Tap Card", () => {
+  it("opens for every member type and every role, between Links and the Scan Pass", () => {
     for (const memberType of ["producer", "mobile", "allied"] as const) {
       for (const role of ["owner", "co_owner", "editor", "media_events"] as const) {
         expect(canOpenPortalSection("jobs", { role, memberType })).toBe(true);

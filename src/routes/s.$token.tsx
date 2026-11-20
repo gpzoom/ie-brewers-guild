@@ -11,7 +11,7 @@ import { StaffQrScreen } from "@/components/tap-card/StaffQrScreen";
 export const Route = createFileRoute("/s/$token")({
   staleTime: 0,
   loader: ({ params }) => getStaffQrView({ data: { token: params.token } }),
-  head: () => ({ meta: [{ title: "Confirm — Inland Tap Card" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({ meta: [{ title: "Confirm — Inland Scan Pass" }, { name: "robots", content: "noindex, nofollow" }] }),
   component: StaffQrRoute,
 });
 

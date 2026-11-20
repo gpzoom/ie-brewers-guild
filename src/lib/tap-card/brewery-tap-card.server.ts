@@ -7,13 +7,13 @@ import { newSetupLinkCore, type SetupLinkStore } from "@/lib/tap-card/setup-link
 import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
 
 /**
- * A brewery's own Tap Card screen (Portal > Tap Card and /admin/tap-card):
+ * A brewery's own Scan Pass screen (Portal > Scan Pass and /admin/scan-pass):
  * the bar devices that can check cards in. requireTapCardEditor checks the
  * caller before any service-role read or write.
  */
 
-/** For the /admin menu: is this member a Tap Card stop? (Reads the member's own row.) */
-/** Universal card: every Guild member has the Tap Card tab (trail stops also get the Beer Trail parts). */
+/** For the /admin menu: is this member a Scan Pass stop? (Reads the member's own row.) */
+/** Universal card: every Guild member has the Scan Pass tab (trail stops also get the Beer Trail parts). */
 export const hasTapCardTab = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => ({ memberId: String(data?.memberId ?? "") }))
   .handler(async ({ data }): Promise<boolean> => {

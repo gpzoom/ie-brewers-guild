@@ -13,7 +13,7 @@ function errorText(err: unknown) {
   return err instanceof Error ? err.message : "That didn't work. Try again.";
 }
 
-/** Portal/Admin > Tap Card: the brewery's counter plate (no bar device needed for smartphone customers). */
+/** Portal/Admin > Scan Pass: the brewery's counter plate (customers check in with their own phones). */
 export function CounterPlateCard({ memberId }: { memberId: string }) {
   const [plate, setPlate] = useState<CounterPlate | null>(null);
   const [qr, setQr] = useState<string | null>(null);
@@ -104,8 +104,8 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
         Counter plate
       </h2>
       <p className="text-[13px] text-ink-muted">
-        Customers with a smartphone tap or scan this plate at your bar and choose a check-in or a reward. Then they scan
-        your staff QR code (below) to confirm. Customers with only a plastic card still need a bar device.
+        Customers scan this plate with their phones at your bar and choose a check-in or a reward. Then they scan your
+        staff QR code (below) to confirm.
       </p>
       {plate && (
         <>

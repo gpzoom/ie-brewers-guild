@@ -4,7 +4,7 @@ import { safeHolderNext } from "@/lib/tap-card/plate";
 import { CanvasHeading, cardLinkClass, leadClass } from "@/components/public-forms/PublicFormParts";
 import { TapCardShell } from "@/components/tap-card/TapCardShell";
 
-/** The emailed Tap Card sign-in link. */
+/** The emailed Scan Pass sign-in link. */
 export const Route = createFileRoute("/card_/login/$token")({
   validateSearch: (search: Record<string, unknown>): { next?: string } => {
     const next = safeHolderNext(search.next);
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/card_/login/$token")({
     }
     return result;
   },
-  head: () => ({ meta: [{ title: "Sign in — Inland Tap Card" }, { name: "robots", content: "noindex, nofollow" }] }),
+  head: () => ({ meta: [{ title: "Sign in — Inland Scan Pass" }, { name: "robots", content: "noindex, nofollow" }] }),
   component: () => (
     <TapCardShell>
       <CanvasHeading size="md">This link has expired</CanvasHeading>

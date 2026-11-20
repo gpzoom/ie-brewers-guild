@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { BrandBar, CanvasCard } from "@/components/public-forms/PublicFormParts";
 
-/** The narrow public card layout every Tap Card screen uses (same as the visit-link page). */
+/** The narrow public card layout every Scan Pass screen uses (same as the visit-link page). */
 export function TapCardShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-bg pb-10 font-sans">

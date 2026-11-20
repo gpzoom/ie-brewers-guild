@@ -1,12 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { TapCardSection } from "@/components/portal/TapCardSection";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-/** /admin/tap-card: the same Tap Card screen as the portal's, for Edit as them. */
+/**
+ * The Inland Tap Card was renamed the Inland Scan Pass (2026-11-20). This
+ * route stays only so old links and bookmarks to /admin/tap-card land on
+ * /admin/scan-pass. The parent /admin route's beforeLoad still runs first.
+ */
 export const Route = createFileRoute("/admin/tap-card")({
-  component: AdminTapCardRoute,
+  beforeLoad: () => {
+    throw redirect({ to: "/admin/scan-pass", replace: true });
+  },
 });
-
-function AdminTapCardRoute() {
-  const { memberId } = Route.useRouteContext();
-  return <TapCardSection memberId={memberId} />;
-}

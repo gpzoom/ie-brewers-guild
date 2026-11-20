@@ -59,7 +59,7 @@ export type PortalMemberShell = {
   status: MemberStatus;
   slug: string;
   draftStatus: DraftStatus;
-  /** A stop on the Inland Tap Card trail (Guild-set); opens the Tap Card section for producers. */
+  /** A stop on the Inland Scan Pass trail (Guild-set); opens the Scan Pass section for producers. */
   trailEligible: boolean;
 };
 

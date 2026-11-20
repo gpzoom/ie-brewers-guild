@@ -60,7 +60,7 @@ describe("activateCore", () => {
     expect(holders[0]).toEqual({ id: "h1", name: "Pat Tester", email: "pat@example.com", via: "staff", memberId: "m1" });
   });
 
-  it("an email that already has a Tap Card never links the card or signs anyone in", async () => {
+  it("an email that already has a Scan Pass never links the card or signs anyone in", async () => {
     const { store, cards, holders } = memoryStore(
       [{ id: "c2", code: "ABCD2345", holderId: null }],
       [{ id: "h7", name: "Pat", email: "pat@x.com", via: "customer", memberId: null }],

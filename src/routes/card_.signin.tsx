@@ -15,7 +15,7 @@ import { CARD_APP_HEAD_LINKS, CARD_APP_HEAD_META } from "@/lib/tap-card/card-app
 
 /** /card/signin: email a one-time link to a card holder. Never says whether the email has a card. */
 export const Route = createFileRoute("/card_/signin")({
-  head: () => ({ meta: [{ title: "Sign in — Inland Tap Card" }, ...CARD_APP_HEAD_META], links: CARD_APP_HEAD_LINKS }),
+  head: () => ({ meta: [{ title: "Sign in — Inland Scan Pass" }, ...CARD_APP_HEAD_META], links: CARD_APP_HEAD_LINKS }),
   component: CardSignIn,
 });
 
@@ -43,12 +43,12 @@ function CardSignIn() {
 
   return (
     <TapCardShell>
-      <CanvasHeading size="md">See your Inland Tap Card</CanvasHeading>
+      <CanvasHeading size="md">See your Inland Scan Pass</CanvasHeading>
       {sent ? (
         <SignInCodeForm email={email} onSignedIn={() => window.location.assign("/card")} />
       ) : (
         <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-          <p className={leadClass}>Enter the email you used when you turned on your card. We&rsquo;ll email you a sign-in code.</p>
+          <p className={leadClass}>Enter the email you used when you turned on your pass. We&rsquo;ll email you a sign-in code.</p>
           <label className="flex flex-col gap-1.5">
             <span className={labelClass}>Email</span>
             <input className={inputClass} type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />

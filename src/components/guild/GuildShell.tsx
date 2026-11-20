@@ -100,7 +100,7 @@ export function GuildShell({
   const membersActive = isActivePath(pathname, "/guild/roster");
   const brandActive = isActivePath(pathname, "/guild/brand");
   const categoriesActive = isActivePath(pathname, "/guild/categories");
-  const tapCardActive = isActivePath(pathname, "/guild/tap-card");
+  const tapCardActive = isActivePath(pathname, "/guild/scan-pass");
   const adminsActive = isActivePath(pathname, "/guild/admins");
   const broadcastActive = isActivePath(pathname, "/guild/broadcast");
   const auditActive = isActivePath(pathname, "/guild/audit");
@@ -195,11 +195,11 @@ export function GuildShell({
           </Link>
 
           <Link
-            to="/guild/tap-card"
+            to="/guild/scan-pass"
             aria-current={tapCardActive ? "page" : undefined}
             className={sidebarItemClass(tapCardActive)}
           >
-            Tap Card
+            Scan Pass
           </Link>
 
           {isSuperAdmin && (

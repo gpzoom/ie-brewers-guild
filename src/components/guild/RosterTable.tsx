@@ -279,12 +279,12 @@ function MemberRow({
                         data: { memberId: member.id, eligible: !member.trail_eligible },
                       }),
                     member.trail_eligible
-                      ? `Removed ${member.business_name} from the Tap Card trail`
-                      : `Added ${member.business_name} to the Tap Card trail`,
+                      ? `Removed ${member.business_name} from the Scan Pass trail`
+                      : `Added ${member.business_name} to the Scan Pass trail`,
                   )
                 }
               >
-                {member.trail_eligible ? "Remove from Tap Card trail" : "Add to Tap Card trail"}
+                {member.trail_eligible ? "Remove from Scan Pass trail" : "Add to Scan Pass trail"}
               </DropdownMenuItem>
             )}
             <DropdownMenuItem

@@ -1,7 +1,7 @@
 import { TZDate } from "@date-fns/tz";
 
 /**
- * The Tap Card's day and year are Pacific (owner, 2026-11-17): one visit per
+ * The Scan Pass's day and year are Pacific (owner, 2026-11-17): one visit per
  * brewery per Pacific day, one offer per brewery per calendar year. A visit
  * at 11:30 pm on Dec 31 belongs to the old year even though it's already
  * Jan 1 in UTC.

@@ -34,7 +34,7 @@ export const CARD_APP_HEAD_LINKS = [
   { rel: "apple-touch-icon", href: "/tap-card/apple-touch-icon.png" },
 ];
 export const CARD_APP_HEAD_META = [
-  { name: "apple-mobile-web-app-title", content: "Tap Card" },
+  { name: "apple-mobile-web-app-title", content: "Scan Pass" },
   { name: "theme-color", content: "#000000" },
 ];
 

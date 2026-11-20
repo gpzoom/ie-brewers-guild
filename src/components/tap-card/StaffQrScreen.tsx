@@ -40,7 +40,7 @@ export function StaffQrScreen({ token, view }: { token: string; view: StaffQrPag
   if (view.view === "unknown") {
     return (
       <>
-        <CanvasHeading size="md">Inland Tap Card</CanvasHeading>
+        <CanvasHeading size="md">Inland Scan Pass</CanvasHeading>
         <p className={leadClass}>This code isn&rsquo;t working any more. Ask a staff member for the current one.</p>
       </>
     );
@@ -52,11 +52,11 @@ export function StaffQrScreen({ token, view }: { token: string; view: StaffQrPag
   return (
     <div className="flex flex-col gap-4">
       <Eyebrow>{view.memberName}</Eyebrow>
-      {view.view === "closed" && <CanvasHeading size="md">Ask a staff member to tap your card.</CanvasHeading>}
+      {view.view === "closed" && <CanvasHeading size="md">This taproom isn&rsquo;t taking Scan Pass check-ins right now.</CanvasHeading>}
       {view.view === "scan-plate-first" && (
         <>
           <CanvasHeading size="md">Scan the counter plate first</CanvasHeading>
-          <p className={leadClass}>Scan the Tap Card plate on the counter, choose what you&rsquo;d like, then scan this code again.</p>
+          <p className={leadClass}>Scan the counter plate, choose what you&rsquo;d like, then scan this code again.</p>
           <CardScanner label="Scan the counter plate" />
         </>
       )}
