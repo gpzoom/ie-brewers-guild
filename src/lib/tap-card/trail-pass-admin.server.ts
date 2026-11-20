@@ -83,6 +83,54 @@ export const saveTrailCampaign = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export type DemoResetResult = { members: number; visits: number; earned: number; misses: number; milestoneRewards: number };
+
+/**
+ * Demo kit "Reset demo visits" (same as `node scripts/demo-kit.mjs reset --yes`):
+ * clears visits, earned rewards and staff-code misses at the DRAFT members named
+ * "Sample …", plus this year's Guild milestone rewards of customers who were only
+ * ever active at those members. Passes, sign-ups and opt-ins are kept. Published
+ * members are never touched, so real customers' visits are safe.
+ */
+export const resetDemoVisits = createServerFn({ method: "POST" }).handler(async (): Promise<DemoResetResult> => {
+  const { service } = await requireTapCardGuildAdmin();
+  const must = <T,>(r: { data: T | null; error: { message: string } | null }): T => {
+    if (r.error) throw new Error(r.error.message);
+    return r.data as T;
+  };
+  const samples = must(await service.from("members").select("id").ilike("business_name", "sample %").eq("status", "draft"));
+  const ids = samples.map((m) => m.id as string);
+  if (!ids.length) throw new Error('No draft members named "Sample …" found.');
+  const notSamples = `(${ids.join(",")})`;
+
+  const [visits, earned, misses] = await Promise.all([
+    must(await service.from("tap_card_visits").select("id, holder_id").in("member_id", ids)),
+    must(await service.from("tap_card_earned_rewards").select("id").in("member_id", ids)),
+    must(await service.from("tap_card_plate_misses").select("id").in("member_id", ids)),
+  ]);
+
+  // Customers whose activity is only at the Samples: their milestone rewards are demo rewards.
+  const demoHolders: string[] = [];
+  for (const id of new Set(visits.map((v) => v.holder_id as string | null).filter((h): h is string => !!h))) {
+    const [otherVisits, otherPasses] = await Promise.all([
+      must(await service.from("tap_card_visits").select("id").eq("holder_id", id).not("member_id", "in", notSamples).limit(1)),
+      must(await service.from("tap_card_trail_passes").select("id").eq("holder_id", id).not("member_id", "in", notSamples).limit(1)),
+    ]);
+    if (!otherVisits.length && !otherPasses.length) demoHolders.push(id);
+  }
+
+  must(await service.from("tap_card_earned_rewards").delete().in("member_id", ids));
+  must(await service.from("tap_card_visits").delete().in("member_id", ids));
+  must(await service.from("tap_card_plate_misses").delete().in("member_id", ids));
+  let milestoneRewards = 0;
+  if (demoHolders.length) {
+    const year = Number(new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" }).slice(0, 4));
+    const deleted = must(await service.from("tap_card_rewards").delete().in("holder_id", demoHolders).gte("year", year).select("holder_id"));
+    milestoneRewards = deleted.length;
+  }
+  return { members: ids.length, visits: visits.length, earned: earned.length, misses: misses.length, milestoneRewards };
+});
+
 export const assignPassToMember = createServerFn({ method: "POST" })
   .inputValidator((data: { passId: string; memberId: string }) => ({ passId: String(data?.passId ?? ""), memberId: String(data?.memberId ?? "") }))
   .handler(async ({ data }): Promise<{ ok: true }> => {

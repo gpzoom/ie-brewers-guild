@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { assignPassToMember, saveTrailCampaign, type PassReport } from "@/lib/tap-card/trail-pass-admin.server";
+import { assignPassToMember, resetDemoVisits, saveTrailCampaign, type PassReport } from "@/lib/tap-card/trail-pass-admin.server";
 import { StatusMessage, cardClass, darkButtonClass, errorText, fieldClass, outlineButtonClass, type Message } from "@/components/guild/settings-ui";
 
 export const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
@@ -192,6 +192,30 @@ export function PassesPanel({ report, onYearChange }: { report: PassReport; onYe
         {current?.unlockNow && (
           <p className="text-[13px] font-semibold text-[#B42318]">Testing switch is ON: {current.year} passes unlock Beer Trail offers now.</p>
         )}
+        <div className="flex flex-col gap-2 rounded-[10px] border border-[#E6E0D6] bg-[#FCFAF6] px-3 py-3 text-[13px] text-ink sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            <span className="font-semibold">Reset the demo.</span> Clears today&rsquo;s visits and rewards at the draft &ldquo;Sample&rdquo;
+            members so the demo can run again. Passes and real members aren&rsquo;t touched.
+          </span>
+          <button
+            type="button"
+            className={`${outlineButtonClass} w-fit shrink-0`}
+            onClick={() => {
+              if (!window.confirm("Reset the demo? This deletes all visits and earned rewards at the draft Sample members.")) return;
+              setMessage(null);
+              resetDemoVisits()
+                .then((r) =>
+                  setMessage({
+                    kind: "ok",
+                    text: `Demo reset: cleared ${r.visits} ${r.visits === 1 ? "visit" : "visits"} at ${r.members} Sample members. Rewards and the nickel offer work again.`,
+                  }),
+                )
+                .catch((err) => setMessage({ kind: "error", text: errorText(err) }));
+            }}
+          >
+            Reset demo visits
+          </button>
+        </div>
         <button type="submit" className={`${darkButtonClass} w-fit`}>
           Save
         </button>
