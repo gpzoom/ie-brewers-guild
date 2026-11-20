@@ -20,6 +20,8 @@ export type HolderViewInput = {
   waiting: WaitingReward[];
   /** A Beer Trail Pass is on sale that this holder hasn't bought (spec 2026-11-19). */
   canJoinTrail?: boolean;
+  /** The Beer Trail is unlocked on this card this year (a pass, or the Guild's testing switch). */
+  hasTrailPass?: boolean;
 };
 
 export type WaitingReward = { memberName: string; reward: string; terms: string; expiresAt: string };
@@ -35,6 +37,7 @@ export type HolderCardView = {
   waiting: WaitingReward[];
   visitCounts: { memberId: string; name: string; count: number }[];
   canJoinTrail: boolean;
+  hasTrailPass: boolean;
 };
 
 export function buildHolderView(input: HolderViewInput): HolderCardView {
@@ -69,6 +72,7 @@ export function buildHolderView(input: HolderViewInput): HolderCardView {
     waiting: [...input.waiting].sort((a, b) => a.expiresAt.localeCompare(b.expiresAt)),
     visitCounts: visitCounts(input.allVisits),
     canJoinTrail: input.canJoinTrail ?? false,
+    hasTrailPass: input.hasTrailPass ?? false,
   };
 }
 

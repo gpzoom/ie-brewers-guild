@@ -31,6 +31,10 @@ describe("buildHolderView", () => {
     expect(buildHolderView(input()).canJoinTrail).toBe(false);
     expect(buildHolderView({ ...input(), canJoinTrail: true }).canJoinTrail).toBe(true);
   });
+  it("knows whether the Beer Trail is unlocked on this card (loyalty-only cards hide trail progress)", () => {
+    expect(buildHolderView(input()).hasTrailPass).toBe(false);
+    expect(buildHolderView({ ...input(), hasTrailPass: true }).hasTrailPass).toBe(true);
+  });
   it("uses the first name and formats the cards", () => {
     const view = buildHolderView(input());
     expect(view.firstName).toBe("Pat");

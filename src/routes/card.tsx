@@ -43,9 +43,13 @@ function CardPage() {
       <SaveToHomeScreen />
       <Waiting view={view} />
       <JoinTrail view={view} />
-      <Progress view={view} />
-      <Milestones view={view} />
-      <StopList view={view} />
+      {view.hasTrailPass && (
+        <>
+          <Progress view={view} />
+          <Milestones view={view} />
+          <StopList view={view} />
+        </>
+      )}
       <YourVisits view={view} />
       <MyCards cards={view.cards} />
       <AddCard />

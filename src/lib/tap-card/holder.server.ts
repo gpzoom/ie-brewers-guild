@@ -11,7 +11,7 @@ import { deactivateCardCore } from "@/lib/tap-card/deactivate-core";
 import { buildHolderView, type HolderCardView } from "@/lib/tap-card/holder-view";
 import { tapCardYear } from "@/lib/tap-card/tap-card-time";
 import { loadTrailStops } from "@/lib/tap-card/trail-stops.server";
-import { canJoinTrail } from "@/lib/tap-card/trail-pass-store.server";
+import { canJoinTrail, holderHasTrailPass } from "@/lib/tap-card/trail-pass-store.server";
 import {
   endHolderSession,
   readHolderId,
@@ -119,7 +119,7 @@ export const getHolderCard = createServerFn({ method: "GET" }).handler(async ():
   const service = await getSupabaseServiceRoleClient();
   const year = tapCardYear(new Date());
   const nowIso = new Date().toISOString();
-  const [holder, stops, visits, milestones, rewards, cards, allVisits, waiting, joinable] = await Promise.all([
+  const [holder, stops, visits, milestones, rewards, cards, allVisits, waiting, joinable, trailPass] = await Promise.all([
     service.from("tap_card_holders").select("name").eq("id", holderId).maybeSingle(),
     loadTrailStops(service),
     service.from("tap_card_visits").select("member_id, visit_day, redeemed_year").eq("holder_id", holderId).gte("visit_day", `${year}-01-01`),
@@ -134,6 +134,7 @@ export const getHolderCard = createServerFn({ method: "GET" }).handler(async ():
       .is("used_at", null)
       .gt("expires_at", nowIso),
     canJoinTrail(service, holderId),
+    holderHasTrailPass(service, holderId, year),
   ]);
   for (const r of [holder, visits, milestones, rewards, cards, allVisits, waiting]) if (r.error) throw new Error(r.error.message);
   const nameOf = (m: unknown) => (m as { business_name: string } | null)?.business_name ?? "";
@@ -149,6 +150,7 @@ export const getHolderCard = createServerFn({ method: "GET" }).handler(async ():
     allVisits: (allVisits.data ?? []).map((v) => ({ memberId: v.member_id, memberName: nameOf(v.members), visitDay: v.visit_day })),
     waiting: (waiting.data ?? []).map((w) => ({ memberName: nameOf(w.members), reward: w.reward, terms: w.terms, expiresAt: w.expires_at })),
     canJoinTrail: joinable,
+    hasTrailPass: trailPass,
   });
 });
 
