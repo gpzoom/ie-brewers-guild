@@ -9,7 +9,6 @@ Inland Tap Card: universal loyalty card + Beer Trail Pass through Zeffy. Everyth
 - [ ] **Owner:** in Zeffy, set the live campaign's **real price**. It was $0 for testing.
 - [ ] **Owner:** in Zeffy, create a **100% discount code** for one test purchase on the live campaign (so the live test costs nothing).
 - [ ] **Owner:** decide which producers are Beer Trail stops (**Guild → Members → Add to Tap Card trail**).
-- [ ] **Claude:** copy both Zeffy keys (`ZEFFY_API_KEY`, `ZEFFY_WEBHOOK_SECRET`) to the **live** site, without displaying them, and confirm the live site's other settings (`SITE_ORIGIN`) are still there.
 
 ## Launch day, in this order
 
@@ -17,8 +16,8 @@ Inland Tap Card: universal loyalty card + Beer Trail Pass through Zeffy. Everyth
 2. [ ] **Claude:** check staging and main are in step, run all tests and the build.
 3. [ ] **Claude:** set the Privacy Policy and Terms **effective date** to today.
 4. [ ] **Claude:** merge staging into the live site and push. Confirm the live site is updated by checking pages, not just the deploy time:
-   - `iscbrewersguild.org/trail/join` opens;
-   - `iscbrewersguild.org/api/zeffy/webhook` answers a test message.
+   - `iscbrewersguild.org/trail/join` opens.
+   - **Then** copy both Zeffy keys (`ZEFFY_API_KEY`, `ZEFFY_WEBHOOK_SECRET`) to the live site without displaying them (only possible once the merged version is the one running: staging pushes leave undeployed preview copies on the live Worker, and Cloudflare refuses secret edits while one is newest). Confirm `SITE_ORIGIN` survived and `iscbrewersguild.org/api/zeffy/webhook` answers a test message.
 5. [ ] **Owner:** in Zeffy → **Settings → Integrations → Webhooks**, change the URL to
    `https://iscbrewersguild.org/api/zeffy/webhook`
    (keep **Send notifications** on, and **payment.completed / updated / deleted** checked). Save.
