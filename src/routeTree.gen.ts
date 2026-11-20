@@ -59,6 +59,7 @@ import { Route as GuildAuditRouteImport } from './routes/guild.audit'
 import { Route as GuildAlertsRouteImport } from './routes/guild.alerts'
 import { Route as GuildAdminsRouteImport } from './routes/guild.admins'
 import { Route as CardSigninRouteImport } from './routes/card_.signin'
+import { Route as CardJoinRouteImport } from './routes/card_.join'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminPreviewRouteImport } from './routes/admin_.preview'
@@ -333,6 +334,11 @@ const CardSigninRoute = CardSigninRouteImport.update({
   path: '/card/signin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CardJoinRoute = CardJoinRouteImport.update({
+  id: '/card_/join',
+  path: '/card/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthConfirmRoute = AuthConfirmRouteImport.update({
   id: '/auth/confirm',
   path: '/auth/confirm',
@@ -484,6 +490,7 @@ export interface FileRoutesByFullPath {
   '/admin/preview': typeof AdminPreviewRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/card/join': typeof CardJoinRoute
   '/card/signin': typeof CardSigninRoute
   '/guild/admins': typeof GuildAdminsRoute
   '/guild/alerts': typeof GuildAlertsRoute
@@ -557,6 +564,7 @@ export interface FileRoutesByTo {
   '/admin/preview': typeof AdminPreviewRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/card/join': typeof CardJoinRoute
   '/card/signin': typeof CardSigninRoute
   '/guild/admins': typeof GuildAdminsRoute
   '/guild/alerts': typeof GuildAlertsRoute
@@ -631,6 +639,7 @@ export interface FileRoutesById {
   '/admin_/preview': typeof AdminPreviewRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/card_/join': typeof CardJoinRoute
   '/card_/signin': typeof CardSigninRoute
   '/guild/admins': typeof GuildAdminsRoute
   '/guild/alerts': typeof GuildAlertsRoute
@@ -708,6 +717,7 @@ export interface FileRouteTypes {
     | '/admin/preview'
     | '/auth/callback'
     | '/auth/confirm'
+    | '/card/join'
     | '/card/signin'
     | '/guild/admins'
     | '/guild/alerts'
@@ -781,6 +791,7 @@ export interface FileRouteTypes {
     | '/admin/preview'
     | '/auth/callback'
     | '/auth/confirm'
+    | '/card/join'
     | '/card/signin'
     | '/guild/admins'
     | '/guild/alerts'
@@ -854,6 +865,7 @@ export interface FileRouteTypes {
     | '/admin_/preview'
     | '/auth/callback'
     | '/auth/confirm'
+    | '/card_/join'
     | '/card_/signin'
     | '/guild/admins'
     | '/guild/alerts'
@@ -919,6 +931,7 @@ export interface RootRouteChildren {
   AdminPreviewRoute: typeof AdminPreviewRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
+  CardJoinRoute: typeof CardJoinRoute
   CardSigninRoute: typeof CardSigninRoute
   JoinFinishRoute: typeof JoinFinishRoute
   MembersSlugRoute: typeof MembersSlugRoute
@@ -1296,6 +1309,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CardSigninRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/card_/join': {
+      id: '/card_/join'
+      path: '/card/join'
+      fullPath: '/card/join'
+      preLoaderRoute: typeof CardJoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/confirm': {
       id: '/auth/confirm'
       path: '/auth/confirm'
@@ -1574,6 +1594,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminPreviewRoute: AdminPreviewRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthConfirmRoute: AuthConfirmRoute,
+  CardJoinRoute: CardJoinRoute,
   CardSigninRoute: CardSigninRoute,
   JoinFinishRoute: JoinFinishRoute,
   MembersSlugRoute: MembersSlugRoute,

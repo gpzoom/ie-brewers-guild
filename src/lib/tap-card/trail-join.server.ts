@@ -9,18 +9,9 @@ import { passLines } from "@/lib/tap-card/zeffy";
 import { zeffyPaymentsSince } from "@/lib/tap-card/zeffy.server";
 import { decideJoinedView, recordZeffyPayment } from "@/lib/tap-card/trail-pass-core";
 import { validateTrailJoin } from "@/lib/tap-card/trail-join";
-import { activeCampaign, countOtherJoins, trailPassStore } from "@/lib/tap-card/trail-pass-store.server";
+import { activeCampaign, countOtherJoins, plateMember, trailPassStore } from "@/lib/tap-card/trail-pass-store.server";
 
 /** Joining the Beer Trail (spec 2026-11-19): our page first (brewery + email + opt-in), then Zeffy. */
-
-async function plateMember(service: SupabaseClient, rawCode: string | null): Promise<{ memberId: string; memberName: string; code: string } | null> {
-  const code = rawCode ? normalizeCardCode(rawCode) : null;
-  if (!code) return null;
-  const { data, error } = await service.from("tap_card_plates").select("member_id, members!inner(business_name)").eq("code", code).maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) return null;
-  return { memberId: data.member_id as string, memberName: (data.members as unknown as { business_name: string }).business_name, code };
-}
 
 export type TrailJoinPage = { open: boolean; year: number | null; memberName: string | null; plateCode: string | null; email: string };
 

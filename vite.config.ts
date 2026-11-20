@@ -556,6 +556,7 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/tap-card/plate.server.ts",
             "src/lib/tap-card/trail-join.server.ts",
             "src/lib/tap-card/trail-pass-admin.server.ts",
+            "src/lib/tap-card/free-card.server.ts",
           ],
           specifiers: ["server-only"],
         },

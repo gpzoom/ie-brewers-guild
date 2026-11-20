@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { passCountsNow, type TrailPassStore } from "@/lib/tap-card/trail-pass-core";
 import { activeCampaignYear } from "@/lib/tap-card/trail-join";
 import { tapCardYear } from "@/lib/tap-card/tap-card-time";
+import { normalizeCardCode } from "@/lib/tap-card/card-code";
 
 /** TrailPassStore on Supabase (service role). */
 export function trailPassStore(service: SupabaseClient): TrailPassStore & { passYears(holderId: string): Promise<number[]> } {
@@ -134,4 +135,14 @@ export async function holderHasTrailPass(service: SupabaseClient, holderId: stri
     (unlocked.data ?? []).map((c) => c.year as number),
     year,
   );
+}
+
+/** The member behind a counter plate code (for crediting a sign-up). */
+export async function plateMember(service: SupabaseClient, rawCode: string | null): Promise<{ memberId: string; memberName: string; code: string } | null> {
+  const code = rawCode ? normalizeCardCode(rawCode) : null;
+  if (!code) return null;
+  const { data, error } = await service.from("tap_card_plates").select("member_id, members!inner(business_name)").eq("code", code).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return { memberId: data.member_id as string, memberName: (data.members as unknown as { business_name: string }).business_name, code };
 }

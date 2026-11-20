@@ -8,7 +8,7 @@ const TRIES = 12;
 const EVERY_MS = 5000;
 
 /** Email a sign-in code, then type it in. */
-function CodeSignIn({ initialEmail, next, intro }: { initialEmail: string; next: string; intro: string }) {
+export function CodeSignIn({ initialEmail, next, intro }: { initialEmail: string; next: string; intro: string }) {
   const [email, setEmail] = useState(initialEmail);
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
