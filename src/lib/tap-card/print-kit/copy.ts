@@ -25,6 +25,14 @@ export const REPRINT_NOTICE = {
   staff: "New staff QR made. Download and print new staff cards: the old ones no longer work.",
 } as const;
 
+/** Server messages a member can act on (requireTapCardEditor); everything else stays generic. */
+const ACTIONABLE_ERRORS = ["Please sign in again.", "Only the owner or a full editor can manage the Scan Pass."];
+
+export function kitErrorMessage(err: unknown): string {
+  const message = err instanceof Error ? err.message : "";
+  return ACTIONABLE_ERRORS.includes(message) ? message : "Couldn't make the PDF. Try again.";
+}
+
 export function plateCodeLine(printedCode: string): string {
   return `code ${printedCode}`;
 }

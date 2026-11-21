@@ -23,17 +23,23 @@ export async function loadKitFonts(): Promise<KitFontBytes> {
   return { heading, body, bodySemi };
 }
 
-/** PNG bytes of the image at url, at most maxPx on its longest side; null on any failure. */
-export async function loadLogo(url: string | null, maxPx = 1200): Promise<Uint8Array | null> {
+/**
+ * PNG bytes of the image at url, at most maxPx on its longest side; null on
+ * any failure, including no answer within timeoutMs (so a stalled logo
+ * request never leaves the Print kit buttons stuck).
+ */
+export async function loadLogo(url: string | null, maxPx = 1200, timeoutMs = 10_000): Promise<Uint8Array | null> {
   if (!url) return null;
   try {
     const img = new Image();
     img.crossOrigin = "anonymous";
+    let timer: ReturnType<typeof setTimeout> | undefined;
     await new Promise<void>((resolve, reject) => {
+      timer = setTimeout(() => reject(new Error("logo timed out")), timeoutMs);
       img.onload = () => resolve();
       img.onerror = () => reject(new Error("logo failed to load"));
       img.src = url;
-    });
+    }).finally(() => clearTimeout(timer));
     const w = img.naturalWidth || img.width;
     const h = img.naturalHeight || img.height;
     if (!w || !h) return null;

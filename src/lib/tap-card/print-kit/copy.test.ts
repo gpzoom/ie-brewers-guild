@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PLATE_COPY, REPRINT_NOTICE, STAFF_COPY, kitFileName, plateCodeLine, printFooter } from "./copy";
+import { PLATE_COPY, REPRINT_NOTICE, STAFF_COPY, kitErrorMessage, kitFileName, plateCodeLine, printFooter } from "./copy";
 
 describe("print-kit copy", () => {
   it("has the plate wording", () => {
@@ -40,6 +40,16 @@ describe("print-kit copy", () => {
       "New plate link made. Download and print a new counter card and table tent: the old ones no longer work.",
     );
     expect(REPRINT_NOTICE.staff).toBe("New staff QR made. Download and print new staff cards: the old ones no longer work.");
+  });
+
+  it("passes sign-in and permission errors through, hides everything else", () => {
+    expect(kitErrorMessage(new Error("Please sign in again."))).toBe("Please sign in again.");
+    expect(kitErrorMessage(new Error("Only the owner or a full editor can manage the Scan Pass."))).toBe(
+      "Only the owner or a full editor can manage the Scan Pass.",
+    );
+    expect(kitErrorMessage(new Error("Couldn't load /fonts/print-kit/Chivo-Regular.ttf"))).toBe("Couldn't make the PDF. Try again.");
+    expect(kitErrorMessage("boom")).toBe("Couldn't make the PDF. Try again.");
+    expect(kitErrorMessage(null)).toBe("Couldn't make the PDF. Try again.");
   });
 
   it("never promises the paid pass, a price or the nickel offer", () => {

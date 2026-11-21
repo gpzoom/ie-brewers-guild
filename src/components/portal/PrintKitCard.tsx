@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { getCounterPlate } from "@/lib/tap-card/plate.server";
 import { getPrintKitInfo } from "@/lib/tap-card/print-kit.server";
-import { kitFileName, type KitPiece } from "@/lib/tap-card/print-kit/copy";
+import { kitErrorMessage, kitFileName, type KitPiece } from "@/lib/tap-card/print-kit/copy";
 
 const outlineClass =
   "inline-flex min-h-11 shrink-0 items-center justify-center rounded-[9px] border border-[#D3CBBD] bg-canvas px-[15px] text-[13px] font-medium text-ink hover:bg-canvas-2 disabled:opacity-60";
@@ -66,8 +66,8 @@ export function PrintKitCard({ memberId }: { memberId: string }) {
             ? render.buildTableTentPdf
             : render.buildStaffCardsPdf;
       saveFile(await build(input, fonts, images), kitFileName(piece, info.memberSlug));
-    } catch {
-      setError("Couldn't make the PDF. Try again.");
+    } catch (err) {
+      setError(kitErrorMessage(err));
     } finally {
       setBusy(null);
     }
