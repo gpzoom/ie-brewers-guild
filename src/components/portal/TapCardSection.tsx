@@ -1,5 +1,6 @@
 import { TapCardOffersSection } from "@/components/portal/TapCardOffersSection";
 import { CounterPlateCard } from "@/components/portal/CounterPlateCard";
+import { PrintKitCard } from "@/components/portal/PrintKitCard";
 import { TapCardPassesCard } from "@/components/portal/TapCardPassesCard";
 
 /**
@@ -18,6 +19,8 @@ export function TapCardSection({ memberId }: { memberId: string }) {
           rewards.
         </p>
       </header>
+
+      <PrintKitCard memberId={memberId} />
 
       <CounterPlateCard memberId={memberId} />
 

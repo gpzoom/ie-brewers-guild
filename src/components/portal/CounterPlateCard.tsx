@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { getCounterPlate, resetPlateLink, resetStaffQr, saveStaffCode, type CounterPlate } from "@/lib/tap-card/plate.server";
 import { CAPTIONED_QR_HEIGHT, SETUP_QR_SIZE, captionedQrDataUrl, qrCaptionLines } from "@/lib/tap-card/setup-qr";
+import { REPRINT_NOTICE } from "@/lib/tap-card/print-kit/copy";
 
 const fieldClass =
   "h-11 w-full min-w-0 rounded-[9px] border border-canvas-border bg-white px-3 text-[14px] text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
@@ -22,6 +23,8 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** After a code is replaced, the printed kit is out of date (spec 2026-11-21). */
+  const [reprint, setReprint] = useState<keyof typeof REPRINT_NOTICE | null>(null);
 
   useEffect(() => {
     getCounterPlate({ data: { memberId } })
@@ -62,6 +65,7 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
     setError(null);
     try {
       setPlate(await resetStaffQr({ data: { memberId } }));
+      setReprint("staff");
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -91,6 +95,7 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
     setError(null);
     try {
       setPlate(await resetPlateLink({ data: { memberId } }));
+      setReprint("plate");
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -192,6 +197,11 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
               : "Set a staff code to turn your plate on."}
           </p>
         </>
+      )}
+      {reprint && (
+        <p role="status" className="rounded-[9px] border border-canvas-border bg-canvas-2 px-3 py-2 text-[13px] font-medium text-ink">
+          {REPRINT_NOTICE[reprint]}
+        </p>
       )}
       {error && (
         <p role="alert" className="text-[13px] text-danger">
