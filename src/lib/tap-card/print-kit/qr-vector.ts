@@ -26,9 +26,13 @@ export function drawQr(page: PDFPage, url: string, box: Rect): void {
   const bottom = box.y + QUIET_ZONE_MODULES * module;
   const black = rgb(0, 0, 0);
 
+  // Each row reaches a little into the row below it, so viewers and printers
+  // don't show hairline seams between rows. The bottom row stays inside the code.
+  const overlap = module * 0.08;
   page.drawRectangle({ x: box.x, y: box.y, width: box.w, height: box.h, color: rgb(1, 1, 1) });
   for (let row = 0; row < size; row++) {
-    const y = bottom + (size - 1 - row) * module;
+    const reach = row < size - 1 ? overlap : 0;
+    const y = bottom + (size - 1 - row) * module - reach;
     let col = 0;
     while (col < size) {
       if (!dark(row, col)) {
@@ -37,7 +41,7 @@ export function drawQr(page: PDFPage, url: string, box: Rect): void {
       }
       const start = col;
       while (col < size && dark(row, col)) col++;
-      page.drawRectangle({ x: left + start * module, y, width: (col - start) * module, height: module, color: black });
+      page.drawRectangle({ x: left + start * module, y, width: (col - start) * module, height: module + reach, color: black });
     }
   }
 }

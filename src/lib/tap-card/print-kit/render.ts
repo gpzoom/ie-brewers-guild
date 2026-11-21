@@ -1,0 +1,267 @@
+import fontkit from "@pdf-lib/fontkit";
+import { PDFDocument, degrees, rgb, type PDFFont, type PDFImage, type PDFPage, type RGB } from "pdf-lib";
+import { PLATE_COPY, STAFF_COPY, plateCodeLine, printFooter, type KitPiece } from "./copy";
+import {
+  COUNTER_PAGE,
+  STAFF_PAGE,
+  TENT_PAGE,
+  containRect,
+  counterCardSlots,
+  cutLines,
+  fitFontSize,
+  staffCardSlots,
+  tentFaces,
+  tentFoldLine,
+  type Line,
+  type Rect,
+} from "./layout";
+import { drawQr } from "./qr-vector";
+import type { KitFontBytes, KitImageBytes, PrintKitInput } from "./types";
+
+/** Site tokens (docs/design/README.md). */
+const BRAND = hex("#B3591F");
+const INK = hex("#241F1A");
+const MUTED = hex("#6B6156");
+const CUT = hex("#9A9083");
+const WHITE = rgb(1, 1, 1);
+
+function hex(value: string): RGB {
+  const m = /^#?([0-9a-f]{6})$/i.exec(value.trim());
+  const n = m ? parseInt(m[1], 16) : 0xffffff;
+  return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
+}
+
+type Kit = {
+  doc: PDFDocument;
+  heading: PDFFont;
+  body: PDFFont;
+  semi: PDFFont;
+  guildLogo: PDFImage | null;
+  memberLogo: PDFImage | null;
+};
+
+async function startKit(fonts: KitFontBytes, images: KitImageBytes): Promise<Kit> {
+  const doc = await PDFDocument.create();
+  doc.registerFontkit(fontkit);
+  const [heading, body, semi] = await Promise.all([
+    doc.embedFont(fonts.heading, { subset: true }),
+    doc.embedFont(fonts.body, { subset: true }),
+    doc.embedFont(fonts.bodySemi, { subset: true }),
+  ]);
+  const guildLogo = images.guildLogoPng ? await doc.embedPng(images.guildLogoPng) : null;
+  const memberLogo = images.memberLogoPng ? await doc.embedPng(images.memberLogoPng) : null;
+  return { doc, heading, body, semi, guildLogo, memberLogo };
+}
+
+/**
+ * Draws in a card's own coordinates (origin at its bottom-left). A rotated
+ * surface is the tent's top face: everything is turned 180 degrees so it
+ * reads upright once the page is folded.
+ */
+class Surface {
+  constructor(
+    private page: PDFPage,
+    private area: Rect,
+    private rotated = false,
+  ) {}
+
+  get w() {
+    return this.area.w;
+  }
+  get h() {
+    return this.area.h;
+  }
+
+  /** Where a local point lands on the page. */
+  private at(x: number, y: number) {
+    return this.rotated
+      ? { x: this.area.x + this.area.w - x, y: this.area.y + this.area.h - y }
+      : { x: this.area.x + x, y: this.area.y + y };
+  }
+
+  rect(r: Rect, color: RGB) {
+    const p = this.at(r.x, r.y);
+    this.page.drawRectangle({ ...p, width: r.w, height: r.h, color, rotate: degrees(this.rotated ? 180 : 0) });
+  }
+
+  text(text: string, x: number, y: number, size: number, font: PDFFont, color: RGB) {
+    this.page.drawText(text, { ...this.at(x, y), size, font, color, rotate: degrees(this.rotated ? 180 : 0) });
+  }
+
+  centered(text: string, cx: number, y: number, size: number, font: PDFFont, color: RGB) {
+    this.text(text, cx - font.widthOfTextAtSize(text, size) / 2, y, size, font, color);
+  }
+
+  image(img: PDFImage, box: Rect) {
+    const r = containRect(box, img.width, img.height);
+    const p = this.at(r.x, r.y);
+    this.page.drawImage(img, { ...p, width: r.w, height: r.h, rotate: degrees(this.rotated ? 180 : 0) });
+  }
+
+  /** A QR scans upside down too, so it is drawn unrotated at the mapped square. */
+  qr(url: string, box: Rect) {
+    const page = this.rotated
+      ? { x: this.area.x + this.area.w - box.x - box.w, y: this.area.y + this.area.h - box.y - box.h, w: box.w, h: box.h }
+      : { x: this.area.x + box.x, y: this.area.y + box.y, w: box.w, h: box.h };
+    drawQr(this.page, url, page);
+  }
+}
+
+function drawLines(page: PDFPage, lines: Line[]) {
+  for (const l of lines) {
+    page.drawLine({
+      start: { x: l.x1, y: l.y1 },
+      end: { x: l.x2, y: l.y2 },
+      thickness: 0.5,
+      color: CUT,
+      dashArray: l.dashed ? [6, 4] : undefined,
+    });
+  }
+}
+
+function footer(page: PDFPage, kit: Kit, piece: KitPiece, y: number) {
+  const text = printFooter(piece);
+  const size = 9;
+  page.drawText(text, { x: (page.getWidth() - kit.body.widthOfTextAtSize(text, size)) / 2, y, size, font: kit.body, color: MUTED });
+}
+
+/** Greedy word wrap. */
+function wrap(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
+  const lines: string[] = [];
+  let line = "";
+  for (const word of text.split(/\s+/)) {
+    const next = line ? `${line} ${word}` : word;
+    if (line && font.widthOfTextAtSize(next, size) > maxWidth) {
+      lines.push(line);
+      line = word;
+    } else line = next;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+/** The orange Scan Pass band: Guild logo tile + "INLAND SCAN PASS". */
+function band(s: Surface, kit: Kit, box: Rect) {
+  s.rect(box, BRAND);
+  const pad = 7;
+  const logoSize = box.h - 2 * pad;
+  let textX = box.x + 12;
+  if (kit.guildLogo) {
+    s.image(kit.guildLogo, { x: box.x + pad, y: box.y + pad, w: logoSize, h: logoSize });
+    textX = box.x + pad + logoSize + 10;
+  }
+  const size = fitFontSize(PLATE_COPY.band, box.x + box.w - textX - 8, 16, 9, (z) => kit.heading.widthOfTextAtSize(PLATE_COPY.band, z));
+  s.text(PLATE_COPY.band, textX, box.y + (box.h - size * 0.7) / 2, size, kit.heading, WHITE);
+}
+
+function trailBadge(s: Surface, kit: Kit, cx: number, y: number) {
+  const size = 8;
+  const w = kit.semi.widthOfTextAtSize(PLATE_COPY.trailBadge, size) + 16;
+  s.rect({ x: cx - w / 2, y, w, h: 16 }, INK);
+  s.centered(PLATE_COPY.trailBadge, cx, y + 5, size, kit.semi, WHITE);
+}
+
+/** Member logo tile (only with a logo), name and plate code, in a row starting at x. */
+function memberRow(s: Surface, kit: Kit, input: PrintKitInput, x: number, y: number, maxW: number, tile: number) {
+  let textX = x;
+  if (kit.memberLogo) {
+    s.rect({ x, y, w: tile, h: tile }, hex(input.logoTileColor));
+    s.image(kit.memberLogo, { x: x + 4, y: y + 4, w: tile - 8, h: tile - 8 });
+    textX = x + tile + 10;
+  }
+  const room = x + maxW - textX;
+  const nameSize = fitFontSize(input.memberName, room, 14, 7, (z) => kit.semi.widthOfTextAtSize(input.memberName, z));
+  s.text(input.memberName, textX, y + tile / 2 + 2, nameSize, kit.semi, INK);
+  s.text(plateCodeLine(input.printedCode), textX, y + tile / 2 - 12, 8, kit.body, MUTED);
+}
+
+/** One 4x6 counter card in its own coordinates (288 x 432). */
+function counterCard(s: Surface, kit: Kit, input: PrintKitInput) {
+  const cx = s.w / 2;
+  const inset = 12;
+  const bandH = 54;
+  const bandTop = s.h - inset;
+  band(s, kit, { x: inset, y: bandTop - bandH, w: s.w - 2 * inset, h: bandH });
+  if (input.trailStop) trailBadge(s, kit, cx, bandTop - bandH - 26);
+  const qr = 190;
+  const qrY = bandTop - bandH - 34 - qr;
+  s.qr(input.plateUrl, { x: cx - qr / 2, y: qrY, w: qr, h: qr });
+  s.centered(PLATE_COPY.headline, cx, qrY - 24, 20, kit.heading, INK);
+  const lineSize = fitFontSize(PLATE_COPY.line, s.w - 36, 10, 7, (z) => kit.body.widthOfTextAtSize(PLATE_COPY.line, z));
+  s.centered(PLATE_COPY.line, cx, qrY - 40, lineSize, kit.body, MUTED);
+  memberRow(s, kit, input, 18, 18, s.w - 36, 44);
+}
+
+/** One tent face in its own coordinates (612 x 396): QR left, the rest right. */
+function tentFace(s: Surface, kit: Kit, input: PrintKitInput) {
+  const margin = 36;
+  const qr = 236;
+  s.qr(input.plateUrl, { x: margin, y: (s.h - qr) / 2, w: qr, h: qr });
+  const colX = margin + qr + 28;
+  const colW = s.w - margin - colX;
+  const cx = colX + colW / 2;
+  const top = s.h - margin;
+  band(s, kit, { x: colX, y: top - 50, w: colW, h: 50 });
+  if (input.trailStop) trailBadge(s, kit, cx, top - 50 - 28);
+  s.centered(PLATE_COPY.headline, cx, top - 50 - 70, 26, kit.heading, INK);
+  const lineSize = fitFontSize(PLATE_COPY.line, colW, 12, 7, (z) => kit.body.widthOfTextAtSize(PLATE_COPY.line, z));
+  s.centered(PLATE_COPY.line, cx, top - 50 - 92, lineSize, kit.body, MUTED);
+  memberRow(s, kit, input, colX, margin, colW, 50);
+}
+
+/** One staff card in its own coordinates (252 x 144): QR left, words right. */
+function staffCard(s: Surface, kit: Kit, input: PrintKitInput) {
+  const pad = 10;
+  const qr = 100;
+  const qrY = s.h - pad - qr;
+  s.qr(input.staffQrUrl, { x: pad, y: qrY, w: qr, h: qr });
+  s.centered(input.staffQrPrinted, pad + qr / 2, qrY - 12, 7, kit.body, MUTED);
+  const colX = pad + qr + 10;
+  const colW = s.w - pad - colX;
+  let y = s.h - pad - 8;
+  for (const line of wrap(STAFF_COPY.eyebrow, kit.semi, 7, colW)) {
+    s.text(line, colX, y, 7, kit.semi, INK);
+    y -= 9;
+  }
+  y -= 6;
+  const nameSize = fitFontSize(input.memberName, colW, 10, 6, (z) => kit.semi.widthOfTextAtSize(input.memberName, z));
+  s.text(input.memberName, colX, y, nameSize, kit.semi, INK);
+  y -= 14;
+  for (const line of wrap(STAFF_COPY.howTo, kit.body, 7, colW)) {
+    s.text(line, colX, y, 7, kit.body, MUTED);
+    y -= 9;
+  }
+}
+
+/** Two 4x6 counter cards on landscape letter, with cut lines. */
+export async function buildCounterCardsPdf(input: PrintKitInput, fonts: KitFontBytes, images: KitImageBytes): Promise<Uint8Array> {
+  const kit = await startKit(fonts, images);
+  const page = kit.doc.addPage([COUNTER_PAGE.width, COUNTER_PAGE.height]);
+  const slots = counterCardSlots();
+  for (const slot of slots) counterCard(new Surface(page, slot), kit, input);
+  drawLines(page, cutLines(slots));
+  footer(page, kit, "counter-card", 40);
+  return kit.doc.save();
+}
+
+/** One letter page folded in half; the top face is upside down. */
+export async function buildTableTentPdf(input: PrintKitInput, fonts: KitFontBytes, images: KitImageBytes): Promise<Uint8Array> {
+  const kit = await startKit(fonts, images);
+  const page = kit.doc.addPage([TENT_PAGE.width, TENT_PAGE.height]);
+  for (const face of tentFaces()) tentFace(new Surface(page, face.rect, face.rotated), kit, input);
+  drawLines(page, [tentFoldLine()]);
+  footer(page, kit, "table-tent", 20);
+  return kit.doc.save();
+}
+
+/** Four staff cards on portrait letter, with cut lines. Never the 4-digit staff code. */
+export async function buildStaffCardsPdf(input: PrintKitInput, fonts: KitFontBytes, _images: KitImageBytes): Promise<Uint8Array> {
+  // The staff card is plain: no logos (spec). `_images` keeps the three builders' signatures alike.
+  const kit = await startKit(fonts, { guildLogoPng: null, memberLogoPng: null });
+  const page = kit.doc.addPage([STAFF_PAGE.width, STAFF_PAGE.height]);
+  const slots = staffCardSlots();
+  for (const slot of slots) staffCard(new Surface(page, slot), kit, input);
+  drawLines(page, cutLines(slots));
+  footer(page, kit, "staff-cards", 40);
+  return kit.doc.save();
+}
