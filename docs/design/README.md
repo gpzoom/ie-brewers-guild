@@ -59,7 +59,7 @@ Placeholders like `[MEMBER NAME]` in the artboards are stand-ins for real data. 
 | M2 `AdminFood` | Food: the food calendar and 7-day preview (producers only) | `routes/admin.food.tsx`, portal section `food` → `admin/FoodCalendarSection` |
 | X `SupportHelp` | Help button: bug report or feature request (every portal, /admin and Guild screen) | `support/SupportButton`, mounted in `routes/__root.tsx` |
 | Y `GuildHelp` | Help messages, with the top bar's bell (super admin only) | `routes/guild.help.tsx` → `guild/HelpMessagesScreen`; bell in `guild/GuildShell` |
-| Z `GuildSettings` | Settings: calendar sync timing, homepage carousel dwell time, homepage hero image (super admin only) | `routes/guild.settings.tsx` → `guild/SiteSettingsScreen` |
+| Z `GuildSettings` | Settings: Maintenance mode, calendar sync timing, homepage carousel dwell time, homepage hero image, Homepage sections with announcement images (super admin only; redrawn from the built screen 2026-11-21) | `routes/guild.settings.tsx` → `guild/SiteSettingsScreen` |
 | A `HomeEvents` | Homepage: "Coming up at our members" carousel (desktop) | `routes/index.tsx` → `home/MemberEventsCarousel` |
 | A2 `HomeEventsPhone` | The same, on a phone | same |
 | A3 `HomeEventsStates` | Calendar page states, the pinned Guild event, nothing coming up | same |
