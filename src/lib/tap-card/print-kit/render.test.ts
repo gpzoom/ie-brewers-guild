@@ -109,6 +109,30 @@ describe("print-kit PDFs", () => {
     expect(texts(spy).some((t) => t.startsWith("Print at 100%"))).toBe(false);
   });
 
+  it("portrait staff card: QR at least 1.6 in, centered, with everything inside the card", async () => {
+    const rects = vi.spyOn(PDFPage.prototype, "drawRectangle");
+    const textSpy = vi.spyOn(PDFPage.prototype, "drawText");
+    await buildStaffCardsPdf(input, fonts, noImages);
+    const slots = staffCardSlots();
+    const white = JSON.stringify(rgb(1, 1, 1));
+    const qrBoxes = rects.mock.calls.map((c) => c[0]!).filter((o) => JSON.stringify(o.color) === white && o.width === o.height);
+    expect(qrBoxes).toHaveLength(4);
+    for (const [i, q] of qrBoxes.entries()) {
+      const s = slots.find((slot) => q.x! >= slot.x && q.x! < slot.x + slot.w && q.y! >= slot.y && q.y! < slot.y + slot.h)!;
+      expect(s, `QR ${i} in a slot`).toBeDefined();
+      expect(q.width!).toBeGreaterThanOrEqual(115);
+      expect(Math.abs(q.x! + q.width! / 2 - (s.x + s.w / 2))).toBeLessThan(0.01);
+    }
+    for (const call of textSpy.mock.calls) {
+      const o = call[1]!;
+      const w = (o.font as PDFFont).widthOfTextAtSize(call[0] as string, o.size!);
+      if ((call[0] as string).startsWith("Print at")) continue;
+      const s = slots.find((slot) => o.x! >= slot.x - 0.01 && o.x! <= slot.x + slot.w && o.y! >= slot.y && o.y! <= slot.y + slot.h);
+      expect(s, `${call[0]} inside a card`).toBeDefined();
+      expect(o.x! + w).toBeLessThanOrEqual(s!.x + s!.w + 0.01);
+    }
+  });
+
   it("staff cards print the staff QR code but no 4-digit code", async () => {
     const spy = vi.spyOn(PDFPage.prototype, "drawText");
     await buildStaffCardsPdf(input, fonts, noImages);

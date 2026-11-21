@@ -21,12 +21,12 @@ describe("print-kit layout", () => {
     ]);
   });
 
-  it("puts four staff cards in a centered 2x2 grid", () => {
+  it("puts four portrait staff cards (2x3.5 in) in a centered 2x2 grid", () => {
     const slots = staffCardSlots();
     expect(STAFF_PAGE).toEqual({ width: 612, height: 792 });
     expect(slots).toHaveLength(4);
     for (const s of slots) {
-      expect([s.w, s.h]).toEqual([252, 144]);
+      expect([s.w, s.h]).toEqual([144, 252]);
       expect(s.x).toBeGreaterThanOrEqual(18);
       expect(s.y).toBeGreaterThanOrEqual(18);
       expect(s.x + s.w).toBeLessThanOrEqual(612 - 18);
@@ -34,10 +34,10 @@ describe("print-kit layout", () => {
     }
     const xs = [...new Set(slots.map((s) => s.x))].sort((a, b) => a - b);
     const ys = [...new Set(slots.map((s) => s.y))].sort((a, b) => a - b);
-    expect(xs[1] - (xs[0] + 252)).toBe(36);
-    expect(ys[1] - (ys[0] + 144)).toBe(36);
-    expect(xs[0]).toBe(612 - (xs[1] + 252));
-    expect(ys[0]).toBe(792 - (ys[1] + 144));
+    expect(xs[1] - (xs[0] + 144)).toBe(36);
+    expect(ys[1] - (ys[0] + 252)).toBe(36);
+    expect(xs[0]).toBe(612 - (xs[1] + 144));
+    expect(ys[0]).toBe(792 - (ys[1] + 252));
   });
 
   it("splits the tent page into two faces, the top one upside down", () => {

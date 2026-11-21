@@ -74,7 +74,7 @@ Owner picked **1**.
 
 **Table tent:** one letter page, folded in half, giving two faces about 8.5 in wide and 5.5 in tall. The 4×6 card doesn't fit a face, and shrinking it would break the 2.5 in QR minimum. So each face gets a **landscape layout** of the same content (my call): the QR on the left, and on the right the band, "SCAN TO CHECK IN", the wording, the badge and the member's logo and name. One face is printed upside down, so both read upright when it stands. The owner reviews a tent sample too.
 
-**Staff card:** business-card size, 3.5×2 in. Plain:
+**Staff card:** business-card size, **portrait, 2×3.5 in** (owner, 2026-11-21; was landscape 3.5×2). Everything is centered top to bottom, and the staff QR fills the card's width (about 1.7 in). Plain:
 - "STAFF ONLY · keep behind the counter"
 - the staff QR
 - the staff QR's printed code in small type (e.g. "Y77A-Q0GA"), so staff can tell an old card from a current one after "Make a new staff QR". This is my call; the code also appears on today's PNG download.

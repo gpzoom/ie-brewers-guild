@@ -236,29 +236,37 @@ function tentFace(s: Surface, kit: Kit, input: PrintKitInput) {
   memberRow(s, kit, input, colX, margin, colW, 50);
 }
 
-/** One staff card in its own coordinates (252 x 144): QR left, words right. */
+/**
+ * One portrait staff card in its own coordinates (144 x 252), centered top to
+ * bottom: STAFF ONLY, the staff QR, its printed code, the member name, how to use it.
+ */
 function staffCard(s: Surface, kit: Kit, input: PrintKitInput) {
   const pad = 10;
-  const qr = 100;
-  const qrY = s.h - pad - qr;
-  s.qr(input.staffQrUrl, { x: pad, y: qrY, w: qr, h: qr });
-  s.centered(input.staffQrPrinted, pad + qr / 2, qrY - 12, 7, kit.body, MUTED);
-  const colX = pad + qr + 10;
-  const colW = s.w - pad - colX;
-  let y = s.h - pad - 8;
-  for (const line of wrap(STAFF_COPY.eyebrow, kit.semi, 7, colW)) {
-    s.text(line, colX, y, 7, kit.semi, INK);
-    y -= 9;
+  const colW = s.w - 2 * pad;
+  const cx = s.w / 2;
+  const eyebrow = wrap(STAFF_COPY.eyebrow, kit.semi, 7.5, colW);
+  const name = fitName(input.memberName, kit.semi, colW, 11, 6.5);
+  const howTo = wrap(STAFF_COPY.howTo, kit.body, 7, colW);
+  // Block height from the first baseline down to the last, so it sits centered on the card.
+  const block = eyebrow.length * 9.5 + 2 + colW + 9 + 16 + name.lines.length * (name.size + 2) + 4 + (howTo.length - 1) * 9;
+  let y = Math.min(s.h - pad - 8, (s.h + block) / 2);
+  for (const line of eyebrow) {
+    s.centered(line, cx, y, 7.5, kit.semi, INK);
+    y -= 9.5;
   }
-  y -= 6;
-  const name = fitName(input.memberName, kit.semi, colW, 10, 6);
+  const qr = colW;
+  const qrY = y - 2 - qr;
+  s.qr(input.staffQrUrl, { x: pad, y: qrY, w: qr, h: qr });
+  y = qrY - 9;
+  s.centered(input.staffQrPrinted, cx, y, 7, kit.body, MUTED);
+  y -= 16;
   for (const line of name.lines) {
-    s.text(line, colX, y, name.size, kit.semi, INK);
+    s.centered(line, cx, y, name.size, kit.semi, INK);
     y -= name.size + 2;
   }
   y -= 4;
-  for (const line of wrap(STAFF_COPY.howTo, kit.body, 7, colW)) {
-    s.text(line, colX, y, 7, kit.body, MUTED);
+  for (const line of howTo) {
+    s.centered(line, cx, y, 7, kit.body, MUTED);
     y -= 9;
   }
 }

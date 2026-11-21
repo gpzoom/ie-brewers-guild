@@ -15,9 +15,9 @@ const COUNTER_GAP = 36;
 
 export const TENT_PAGE = { width: 612, height: 792 } as const;
 
-/** Four 3.5x2 in staff cards, a 2x2 grid on portrait letter. */
+/** Four 2x3.5 in portrait staff cards (owner, 2026-11-21), a 2x2 grid on portrait letter. */
 export const STAFF_PAGE = { width: 612, height: 792 } as const;
-export const STAFF_CARD = { w: 252, h: 144 } as const;
+export const STAFF_CARD = { w: 144, h: 252 } as const;
 const STAFF_GAP = 36;
 
 export function counterCardSlots(): Rect[] {
