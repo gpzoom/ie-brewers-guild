@@ -209,13 +209,15 @@ function counterCard(s: Surface, kit: Kit, input: PrintKitInput) {
   const bandH = 54;
   const bandTop = s.h - inset;
   band(s, kit, { x: inset, y: bandTop - bandH, w: s.w - 2 * inset, h: bandH });
-  if (input.trailStop) trailBadge(s, kit, cx, bandTop - bandH - 26);
-  const qr = 190;
-  const qrY = bandTop - bandH - 34 - qr;
+  if (input.trailStop) trailBadge(s, kit, cx, bandTop - bandH - 22);
+  // As big as the card allows (owner, 2026-11-21): the box's white margin is
+  // what separates it from the badge above and the headline below.
+  const qr = 232;
+  const qrY = bandTop - bandH - 24 - qr;
   s.qr(input.plateUrl, { x: cx - qr / 2, y: qrY, w: qr, h: qr });
-  s.centered(PLATE_COPY.headline, cx, qrY - 24, 20, kit.heading, INK);
+  s.centered(PLATE_COPY.headline, cx, qrY - 20, 20, kit.heading, INK);
   const lineSize = fitFontSize(PLATE_COPY.line, s.w - 36, 10, 7, (z) => kit.body.widthOfTextAtSize(PLATE_COPY.line, z));
-  s.centered(PLATE_COPY.line, cx, qrY - 40, lineSize, kit.body, MUTED);
+  s.centered(PLATE_COPY.line, cx, qrY - 35, lineSize, kit.body, MUTED);
   memberRow(s, kit, input, 18, 18, s.w - 36, 44);
 }
 

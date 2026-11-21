@@ -64,7 +64,7 @@ Owner picked **1**.
 
 **Counter card, 4×6 portrait, white background:**
 - Top band in the Scan Pass color: Guild logo + "INLAND SCAN PASS".
-- A large QR code, black on white, at least 2.5 in wide.
+- A large QR code, black on white: a 232 pt box (owner, 2026-11-21: "bigger"), so the black code itself is about 2.5 in wide.
 - "SCAN TO CHECK IN" in the heading font.
 - One or two lines of **always-true wording** (owner, 2026-11-21). Cards sit on counters for months, but Beer Trail passes are only sometimes on sale (`signedOutButtons` in `src/lib/tap-card/plate.ts` offers only the free pass when `canJoinTrail` is false). So the card never names the paid pass, its price, or the nickel-beer offer. Draft: "Get your free Scan Pass · earn rewards here." The owner checks the final wording in the sample.
   - Beer Trail stops (`trail_eligible`) also get a **BEER TRAIL STOP** badge.

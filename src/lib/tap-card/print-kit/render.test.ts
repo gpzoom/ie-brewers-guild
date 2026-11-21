@@ -103,6 +103,42 @@ describe("print-kit PDFs", () => {
     }
   });
 
+  it("counter card QR box is at least 230 pt and no text touches it", async () => {
+    for (const trailStop of [true, false]) {
+      const rects = vi.spyOn(PDFPage.prototype, "drawRectangle");
+      const textSpy = vi.spyOn(PDFPage.prototype, "drawText");
+      await buildCounterCardsPdf({ ...input, trailStop }, fonts, { guildLogoPng: null, memberLogoPng: pngLogo });
+      const white = JSON.stringify(rgb(1, 1, 1));
+      const qrs = rects.mock.calls.map((c) => c[0]!).filter((o) => JSON.stringify(o.color) === white && o.width === o.height);
+      expect(qrs).toHaveLength(2);
+      const slots = counterCardSlots();
+      for (const q of qrs) {
+        expect(q.width!).toBeGreaterThanOrEqual(230);
+        const s = slots.find((slot) => q.x! >= slot.x && q.x! + q.width! <= slot.x + slot.w)!;
+        expect(s).toBeDefined();
+        expect(q.y!).toBeGreaterThanOrEqual(s.y);
+        expect(q.y! + q.height!).toBeLessThanOrEqual(s.y + s.h);
+        for (const call of textSpy.mock.calls) {
+          const o = call[1]!;
+          const w = (o.font as PDFFont).widthOfTextAtSize(call[0] as string, o.size!);
+          const overlapsX = o.x! < q.x! + q.width! && o.x! + w > q.x!;
+          const top = o.y! + o.size! * 0.8;
+          const bottom = o.y! - o.size! * 0.25;
+          const overlapsY = bottom < q.y! + q.height! && top > q.y!;
+          expect(overlapsX && overlapsY, `"${call[0]}" overlaps the QR`).toBe(false);
+        }
+        // nothing else (band, badge, tile) inside the QR box either
+        for (const r of rects.mock.calls.map((c) => c[0]!)) {
+          if (r === q || JSON.stringify(r.color) === JSON.stringify(rgb(0, 0, 0))) continue;
+          const inside = r.x! < q.x! + q.width! && r.x! + r.width! > q.x! && r.y! < q.y! + q.height! && r.y! + r.height! > q.y!;
+          expect(inside).toBe(false);
+        }
+      }
+      rects.mockRestore();
+      textSpy.mockRestore();
+    }
+  });
+
   it("the table tent prints no footer (both faces face customers)", async () => {
     const spy = vi.spyOn(PDFPage.prototype, "drawText");
     await buildTableTentPdf(input, fonts, noImages);
