@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
-import { printKitInfoFromRow, type PrintKitInfo } from "@/lib/tap-card/print-kit-info";
+import { approvedLogoUrl, printKitInfoFromRow, type PrintKitInfo } from "@/lib/tap-card/print-kit-info";
 
 /**
  * Portal/Admin > Scan Pass > Print kit: the member's name, slug, logo and
@@ -20,11 +20,6 @@ export const getPrintKitInfo = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     if (!member) throw new Error("Member not found.");
 
-    let logoUrl: string | null = null;
-    if (member.logo_asset_id) {
-      const { data: asset } = await service.from("media_assets").select("storage_path").eq("id", member.logo_asset_id).maybeSingle();
-      const path = (asset?.storage_path as string | undefined) ?? null;
-      if (path) logoUrl = service.storage.from("member-logos").getPublicUrl(path).data.publicUrl;
-    }
+    const logoUrl = await approvedLogoUrl(service as unknown as Parameters<typeof approvedLogoUrl>[0], member.logo_asset_id);
     return printKitInfoFromRow(member, trailStop, logoUrl);
   });

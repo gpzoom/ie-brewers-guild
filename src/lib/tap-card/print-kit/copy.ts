@@ -37,11 +37,8 @@ export function plateCodeLine(printedCode: string): string {
   return `code ${printedCode}`;
 }
 
-export function printFooter(piece: KitPiece): string {
-  return piece === "table-tent"
-    ? "Print at 100% / Actual size. Fold on the dashed line."
-    : "Print at 100% / Actual size. Cut on the gray lines.";
-}
+/** Printed under the counter cards and staff cards. The table tent has none: both its faces face customers. */
+export const PRINT_FOOTER = "Print at 100% / Actual size. Cut on the gray lines.";
 
 export function kitFileName(piece: KitPiece, memberSlug: string): string {
   const slug = memberSlug.trim();

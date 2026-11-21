@@ -1,5 +1,40 @@
 import { describe, expect, it } from "vitest";
-import { printKitInfoFromRow } from "./print-kit-info";
+import { approvedLogoUrl, printKitInfoFromRow } from "./print-kit-info";
+
+/** A stand-in for the Supabase client: records filters, answers from `rows`. */
+function fakeClient(rows: Array<{ id: string; review_status: string; storage_path: string }>) {
+  const filters: Record<string, string> = {};
+  const query = {
+    select: () => query,
+    eq: (col: string, val: string) => {
+      filters[col] = val;
+      return query;
+    },
+    maybeSingle: async () => ({ data: rows.find((r) => Object.entries(filters).every(([k, v]) => r[k as keyof typeof r] === v)) ?? null }),
+  };
+  return {
+    filters,
+    from: () => query,
+    storage: { from: (bucket: string) => ({ getPublicUrl: (path: string) => ({ data: { publicUrl: `https://cdn/${bucket}/${path}` } }) }) },
+  };
+}
+
+describe("approvedLogoUrl", () => {
+  it("returns the public URL of an approved logo", async () => {
+    const db = fakeClient([{ id: "a1", review_status: "approved", storage_path: "m/logo.png" }]);
+    expect(await approvedLogoUrl(db, "a1")).toBe("https://cdn/member-logos/m/logo.png");
+    expect(db.filters).toMatchObject({ id: "a1", review_status: "approved" });
+  });
+
+  it("returns null for a logo that isn't approved", async () => {
+    expect(await approvedLogoUrl(fakeClient([{ id: "a1", review_status: "rejected", storage_path: "m/x.png" }]), "a1")).toBeNull();
+    expect(await approvedLogoUrl(fakeClient([{ id: "a1", review_status: "pending", storage_path: "m/x.png" }]), "a1")).toBeNull();
+  });
+
+  it("returns null with no logo", async () => {
+    expect(await approvedLogoUrl(fakeClient([]), null)).toBeNull();
+  });
+});
 import { logoBackgroundColor } from "@/lib/members/logo-background";
 import type { MemberThemeName } from "@/lib/theme/member-themes";
 

@@ -1,6 +1,6 @@
 import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, degrees, rgb, type PDFFont, type PDFImage, type PDFPage, type RGB } from "pdf-lib";
-import { PLATE_COPY, STAFF_COPY, plateCodeLine, printFooter, type KitPiece } from "./copy";
+import { PLATE_COPY, PRINT_FOOTER, STAFF_COPY, plateCodeLine } from "./copy";
 import {
   COUNTER_PAGE,
   STAFF_PAGE,
@@ -119,8 +119,8 @@ function drawLines(page: PDFPage, lines: Line[]) {
   }
 }
 
-function footer(page: PDFPage, kit: Kit, piece: KitPiece, y: number) {
-  const text = printFooter(piece);
+function footer(page: PDFPage, kit: Kit, y: number) {
+  const text = PRINT_FOOTER;
   const size = 9;
   page.drawText(text, { x: (page.getWidth() - kit.body.widthOfTextAtSize(text, size)) / 2, y, size, font: kit.body, color: MUTED });
 }
@@ -280,7 +280,7 @@ export async function buildCounterCardsPdf(input: PrintKitInput, fonts: KitFontB
   const slots = counterCardSlots();
   for (const slot of slots) counterCard(new Surface(page, slot), kit, input);
   drawLines(page, cutLines(slots));
-  footer(page, kit, "counter-card", 40);
+  footer(page, kit, 40);
   return kit.doc.save();
 }
 
@@ -303,6 +303,6 @@ export async function buildStaffCardsPdf(input: PrintKitInput, fonts: KitFontByt
   const slots = staffCardSlots();
   for (const slot of slots) staffCard(new Surface(page, slot), kit, input);
   drawLines(page, cutLines(slots));
-  footer(page, kit, "staff-cards", 40);
+  footer(page, kit, 40);
   return kit.doc.save();
 }

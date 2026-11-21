@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PLATE_COPY, REPRINT_NOTICE, STAFF_COPY, kitErrorMessage, kitFileName, plateCodeLine, printFooter } from "./copy";
+import { PLATE_COPY, PRINT_FOOTER, REPRINT_NOTICE, STAFF_COPY, kitErrorMessage, kitFileName, plateCodeLine } from "./copy";
 
 describe("print-kit copy", () => {
   it("has the plate wording", () => {
@@ -22,10 +22,8 @@ describe("print-kit copy", () => {
     expect(plateCodeLine("68JJ-PT27")).toBe("code 68JJ-PT27");
   });
 
-  it("has a footer per piece", () => {
-    expect(printFooter("counter-card")).toBe("Print at 100% / Actual size. Cut on the gray lines.");
-    expect(printFooter("staff-cards")).toBe("Print at 100% / Actual size. Cut on the gray lines.");
-    expect(printFooter("table-tent")).toBe("Print at 100% / Actual size. Fold on the dashed line.");
+  it("has one print footer for the cut sheets (the tent has none)", () => {
+    expect(PRINT_FOOTER).toBe("Print at 100% / Actual size. Cut on the gray lines.");
   });
 
   it("names the files", () => {
