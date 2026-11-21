@@ -37,9 +37,11 @@ describe("print-kit copy", () => {
 
   it("has the reprint notices", () => {
     expect(REPRINT_NOTICE.plate).toBe(
-      "New plate link made. Download and print a new counter card and table tent: the old ones no longer work.",
+      "New plate link made. Your printed counter cards and table tents no longer work: use Print kit above to print new ones.",
     );
-    expect(REPRINT_NOTICE.staff).toBe("New staff QR made. Download and print new staff cards: the old ones no longer work.");
+    expect(REPRINT_NOTICE.staff).toBe(
+      "New staff QR made. Your printed staff cards no longer work: use Print kit above to print new ones.",
+    );
   });
 
   it("passes sign-in and permission errors through, hides everything else", () => {

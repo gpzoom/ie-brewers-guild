@@ -21,8 +21,8 @@ export const STAFF_COPY = {
 } as const;
 
 export const REPRINT_NOTICE = {
-  plate: "New plate link made. Download and print a new counter card and table tent: the old ones no longer work.",
-  staff: "New staff QR made. Download and print new staff cards: the old ones no longer work.",
+  plate: "New plate link made. Your printed counter cards and table tents no longer work: use Print kit above to print new ones.",
+  staff: "New staff QR made. Your printed staff cards no longer work: use Print kit above to print new ones.",
 } as const;
 
 /** Server messages a member can act on (requireTapCardEditor); everything else stays generic. */
