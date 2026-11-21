@@ -39,7 +39,7 @@ async function pageSize(bytes: Uint8Array) {
 }
 const tileColor = rgb(0x12 / 255, 0x34 / 255, 0x56 / 255);
 const isTile = (o: { color?: unknown } | undefined) => JSON.stringify(o?.color) === JSON.stringify(tileColor);
-function texts(spy: ReturnType<typeof vi.spyOn>) {
+function texts(spy: { mock: { calls: unknown[][] } }) {
   return spy.mock.calls.map((c) => c[0] as string);
 }
 
