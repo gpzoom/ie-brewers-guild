@@ -140,6 +140,28 @@ function wrap(text: string, font: PDFFont, size: number, maxWidth: number): stri
   return lines;
 }
 
+/**
+ * A member name in at most two lines: one line, shrunk from startSize; if
+ * it still doesn't fit at minSize, wrapped onto two lines at minSize, and the
+ * second line shortened with "…" if even that runs over.
+ */
+function fitName(name: string, font: PDFFont, maxWidth: number, startSize: number, minSize: number) {
+  const size = fitFontSize(name, maxWidth, startSize, minSize, (z) => font.widthOfTextAtSize(name, z));
+  if (font.widthOfTextAtSize(name, size) <= maxWidth) return { size, lines: [name] };
+  const lines = wrap(name, font, minSize, maxWidth);
+  const first = lines[0];
+  let second = lines.slice(1).join(" ");
+  const fits = (t: string) => font.widthOfTextAtSize(t, minSize) <= maxWidth;
+  if (lines.length > 2 || !fits(second)) {
+    while (second.length > 1 && !fits(`${second}…`)) second = second.slice(0, -1).trimEnd();
+    second = `${second}…`;
+  }
+  // A single word longer than the column: shorten it too.
+  let head = first;
+  while (head.length > 1 && !fits(head)) head = head.slice(0, -1);
+  return { size: minSize, lines: second ? [head, second] : [head] };
+}
+
 /** The orange Scan Pass band: Guild logo tile + "INLAND SCAN PASS". */
 function band(s: Surface, kit: Kit, box: Rect) {
   s.rect(box, BRAND);
@@ -170,9 +192,14 @@ function memberRow(s: Surface, kit: Kit, input: PrintKitInput, x: number, y: num
     textX = x + tile + 10;
   }
   const room = x + maxW - textX;
-  const nameSize = fitFontSize(input.memberName, room, 14, 7, (z) => kit.semi.widthOfTextAtSize(input.memberName, z));
-  s.text(input.memberName, textX, y + tile / 2 + 2, nameSize, kit.semi, INK);
-  s.text(plateCodeLine(input.printedCode), textX, y + tile / 2 - 12, 8, kit.body, MUTED);
+  const name = fitName(input.memberName, kit.semi, room, 14, 7);
+  const lineGap = name.size + 2;
+  let nameY = y + tile / 2 + 2 + (name.lines.length - 1) * (lineGap / 2);
+  for (const line of name.lines) {
+    s.text(line, textX, nameY, name.size, kit.semi, INK);
+    nameY -= lineGap;
+  }
+  s.text(plateCodeLine(input.printedCode), textX, nameY + lineGap - 14, 8, kit.body, MUTED);
 }
 
 /** One 4x6 counter card in its own coordinates (288 x 432). */
@@ -224,9 +251,12 @@ function staffCard(s: Surface, kit: Kit, input: PrintKitInput) {
     y -= 9;
   }
   y -= 6;
-  const nameSize = fitFontSize(input.memberName, colW, 10, 6, (z) => kit.semi.widthOfTextAtSize(input.memberName, z));
-  s.text(input.memberName, colX, y, nameSize, kit.semi, INK);
-  y -= 14;
+  const name = fitName(input.memberName, kit.semi, colW, 10, 6);
+  for (const line of name.lines) {
+    s.text(line, colX, y, name.size, kit.semi, INK);
+    y -= name.size + 2;
+  }
+  y -= 4;
   for (const line of wrap(STAFF_COPY.howTo, kit.body, 7, colW)) {
     s.text(line, colX, y, 7, kit.body, MUTED);
     y -= 9;
@@ -250,7 +280,8 @@ export async function buildTableTentPdf(input: PrintKitInput, fonts: KitFontByte
   const page = kit.doc.addPage([TENT_PAGE.width, TENT_PAGE.height]);
   for (const face of tentFaces()) tentFace(new Surface(page, face.rect, face.rotated), kit, input);
   drawLines(page, [tentFoldLine()]);
-  footer(page, kit, "table-tent", 20);
+  // No print footer: both faces face customers once folded, and there's no
+  // cut-away area to put it in. The Print kit box tells members to print at 100%.
   return kit.doc.save();
 }
 

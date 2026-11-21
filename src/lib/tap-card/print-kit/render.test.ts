@@ -4,7 +4,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import QRCode from "qrcode";
 import { PDFDocument, PDFPage, rgb, type PDFFont } from "pdf-lib";
 import { buildCounterCardsPdf, buildStaffCardsPdf, buildTableTentPdf } from "./render";
-import { counterCardSlots } from "./layout";
+import { counterCardSlots, staffCardSlots, tentFaces } from "./layout";
 import type { KitFontBytes, KitImageBytes, PrintKitInput } from "./types";
 
 const dir = join(process.cwd(), "public", "fonts", "print-kit");
@@ -72,6 +72,41 @@ describe("print-kit PDFs", () => {
       expect(o.x!).toBeGreaterThanOrEqual(slots[i].x);
       expect(o.x! + width).toBeLessThanOrEqual(slots[i].x + slots[i].w);
     }
+  });
+
+  it("long names stay inside every card: staff cards, counter cards and the tent", async () => {
+    const names = ["The Extraordinarily Long Name Brewing Company #2", "MOUNTAIN WOLF WORLDWIDE BREWING AND WINERY COMPANY"];
+    const cases = [
+      { build: buildStaffCardsPdf, slots: staffCardSlots() },
+      { build: buildCounterCardsPdf, slots: counterCardSlots() },
+      { build: buildTableTentPdf, slots: tentFaces().map((f) => f.rect) },
+    ];
+    for (const name of names) {
+      for (const { build, slots } of cases) {
+        const spy = vi.spyOn(PDFPage.prototype, "drawText");
+        await build({ ...input, memberName: name }, fonts, { guildLogoPng: null, memberLogoPng: pngLogo });
+        const words = new Set(name.split(" "));
+        const nameCalls = spy.mock.calls.filter((c) => (c[0] as string).split(/\s+/).some((w) => words.has(w)) && !/SCAN|STAFF|Get your/.test(c[0] as string));
+        expect(nameCalls.length).toBeGreaterThan(0);
+        for (const call of nameCalls) {
+          const o = call[1]!;
+          const text = call[0] as string;
+          const width = (o.font as PDFFont).widthOfTextAtSize(text, o.size!);
+          const rotated = (o.rotate as { angle?: number } | undefined)?.angle === 180;
+          const left = rotated ? o.x! - width : o.x!;
+          const slot = slots.find((s) => left >= s.x - 0.01 && left <= s.x + s.w);
+          expect(slot, `${text} at x=${left}`).toBeDefined();
+          expect(left + width).toBeLessThanOrEqual(slot!.x + slot!.w + 0.01);
+        }
+        spy.mockRestore();
+      }
+    }
+  });
+
+  it("the table tent prints no footer (both faces face customers)", async () => {
+    const spy = vi.spyOn(PDFPage.prototype, "drawText");
+    await buildTableTentPdf(input, fonts, noImages);
+    expect(texts(spy).some((t) => t.startsWith("Print at 100%"))).toBe(false);
   });
 
   it("staff cards print the staff QR code but no 4-digit code", async () => {
