@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>News page (public)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#171410}
+a{color:#E8913A}a:hover{color:#F2AE66}
+</style>
+</helmet>
+<div style="width: 1440px; height: 2190px; box-sizing: border-box; background: #171410; color: #F7F3EC; display: flex; flex-direction: column; overflow: hidden;">
+<header style="height: 73px; flex-shrink: 0; box-sizing: border-box; border-bottom: 1px solid rgba(58,51,44,0.6); background: rgba(23,20,16,0.8);">
+  <div style="width: 1280px; height: 72px; margin: 0 auto; padding: 0 24px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between;">
+    <a href="#home" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #F7F3EC;">
+      <span style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 2px; background: #2A241E; border: 1px dashed #3A332C; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.08em; color: #B6AC9D;">LOGO</span>
+      <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #F7F3EC;">ISC Brewers Guild</span>
+    </a>
+    <nav aria-label="Main" style="display: flex; align-items: center; gap: 4px;">
+      <a href="#home" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 6px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.025em; color: rgba(247,243,236,0.8); text-decoration: none;">Home</a><a href="#about" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 6px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.025em; color: rgba(247,243,236,0.8); text-decoration: none;">About</a><a href="#members" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 6px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.025em; color: rgba(247,243,236,0.8); text-decoration: none;">Members</a><a href="#news" aria-current="page" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 6px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.025em; color: #E8913A; text-decoration: none;">News</a><a href="#jobs" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 6px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.025em; color: rgba(247,243,236,0.8); text-decoration: none;">Jobs</a><a href="#trail" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 6px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.025em; color: rgba(247,243,236,0.8); text-decoration: none;">Scan Pass</a><a href="#contact" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 6px; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.025em; color: rgba(247,243,236,0.8); text-decoration: none;">Contact</a>
+      <div style="margin-left: 12px; padding-left: 12px; border-left: 1px solid rgba(58,51,44,0.6); display: flex; align-items: center; gap: 0; color: rgba(247,243,236,0.7);">
+        <a href="#instagram" aria-label="Instagram" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: rgba(247,243,236,0.7);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/></svg></a>
+        <a href="#facebook" aria-label="Facebook" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: rgba(247,243,236,0.7);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+      </div>
+    </nav>
+  </div>
+</header>
+<main style="flex-grow: 1; display: flex; flex-direction: column;">
+<section style="position: relative; height: 450px; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; background: #4A3A2C;">
+  <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(23,20,16,0.7), rgba(23,20,16,0.6) 50%, #171410);"></div>
+  <div style="position: absolute; left: 24px; top: 16px; font-size: 10px; letter-spacing: 0.14em; color: #B6AC9D;">[HERO PHOTO · hero-news.jpg]</div>
+  <div style="position: relative; width: 1024px; margin: 0 auto; padding: 80px 24px; box-sizing: border-box; text-align: center;">
+    <div style="margin-bottom: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3em; color: #E8913A;">Newsroom</div>
+    <h1 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 60px; font-weight: 800; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.01em; color: #F7F3EC;">Latest from the guild.</h1>
+    <p style="margin: 20px auto 0; max-width: 672px; font-size: 18px; line-height: 1.55; color: rgba(247,243,236,0.85);">Industry news, advocacy updates, and member spotlights.</p>
+    
+  </div>
+</section>
+<section style="width: 896px; margin: 0 auto; padding: 80px 24px; box-sizing: border-box;">
+  <article>
+    <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #E8913A;">October 15, 2026</div>
+    <h2 style="margin: 8px 0 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 24px; font-weight: 800; line-height: 1.33; text-transform: uppercase; letter-spacing: 0.01em; color: #F7F3EC;">Inland Southern California Brewers Shine at the 2026 Great American Beer Festival</h2>
+    <p style="margin: 12px 0 0; font-size: 18px; line-height: 1.55; color: #F7F3EC;">Breweries from our region brought home two gold medals and a bronze from the Great American Beer Festival in Denver, and four more beers reached the final table.</p>
+    <p style="margin: 16px 0 0; font-size: 16px; line-height: 1.5; color: #B6AC9D;">The Great American Beer Festival competition is one of the toughest in the country, with dozens to hundreds of entries in every category. This year, brewers from across Inland Southern California earned three medals and four final-table spots. Congratulations to everyone who entered, and to these winners and finalists.</p>
+    <div style="margin-top: 32px;">
+        <h3 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; line-height: 1.55; text-transform: uppercase; letter-spacing: 0.01em; color: #E8913A;">Medals</h3>
+        <ul style="list-style: none; margin: 12px 0 0; padding: 0; border-radius: 14px; border: 1px solid #3A332C; background: #211C17;"><li style=" display: flex; align-items: flex-start; gap: 16px; padding: 16px 20px;">
+          <span style="width: 96px; box-sizing: border-box; flex-shrink: 0; margin-top: 2px; border-radius: 999px; padding: 4px 12px; text-align: center; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; background: #D9AE3B; color: #241F1A;">Gold</span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+            <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.01em; color: #F7F3EC;">No Fly Zone</span>
+            <span style="font-size: 15px; font-weight: 600; color: #F7F3EC;">8 Bit Brewing Co. &#183; Murrieta</span>
+            <span style="font-size: 14px; color: #B6AC9D;">New Zealand-Style India Pale Ale (89 entries)</span>
+          </div>
+        </li><li style="border-top: 1px solid #3A332C; display: flex; align-items: flex-start; gap: 16px; padding: 16px 20px;">
+          <span style="width: 96px; box-sizing: border-box; flex-shrink: 0; margin-top: 2px; border-radius: 999px; padding: 4px 12px; text-align: center; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; background: #D9AE3B; color: #241F1A;">Gold</span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+            <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.01em; color: #F7F3EC;">Happy Days</span>
+            <span style="font-size: 15px; font-weight: 600; color: #F7F3EC;">Claremont Craft Ales &#183; Claremont</span>
+            <span style="font-size: 14px; color: #B6AC9D;">Strong Red Ale (32 entries)</span>
+          </div>
+        </li><li style="border-top: 1px solid #3A332C; display: flex; align-items: flex-start; gap: 16px; padding: 16px 20px;">
+          <span style="width: 96px; box-sizing: border-box; flex-shrink: 0; margin-top: 2px; border-radius: 999px; padding: 4px 12px; text-align: center; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; background: #C27C4E; color: #241F1A;">Bronze</span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+            <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.01em; color: #F7F3EC;">Pepper and Peaches</span>
+            <span style="font-size: 15px; font-weight: 600; color: #F7F3EC;">Claremont Craft Ales &#183; Claremont</span>
+            <span style="font-size: 14px; color: #B6AC9D;">Specialty India Pale Ale (65 entries)</span>
+          </div>
+        </li></ul>
+      </div>
+    <div style="margin-top: 32px;">
+        <h3 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; line-height: 1.55; text-transform: uppercase; letter-spacing: 0.01em; color: #E8913A;">Final table</h3>
+        <ul style="list-style: none; margin: 12px 0 0; padding: 0; border-radius: 14px; border: 1px solid #3A332C; background: #211C17;"><li style=" display: flex; align-items: flex-start; gap: 16px; padding: 16px 20px;">
+          <span style="width: 96px; box-sizing: border-box; flex-shrink: 0; margin-top: 2px; border-radius: 999px; padding: 4px 12px; text-align: center; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; background: #E8913A; color: #241F1A;">Finalist</span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+            <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.01em; color: #F7F3EC;">Festbier</span>
+            <span style="font-size: 15px; font-weight: 600; color: #F7F3EC;">Claremont Craft Ales &#183; Claremont</span>
+            <span style="font-size: 14px; color: #B6AC9D;">Dortmunder or German-Style Festbier (161 entries)</span>
+          </div>
+        </li><li style="border-top: 1px solid #3A332C; display: flex; align-items: flex-start; gap: 16px; padding: 16px 20px;">
+          <span style="width: 96px; box-sizing: border-box; flex-shrink: 0; margin-top: 2px; border-radius: 999px; padding: 4px 12px; text-align: center; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; background: #E8913A; color: #241F1A;">Finalist</span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+            <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.01em; color: #F7F3EC;">Uncle Fester</span>
+            <span style="font-size: 15px; font-weight: 600; color: #F7F3EC;">Evans Brewing Co. &#183; Corona</span>
+            <span style="font-size: 14px; color: #B6AC9D;">Dortmunder or German-Style Festbier (161 entries)</span>
+          </div>
+        </li><li style="border-top: 1px solid #3A332C; display: flex; align-items: flex-start; gap: 16px; padding: 16px 20px;">
+          <span style="width: 96px; box-sizing: border-box; flex-shrink: 0; margin-top: 2px; border-radius: 999px; padding: 4px 12px; text-align: center; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; background: #E8913A; color: #241F1A;">Finalist</span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+            <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.01em; color: #F7F3EC;">My Favorite Marzen</span>
+            <span style="font-size: 15px; font-weight: 600; color: #F7F3EC;"><a href="#members-mars-brewing-co" style="color: #F7F3EC; text-decoration: underline; text-decoration-color: #E8913A; text-underline-offset: 4px;">Mars Brewing Co.</a> &#183; Rancho Cucamonga</span>
+            <span style="font-size: 14px; color: #B6AC9D;">German-Style Maerzen (184 entries)</span>
+          </div>
+        </li><li style="border-top: 1px solid #3A332C; display: flex; align-items: flex-start; gap: 16px; padding: 16px 20px;">
+          <span style="width: 96px; box-sizing: border-box; flex-shrink: 0; margin-top: 2px; border-radius: 999px; padding: 4px 12px; text-align: center; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; background: #E8913A; color: #241F1A;">Finalist</span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+            <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.01em; color: #F7F3EC;">Munich Lager Bavarian Style-Maerzen</span>
+            <span style="font-size: 15px; font-weight: 600; color: #F7F3EC;">Ritual Brewing Co. &#183; Redlands</span>
+            <span style="font-size: 14px; color: #B6AC9D;">German-Style Maerzen (184 entries)</span>
+          </div>
+        </li></ul>
+      </div>
+  </article>
+</section>
+</main>
+<footer style="margin-top: 96px; flex-shrink: 0; border-top: 1px solid rgba(58,51,44,0.6); background: #1B1713;">
+  <div style="width: 1280px; margin: 0 auto; padding: 56px 24px; box-sizing: border-box; display: flex; gap: 40px;">
+    <div style="width: 784px; flex-shrink: 0;">
+      <a href="#home" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: #F7F3EC;">
+        <span style="width: 40px; height: 40px; flex-shrink: 0; border-radius: 2px; background: #2A241E; border: 1px dashed #3A332C; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 8px; letter-spacing: 0.08em; color: #B6AC9D;">LOGO</span>
+        <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">ISC Brewers Guild</span>
+      </a>
+      <p style="margin: 12px 0 0; max-width: 448px; font-size: 14px; line-height: 1.43; color: #B6AC9D;">Promoting and protecting independent craft breweries through advocacy, education, and community events.</p>
+      <div style="margin-top: 8px; margin-left: -12px; display: flex; gap: 0;"><a href="#instagram" aria-label="Instagram" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: rgba(247,243,236,0.7);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/></svg></a><a href="#facebook" aria-label="Facebook" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: rgba(247,243,236,0.7);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a><a href="#twitter" aria-label="Twitter" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: rgba(247,243,236,0.7);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg></a></div>
+    </div>
+    <div>
+      <h4 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #F7F3EC;">Explore</h4>
+      <ul style="list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px;">
+        <li style="margin: 0;"><a href="#about" style="display: inline-flex; align-items: center; min-height: 28px; font-size: 14px; color: #B6AC9D; text-decoration: none;">About</a></li><li style="margin: 0;"><a href="#members" style="display: inline-flex; align-items: center; min-height: 28px; font-size: 14px; color: #B6AC9D; text-decoration: none;">Members</a></li><li style="margin: 0;"><a href="#news" style="display: inline-flex; align-items: center; min-height: 28px; font-size: 14px; color: #B6AC9D; text-decoration: none;">News</a></li><li style="margin: 0;"><a href="#jobs" style="display: inline-flex; align-items: center; min-height: 28px; font-size: 14px; color: #B6AC9D; text-decoration: none;">Jobs</a></li><li style="margin: 0;"><a href="#contact" style="display: inline-flex; align-items: center; min-height: 28px; font-size: 14px; color: #B6AC9D; text-decoration: none;">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div style="border-top: 1px solid rgba(58,51,44,0.6); padding: 8px 24px; display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; color: #B6AC9D;">
+      <span>&#169; 2026 ISC Brewers Guild. All rights reserved.</span>
+      <span style="display: flex; gap: 16px;"><a href="#privacy" style="display: inline-flex; align-items: center; min-height: 44px; font-size: 12px; color: #B6AC9D; text-decoration: none;">Privacy</a><a href="#terms" style="display: inline-flex; align-items: center; min-height: 44px; font-size: 12px; color: #B6AC9D; text-decoration: none;">Terms</a></span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px;"><a href="#card" style="display: inline-flex; align-items: center; min-height: 44px; font-size: 12px; color: #B6AC9D; text-decoration: none;">My Scan Pass</a><a href="#signin" style="display: inline-flex; align-items: center; min-height: 44px; font-size: 12px; color: #B6AC9D; text-decoration: none;">Member Portal</a></div>
+  </div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2190}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

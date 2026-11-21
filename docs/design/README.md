@@ -76,8 +76,25 @@ Placeholders like `[MEMBER NAME]` in the artboards are stand-ins for real data. 
 | BZ3 `BizShortSetup` | Short setup for another location: shared logo and cover read-only, its own gallery; "[City] is live" with Set up the next location | Part 2–5 (not built yet) |
 | BZ4 `BizPeople` | People for one location: Business manager, Hand off this location, Take back this location | Part 2–5 (not built yet) |
 | BZ5 `BizLookReadOnly` | Theme as a location manager sees it: the shared look, read-only | Part 2–5 (not built yet) |
+| AA `GuildBroadcast` | Broadcast email (super admin) | `routes/guild.broadcast.tsx` |
+| CC1 `AdminJobs` · CC2 `GuildJobsBoard` | Member Jobs page; the public Jobs board | `routes/admin.jobs.tsx`, `routes/jobs.tsx` |
+| SP1 `ScanPassTrail` | Scan Pass: the public Trail page (desktop) | `routes/trail.tsx` |
+| SP2 `ScanPassCheckIn` | Scan Pass: the counter plate a customer scans (6 states) | `routes/t.$code.tsx` → `tap-card/PlateScreen` |
+| SP3 `ScanPassConfirmed` | Scan Pass: staff QR confirm and the green screen | `routes/s.$token.tsx` |
+| SP4 `ScanPassCard` | Scan Pass: the holder's own pass page | `routes/card.tsx` |
+| SP5 `ScanPassSignIn` | Scan Pass: holder sign-in and code | `routes/card_.signin.tsx` → `tap-card/SignInCodeForm` |
+| SP6 `ScanPassJoinTrail` | Scan Pass: Join the Beer Trail (Zeffy) and the joined page | `routes/trail_.join.tsx`, `routes/trail_.joined.tsx` |
+| SP7 `ScanPassFreePass` | Scan Pass: free loyalty-only pass | `routes/card_.join.tsx` → `tap-card/FreeCardForm` |
+| SP8 `GuildScanPass` · SP8b `GuildScanPassPasses` | Guild Scan Pass: Offers tab, Passes tab | `routes/guild.scan-pass.tsx` → `guild/tap-card/*` |
+| SP9 `MemberScanPass` | A member's Scan Pass section (portal and /admin/scan-pass) | `portal/TapCardSection` |
+| N1 `GuildAlerts` | Guild: Member alerts | `routes/guild.alerts.tsx` |
+| N2 `MemberNotifications` | Member portal: Notifications | `routes/admin.notifications.tsx`, `lib/notifications/portal-view.ts` |
+| N3 `AdminDiscount` | Member discount (Affiliate Members) | `routes/admin.discount.tsx` |
+| J1 `JoinForm` · J2 `JoinFinish` | Join: details + Fill from Google; Step 2 for a signed-in applicant | `routes/join.tsx`, `routes/join_.finish.tsx` |
+| H1 `HomeSections` | Homepage, every section as built | `routes/index.tsx` → `home/*` |
+| P1 `AboutPage` · P2 `NewsPage` · P3 `TermsPrivacy` · P4 `MaintenancePage` | About, News, Terms (Privacy shares its layout), Maintenance page | `routes/about.tsx`, `news.tsx`, `terms.tsx`, `maintenance.tsx` |
 
-Screens with no artboard (e.g. `/admin/discount`) follow the same shell and design language.
+Screens with no artboard follow the same shell and design language. **Synced with the built site on 2026-11-21**: the SP, N, J, H and P boards were drawn from the built code (states stacked top to bottom on phone boards), and the AA/CC boards, which were on the live canvas only, were added to this snapshot.
 
 ### The two newest screens
 

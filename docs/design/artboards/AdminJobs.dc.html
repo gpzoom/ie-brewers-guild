@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Member admin — jobs</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#F9F6F0}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+
+<div style="width: 1280px; height: 1620px; box-sizing: border-box; background: #F9F6F0; display: flex; flex-direction: column;">
+
+  <div style="height: 64px; flex-shrink: 0; background: #171410; display: flex; align-items: center; justify-content: space-between; padding: 0 28px;">
+    <div style="display: flex; align-items: center; gap: 11px;">
+      <div style="width: 24px; height: 24px; border-radius: 5px; background: #38322A;"></div>
+      <div style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">ISC BREWERS GUILD · MEMBER ADMIN</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="font-size: 13px; color: #A89D8E;">[MEMBER NAME]</div>
+      <a href="TaproomProfile.dc.html" style="height: 40px; padding: 0 16px; border-radius: 9px; border: 1px solid #4A4238; color: #F9F6F0; display: flex; align-items: center; font-size: 13px; font-weight: 500; text-decoration: none;">Preview</a>
+      <a href="AdminPublish.dc.html" style="height: 40px; padding: 0 18px; border-radius: 9px; background: #B3591F; color: #FFFFFF; display: flex; align-items: center; font-size: 13px; font-weight: 600; text-decoration: none;">Publish changes</a>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; display: flex;">
+
+    <div style="width: 236px; flex-shrink: 0; border-right: 1px solid #E6E0D6; padding: 26px 16px; display: flex; flex-direction: column; gap: 3px;">
+      <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #8C8275; padding: 0 12px 10px;">YOUR PROFILE</div>
+      <a href="AdminBasics.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Basics &amp; hours</a>
+      <a href="AdminMedia.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Logo, Photos &amp; Cover</a>
+      <a href="AdminEvents.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Events</a>
+      <a href="AdminFood.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Food<span style="font-size: 10px; letter-spacing: 0.08em; color: #8C8275;">PRODUCERS</span></a>
+      <a href="AdminLinks.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Links &amp; contact</a>
+      <a href="#jobs" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; background: #241F1A; color: #F9F6F0; font-weight: 600;">Jobs<span style="min-width: 20px; height: 20px; padding: 0 5px; border-radius: 99px; background: #B3591F; font-size: 11px; font-weight: 600; color: #FFFFFF; display: flex; align-items: center; justify-content: center;">1</span></a>
+      <a href="AdminPhone.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Discount &amp; supplies<span style="font-size: 10px; letter-spacing: 0.08em; color: #8C8275;">AFFILIATE</span></a>
+      <a href="AdminTheme.dc.html" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Theme</a>
+      <a href="#people" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">People<span style="font-size: 10px; letter-spacing: 0.08em; color: #8C8275;">OWNER</span></a>
+      <a href="#member-guide" style="min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-radius: 9px; font-size: 14px; text-decoration: none; color: #241F1A;">Member Guide (PDF)</a>
+      <div style="font-size: 11px; line-height: 1.45; color: #A89D8E; padding: 8px 12px 0;">Food: producers · Discount &amp; supplies: Affiliate Members · People: the owner. Jobs: any member type. Member Guide (PDF): everyone; it opens in a new tab. A Photos &amp; events editor sees only Logo, Photos &amp; Cover and Events.</div>
+    </div>
+
+    <div style="flex-grow: 1; padding: 30px 36px; display: flex; flex-direction: column; gap: 26px;">
+
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 28px; font-weight: 700; color: #241F1A; letter-spacing: -0.01em;">Jobs</div>
+        <div style="font-size: 13px; color: #564E45;">Post an opening on the Guild jobs board. It goes live as soon as you save it — no need to Publish changes, and no Guild admin review.</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">YOUR POSTINGS</div>
+        <div style="border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF; overflow: hidden;">
+          <div style="display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-bottom: 1px solid #F0EBE3;">
+            <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px;">
+              <div style="font-size: 14px; font-weight: 600; color: #241F1A;">Taproom Lead, Weekends</div>
+              <div style="font-size: 12px; color: #6B6156;">Part-time · Posted Sep 21 · Active until Nov 30</div>
+            </div>
+            <span style="padding: 4px 11px; border-radius: 99px; background: #E4F0E1; font-size: 11px; font-weight: 600; color: #2F5E2C;">Open</span>
+            <button type="button" style="height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #DED7CB; background: #F9F6F0; font-family: inherit; font-size: 12px; font-weight: 500; color: #241F1A;">Edit</button>
+            <button type="button" style="height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #DED7CB; background: #F9F6F0; font-family: inherit; font-size: 12px; font-weight: 500; color: #241F1A;">Mark filled</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 16px; padding: 16px 20px;">
+            <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px;">
+              <div style="font-size: 14px; font-weight: 600; color: #8C8275;">Cellar Hand, Part-time</div>
+              <div style="font-size: 12px; color: #8C8275;">Part-time · Posted Jul 2 · Expired Aug 31</div>
+            </div>
+            <span style="padding: 4px 11px; border-radius: 99px; background: #F2EEE7; font-size: 11px; font-weight: 600; color: #8C8275;">Expired</span>
+            <button type="button" style="height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #DED7CB; background: #F9F6F0; font-family: inherit; font-size: 12px; font-weight: 500; color: #241F1A;">Repost</button>
+            <button type="button" aria-label="Delete this posting" style="width: 36px; height: 36px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 5h9M6.5 5V3.5h3V5M6 7.5v3.5M10 7.5v3.5M4.5 5l.6 7.3c.05.65.6 1.2 1.25 1.2h3.3c.65 0 1.2-.55 1.25-1.2L11.5 5" stroke="#8C8275" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px; padding: 24px 24px; border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF; max-width: 760px;">
+        <div style="font-size: 10px; letter-spacing: 0.15em; font-weight: 600; color: #6B6156;">POST A JOB</div>
+
+        <div style="display: flex; flex-direction: column; gap: 7px;">
+          <label for="j-title" style="font-size: 13px; font-weight: 500; color: #241F1A;">Job title</label>
+          <input type="text" id="j-title" placeholder="e.g. Taproom Lead, Weekends" style="height: 48px; padding: 0 14px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <label for="j-type" style="font-size: 13px; font-weight: 500; color: #241F1A;">Employment type</label>
+            <select id="j-type" style="height: 48px; padding: 0 12px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A;">
+              <option>Full-time</option>
+              <option selected="selected">Part-time</option>
+              <option>Seasonal</option>
+              <option>Internship</option>
+              <option>Contract</option>
+            </select>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <label for="j-location" style="font-size: 13px; font-weight: 500; color: #241F1A;">Location</label>
+            <input type="text" id="j-location" placeholder="City, or Remote" value="Riverside, CA" style="height: 48px; padding: 0 14px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 7px;">
+          <label for="j-desc" style="font-size: 13px; font-weight: 500; color: #241F1A;">Description</label>
+          <textarea id="j-desc" rows="4" placeholder="What the role involves, hours, and anything a candidate should know before applying." style="padding: 13px 14px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; line-height: 1.5; color: #241F1A; box-sizing: border-box; resize: vertical;"></textarea>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 7px;">
+          <label for="j-apply" style="font-size: 13px; font-weight: 500; color: #241F1A;">How to apply</label>
+          <input type="text" id="j-apply" placeholder="An email address, or a link to your own application form" style="height: 48px; padding: 0 14px; border-radius: 9px; border: 1px solid #DED7CB; background: #FFFFFF; font-family: inherit; font-size: 14px; color: #241F1A; box-sizing: border-box;">
+          <div style="font-size: 12px; color: #8C8275;">Shown as a button on the listing. An email address becomes "Apply by email"; a link becomes "Apply →".</div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 6px;">
+          <div style="font-size: 12px; color: #8C8275;">Stays listed for 60 days, or until you mark it filled — whichever comes first.</div>
+          <button type="button" style="height: 46px; padding: 0 22px; border-radius: 9px; border: 0; background: #B3591F; font-family: inherit; font-size: 14px; font-weight: 600; color: #FFFFFF;">Post job</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1620}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

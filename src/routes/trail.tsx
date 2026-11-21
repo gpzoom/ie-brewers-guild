@@ -58,7 +58,7 @@ function TrailPage() {
         </ol>
         <div className="mt-8 flex flex-col items-center gap-3">
           <p className="text-sm text-muted-foreground">Already have a pass?</p>
-          <Button asChild size="lg" variant="outline">
+          <Button asChild size="lg" variant="outline" className="h-11">
             <Link to="/card">Sign in to your pass</Link>
           </Button>
         </div>

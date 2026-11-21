@@ -93,13 +93,6 @@
       "x": 12660,
       "y": 2300
     },
-    "GuildMembers.dc.html": {
-      "h": 1140,
-      "title": "P · Guild admin — members & impersonation (Delete, Trail: super admin)",
-      "w": 1280,
-      "x": 8580,
-      "y": 2300
-    },
     "MobileProfile.dc.html": {
       "h": 1600,
       "title": "E · Mobile member",
@@ -309,6 +302,167 @@
       "w": 1280,
       "h": 900,
       "title": "BZ5 · Shared look, read-only for a location manager"
+    },
+    "GuildBroadcast.dc.html": {
+      "x": 20820,
+      "y": 2300,
+      "w": 1280,
+      "h": 1900,
+      "title": "AA · Super admin — Broadcast email"
+    },
+    "AdminJobs.dc.html": {
+      "x": 0,
+      "y": 12700,
+      "w": 1280,
+      "h": 1620,
+      "title": "CC1 · Admin — Jobs (any member type, publishes immediately)"
+    },
+    "GuildJobsBoard.dc.html": {
+      "x": 1400,
+      "y": 12700,
+      "w": 1440,
+      "h": 1500,
+      "title": "CC2 · Public — Jobs board (nav: JOBS)"
+    },
+    "ScanPassTrail.dc.html": {
+      "x": 0,
+      "y": 14900,
+      "w": 1440,
+      "h": 2330,
+      "title": "SP1 · Scan Pass — Trail page (public, desktop)"
+    },
+    "ScanPassCheckIn.dc.html": {
+      "x": 1520,
+      "y": 14900,
+      "w": 390,
+      "h": 5200,
+      "title": "SP2 · Scan Pass — Counter plate check-in (6 states)"
+    },
+    "ScanPassConfirmed.dc.html": {
+      "x": 1990,
+      "y": 14900,
+      "w": 390,
+      "h": 3950,
+      "title": "SP3 · Scan Pass — Staff confirm and green screen"
+    },
+    "ScanPassCard.dc.html": {
+      "x": 2460,
+      "y": 14900,
+      "w": 390,
+      "h": 4700,
+      "title": "SP4 · Scan Pass — My pass (/card)"
+    },
+    "ScanPassSignIn.dc.html": {
+      "x": 2930,
+      "y": 14900,
+      "w": 390,
+      "h": 2200,
+      "title": "SP5 · Scan Pass — Sign in (/card/signin)"
+    },
+    "ScanPassJoinTrail.dc.html": {
+      "x": 3400,
+      "y": 14900,
+      "w": 390,
+      "h": 4050,
+      "title": "SP6 · Scan Pass — Join the Beer Trail"
+    },
+    "ScanPassFreePass.dc.html": {
+      "x": 3870,
+      "y": 14900,
+      "w": 390,
+      "h": 2950,
+      "title": "SP7 · Scan Pass — Free loyalty pass (/card/join)"
+    },
+    "GuildScanPass.dc.html": {
+      "x": 0,
+      "y": 20700,
+      "w": 1280,
+      "h": 1300,
+      "title": "SP8 · Scan Pass — Guild, Offers tab"
+    },
+    "GuildScanPassPasses.dc.html": {
+      "x": 1360,
+      "y": 20700,
+      "w": 1280,
+      "h": 2000,
+      "title": "SP8b · Scan Pass — Guild, Passes tab"
+    },
+    "MemberScanPass.dc.html": {
+      "x": 2720,
+      "y": 20700,
+      "w": 1280,
+      "h": 3150,
+      "title": "SP9 · Scan Pass — member portal (Sample Brewery #1)"
+    },
+    "GuildAlerts.dc.html": {
+      "x": 4080,
+      "y": 20700,
+      "w": 1280,
+      "h": 1260,
+      "title": "N1 · Guild — Member alerts"
+    },
+    "MemberNotifications.dc.html": {
+      "x": 5440,
+      "y": 20700,
+      "w": 1280,
+      "h": 1500,
+      "title": "N2 · Member portal — Notifications"
+    },
+    "AdminDiscount.dc.html": {
+      "x": 6800,
+      "y": 20700,
+      "w": 1280,
+      "h": 1260,
+      "title": "N3 · Admin — Member discount (Affiliate Members)"
+    },
+    "JoinForm.dc.html": {
+      "x": 0,
+      "y": 24450,
+      "w": 1760,
+      "h": 1820,
+      "title": "J1 · Join — details, Google lookup, preview, results (phone)"
+    },
+    "JoinFinish.dc.html": {
+      "x": 1840,
+      "y": 24450,
+      "w": 1440,
+      "h": 3440,
+      "title": "J2 · Join — Step 2 for a signed-in applicant (/join/finish)"
+    },
+    "HomeSections.dc.html": {
+      "x": 3360,
+      "y": 24450,
+      "w": 1440,
+      "h": 2800,
+      "title": "H1 · Homepage — all sections as built"
+    },
+    "AboutPage.dc.html": {
+      "x": 4880,
+      "y": 24450,
+      "w": 1440,
+      "h": 2420,
+      "title": "P1 · About"
+    },
+    "NewsPage.dc.html": {
+      "x": 6400,
+      "y": 24450,
+      "w": 1440,
+      "h": 2190,
+      "title": "P2 · News — awards"
+    },
+    "TermsPrivacy.dc.html": {
+      "x": 7920,
+      "y": 24450,
+      "w": 1440,
+      "h": 2560,
+      "title": "P3 · Terms of Use (Privacy uses the same layout)"
+    },
+    "MaintenancePage.dc.html": {
+      "x": 9440,
+      "y": 24450,
+      "w": 1990,
+      "h": 1010,
+      "title": "P4 · Maintenance page (desktop and phone)"
     }
   },
   "createdOnFiles": {
@@ -367,6 +521,38 @@
       "y": 10700,
       "w": 240,
       "maxW": 7000
+    },
+    "hdr8": {
+      "kind": "title1",
+      "text": "Jobs board — member posting screen, then the public page (spec 2026-11-12)",
+      "x": 0,
+      "y": 12400,
+      "w": 240,
+      "maxW": 7000
+    },
+    "hdr9": {
+      "kind": "title1",
+      "text": "Inland Scan Pass — customer screens (built Nov 17–20, 2026)",
+      "x": 0,
+      "y": 14600,
+      "w": 240,
+      "maxW": 4260
+    },
+    "hdr10": {
+      "kind": "title1",
+      "text": "Scan Pass, alerts and notifications — Guild and member admin (built Nov 2026)",
+      "x": 0,
+      "y": 20400,
+      "w": 240,
+      "maxW": 8080
+    },
+    "hdr11": {
+      "kind": "title1",
+      "text": "Join, homepage and public pages — as built (Nov 2026)",
+      "x": 0,
+      "y": 24150,
+      "w": 240,
+      "maxW": 11430
     }
   },
   "order": [
@@ -384,7 +570,6 @@
     "AdminEvents.dc.html",
     "AdminFood.dc.html",
     "GuildApprovals.dc.html",
-    "GuildMembers.dc.html",
     "GuildBrand.dc.html",
     "SignIn.dc.html",
     "AuthConfirm.dc.html",
@@ -396,6 +581,7 @@
     "SupportHelp.dc.html",
     "GuildHelp.dc.html",
     "GuildSettings.dc.html",
+    "GuildBroadcast.dc.html",
     "HomeEvents.dc.html",
     "HomeEventsPhone.dc.html",
     "HomeEventsStates.dc.html",
@@ -413,8 +599,30 @@
     "BizSwitcher.dc.html",
     "BizShortSetup.dc.html",
     "BizPeople.dc.html",
-    "BizLookReadOnly.dc.html"
+    "BizLookReadOnly.dc.html",
+    "AdminJobs.dc.html",
+    "GuildJobsBoard.dc.html",
+    "ScanPassTrail.dc.html",
+    "ScanPassCheckIn.dc.html",
+    "ScanPassConfirmed.dc.html",
+    "ScanPassCard.dc.html",
+    "ScanPassSignIn.dc.html",
+    "ScanPassJoinTrail.dc.html",
+    "ScanPassFreePass.dc.html",
+    "GuildScanPass.dc.html",
+    "GuildScanPassPasses.dc.html",
+    "MemberScanPass.dc.html",
+    "GuildAlerts.dc.html",
+    "MemberNotifications.dc.html",
+    "AdminDiscount.dc.html",
+    "JoinForm.dc.html",
+    "JoinFinish.dc.html",
+    "HomeSections.dc.html",
+    "AboutPage.dc.html",
+    "NewsPage.dc.html",
+    "TermsPrivacy.dc.html",
+    "MaintenancePage.dc.html"
   ],
   "pages": [],
-  "title": "IE Brewers Guild — Member Profile"
+  "title": "ISC Brewers Guild — Member Profile"
 }

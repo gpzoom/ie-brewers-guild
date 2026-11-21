@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Join the Guild — /join (phone)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#EFEAE1}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+<div style="width: 1760px; height: 1820px; box-sizing: border-box; background: #EFEAE1; padding: 40px; display: flex; flex-direction: column; gap: 48px;">
+  <div style="display: flex; gap: 40px; align-items: flex-start;"><div style="display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;">
+  <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.15em; color: #6B6156;">1 · DETAILS (PRODUCER PICKED)</div>
+  <div style="width: 390px; height: 1180px; box-sizing: border-box; background: #171410; overflow: hidden; display: flex; flex-direction: column;">
+    <header style="height: 73px; flex-shrink: 0; box-sizing: border-box; border-bottom: 1px solid rgba(58,51,44,0.6); background: rgba(23,20,16,0.8); display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 16px;">
+    <a href="#home" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #F7F3EC;">
+      <span style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 2px; background: #2A241E; border: 1px dashed #3A332C; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.08em; color: #B6AC9D;">LOGO</span>
+      <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #F7F3EC;">ISC Brewers Guild</span>
+    </a>
+    <button type="button" aria-label="Toggle menu" style="width: 44px; height: 44px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: rgba(247,243,236,0.8); display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+</header>
+    <section style="padding: 24px 10px 64px;"><div style="display: flex; flex-direction: column; gap: 22px; border-radius: 22px; background: #F9F6F0; padding: 28px 18px 26px; color: #241F1A;"><div style="display: flex; flex-direction: column; gap: 9px;">
+  <h1 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 30px; font-weight: 700; line-height: 1.06; letter-spacing: -0.02em; color: #241F1A;">Join the Guild</h1>
+  <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #6B6156; text-wrap: pretty;">Tell us a little about your business and see your Guild profile in seconds. Nothing goes public until you submit and we approve it.</p>
+</div>
+<form style="display: flex; flex-direction: column; gap: 22px; margin: 0;">
+  <div style="display: flex; flex-direction: column; gap: 7px;">
+    <label for="join-email" style="font-size: 13px; font-weight: 500; color: #241F1A;">Your email</label>
+    <input id="join-email" name="email" type="email" autocomplete="email" value="alex@example.com" style="display: block; width: 100%; height: 50px; box-sizing: border-box; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 0 14px; font-family: inherit; font-size: 16px; color: #241F1A;">
+    <p style="margin: 0; font-size: 12px; color: #6B6156;">We will email you a link to finish your profile. This will be your sign-in email.</p>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 7px;">
+    <label for="join-business" style="font-size: 13px; font-weight: 500; color: #241F1A;">Business name</label>
+    <input id="join-business" name="businessName" type="text" autocomplete="organization" value="Sample Brewery #1" style="display: block; width: 100%; height: 50px; box-sizing: border-box; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 0 14px; font-family: inherit; font-size: 16px; color: #241F1A;">
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 7px;">
+    <label for="join-city" style="font-size: 13px; font-weight: 500; color: #241F1A;">City</label>
+    <input id="join-city" name="city" type="text" autocomplete="address-level2" value="[CITY]" style="display: block; width: 100%; height: 50px; box-sizing: border-box; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 0 14px; font-family: inherit; font-size: 16px; color: #241F1A;">
+  </div>
+  <fieldset style="display: flex; flex-direction: column; gap: 10px; border: 0; padding: 0; margin: 0;">
+    <legend style="font-size: 13px; font-weight: 500; color: #241F1A; padding: 0; margin-bottom: 7px;">What kind of member are you?</legend>
+    <label for="join-type-producer" style="display: flex; min-height: 44px; align-items: flex-start; gap: 12px; border-radius: 13px; border: 2px solid #B3591F; padding: 13px 14px; background: #FFFFFF; cursor: pointer;">
+  <input type="radio" id="join-type-producer" name="memberType" value="producer" checked style="margin: 4px 0 0; width: 20px; height: 20px; flex-shrink: 0; accent-color: #B3591F;">
+  <span style="display: flex; flex-direction: column; gap: 2px;">
+    <span style="font-size: 15px; font-weight: 600; color: #241F1A;">Producer</span>
+    <span style="font-size: 13px; color: #6B6156;">Brewery, meadery, cidery or distillery with a taproom.</span>
+  </span>
+</label>
+    <label for="join-type-mobile" style="display: flex; min-height: 44px; align-items: flex-start; gap: 12px; border-radius: 13px; border: 1px solid #DED7CB; padding: 14px 15px; background: #FFFFFF; cursor: pointer;">
+  <input type="radio" id="join-type-mobile" name="memberType" value="mobile" style="margin: 4px 0 0; width: 20px; height: 20px; flex-shrink: 0; accent-color: #B3591F;">
+  <span style="display: flex; flex-direction: column; gap: 2px;">
+    <span style="font-size: 15px; font-weight: 600; color: #241F1A;">Mobile</span>
+    <span style="font-size: 13px; color: #6B6156;">Entertainment, food truck or pop-up.</span>
+  </span>
+</label>
+    <label for="join-type-allied" style="display: flex; min-height: 44px; align-items: flex-start; gap: 12px; border-radius: 13px; border: 1px solid #DED7CB; padding: 14px 15px; background: #FFFFFF; cursor: pointer;">
+  <input type="radio" id="join-type-allied" name="memberType" value="allied" style="margin: 4px 0 0; width: 20px; height: 20px; flex-shrink: 0; accent-color: #B3591F;">
+  <span style="display: flex; flex-direction: column; gap: 2px;">
+    <span style="font-size: 15px; font-weight: 600; color: #241F1A;">Affiliate Member</span>
+    <span style="font-size: 13px; color: #6B6156;">Supply house, ingredients, equipment or services.</span>
+  </span>
+</label>
+  </fieldset>
+  <button type="submit" style="display: inline-flex; width: 100%; height: 54px; align-items: center; justify-content: center; border-radius: 11px; border: 0; background: #B3591F; padding: 0 20px; font-family: inherit; font-size: 16px; font-weight: 600; color: #FFFFFF;">Continue</button>
+</form>
+<p style="margin: 0; font-size: 12px; line-height: 1.55; color: #6B6156;">Already a member? <a href="#signin" style="font-weight: 500; color: #B3591F; text-decoration: underline; text-underline-offset: 2px;">Sign in</a>.</p></div></section>
+  </div>
+</div><div style="display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;">
+  <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.15em; color: #6B6156;">2 · FILL FROM GOOGLE: &#8220;IS THIS YOU?&#8221;</div>
+  <div style="width: 390px; height: 1180px; box-sizing: border-box; background: #171410; overflow: hidden; display: flex; flex-direction: column;">
+    <header style="height: 73px; flex-shrink: 0; box-sizing: border-box; border-bottom: 1px solid rgba(58,51,44,0.6); background: rgba(23,20,16,0.8); display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 16px;">
+    <a href="#home" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #F7F3EC;">
+      <span style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 2px; background: #2A241E; border: 1px dashed #3A332C; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.08em; color: #B6AC9D;">LOGO</span>
+      <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #F7F3EC;">ISC Brewers Guild</span>
+    </a>
+    <button type="button" aria-label="Toggle menu" style="width: 44px; height: 44px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: rgba(247,243,236,0.8); display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+</header>
+    <section style="padding: 24px 10px 64px;"><div style="display: flex; flex-direction: column; gap: 22px; border-radius: 22px; background: #F9F6F0; padding: 28px 18px 26px; color: #241F1A;"><div style="display: flex; flex-direction: column; gap: 9px;">
+  <h1 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 30px; font-weight: 700; line-height: 1.06; letter-spacing: -0.02em; color: #241F1A;">Is this you?</h1>
+  <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #6B6156; text-wrap: pretty;">Pick your business and we will fill in your profile from Google.</p>
+</div>
+<fieldset style="display: flex; flex-direction: column; gap: 10px; border: 0; padding: 0; margin: 0;">
+  <legend style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Your business on Google</legend>
+  <label for="place-1" style="display: flex; min-height: 44px; align-items: flex-start; gap: 12px; border-radius: 13px; border: 2px solid #B3591F; padding: 13px 14px; background: #FFFFFF; cursor: pointer;">
+  <input type="radio" id="place-1" name="place" value="p1" checked style="margin: 4px 0 0; width: 20px; height: 20px; flex-shrink: 0; accent-color: #B3591F;">
+  <span style="display: flex; flex-direction: column; gap: 2px;">
+    <span style="font-size: 15px; font-weight: 600; color: #241F1A;">Sample Brewery #1</span>
+    <span style="font-size: 13px; color: #6B6156;">[STREET ADDRESS], [CITY], CA [ZIP], USA</span>
+  </span>
+</label>
+  <label for="place-2" style="display: flex; min-height: 44px; align-items: flex-start; gap: 12px; border-radius: 13px; border: 1px solid #DED7CB; padding: 14px 15px; background: #FFFFFF; cursor: pointer;">
+  <input type="radio" id="place-2" name="place" value="p2" style="margin: 4px 0 0; width: 20px; height: 20px; flex-shrink: 0; accent-color: #B3591F;">
+  <span style="display: flex; flex-direction: column; gap: 2px;">
+    <span style="font-size: 15px; font-weight: 600; color: #241F1A;">[ANOTHER GOOGLE MATCH]</span>
+    <span style="font-size: 13px; color: #6B6156;">[STREET ADDRESS], [CITY], CA [ZIP], USA</span>
+  </span>
+</label>
+  <label for="place-3" style="display: flex; min-height: 44px; align-items: flex-start; gap: 12px; border-radius: 13px; border: 1px solid #DED7CB; padding: 14px 15px; background: #FFFFFF; cursor: pointer;">
+  <input type="radio" id="place-3" name="place" value="p3" style="margin: 4px 0 0; width: 20px; height: 20px; flex-shrink: 0; accent-color: #B3591F;">
+  <span style="display: flex; flex-direction: column; gap: 2px;">
+    <span style="font-size: 15px; font-weight: 600; color: #241F1A;">[ANOTHER GOOGLE MATCH]</span>
+    <span style="font-size: 13px; color: #6B6156;">[STREET ADDRESS], [CITY], CA [ZIP], USA</span>
+  </span>
+</label>
+</fieldset>
+<div style="display: flex; flex-direction: column; gap: 12px;">
+  <button type="button" style="display: inline-flex; width: 100%; height: 54px; align-items: center; justify-content: center; border-radius: 11px; border: 0; background: #B3591F; padding: 0 20px; font-family: inherit; font-size: 16px; font-weight: 600; color: #FFFFFF;">This is my business</button>
+  <button type="button" style="display: inline-flex; width: 100%; height: 48px; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 0 20px; font-family: inherit; font-size: 14px; font-weight: 500; color: #241F1A; box-sizing: border-box;">Not listed — continue without Google</button>
+  <button type="button" style="display: inline-flex; width: 100%; height: 48px; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 0 20px; font-family: inherit; font-size: 14px; font-weight: 500; color: #241F1A; box-sizing: border-box;">Back</button>
+</div>
+<p style="margin: 0; font-size: 12px; color: #6B6156;">Powered by Google</p></div></section>
+  </div>
+</div><div style="display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;">
+  <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.15em; color: #6B6156;">2b · NO GOOGLE MATCH</div>
+  <div style="width: 390px; height: 1180px; box-sizing: border-box; background: #171410; overflow: hidden; display: flex; flex-direction: column;">
+    <header style="height: 73px; flex-shrink: 0; box-sizing: border-box; border-bottom: 1px solid rgba(58,51,44,0.6); background: rgba(23,20,16,0.8); display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 16px;">
+    <a href="#home" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #F7F3EC;">
+      <span style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 2px; background: #2A241E; border: 1px dashed #3A332C; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.08em; color: #B6AC9D;">LOGO</span>
+      <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #F7F3EC;">ISC Brewers Guild</span>
+    </a>
+    <button type="button" aria-label="Toggle menu" style="width: 44px; height: 44px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: rgba(247,243,236,0.8); display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+</header>
+    <section style="padding: 24px 10px 64px;"><div style="display: flex; flex-direction: column; gap: 22px; border-radius: 22px; background: #F9F6F0; padding: 28px 18px 26px; color: #241F1A;"><div style="display: flex; flex-direction: column; gap: 9px;">
+  <h1 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 30px; font-weight: 700; line-height: 1.06; letter-spacing: -0.02em; color: #241F1A;">Is this you?</h1>
+  <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #6B6156; text-wrap: pretty;">No Google match to pick from.</p>
+</div>
+<p role="alert" style="margin: 0; border-radius: 10px; border: 1px solid #E3CB9B; background: #F7EEDC; padding: 12px 14px; font-size: 14px; line-height: 1.5; color: #241F1A;">We couldn't find your business on Google right now, so you can continue without it. You can add details later.</p>
+<div style="display: flex; flex-direction: column; gap: 12px;">
+  <button type="button" style="display: inline-flex; width: 100%; height: 54px; align-items: center; justify-content: center; border-radius: 11px; border: 0; background: #B3591F; padding: 0 20px; font-family: inherit; font-size: 16px; font-weight: 600; color: #FFFFFF;">Not listed — continue without Google</button>
+  <button type="button" style="display: inline-flex; width: 100%; height: 48px; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 0 20px; font-family: inherit; font-size: 14px; font-weight: 500; color: #241F1A; box-sizing: border-box;">Back</button>
+</div></div></section>
+  </div>
+</div><div style="display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;">
+  <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.15em; color: #6B6156;">3 · PROFILE PREVIEW</div>
+  <div style="width: 390px; height: 1180px; box-sizing: border-box; background: #171410; overflow: hidden; display: flex; flex-direction: column;">
+    <header style="height: 73px; flex-shrink: 0; box-sizing: border-box; border-bottom: 1px solid rgba(58,51,44,0.6); background: rgba(23,20,16,0.8); display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 16px;">
+    <a href="#home" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #F7F3EC;">
+      <span style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 2px; background: #2A241E; border: 1px dashed #3A332C; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.08em; color: #B6AC9D;">LOGO</span>
+      <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #F7F3EC;">ISC Brewers Guild</span>
+    </a>
+    <button type="button" aria-label="Toggle menu" style="width: 44px; height: 44px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: rgba(247,243,236,0.8); display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+</header>
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+  <div style="padding: 0 10px;">
+    <div role="status" style="display: flex; flex-direction: column; gap: 8px; border-radius: 14px; background: #F9F6F0; padding: 16px; color: #241F1A;">
+      <h2 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 20px; font-weight: 700; line-height: 1.15; color: #241F1A;">This is a preview — nothing is public yet.</h2>
+      <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #6B6156;">Here is how your Guild profile could look. Happy with it? Submit to the Guild and we will take it from there.</p>
+    </div>
+  </div>
+  <a href="MobileProfile.dc.html" style="display: flex; height: 520px; margin: 0 10px; border-radius: 16px; border: 2px dashed #3A332C; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-decoration: none; text-align: center; padding: 0 20px;">
+    <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.12em; color: #B6AC9D;">[MEMBER PROFILE PREVIEW]</span>
+    <span style="font-size: 12px; line-height: 1.5; color: #B6AC9D;">The full profile page (MemberProfileTemplate) filled from Google, visitor controls hidden. See the Mobile profile board.</span>
+  </a>
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 0 10px 64px;">
+    <button type="button" style="display: inline-flex; width: 100%; height: 54px; align-items: center; justify-content: center; border-radius: 11px; border: 0; background: #B3591F; padding: 0 20px; font-family: inherit; font-size: 16px; font-weight: 600; color: #FFFFFF;">Submit to the Guild</button>
+    <p style="margin: 0; text-align: center; font-size: 12px; line-height: 1.45; color: #B6AC9D;">By submitting, you agree to the <a href="#terms" style="color: #B6AC9D; text-decoration: underline; text-underline-offset: 2px;">Terms</a> and <a href="#privacy" style="color: #B6AC9D; text-decoration: underline; text-underline-offset: 2px;">Privacy Policy</a>.</p>
+    <button type="button" style="display: inline-flex; width: 100%; height: 48px; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 0 20px; font-family: inherit; font-size: 14px; font-weight: 500; color: #241F1A; box-sizing: border-box;">Go back and change something</button>
+    <p style="margin: 0; text-align: center; font-size: 12px; color: #B6AC9D;">Powered by Google</p>
+  </div>
+</div>
+  </div>
+</div></div>
+  <div style="display: flex; gap: 40px; align-items: flex-start;"><div style="display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;">
+  <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.15em; color: #6B6156;">4 · CHECK YOUR EMAIL</div>
+  <div style="width: 390px; height: 470px; box-sizing: border-box; background: #171410; overflow: hidden; display: flex; flex-direction: column;">
+    <header style="height: 73px; flex-shrink: 0; box-sizing: border-box; border-bottom: 1px solid rgba(58,51,44,0.6); background: rgba(23,20,16,0.8); display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 16px;">
+    <a href="#home" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #F7F3EC;">
+      <span style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 2px; background: #2A241E; border: 1px dashed #3A332C; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.08em; color: #B6AC9D;">LOGO</span>
+      <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #F7F3EC;">ISC Brewers Guild</span>
+    </a>
+    <button type="button" aria-label="Toggle menu" style="width: 44px; height: 44px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: rgba(247,243,236,0.8); display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+</header>
+    <section style="padding: 24px 10px 64px;"><div style="display: flex; flex-direction: column; gap: 18px; border-radius: 22px; background: #F9F6F0; padding: 28px 18px 26px; color: #241F1A;"><div style="width: 52px; height: 52px; border-radius: 13px; background: #EFEAE1; display: flex; align-items: center; justify-content: center;">
+  <svg width="24" height="24" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1.8" y="3.4" width="12.4" height="9.2" rx="1.6" stroke="#6B6156" stroke-width="1.4"/><path d="m2.4 4.4 5.6 4 5.6-4" stroke="#6B6156" stroke-width="1.4" stroke-linejoin="round"/></svg>
+</div>
+<div role="status" style="display: flex; flex-direction: column; gap: 9px;">
+  <h1 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 30px; font-weight: 700; line-height: 1.06; letter-spacing: -0.02em; color: #241F1A;">Check your email</h1>
+  <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #6B6156; text-wrap: pretty;">We sent a link to <strong style="color: #241F1A;">alex@example.com</strong>. Open it to finish setting up your profile.</p>
+</div></div></section>
+  </div>
+</div><div style="display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;">
+  <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.15em; color: #6B6156;">ALREADY A MEMBER (NAME MATCH)</div>
+  <div style="width: 390px; height: 470px; box-sizing: border-box; background: #171410; overflow: hidden; display: flex; flex-direction: column;">
+    <header style="height: 73px; flex-shrink: 0; box-sizing: border-box; border-bottom: 1px solid rgba(58,51,44,0.6); background: rgba(23,20,16,0.8); display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 16px;">
+    <a href="#home" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #F7F3EC;">
+      <span style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 2px; background: #2A241E; border: 1px dashed #3A332C; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.08em; color: #B6AC9D;">LOGO</span>
+      <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #F7F3EC;">ISC Brewers Guild</span>
+    </a>
+    <button type="button" aria-label="Toggle menu" style="width: 44px; height: 44px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: rgba(247,243,236,0.8); display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+</header>
+    <section style="padding: 24px 10px 64px;"><div style="display: flex; flex-direction: column; gap: 18px; border-radius: 22px; background: #F9F6F0; padding: 28px 18px 26px; color: #241F1A;"><div role="status" style="display: flex; flex-direction: column; gap: 9px;">
+  <h1 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 30px; font-weight: 700; line-height: 1.06; letter-spacing: -0.02em; color: #241F1A;">We may already have you</h1>
+  <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #6B6156; text-wrap: pretty;">We may already have Sample Brewery #1. Please <a href="#contact" style="font-weight: 500; color: #B3591F; text-decoration: underline; text-underline-offset: 2px;">contact us</a>.</p>
+</div></div></section>
+  </div>
+</div><div style="display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;">
+  <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.15em; color: #6B6156;">JOIN CLOSED (JOIN_OPEN NOT &#8220;true&#8221;)</div>
+  <div style="width: 390px; height: 470px; box-sizing: border-box; background: #171410; overflow: hidden; display: flex; flex-direction: column;">
+    <header style="height: 73px; flex-shrink: 0; box-sizing: border-box; border-bottom: 1px solid rgba(58,51,44,0.6); background: rgba(23,20,16,0.8); display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 16px;">
+    <a href="#home" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #F7F3EC;">
+      <span style="width: 56px; height: 56px; flex-shrink: 0; border-radius: 2px; background: #2A241E; border: 1px dashed #3A332C; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.08em; color: #B6AC9D;">LOGO</span>
+      <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #F7F3EC;">ISC Brewers Guild</span>
+    </a>
+    <button type="button" aria-label="Toggle menu" style="width: 44px; height: 44px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: rgba(247,243,236,0.8); display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+</header>
+    <section style="padding: 24px 10px 64px;"><div style="display: flex; flex-direction: column; gap: 18px; border-radius: 22px; background: #F9F6F0; padding: 28px 18px 26px; color: #241F1A;"><div style="display: flex; flex-direction: column; gap: 9px;">
+  <h1 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 30px; font-weight: 700; line-height: 1.06; letter-spacing: -0.02em; color: #241F1A;">Join the Guild</h1>
+  <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #6B6156; text-wrap: pretty;">Joining online isn't open yet. Please <a href="#contact" style="font-weight: 500; color: #B3591F; text-decoration: underline; text-underline-offset: 2px;">contact us</a>.</p>
+</div></div></section>
+  </div>
+</div><div style="width: 390px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; line-height: 1.55; color: #6B6156;">
+  <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.15em; color: #6B6156;">NOTES</div>
+  <p style="margin: 0;">One page, /join. Mobile skips step 2 and goes straight to the preview. Producer and Affiliate Member see step 2 after Continue.</p>
+  <p style="margin: 0;">Site footer sits under each screen (see the public page boards); left off here.</p>
+  <p style="margin: 0;">Errors: &#8220;Fix the highlighted fields and try again.&#8221; shows in a red box above Continue, with each field's message under it.</p>
+</div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1760,"height":1820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Scan Pass — my pass (/card)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#171410}
+a{color:#B3591F}a:hover{color:#8F4517}
+</style>
+</helmet>
+
+<div style="width: 390px; height: 4700px; box-sizing: border-box; background: #171410; display: flex; flex-direction: column;">
+<div style="padding: 28px 26px 12px; display: flex; align-items: center; gap: 12px;">
+  <span style="display: block; height: 1px; flex-grow: 1; background: #2B261F;"></span>
+  <span style="font-size: 10px; letter-spacing: 0.15em; color: #9A9184; text-align: center;">WITH A BEER TRAIL PASS</span>
+  <span style="display: block; height: 1px; flex-grow: 1; background: #2B261F;"></span>
+</div>
+<div style="padding: 0 26px 8px; font-size: 12px; line-height: 1.5; color: #B6AC9D; text-align: center; text-wrap: pretty;">&ldquo;Save to Home Screen&rdquo; is hidden when the pass is already opened from the Home Screen. &ldquo;Waiting for you&rdquo; shows only when a reward is waiting.</div>
+<div style="height: 72px; flex-shrink: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 16px; border-bottom: 1px solid #2E2823; background: #171410;">
+  <a href="#home" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #F7F3EC;">
+    <span style="width: 56px; height: 56px; border-radius: 2px; background: #2A241E; display: flex; align-items: center; justify-content: center; font-size: 8px; letter-spacing: 0.1em; color: #B6AC9D;">[LOGO]</span>
+    <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">ISC Brewers Guild</span>
+  </a>
+  <button type="button" aria-label="Toggle menu" style="width: 44px; height: 44px; border: 0; border-radius: 6px; background: none; padding: 0; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F7F3EC" stroke-opacity="0.8" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+</div>
+<div style="height: 58px; flex-shrink: 0; display: flex; align-items: center; padding: 0 14px;">
+  <a href="#home" aria-label="Inland Southern California Brewers Guild — home" style="display: flex; align-items: center; gap: 10px; min-height: 44px; text-decoration: none;">
+    <span style="display: block; width: 28px; height: 28px; border-radius: 5px; background: #38322A;"></span>
+    <span style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">ISC BREWERS GUILD</span>
+  </a>
+</div>
+<div style="margin: 0 10px 40px; padding: 28px 18px 26px; box-sizing: border-box; background: #F9F6F0; border-radius: 22px; display: flex; flex-direction: column; gap: 18px; color: #241F1A;">
+<span style="font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #6B6156;">Inland Scan Pass · 2026</span>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 26px; font-weight: 700; line-height: 1.08; letter-spacing: -0.015em; color: #241F1A;">Alex&rsquo;s Inland Scan Pass</h1>
+<button type="button" style="height: 54px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 11px; border: 0; background: #B3591F; padding: 0 20px; font-family: inherit; font-size: 16px; font-weight: 600; color: #FFFFFF; text-decoration: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>Scan the QR code</button>
+<button type="button" style="height: 48px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 0 20px; font-family: inherit; font-size: 14px; font-weight: 500; color: #241F1A; text-decoration: none;">&oplus; Save to Home Screen</button>
+<section aria-label="Waiting for you" style="display: flex; flex-direction: column; gap: 8px; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 14px 16px;">
+  <h2 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 15px; font-weight: 700; letter-spacing: 0.01em; text-transform: uppercase; color: #241F1A;">Waiting for you</h2>
+  <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px;">
+    <li style="display: flex; flex-direction: column; gap: 2px;">
+      <span style="font-size: 16px; font-weight: 600; color: #241F1A;">[REWARD]</span>
+      <span style="font-size: 13px; color: #6B6156;">Sample Brewery #1 · Use by [DATE]</span>
+      <span style="font-size: 13px; color: #6B6156;">[TERMS]</span>
+    </li>
+  </ul>
+  <p style="margin: 0; font-size: 12px; color: #6B6156;">Ask a staff member for it on your next visit. One reward per visit.</p>
+</section>
+<div style="display: flex; flex-direction: column; gap: 8px;">
+  <p style="margin: 0; font-size: 17px; font-weight: 600; color: #241F1A;">2 of 4 stops in 2026</p>
+  <div role="progressbar" aria-valuemin="0" aria-valuemax="4" aria-valuenow="2" aria-label="Stops visited this year" style="height: 12px; width: 100%; border-radius: 99px; background: #EFEAE1; overflow: hidden;"><div style="width: 50%; height: 12px; border-radius: 99px; background: #B3591F;"></div></div>
+</div>
+<section aria-label="Rewards" style="display: flex; flex-direction: column; gap: 8px;">
+  <h2 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 15px; font-weight: 700; letter-spacing: 0.01em; text-transform: uppercase; color: #241F1A;">Guild rewards</h2>
+  <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px;">
+    <li style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 14px; color: #241F1A;"><span>2 stops: [GUILD REWARD]</span><span style="font-weight: 600; color: #1F5E2A;">Earned!</span></li>
+    <li style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 14px; color: #241F1A;"><span>4 stops: [GUILD REWARD]</span><span style="color: #6B6156;">Not yet</span></li>
+  </ul>
+</section>
+<section aria-label="Stops" style="display: flex; flex-direction: column; gap: 8px;">
+  <h2 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 15px; font-weight: 700; letter-spacing: 0.01em; text-transform: uppercase; color: #241F1A;">The Beer Trail Stops</h2>
+  <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF;">
+    <li style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #DED7CB;">
+      <div style="min-width: 0;"><a href="#sample-brewery-1" style="font-size: 15px; font-weight: 500; color: #241F1A; text-decoration: none;">Sample Brewery #1</a><div style="font-size: 13px; color: #6B6156;">[CITY] · [OFFER]</div></div>
+      <span style="flex-shrink: 0; font-size: 13px; font-weight: 600; color: #1F5E2A;">Visited</span>
+    </li>
+    <li style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #DED7CB;">
+      <div style="min-width: 0;"><a href="#member-name" style="font-size: 15px; font-weight: 500; color: #241F1A; text-decoration: none;">[MEMBER NAME]</a><div style="font-size: 13px; color: #6B6156;">[CITY] · [OFFER]</div></div>
+      <span style="flex-shrink: 0; font-size: 13px; font-weight: 600; color: #1F5E2A;">Visited</span>
+    </li>
+    <li style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #DED7CB;">
+      <div style="min-width: 0;"><a href="#member-name" style="font-size: 15px; font-weight: 500; color: #241F1A; text-decoration: none;">[MEMBER NAME]</a><div style="font-size: 13px; color: #6B6156;">[CITY] · [OFFER]</div></div>
+      <span style="flex-shrink: 0; font-size: 13px; color: #6B6156;">Not yet</span>
+    </li>
+    <li style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 16px;">
+      <div style="min-width: 0;"><a href="#member-name" style="font-size: 15px; font-weight: 500; color: #241F1A; text-decoration: none;">[MEMBER NAME]</a><div style="font-size: 13px; color: #6B6156;">[CITY] · [OFFER]</div></div>
+      <span style="flex-shrink: 0; font-size: 13px; color: #6B6156;">Not yet</span>
+    </li>
+  </ul>
+</section>
+<section aria-label="Your visits" style="display: flex; flex-direction: column; gap: 8px;">
+  <h2 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 15px; font-weight: 700; letter-spacing: 0.01em; text-transform: uppercase; color: #241F1A;">Your visits</h2>
+  <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: #241F1A;"><li>Sample Brewery #1 — 3 visits</li><li>Sample Taco Truck — 1 visit</li></ul>
+</section>
+<p style="margin: 0;"><button type="button" style="min-height: 44px; padding: 0; border: 0; background: none; font-family: inherit; font-size: 15px; font-weight: 500; color: #B3591F; text-decoration: underline; text-underline-offset: 2px;">Sign out</button></p>
+</div>
+
+<div style="padding: 34px 26px 12px; display: flex; align-items: center; gap: 12px;">
+  <span style="display: block; height: 1px; flex-grow: 1; background: #2B261F;"></span>
+  <span style="font-size: 10px; letter-spacing: 0.15em; color: #9A9184; text-align: center;">FREE LOYALTY-ONLY PASS</span>
+  <span style="display: block; height: 1px; flex-grow: 1; background: #2B261F;"></span>
+</div>
+<div style="padding: 0 26px 8px; font-size: 12px; line-height: 1.5; color: #B6AC9D; text-align: center; text-wrap: pretty;">&ldquo;Join the Beer Trail&rdquo; shows while a Beer Trail Pass is on sale and this pass has none.</div>
+<div style="height: 72px; flex-shrink: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 16px; border-bottom: 1px solid #2E2823; background: #171410;">
+  <a href="#home" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #F7F3EC;">
+    <span style="width: 56px; height: 56px; border-radius: 2px; background: #2A241E; display: flex; align-items: center; justify-content: center; font-size: 8px; letter-spacing: 0.1em; color: #B6AC9D;">[LOGO]</span>
+    <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">ISC Brewers Guild</span>
+  </a>
+  <button type="button" aria-label="Toggle menu" style="width: 44px; height: 44px; border: 0; border-radius: 6px; background: none; padding: 0; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F7F3EC" stroke-opacity="0.8" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+</div>
+<div style="height: 58px; flex-shrink: 0; display: flex; align-items: center; padding: 0 14px;">
+  <a href="#home" aria-label="Inland Southern California Brewers Guild — home" style="display: flex; align-items: center; gap: 10px; min-height: 44px; text-decoration: none;">
+    <span style="display: block; width: 28px; height: 28px; border-radius: 5px; background: #38322A;"></span>
+    <span style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">ISC BREWERS GUILD</span>
+  </a>
+</div>
+<div style="margin: 0 10px 40px; padding: 28px 18px 26px; box-sizing: border-box; background: #F9F6F0; border-radius: 22px; display: flex; flex-direction: column; gap: 18px; color: #241F1A;">
+<span style="font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #6B6156;">Inland Scan Pass · 2026</span>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 26px; font-weight: 700; line-height: 1.08; letter-spacing: -0.015em; color: #241F1A;">Alex&rsquo;s Inland Scan Pass</h1>
+<button type="button" style="height: 54px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 11px; border: 0; background: #B3591F; padding: 0 20px; font-family: inherit; font-size: 16px; font-weight: 600; color: #FFFFFF; text-decoration: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>Scan the QR code</button>
+<button type="button" style="height: 48px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 0 20px; font-family: inherit; font-size: 14px; font-weight: 500; color: #241F1A; text-decoration: none;">&oplus; Save to Home Screen</button>
+<div style="display: flex; flex-direction: column; gap: 8px; border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 16px;">
+  <p style="margin: 0; font-size: 15px; font-weight: 600; color: #241F1A;">Join the Beer Trail</p>
+  <p style="margin: 0; font-size: 14px; color: #6B6156;">Get the Beer Trail offer at every stop and Guild rewards for visiting more. Your brewery rewards keep working either way.</p>
+  <a href="#get-your-beer-trail-pass" style="align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; font-size: 14px; font-weight: 500; color: #B3591F; text-decoration: underline; text-underline-offset: 2px;">Get your Beer Trail Pass</a>
+</div>
+<section aria-label="Your visits" style="display: flex; flex-direction: column; gap: 8px;">
+  <h2 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 15px; font-weight: 700; letter-spacing: 0.01em; text-transform: uppercase; color: #241F1A;">Your visits</h2>
+  <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: #241F1A;"><li>Sample Taco Truck — 2 visits</li></ul>
+</section>
+<p style="margin: 0;"><button type="button" style="min-height: 44px; padding: 0; border: 0; background: none; font-family: inherit; font-size: 15px; font-weight: 500; color: #B3591F; text-decoration: underline; text-underline-offset: 2px;">Sign out</button></p>
+</div>
+
+<div style="padding: 34px 26px 12px; display: flex; align-items: center; gap: 12px;">
+  <span style="display: block; height: 1px; flex-grow: 1; background: #2B261F;"></span>
+  <span style="font-size: 10px; letter-spacing: 0.15em; color: #9A9184; text-align: center;">SAVE TO HOME SCREEN TAPPED · IPHONE</span>
+  <span style="display: block; height: 1px; flex-grow: 1; background: #2B261F;"></span>
+</div>
+<div style="padding: 0 26px 8px; font-size: 12px; line-height: 1.5; color: #B6AC9D; text-align: center; text-wrap: pretty;">On Android the button opens the phone&rsquo;s own install prompt; where there is none, two steps: open the browser menu (&#8942;), then Add to Home screen or Install app.</div>
+<div style="height: 72px; flex-shrink: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 16px; border-bottom: 1px solid #2E2823; background: #171410;">
+  <a href="#home" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #F7F3EC;">
+    <span style="width: 56px; height: 56px; border-radius: 2px; background: #2A241E; display: flex; align-items: center; justify-content: center; font-size: 8px; letter-spacing: 0.1em; color: #B6AC9D;">[LOGO]</span>
+    <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">ISC Brewers Guild</span>
+  </a>
+  <button type="button" aria-label="Toggle menu" style="width: 44px; height: 44px; border: 0; border-radius: 6px; background: none; padding: 0; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F7F3EC" stroke-opacity="0.8" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+</div>
+<div style="height: 58px; flex-shrink: 0; display: flex; align-items: center; padding: 0 14px;">
+  <a href="#home" aria-label="Inland Southern California Brewers Guild — home" style="display: flex; align-items: center; gap: 10px; min-height: 44px; text-decoration: none;">
+    <span style="display: block; width: 28px; height: 28px; border-radius: 5px; background: #38322A;"></span>
+    <span style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">ISC BREWERS GUILD</span>
+  </a>
+</div>
+<div style="margin: 0 10px 40px; padding: 28px 18px 26px; box-sizing: border-box; background: #F9F6F0; border-radius: 22px; display: flex; flex-direction: column; gap: 18px; color: #241F1A;">
+<span style="font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #6B6156;">Inland Scan Pass · 2026</span>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 26px; font-weight: 700; line-height: 1.08; letter-spacing: -0.015em; color: #241F1A;">Alex&rsquo;s Inland Scan Pass</h1>
+<button type="button" style="height: 54px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 11px; border: 0; background: #B3591F; padding: 0 20px; font-family: inherit; font-size: 16px; font-weight: 600; color: #FFFFFF; text-decoration: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>Scan the QR code</button>
+<div style="display: flex; flex-direction: column; gap: 12px;">
+  <button type="button" style="height: 48px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 0 20px; font-family: inherit; font-size: 14px; font-weight: 500; color: #241F1A; text-decoration: none;">&oplus; Save to Home Screen</button>
+  <ol style="margin: 0; border-radius: 12px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 12px 16px 12px 36px; font-size: 14px; line-height: 1.45; color: #241F1A; display: flex; flex-direction: column; gap: 6px;">
+    <li>Tap <strong>Share</strong> (the square with an arrow). In Chrome it&rsquo;s at the top right; then tap <strong>View More</strong>.</li>
+    <li>Tap <strong>Add to Home Screen</strong>.</li>
+    <li>Leave <strong>Open as Web App</strong> on, and tap <strong>Add</strong>.</li>
+  </ol>
+</div>
+</div>
+
+<div style="padding: 34px 26px 12px; display: flex; align-items: center; gap: 12px;">
+  <span style="display: block; height: 1px; flex-grow: 1; background: #2B261F;"></span>
+  <span style="font-size: 10px; letter-spacing: 0.15em; color: #9A9184; text-align: center;">NEXT YEAR&rsquo;S PASS BOUGHT</span>
+  <span style="display: block; height: 1px; flex-grow: 1; background: #2B261F;"></span>
+</div>
+<div style="padding: 0 26px 8px; font-size: 12px; line-height: 1.5; color: #B6AC9D; text-align: center; text-wrap: pretty;">Shown above the progress section when a Beer Trail Pass for next year is already on this pass.</div>
+<div style="height: 72px; flex-shrink: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 16px; border-bottom: 1px solid #2E2823; background: #171410;">
+  <a href="#home" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #F7F3EC;">
+    <span style="width: 56px; height: 56px; border-radius: 2px; background: #2A241E; display: flex; align-items: center; justify-content: center; font-size: 8px; letter-spacing: 0.1em; color: #B6AC9D;">[LOGO]</span>
+    <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 18px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">ISC Brewers Guild</span>
+  </a>
+  <button type="button" aria-label="Toggle menu" style="width: 44px; height: 44px; border: 0; border-radius: 6px; background: none; padding: 0; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F7F3EC" stroke-opacity="0.8" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+</div>
+<div style="height: 58px; flex-shrink: 0; display: flex; align-items: center; padding: 0 14px;">
+  <a href="#home" aria-label="Inland Southern California Brewers Guild — home" style="display: flex; align-items: center; gap: 10px; min-height: 44px; text-decoration: none;">
+    <span style="display: block; width: 28px; height: 28px; border-radius: 5px; background: #38322A;"></span>
+    <span style="font-size: 10px; letter-spacing: 0.16em; font-weight: 600; color: #B6AC9D;">ISC BREWERS GUILD</span>
+  </a>
+</div>
+<div style="margin: 0 10px 40px; padding: 28px 18px 26px; box-sizing: border-box; background: #F9F6F0; border-radius: 22px; display: flex; flex-direction: column; gap: 18px; color: #241F1A;">
+<span style="font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #6B6156;">Inland Scan Pass · 2026</span>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 26px; font-weight: 700; line-height: 1.08; letter-spacing: -0.015em; color: #241F1A;">Alex&rsquo;s Inland Scan Pass</h1>
+<button type="button" style="height: 54px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 11px; border: 0; background: #B3591F; padding: 0 20px; font-family: inherit; font-size: 16px; font-weight: 600; color: #FFFFFF; text-decoration: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>Scan the QR code</button>
+<button type="button" style="height: 48px; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 0 20px; font-family: inherit; font-size: 14px; font-weight: 500; color: #241F1A; text-decoration: none;">&oplus; Save to Home Screen</button>
+<p style="margin: 0; border-radius: 14px; border: 1px solid #DED7CB; background: #FFFFFF; padding: 16px; font-size: 15px; color: #241F1A;"><span style="font-weight: 600;">Your 2027 Beer Trail Pass is ready.</span> It starts January 1, 2027. Your brewery rewards work now.</p>
+</div>
+
+<div style="padding: 34px 26px 12px; display: flex; align-items: center; gap: 12px;">
+  <span style="display: block; height: 1px; flex-grow: 1; background: #2B261F;"></span>
+  <span style="font-size: 10px; letter-spacing: 0.15em; color: #9A9184; text-align: center;">SITE FOOTER · BELOW EVERY SCREEN ON THIS BOARD</span>
+  <span style="display: block; height: 1px; flex-grow: 1; background: #2B261F;"></span>
+</div>
+<div style="margin-top: 60px; border-top: 1px solid #2E2823; background: #1B1713;">
+  <div style="padding: 56px 16px; display: flex; flex-direction: column; gap: 40px;">
+    <div>
+      <a href="#home" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #F7F3EC;">
+        <span style="width: 40px; height: 40px; border-radius: 2px; background: #2A241E; display: flex; align-items: center; justify-content: center; font-size: 7px; letter-spacing: 0.08em; color: #B6AC9D;">[LOGO]</span>
+        <span style="font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 20px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">ISC Brewers Guild</span>
+      </a>
+      <p style="margin: 12px 0 0; font-size: 14px; line-height: 1.45; color: #B6AC9D;">Promoting and protecting independent craft breweries through advocacy, education, and community events.</p>
+      <div style="margin-top: 20px; display: flex; gap: 12px;">
+        <a href="#instagram" aria-label="Instagram" style="display: flex;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B6AC9D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.6" fill="#B6AC9D"/></svg></a>
+        <a href="#facebook" aria-label="Facebook" style="display: flex;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B6AC9D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+        <a href="#twitter" aria-label="Twitter" style="display: flex;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B6AC9D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg></a>
+      </div>
+    </div>
+    <div>
+      <h4 style="margin: 0; font-family: 'Bricolage Grotesque', Georgia, serif; font-size: 14px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #F7F3EC;">Explore</h4>
+      <ul style="margin: 12px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 14px;"><li><a href="#about" style="color: #B6AC9D; text-decoration: none; min-height: 28px; display: inline-flex; align-items: center;">About</a></li><li><a href="#members" style="color: #B6AC9D; text-decoration: none; min-height: 28px; display: inline-flex; align-items: center;">Members</a></li><li><a href="#news" style="color: #B6AC9D; text-decoration: none; min-height: 28px; display: inline-flex; align-items: center;">News</a></li><li><a href="#jobs" style="color: #B6AC9D; text-decoration: none; min-height: 28px; display: inline-flex; align-items: center;">Jobs</a></li><li><a href="#contact" style="color: #B6AC9D; text-decoration: none; min-height: 28px; display: inline-flex; align-items: center;">Contact</a></li></ul>
+    </div>
+  </div>
+  <div style="border-top: 1px solid #2E2823; padding: 20px 16px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; color: #B6AC9D; text-align: center;">
+    <span>&copy; 2026 ISC Brewers Guild. All rights reserved.</span>
+    <span style="display: flex; gap: 16px;"><a href="#privacy" style="min-height: 44px; display: inline-flex; align-items: center; color: #B6AC9D; text-decoration: none;">Privacy</a><a href="#terms" style="min-height: 44px; display: inline-flex; align-items: center; color: #B6AC9D; text-decoration: none;">Terms</a></span>
+    <a href="#my-scan-pass" style="min-height: 44px; display: inline-flex; align-items: center; color: #B6AC9D; text-decoration: none;">My Scan Pass</a>
+    <a href="#member-portal" style="min-height: 44px; display: inline-flex; align-items: center; color: #B6AC9D; text-decoration: none;">Member Portal</a>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":4700}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

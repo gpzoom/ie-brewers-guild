@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Jobs board</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Chivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;font-family:Chivo,ui-sans-serif,system-ui,sans-serif;background:#171410}
+</style>
+</helmet>
+<div style="width:1440px;box-sizing:border-box;background:#171410;display:flex;flex-direction:column;font-family:Chivo,sans-serif;color:#F7F3EC">
+
+  <div style="height:64px;flex-shrink:0;background:#0F0C0A;border-bottom:1px solid #332B24;display:flex;align-items:center;justify-content:space-between;padding:0 48px">
+    <div style="display:flex;align-items:center;gap:10px"><div style="width:34px;height:34px;border-radius:6px;background:#FFF;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#241F1A">LOGO</div><span style="font-family:'Bricolage Grotesque', Georgia, serif;font-size:15px;font-weight:800;letter-spacing:0.04em;color:#F7F3EC">ISC BREWERS GUILD</span></div>
+    <div style="display:flex;gap:30px;align-items:center">
+      <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:#F7F3EC">HOME</span>
+      <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:#F7F3EC">ABOUT</span>
+      <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:#F7F3EC">MEMBERS</span>
+      <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:#F7F3EC">NEWS</span>
+      <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:#E8913A">JOBS</span>
+      <span style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:#F7F3EC">CONTACT</span>
+    </div>
+  </div>
+
+  <div style="padding:46px 48px 8px;display:flex;flex-direction:column;gap:10px;max-width:760px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.25em;color:#E8913A">JOBS</div>
+    <div style="font-family:'Bricolage Grotesque', Georgia, serif;font-size:36px;font-weight:800;color:#F7F3EC;letter-spacing:0.005em;line-height:1.1">Open roles across the Guild.</div>
+    <div style="font-size:15px;line-height:1.55;color:#B6AC9D">Posted directly by our members — producers, mobile vendors and the businesses that supply them. Apply straight to the member; the Guild isn't involved in hiring.</div>
+  </div>
+
+  <div style="padding:26px 48px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #332B24">
+    <div style="flex:1;max-width:360px;height:46px;box-sizing:border-box;border:1px solid #3A332C;border-radius:10px;background:#211C17;display:flex;align-items:center;gap:10px;padding:0 14px;font-size:14px;color:#B6AC9D">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      Search roles or members…
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="height:40px;padding:0 15px;border-radius:99px;display:flex;align-items:center;font-size:13px;font-weight:600;border:1px solid #E8913A;background:rgba(232,145,58,0.14);color:#E8913A">All types</div>
+      <div style="height:40px;padding:0 15px;border-radius:99px;display:flex;align-items:center;font-size:13px;font-weight:600;border:1px solid #3A332C;color:#D9D1C4">Full-time</div>
+      <div style="height:40px;padding:0 15px;border-radius:99px;display:flex;align-items:center;font-size:13px;font-weight:600;border:1px solid #3A332C;color:#D9D1C4">Part-time</div>
+      <div style="height:40px;padding:0 15px;border-radius:99px;display:flex;align-items:center;font-size:13px;font-weight:600;border:1px solid #3A332C;color:#D9D1C4">Seasonal</div>
+      <div style="height:40px;padding:0 15px;border-radius:99px;display:flex;align-items:center;font-size:13px;font-weight:600;border:1px solid #3A332C;color:#D9D1C4">Internship</div>
+    </div>
+    <span style="flex-grow:1"></span>
+    <div style="font-size:13px;color:#8C8275">14 open roles</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column">
+
+    <!-- Row 1, expanded in place — this is what clicking any row does -->
+    <div id="job-1" style="display:flex;flex-direction:column;border-bottom:1px solid #2A241E;background:#1C1813">
+      <div style="display:flex;align-items:center;gap:20px;padding:22px 48px 14px">
+        <div style="width:42px;height:42px;flex-shrink:0;border-radius:9px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque', Georgia, serif;font-weight:800;font-size:12px;color:#9B2242">AP</div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+          <div style="font-size:16px;font-weight:700;color:#F7F3EC">Taproom Lead, Weekends</div>
+          <div style="font-size:13px;color:#B6AC9D">All Points Brewing Co. · Riverside, CA</div>
+        </div>
+        <div style="width:110px;flex-shrink:0;display:flex;justify-content:center"><span style="height:28px;padding:0 12px;border-radius:99px;border:1px solid #3A332C;display:flex;align-items:center;font-size:12px;font-weight:600;color:#D9D1C4">Part-time</span></div>
+        <div style="width:120px;flex-shrink:0;font-size:13px;color:#8C8275">Posted 3 days ago</div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B6AC9D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M6 9l6-6 6 6"/></svg>
+      </div>
+      <div style="padding:0 48px 28px 90px;max-width:760px;display:flex;flex-direction:column;gap:16px">
+        <div style="font-size:14px;line-height:1.65;color:#D9D1C4">Looking for a weekend lead to run our taproom bar Friday through Sunday — pouring, light cellar work, and keeping the floor moving during our busiest shifts. Beer knowledge a plus; we'll train on the rest. Must be 21+ and able to lift a half barrel.</div>
+        <div style="display:flex;align-items:center;gap:16px">
+          <a href="#apply" style="height:44px;padding:0 20px;border-radius:9px;background:#B3591F;color:#FFFFFF;display:flex;align-items:center;font-size:14px;font-weight:600;text-decoration:none">Apply by email →</a>
+          <div style="font-size:12px;color:#8C8275">Open until filled, or Nov 30 — whichever comes first</div>
+        </div>
+      </div>
+    </div>
+
+    <a href="#job-2" style="display:flex;align-items:center;gap:20px;padding:22px 48px;text-decoration:none;border-bottom:1px solid #2A241E">
+      <div style="width:42px;height:42px;flex-shrink:0;border-radius:9px;background:#2B2B2B;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque', Georgia, serif;font-weight:800;font-size:12px;color:#7FC241">CN</div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+        <div style="font-size:16px;font-weight:700;color:#F7F3EC">Assistant Brewer</div>
+        <div style="font-size:13px;color:#B6AC9D">Carbon Nation Brewing Co. · Riverside, CA</div>
+      </div>
+      <div style="width:110px;flex-shrink:0;display:flex;justify-content:center"><span style="height:28px;padding:0 12px;border-radius:99px;border:1px solid #3A332C;display:flex;align-items:center;font-size:12px;font-weight:600;color:#D9D1C4">Full-time</span></div>
+      <div style="width:120px;flex-shrink:0;font-size:13px;color:#8C8275">Posted 6 days ago</div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6156" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+
+    <a href="#job-3" style="display:flex;align-items:center;gap:20px;padding:22px 48px;text-decoration:none;border-bottom:1px solid #2A241E">
+      <div style="width:42px;height:42px;flex-shrink:0;border-radius:9px;background:#111111;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque', Georgia, serif;font-weight:800;font-size:11px;color:#E8913A">H24</div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+        <div style="font-size:16px;font-weight:700;color:#F7F3EC">Delivery Driver — Summer Season</div>
+        <div style="font-size:13px;color:#B6AC9D">Hangar 24 Brewing Co. · Redlands, CA</div>
+      </div>
+      <div style="width:110px;flex-shrink:0;display:flex;justify-content:center"><span style="height:28px;padding:0 12px;border-radius:99px;border:1px solid #3A332C;display:flex;align-items:center;font-size:12px;font-weight:600;color:#D9D1C4">Seasonal</span></div>
+      <div style="width:120px;flex-shrink:0;font-size:13px;color:#8C8275">Posted 9 days ago</div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6156" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+
+    <a href="#job-4" style="display:flex;align-items:center;gap:20px;padding:22px 48px;text-decoration:none;border-bottom:1px solid #2A241E">
+      <div style="width:42px;height:42px;flex-shrink:0;border-radius:9px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque', Georgia, serif;font-weight:800;font-size:11px;color:#1F5F6B">KC</div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+        <div style="font-size:16px;font-weight:700;color:#F7F3EC">Keg &amp; Equipment Sales Rep</div>
+        <div style="font-size:13px;color:#B6AC9D">Keystone Containers (Affiliate Member) · Ontario, CA</div>
+      </div>
+      <div style="width:110px;flex-shrink:0;display:flex;justify-content:center"><span style="height:28px;padding:0 12px;border-radius:99px;border:1px solid #3A332C;display:flex;align-items:center;font-size:12px;font-weight:600;color:#D9D1C4">Full-time</span></div>
+      <div style="width:120px;flex-shrink:0;font-size:13px;color:#8C8275">Posted 12 days ago</div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6156" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+
+  </div>
+
+  <div style="padding:30px 48px 56px;display:flex;justify-content:center">
+    <div style="height:46px;padding:0 20px;border-radius:9px;border:1px solid #3A332C;display:flex;align-items:center;font-size:13px;font-weight:600;color:#D9D1C4">Show more roles</div>
+  </div>
+
+  <div style="width:1440px;box-sizing:border-box;background:#FFF8E6;border-top:3px solid #E8B54A;padding:20px 48px;font-family:Chivo,sans-serif;color:#3A2E1F;font-size:14px;line-height:1.5">
+    <div style="font-weight:700;margin-bottom:8px">Notes for review</div>
+    <ul style="margin:0;padding-left:20px">
+      <li style="margin-bottom:6px"><b>Deliberately plain:</b> one list, no photos, no cards. A clean row is easier to scan ten of than a card is — this is a job board, not a directory.</li>
+      <li style="margin-bottom:6px"><b>Click a row to expand it in place</b> (job 1, open): full description, an Apply button that's either a <code>mailto:</code> link or an outside URL depending what the member entered, and the closing date. No separate job detail page.</li>
+      <li style="margin-bottom:6px">Posted directly by members on their own admin, live immediately — no Guild admin approval step. A listing disappears from this page on its own after it expires or the member marks it filled; there's no "last chance" banner.</li>
+      <li style="margin-bottom:6px">Sorted newest first. "All types" plus the four pills are the only filter; no location filter for now given how few members there are.</li>
+      <li style="margin-bottom:6px">Empty state: "No open roles right now. Check back soon, or see our members directly." No illustration — matches the rest of the page's restraint.</li>
+    </ul>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
