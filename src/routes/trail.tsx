@@ -43,9 +43,9 @@ function TrailPage() {
     <div className="pb-20">
       <section className="mx-auto max-w-7xl px-4 pt-16 md:px-6">
         <SectionHeader
-          eyebrow="Inland Scan Pass"
+          eyebrow="Inland Beer Trail 2027"
           title={trailOfferHeadline(trailOffer)}
-          subtitle="One pass for every independent taproom on the trail. Discover a brewery you've never been to."
+          subtitle="Your Scan Pass works at every member's taproom on the trail. Discover a new taproom you've never visited before!"
           align="center"
         />
         <ol className="mx-auto mt-10 grid max-w-5xl gap-4 md:grid-cols-3">

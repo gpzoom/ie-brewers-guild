@@ -57,7 +57,7 @@ function CardBody({ view }: { view: CardView }) {
           <Eyebrow>{view.memberName}</Eyebrow>
           <CanvasHeading size="md">This device can&rsquo;t record visits right now</CanvasHeading>
           <p className={leadClass}>
-            {view.memberName} isn&rsquo;t on the Inland Scan Pass trail at the moment (its page isn&rsquo;t published, or the Guild
+            {view.memberName} currently isn&rsquo;t on the 2027 Inland Beer Trail (its page isn&rsquo;t published, or the Guild
             has it off the trail). Ask the Guild if that&rsquo;s a surprise.
           </p>
         </>
