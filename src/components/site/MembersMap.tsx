@@ -2,6 +2,7 @@ import { APIProvider, Map, Marker, InfoWindow, useMap } from "@vis.gl/react-goog
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { DirectorySearch } from "@/lib/directory/search-params";
+import { MEMBER_MAP_STYLES } from "@/lib/maps/map-styles";
 import { directionsUrl, directoryPins, type DirectoryMember, type DirectoryPin } from "@/lib/members/directory";
 import { Compass, ExternalLink, Navigation } from "lucide-react";
 
@@ -60,6 +61,7 @@ export function MembersMap({ members, linkSearch, initialView, onViewChange }: M
           defaultCenter={initialView ? { lat: initialView.lat, lng: initialView.lng } : { lat: 33.95, lng: -117.3 }}
           defaultZoom={initialView?.zoom ?? 9}
           gestureHandling="cooperative"
+          styles={MEMBER_MAP_STYLES}
           mapTypeControl={false}
           streetViewControl={false}
           fullscreenControl
