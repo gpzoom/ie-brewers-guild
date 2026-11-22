@@ -67,7 +67,7 @@ export function MembersMap({ members, linkSearch, initialView, onViewChange }: M
         <Map
           defaultCenter={initialView ? { lat: initialView.lat, lng: initialView.lng } : { lat: 33.95, lng: -117.3 }}
           defaultZoom={initialView?.zoom ?? 9}
-          gestureHandling="cooperative"
+          gestureHandling="greedy"
           styles={MEMBER_MAP_STYLES}
           mapTypeControl={false}
           streetViewControl={false}

@@ -14,12 +14,12 @@ export const Route = createFileRoute("/trail")({
   loader: () => getTrailPage(),
   head: () => ({
     meta: [
-      { title: "Inland Scan Pass — Inland Southern California Brewers Guild" },
+      { title: "Inland Beer Trail 2027 — Inland Southern California Brewers Guild" },
       {
         name: "description",
         content: "Get an Inland Scan Pass on your phone, scan in at every new taproom on the trail, and get the Beer Trail offer at each stop.",
       },
-      { property: "og:title", content: "Inland Scan Pass" },
+      { property: "og:title", content: "Inland Beer Trail 2027" },
     ],
   }),
   component: TrailPage,
