@@ -128,7 +128,7 @@ async function assembleProfile(args: {
     eventsResult,
     categoriesResult,
     directoryResult,
-    sameTypeResult,
+    crossLinkResult,
     siblingResult,
     foodCalendarResult,
     guestEvents,
@@ -142,13 +142,15 @@ async function assembleProfile(args: {
       ? supabase.from("categories").select("*").in("id", rows.categoryIds).order("sort_order")
       : Promise.resolve({ data: [] as CategoryRow[] }),
     directoryQuery,
-    // Cross-link card: always this member's own type, however the visitor arrived.
+    // "Next member" card: every published member A-Z (any type, so a type
+    // with a single member still gets one), wrapping from last to first
+    // (owner, 2026-11-22).
     supabase
       .from("members")
       .select("id, slug, business_name, city, member_type, logo_asset_id, logo_background, theme")
       .eq("status", "published")
-      .eq("member_type", member.member_type)
-      .order("business_name"),
+      .order("business_name")
+      .order("city"),
     // Next location: the other published locations of this business, by city.
     // A single location (no business) has none.
     member.business_id
@@ -198,10 +200,10 @@ async function assembleProfile(args: {
     ? supabase.storage.from("member-logos").getPublicUrl(logoAsset.storage_path).data.publicUrl
     : null;
 
-  const sameTypeRows = (sameTypeResult.data ?? []) as Array<Record<string, unknown>>;
-  const sameTypeEntries = toEntries(sameTypeRows);
-  const crossLink = getAdjacentInList(sameTypeEntries, member.id).next;
-  const crossLinkRow = crossLink ? sameTypeRows.find((row) => row.id === crossLink.id) : undefined;
+  const crossLinkRows = (crossLinkResult.data ?? []) as Array<Record<string, unknown>>;
+  const crossLinkEntries = toEntries(crossLinkRows);
+  const crossLink = getAdjacentInList(crossLinkEntries, member.id).next;
+  const crossLinkRow = crossLink ? crossLinkRows.find((row) => row.id === crossLink.id) : undefined;
   const crossLinkLogoBackground = crossLinkRow
     ? logoBackgroundColor(
         crossLinkRow.logo_background as string | null,
@@ -231,7 +233,7 @@ async function assembleProfile(args: {
     categories: (categoriesResult.data ?? []) as CategoryRow[],
     logoPublicUrl,
     directoryEntries: toEntries(directoryResult.data),
-    sameTypeEntries,
+    crossLinkEntries,
     siblingEntries: toEntries(siblingResult.data),
     crossLinkLogoUrl,
     crossLinkLogoBackground,

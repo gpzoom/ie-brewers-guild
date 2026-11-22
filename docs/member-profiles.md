@@ -137,11 +137,11 @@ Two mechanisms that look alike and must not be conflated.
 
 **The Trail (the passport)** is the collectible: visited state, the progress strip, the "8 of 24 visited" count. Producers with taprooms only. A supply house is not a trail stop and neither is a band.
 
-**Cross-linking** is the card at the bottom of every profile, and every member gets one regardless of type. A profile that ends in a dead end wastes the exit. Producers point at the next trail stop, mobile members at another act playing nearby, Affiliate Members at another Affiliate Member.
+**Cross-linking** is the card at the bottom of every profile, and every member gets one regardless of type. A profile that ends in a dead end wastes the exit. Since 2026-11-22 (owner) the card is "Next member" for every type: the next published member A–Z of any type, wrapping from the last back to the first, so a type with a single member (one Mobile member, one Affiliate) still gets a link.
 
 Because the Guild takes meaderies, cideries and distilleries, no member-facing copy should say "brewery." The producer cross-link card reads "Next member" (owner, 2026-11-22), not "Next brewery." If the Guild has its own name for the trail concept, that name replaces this one throughout — worth settling before copy gets written twice.
 
-Affiliate Member cross-links point to another Affiliate Member. Pointing one at a producer they supply is more interesting, but needs a supplier relationship in the data model that does not exist yet. Revisit if that relationship ever lands.
+Pointing an Affiliate Member at a producer they supply would be more interesting, but needs a supplier relationship in the data model that does not exist yet. Revisit if that relationship ever lands.
 
 ## Affiliate Member discount
 

@@ -283,7 +283,7 @@ function input(overrides: Partial<BuildProfileInput> = {}): BuildProfileInput {
       },
       { id: "m2", slug: "c", businessName: "C", city: "Y", memberType: "producer" },
     ],
-    sameTypeEntries: [],
+    crossLinkEntries: [],
     siblingEntries: [],
     crossLinkLogoUrl: null,
     crossLinkLogoBackground: null,
