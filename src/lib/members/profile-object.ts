@@ -240,8 +240,8 @@ export type BuildProfileInput = {
   logoPublicUrl: string | null;
   /** Published members in the visitor's browsing order (already filtered). */
   directoryEntries: DirectoryEntry[];
-  /** Published members of the same type, by name (for the cross-link card). */
-  sameTypeEntries: DirectoryEntry[];
+  /** Every published member, by name then city (for the "Next member" card). */
+  crossLinkEntries: DirectoryEntry[];
   /** Published rows with the same business_name, by city. */
   siblingEntries: DirectoryEntry[];
   crossLinkLogoUrl: string | null;
@@ -329,7 +329,7 @@ export function buildProfileObject(input: BuildProfileInput): MemberProfileData 
     logoAsset: member.logo_asset_id ? (assetsById.get(member.logo_asset_id) ?? null) : null,
     coverAsset: member.cover_asset_id ? (assetsById.get(member.cover_asset_id) ?? null) : null,
     logoPublicUrl: input.logoPublicUrl,
-    crossLink: getAdjacentInList(input.sameTypeEntries, member.id).next,
+    crossLink: getAdjacentInList(input.crossLinkEntries, member.id).next,
     headerPrev,
     headerNext,
     headerPosition,
