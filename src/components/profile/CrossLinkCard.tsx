@@ -16,9 +16,9 @@ type CrossLinkCardProps = {
 // distilleries too. (The artboards' "NEXT IN THE DIRECTORY" is the
 // generic placeholder; the spec's table names the per-type copy.)
 const CROSS_LINK_HEADING: Record<MemberType, string> = {
-  producer: "Next on the trail",
-  mobile: "Playing nearby",
-  allied: "Another Affiliate Member",
+  producer: "Next member",
+  mobile: "Next member",
+  allied: "Next member",
 };
 
 /**
