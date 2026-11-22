@@ -15,3 +15,12 @@ SUPABASE_SERVICE_ROLE_KEY=
 # transactional email in src/lib/email/send.ts. mail.iscbrewersguild.org is
 # already verified in Resend -- no domain setup needed, just the key.
 RESEND_API_KEY=
+
+# Any long random string -- generate one with `openssl rand -base64 32`.
+# Signs the "confirm your hours" email links and the broadcast unsubscribe
+# links (src/lib/hours/confirm-token.server.ts, src/lib/email/unsubscribe.server.ts).
+HOURS_CONFIRM_SECRET=
+
+# Any long random string -- generate one with `openssl rand -base64 32`.
+# Signs the Guild admin "view as member" cookie (src/lib/guild/impersonation.server.ts).
+IMPERSONATION_COOKIE_SECRET=
