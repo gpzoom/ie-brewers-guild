@@ -6,6 +6,7 @@ import type { V2Pin } from "@/lib/members/members-v2";
 import type { DirectorySearch } from "@/lib/directory/search-params";
 import { clusterPinSvg, locationPinSvg, mobilePinSvg, trailPinSvg, type PinLook } from "@/lib/maps/pin-icons";
 import { clusterPins } from "@/lib/maps/cluster-pins";
+import { MEMBER_MAP_STYLES } from "@/lib/maps/map-styles";
 import { panDecision } from "@/lib/maps/pan-decision";
 
 const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -215,6 +216,7 @@ export function MembersV2Map(props: {
           defaultCenter={props.initialView ? { lat: props.initialView.lat, lng: props.initialView.lng } : { lat: 33.95, lng: -117.3 }}
           defaultZoom={props.initialView?.zoom ?? 9}
           gestureHandling="greedy"
+          styles={MEMBER_MAP_STYLES}
           mapTypeControl={false}
           streetViewControl={false}
           fullscreenControl={false}
