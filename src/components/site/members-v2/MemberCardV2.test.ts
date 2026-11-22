@@ -15,9 +15,9 @@ function card(o: Partial<V2Card>): V2Card {
     key: "Hangar 24 Brewing Co.", groupKey: "Hangar 24 Brewing Co.", name: "Hangar 24 Brewing Co.", memberType: "producer", website: "https://hangar24.example",
     logo: null, logoBackground: null, tag: null, mobileIcon: null, stop: null, stopPin: null,
     locations: [
-      { slug: "h24-irvine", city: "Irvine", street: "17877 Von Karman Ave", address: "17877 Von Karman Ave, Irvine, CA", lat: 33.69, lng: -117.85 },
-      { slug: "h24-redlands", city: "Redlands", street: "1710 Sessums Dr", address: "1710 Sessums Dr, Redlands, CA", lat: 34.06, lng: -117.2 },
-      { slug: "h24-riverside", city: "Riverside", street: "5225 Canyon Crest Dr", address: "5225 Canyon Crest Dr, Riverside, CA", lat: 33.95, lng: -117.33 },
+      { slug: "h24-irvine", city: "Irvine", street: "17877 Von Karman Ave", address: "17877 Von Karman Ave, Irvine, CA", lat: 33.69, lng: -117.85, trailStop: false },
+      { slug: "h24-redlands", city: "Redlands", street: "1710 Sessums Dr", address: "1710 Sessums Dr, Redlands, CA", lat: 34.06, lng: -117.2, trailStop: false },
+      { slug: "h24-riverside", city: "Riverside", street: "5225 Canyon Crest Dr", address: "5225 Canyon Crest Dr, Riverside, CA", lat: 33.95, lng: -117.33, trailStop: false },
     ],
     ...o,
   };
@@ -64,7 +64,7 @@ describe("MemberCardV2", () => {
   });
 
   it("a mobile card with no pin today shows Schedule instead of Directions", () => {
-    const html = render(card({ memberType: "mobile", tag: "ENTERTAINMENT", mobileIcon: "mic", stop: { state: "in-city", place: "Corona", time: "6–9 pm" }, locations: [{ slug: "k", city: "Riverside", street: null, address: "Riverside, CA", lat: null, lng: null }] }));
+    const html = render(card({ memberType: "mobile", tag: "ENTERTAINMENT", mobileIcon: "mic", stop: { state: "in-city", place: "Corona", time: "6–9 pm" }, locations: [{ slug: "k", city: "Riverside", street: null, address: "Riverside, CA", lat: null, lng: null, trailStop: false }] }));
     expect(html).toContain("ENTERTAINMENT");
     expect(html).toContain("Schedule");
     expect(html).not.toContain("Directions");

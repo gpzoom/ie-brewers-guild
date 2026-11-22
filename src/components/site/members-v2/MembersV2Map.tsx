@@ -1,10 +1,10 @@
 /// <reference types="google.maps" />
-import { APIProvider, InfoWindow, Map, Marker, useApiIsLoaded, useMap } from "@vis.gl/react-google-maps";
+import { APIProvider, ControlPosition, InfoWindow, Map, MapControl, Marker, useApiIsLoaded, useMap } from "@vis.gl/react-google-maps";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { V2Pin } from "@/lib/members/members-v2";
 import type { DirectorySearch } from "@/lib/directory/search-params";
-import { clusterPinSvg, locationPinSvg, mobilePinSvg, type PinLook } from "@/lib/maps/pin-icons";
+import { clusterPinSvg, locationPinSvg, mobilePinSvg, trailPinSvg, type PinLook } from "@/lib/maps/pin-icons";
 import { clusterPins } from "@/lib/maps/cluster-pins";
 import { panDecision } from "@/lib/maps/pan-decision";
 
@@ -119,12 +119,17 @@ function PinMarkers(props: {
         const p = item.pin;
         const look = lookOf(p, props.highlightCard, props.focusedSlug);
         const label = `${p.name} · ${p.city}`.toUpperCase();
-        const icon = p.kind === "mobile" && p.icon ? mobilePinSvg(p.icon, look, label) : locationPinSvg(look, label);
+        const icon =
+          p.kind === "mobile" && p.icon
+            ? mobilePinSvg(p.icon, look, label)
+            : p.trailStop
+              ? trailPinSvg(look, label)
+              : locationPinSvg(look, label);
         return (
           <Marker
             key={p.key}
             position={{ lat: p.lat, lng: p.lng }}
-            title={`${p.name} — ${p.city}`}
+            title={`${p.name} — ${p.city}${p.trailStop ? " (Beer Trail stop)" : ""}`}
             zIndex={look === "normal" ? 1 : look === "member" ? 50 : 100}
             icon={{
               url: icon.url,
@@ -138,6 +143,24 @@ function PinMarkers(props: {
         );
       })}
     </>
+  );
+}
+
+/**
+ * The Beer Trail key (owner, 2026-11-21): only when the map mixes trail
+ * stops with other members, so it explains the green mug pin.
+ */
+export function TrailPinKey() {
+  return (
+    <div className="m-2.5 flex items-center gap-2 rounded-lg bg-white/95 px-2.5 py-1.5 font-sans text-[12px] text-gray-800 shadow-md">
+      <img src="/tap-card/trail-pin.svg" alt="" width={15} height={20} />
+      <span>
+        Beer Trail stop ·{" "}
+        <Link to="/trail" className="font-semibold text-amber-800 underline underline-offset-2">
+          About the trail
+        </Link>
+      </span>
+    </div>
   );
 }
 
@@ -177,6 +200,7 @@ export function MembersV2Map(props: {
   const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(debounce.current), []);
 
+  const showTrailKey = props.pins.some((p) => p.trailStop) && props.pins.some((p) => !p.trailStop);
   const targets = useMemo(() => {
     if (!props.highlightCard) return [];
     const own = props.pins.filter((p) => p.cardKey === props.highlightCard);
@@ -219,6 +243,11 @@ export function MembersV2Map(props: {
               props.onPinClick(p);
             }}
           />
+          {showTrailKey && (
+            <MapControl position={ControlPosition.TOP_LEFT}>
+              <TrailPinKey />
+            </MapControl>
+          )}
           {active && (
             <InfoWindow position={{ lat: active.lat, lng: active.lng }} pixelOffset={[0, -36]} onCloseClick={() => setActive(null)}>
               <PinPopup pin={active} linkSearch={props.linkSearch} />

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clusterPinSvg, locationPinSvg, mobilePinSvg } from "./pin-icons";
+import { clusterPinSvg, locationPinSvg, mobilePinSvg, trailPinSvg } from "./pin-icons";
 
 function svgOf(url: string): string {
   return decodeURIComponent(url.replace("data:image/svg+xml;charset=UTF-8,", ""));
@@ -11,6 +11,16 @@ describe("pin icons", () => {
     expect(svgOf(locationPinSvg("member").url)).toContain("#E8913A");
     expect(locationPinSvg("focused").height).toBeGreaterThan(locationPinSvg("member").height);
     expect(locationPinSvg("member").height).toBeGreaterThan(locationPinSvg("normal").height);
+  });
+  it("trail pins: green with the golden mug; orange outline and bigger when highlighted; tip-anchored", () => {
+    const normal = trailPinSvg("normal");
+    expect(svgOf(normal.url)).toContain("#2E7D3A");
+    expect(svgOf(normal.url)).toContain("#F2B233");
+    expect(svgOf(normal.url)).not.toContain("#E8913A");
+    expect(svgOf(trailPinSvg("member").url)).toContain('stroke="#E8913A"');
+    expect(trailPinSvg("member").height).toBeGreaterThan(normal.height);
+    expect(svgOf(trailPinSvg("focused", "TRAIL CO · RIVERSIDE").url)).toContain("TRAIL CO · RIVERSIDE");
+    expect(normal.anchorY).toBe(normal.height);
   });
   it("the focused pin carries its label, escaped", () => {
     const svg = svgOf(locationPinSvg("focused", "HANGAR 24 & CO · REDLANDS").url);

@@ -50,6 +50,20 @@ describe("buildV2", () => {
     expect(pin.stopLine).toBe("Today 5–9 pm at All Points Brewing Co.");
   });
 
+  it("a trail stop's location pin is marked for the trail pin; mobile pins never are", () => {
+    const trailMembers = buildDirectoryMembers({ rows: [row({ trail_eligible: true }), rows[1]], links: [], logoUrls: new Map() });
+    const built = buildV2({
+      members: trailMembers,
+      rows,
+      categoriesByMemberId: new Map(),
+      stopsByMemberId: new Map([["t1", [truckStop]]]),
+      now: NOW,
+    });
+    expect(built.pins.find((p) => p.kind === "location")?.trailStop).toBe(true);
+    expect(built.pins.filter((p) => p.kind === "mobile").every((p) => !p.trailStop)).toBe(true);
+    expect(v2.pins.every((p) => !p.trailStop)).toBe(true);
+  });
+
   it("an Affiliate Member is tagged AFFILIATE", () => {
     const allied = buildDirectoryMembers({ rows: [row({ id: "a1", slug: "supply", member_type: "allied", business_name: "Sample Supply Co." })], links: [], logoUrls: new Map() });
     const r = buildV2({ members: allied, rows: [row({ id: "a1", slug: "supply", member_type: "allied", business_name: "Sample Supply Co." })], categoriesByMemberId: new Map(), stopsByMemberId: new Map(), now: NOW });
@@ -76,7 +90,7 @@ describe("buildV2", () => {
           name: "Same Name",
           groupKey: "biz-1",
           memberType: "producer",
-          locations: [{ slug: "s1", city: "Chino", street: "1 Main St", address: "1 Main St, Chino, CA", lat: 34, lng: -117.7 }],
+          locations: [{ slug: "s1", city: "Chino", street: "1 Main St", address: "1 Main St, Chino, CA", lat: 34, lng: -117.7, trailStop: false }],
           website: null,
           logo: null,
           logoBackground: null,

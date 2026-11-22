@@ -16,6 +16,7 @@ function pin(key: string, lat: number, lng: number, cardKey = key): V2Pin {
     icon: null,
     website: null,
     stopLine: null,
+    trailStop: false,
   };
 }
 

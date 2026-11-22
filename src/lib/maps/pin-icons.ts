@@ -51,6 +51,31 @@ export function locationPinSvg(look: PinLook, label?: string): PinIcon {
   return withLabel(body, w, h, look === "focused" ? label : undefined);
 }
 
+/**
+ * A Beer Trail stop (owner 2026-11-21, option C "Golden pour"): a green pin
+ * with a golden mug of beer and a white foam head. Drawn in a 40x52 box, the
+ * same art as public/tap-card/trail-pin.svg. Highlighted, it grows like the
+ * red pins and gets an orange outline instead of turning orange.
+ */
+const TRAIL_GREEN = "#2E7D3A";
+const TRAIL_PIN_BODY =
+  '<path d="M23.5 18.2h2.2a2.6 2.6 0 0 1 2.6 2.6v2.6a2.6 2.6 0 0 1-2.6 2.6h-2.2" fill="none" stroke="#FFFFFF" stroke-width="2"/>' +
+  '<rect x="11.5" y="16" width="12" height="12.4" rx="1.8" fill="#F2B233" stroke="#FFFFFF" stroke-width="1.4"/>' +
+  '<g fill="#FFF6DA"><circle cx="15" cy="22" r=".8"/><circle cx="19.5" cy="24.6" r=".7"/><circle cx="17.8" cy="20.4" r=".6"/></g>' +
+  '<g fill="#FFFFFF"><circle cx="12.6" cy="15.4" r="2.5"/><circle cx="15.9" cy="13.1" r="3.1"/>' +
+  '<circle cx="19.6" cy="13.5" r="2.9"/><circle cx="22.4" cy="15.5" r="2.3"/><rect x="11.2" y="14.6" width="12.6" height="3"/></g>';
+
+export function trailPinSvg(look: PinLook, label?: string): PinIcon {
+  const s = SCALE[look];
+  const w = Math.round(31 * s);
+  const h = Math.round(40 * s);
+  const outline = look === "normal" ? '#1C5226" stroke-width="1.2' : `${ORANGE}" stroke-width="2.6`;
+  const body =
+    `<g transform="scale(${(31 / 40) * s})"><path data-trail="1" d="M20 1C9.5 1 1 9.3 1 19.6c0 13.6 16.6 29.6 18.1 31a1.3 1.3 0 0 0 1.8 0C22.4 49.2 39 33.2 39 19.6 39 9.3 30.5 1 20 1z" fill="${TRAIL_GREEN}" stroke="${outline}"/>` +
+    `${TRAIL_PIN_BODY}</g>`;
+  return withLabel(body, w, h, look === "focused" ? label : undefined);
+}
+
 const GLYPHS: Record<MobileIcon, string> = {
   truck: '<path d="M2 6h11v9H2zM13 9h4l3 3v3h-7z"/><circle cx="6" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>',
   tent: '<path d="M3 20L12 4l9 16zM12 4v16M8.5 20l3.5-6 3.5 6"/>',

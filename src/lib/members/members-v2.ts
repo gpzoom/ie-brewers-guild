@@ -24,6 +24,8 @@ export type V2Pin = {
   lng: number;
   kind: "location" | "mobile";
   icon: MobileIcon | null;
+  /** A Beer Trail stop's location: drawn with the trail pin (pin-icons.ts). */
+  trailStop: boolean;
   website: string | null;
   /** The pop-up's line for a mobile pin: "Today 5–9 pm at All Points Brewing Co." */
   stopLine: string | null;
@@ -79,6 +81,7 @@ export function buildV2(args: {
           lng: stopPin.lng,
           kind: "mobile",
           icon,
+          trailStop: false,
           website: m.website,
           stopLine: stopLineFor(summary),
         });
@@ -99,6 +102,7 @@ export function buildV2(args: {
         lng: l.lng,
         kind: "location",
         icon: null,
+        trailStop: l.trailStop,
         website: m.website,
         stopLine: null,
       });

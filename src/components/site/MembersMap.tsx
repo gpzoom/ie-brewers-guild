@@ -28,6 +28,11 @@ function FitToPins({ pins }: { pins: Pin[] }) {
 // If this is rotated, remember to update the referrer restrictions too.
 const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
+// Beer Trail stops get the green mug pin (owner, 2026-11-21, option C);
+// everyone else keeps Google's red pin. The SVG's own size (31x40) is the
+// pin's size; Google anchors it at the bottom center, the pin's tip.
+const TRAIL_PIN_URL = "/tap-card/trail-pin.svg";
+
 type MembersMapProps = {
   members: DirectoryMember[];
   linkSearch: DirectorySearch;
@@ -38,6 +43,8 @@ type MembersMapProps = {
 export function MembersMap({ members, linkSearch, initialView, onViewChange }: MembersMapProps) {
   const pins = useMemo(() => directoryPins(members), [members]);
   const [active, setActive] = useState<Pin | null>(null);
+  // The key only helps when the map mixes both kinds (not on /trail, where every pin is a stop).
+  const showKey = pins.some((p) => p.trailStop) && pins.some((p) => !p.trailStop);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => () => clearTimeout(debounceRef.current), []);
@@ -70,7 +77,8 @@ export function MembersMap({ members, linkSearch, initialView, onViewChange }: M
             <Marker
               key={`${p.brewery}-${p.city}-${i}`}
               position={{ lat: p.lat, lng: p.lng }}
-              title={`${p.brewery} — ${p.city}`}
+              title={`${p.brewery} — ${p.city}${p.trailStop ? " (Beer Trail stop)" : ""}`}
+              icon={p.trailStop ? TRAIL_PIN_URL : undefined}
               onClick={() => setActive(p)}
             />
           ))}
@@ -138,6 +146,17 @@ export function MembersMap({ members, linkSearch, initialView, onViewChange }: M
           )}
         </Map>
       </div>
+      {showKey && (
+        <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+          <img src={TRAIL_PIN_URL} alt="" width={16} height={21} />
+          <span>
+            Beer Trail stop.{" "}
+            <Link to="/trail" className="font-medium text-foreground underline underline-offset-2">
+              About the Beer Trail
+            </Link>
+          </span>
+        </p>
+      )}
     </APIProvider>
   );
 }

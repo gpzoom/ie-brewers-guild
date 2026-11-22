@@ -23,7 +23,7 @@ describe("MembersV2Map before Google Maps has loaded", () => {
   it("renders without touching the google global", () => {
     const pin = {
       key: "a", cardKey: "A", slug: "a", name: "A", city: "Riverside", address: "", lat: 33.9, lng: -117.3,
-      kind: "location" as const, icon: null, website: null, stopLine: null,
+      kind: "location" as const, icon: null, trailStop: false, website: null, stopLine: null,
     };
     expect(() =>
       renderToStaticMarkup(

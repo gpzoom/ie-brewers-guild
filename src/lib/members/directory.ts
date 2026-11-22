@@ -17,7 +17,7 @@ import type { MemberThemeName } from "@/lib/theme/member-themes";
 
 /** The members columns the directory reads -- all in anon's column grant. */
 export const DIRECTORY_MEMBER_COLUMNS =
-  "id, slug, member_type, business_name, city, state, street_address, postal_code, latitude, longitude, logo_asset_id, logo_background, theme, business_id";
+  "id, slug, member_type, business_name, city, state, street_address, postal_code, latitude, longitude, logo_asset_id, logo_background, theme, business_id, trail_eligible";
 
 export type DirectoryMemberRow = {
   id: string;
@@ -36,6 +36,8 @@ export type DirectoryMemberRow = {
   /** The tile behind the logo, as on the profile (logo-background.ts). */
   logo_background: string | null;
   theme: string | null;
+  /** On the Beer Trail (Guild admins set it); counts only for producers (isTrailStop). */
+  trail_eligible?: boolean | null;
 };
 
 export type DirectoryLinkRow = {
@@ -57,6 +59,8 @@ export type DirectoryLocation = {
   /** Null when the location has no street address or no coordinates yet -- no map pin. */
   lat: number | null;
   lng: number | null;
+  /** A Beer Trail stop: its map pin uses the trail icon. */
+  trailStop: boolean;
 };
 
 export type DirectoryMember = {
@@ -118,6 +122,9 @@ function toLocation(row: DirectoryMemberRow): DirectoryLocation {
     address: formatDirectoryAddress(row),
     lat: pinnable ? lat : null,
     lng: pinnable ? lng : null,
+    // Same rule as isTrailStop (src/lib/tap-card/staff-qr.ts), kept inline so
+    // the public Members page doesn't pull in the Scan Pass code.
+    trailStop: row.member_type === "producer" && row.trail_eligible === true,
   };
 }
 
@@ -194,6 +201,8 @@ export type DirectoryPin = {
   lng: number;
   website: string | null;
   tourUrl?: string;
+  /** Drawn with the Beer Trail pin (public/tap-card/trail-pin.svg). */
+  trailStop: boolean;
 };
 
 /** One map pin per location that has coordinates (and a street address). */
@@ -212,6 +221,7 @@ export function directoryPins(members: DirectoryMember[]): DirectoryPin[] {
               lng: l.lng,
               website: m.website,
               tourUrl: m.tourUrl,
+              trailStop: l.trailStop,
             },
           ]
         : [],

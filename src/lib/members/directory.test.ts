@@ -73,6 +73,7 @@ describe("buildDirectoryMembers", () => {
           address: "2060 Chicago Ave STE A17, Riverside, CA 92507",
           lat: 33.992759,
           lng: -117.347977,
+          trailStop: false,
         },
       ],
       website: "https://euryalebrewing.com/",
@@ -242,6 +243,7 @@ describe("directoryPins", () => {
         lng: -117.347977,
         website: "https://x.example/",
         tourUrl: undefined,
+        trailStop: false,
       },
     ]);
   });
@@ -257,5 +259,25 @@ describe("directionsUrl", () => {
     expect(directionsUrl({ lat: null, lng: null, address: "Riverside, CA" })).toBe(
       "https://www.google.com/maps/dir/?api=1&destination=Riverside%2C%20CA",
     );
+  });
+});
+
+describe("Beer Trail stops on the map", () => {
+  it("a producer on the trail is a trail stop, and its pin says so; others aren't", () => {
+    const cards = buildDirectoryMembers({
+      rows: [
+        row({ id: "a", slug: "trail-brewery", business_name: "A Trail Brewery", trail_eligible: true }),
+        row({ id: "b", slug: "plain-brewery", business_name: "B Plain Brewery", trail_eligible: false }),
+        row({ id: "c", slug: "affiliate", business_name: "C Affiliate", member_type: "allied", trail_eligible: true }),
+      ],
+      links: [],
+      logoUrls: new Map(),
+    });
+    expect(cards.map((c) => c.locations[0].trailStop)).toEqual([true, false, false]);
+    expect(directoryPins(cards).map((p) => [p.slug, p.trailStop])).toEqual([
+      ["trail-brewery", true],
+      ["plain-brewery", false],
+      ["affiliate", false],
+    ]);
   });
 });
