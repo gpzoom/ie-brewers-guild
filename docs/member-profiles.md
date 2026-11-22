@@ -35,7 +35,7 @@ Affiliate Members were called Allied Members until 7 October 2026. Only the word
 | Third link button | Tap list | Press kit | Catalog |
 | On the Guild Trail | Yes | No | No |
 | Trail progress strip | Yes | No | No |
-| Cross-link card | Next on the trail | Playing nearby | Another Affiliate Member |
+| Cross-link card | Next member | Next member | Next member |
 
 Changing a member's type must not delete data from the modules that type doesn't render. A producer who switches to mobile and back should find their hours intact.
 
@@ -139,7 +139,7 @@ Two mechanisms that look alike and must not be conflated.
 
 **Cross-linking** is the card at the bottom of every profile, and every member gets one regardless of type. A profile that ends in a dead end wastes the exit. Producers point at the next trail stop, mobile members at another act playing nearby, Affiliate Members at another Affiliate Member.
 
-Because the Guild takes meaderies, cideries and distilleries, no member-facing copy should say "brewery." The producer cross-link card reads "Next on the trail," not "Next brewery." If the Guild has its own name for the trail concept, that name replaces this one throughout — worth settling before copy gets written twice.
+Because the Guild takes meaderies, cideries and distilleries, no member-facing copy should say "brewery." The producer cross-link card reads "Next member" (owner, 2026-11-22), not "Next brewery." If the Guild has its own name for the trail concept, that name replaces this one throughout — worth settling before copy gets written twice.
 
 Affiliate Member cross-links point to another Affiliate Member. Pointing one at a producer they supply is more interesting, but needs a supplier relationship in the data model that does not exist yet. Revisit if that relationship ever lands.
 
