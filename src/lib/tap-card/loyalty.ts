@@ -1,6 +1,5 @@
 import type { TapCardOfferSlot } from "@/lib/supabase/types";
 import { TZDate } from "@date-fns/tz";
-import { STANDARD_OFFER } from "@/lib/tap-card/tap-card-copy";
 import { TAP_CARD_TZ } from "@/lib/tap-card/tap-card-time";
 
 /**
@@ -109,6 +108,8 @@ export const OFFER_SLOTS: readonly OfferSlot[] = ["step1", "step2", "step3", "re
  */
 export function pickBarRewards(input: {
   trailAvailable: boolean;
+  /** The Beer Trail offer's wording (Guild Settings). */
+  trailOffer: string;
   banked: BankedReward[];
   now: Date;
   earnNow?: { slot: OfferSlot; reward: string; terms: string }[];
@@ -118,7 +119,7 @@ export function pickBarRewards(input: {
     .sort((a, b) => a.expiresAt.localeCompare(b.expiresAt) || a.earnedAt.localeCompare(b.earnedAt))
     .map((r) => ({ kind: "member", id: r.id, reward: r.reward, terms: r.terms, expiresAt: r.expiresAt }));
   const earn: BarReward[] = (input.earnNow ?? []).map((e) => ({ kind: "earn", slot: e.slot, reward: e.reward, terms: e.terms }));
-  const all: BarReward[] = [...(input.trailAvailable ? [{ kind: "trail" as const, reward: STANDARD_OFFER }] : []), ...earn, ...waiting];
+  const all: BarReward[] = [...(input.trailAvailable ? [{ kind: "trail" as const, reward: input.trailOffer }] : []), ...earn, ...waiting];
   return { featured: all[0] ?? null, others: all.slice(1) };
 }
 

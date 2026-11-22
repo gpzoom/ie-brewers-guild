@@ -26,6 +26,7 @@ function memoryStore(
     earned?: Earned[];
     passYears?: number[];
     nonTrail?: string[];
+    trailOffer?: string;
   } = {},
 ) {
   const visits: Visit[] = seed.visits ?? [];
@@ -61,6 +62,9 @@ function memoryStore(
       }
       v.redeemedYear = year;
       return "ok";
+    },
+    async trailOffer() {
+      return seed.trailOffer ?? STANDARD_OFFER;
     },
     async liveOffers(memberId) {
       return seed.offers?.[memberId] ?? [];
@@ -149,6 +153,14 @@ describe("checkInVisit", () => {
       others: [],
       newlyEarned: [],
     });
+  });
+
+  it("shows the Guild Settings wording for the Beer Trail offer, before and after it's used", async () => {
+    const { store } = memoryStore({ trailOffer: "Your first pint for a dime" });
+    const state = await checkInVisit(store, input);
+    expect(state.featured).toEqual({ kind: "trail", reward: "Your first pint for a dime" });
+    const used = await useBarReward(store, { ...input, choice: { kind: "trail" } });
+    expect(used.state.used).toEqual({ kind: "trail", reward: "Your first pint for a dime" });
   });
 
   it("opening twice the same day records one visit and earns nothing new", async () => {

@@ -1,5 +1,4 @@
 import { earnedOnVisit, expiresAt, pickBarRewards, type BarReward, type LiveOffer, type OfferSlot } from "@/lib/tap-card/loyalty";
-import { STANDARD_OFFER } from "@/lib/tap-card/tap-card-copy";
 import { tapCardDay, tapCardYear } from "@/lib/tap-card/tap-card-time";
 
 /**
@@ -21,6 +20,8 @@ export type BarStore = {
   hasTrailPass(holderId: string, year: number): Promise<boolean>;
   trailRedeemedIn(holderId: string, memberId: string, year: number): Promise<{ visitId: string; day: string } | null>;
   setTrailRedeemed(visitId: string, year: number | null): Promise<"ok" | "duplicate">;
+  /** The Beer Trail offer's wording (Guild Settings). */
+  trailOffer(): Promise<string>;
   liveOffers(memberId: string): Promise<LiveOffer[]>;
   stepsEarned(holderId: string, memberId: string): Promise<Set<OfferSlot>>;
   expiryDays(memberId: string): Promise<number>;
@@ -58,7 +59,7 @@ export type VisitInput = { holderId: string; memberId: string; cardId: string | 
 export type RewardChoice = { kind: "trail" } | { kind: "member"; id: string } | { kind: "earn"; slot: OfferSlot };
 
 async function usedOn(store: BarStore, visit: { id: string; redeemedYear: number | null }): Promise<BarReward | null> {
-  if (visit.redeemedYear !== null) return { kind: "trail", reward: STANDARD_OFFER };
+  if (visit.redeemedYear !== null) return { kind: "trail", reward: await store.trailOffer() };
   const member = await store.memberRewardUsedOn(visit.id);
   return member ? { kind: "member", ...member } : null;
 }
@@ -70,11 +71,12 @@ export async function barState(store: BarStore, input: VisitInput & { firstToday
   const base = { visitNumber, firstToday: input.firstToday, used, newlyEarned: input.newlyEarned };
   if (used) return { ...base, featured: null, others: [] };
   const year = tapCardYear(at);
-  const [stop, pass, trail, banked] = await Promise.all([
+  const [stop, pass, trail, banked, trailOffer] = await Promise.all([
     store.isTrailStop(memberId),
     store.hasTrailPass(holderId, year),
     store.trailRedeemedIn(holderId, memberId, year),
     store.banked(holderId, memberId),
+    store.trailOffer(),
   ]);
   // Not checked in yet: also offer what this visit will earn, so it can be used right away.
   let earnNow: { slot: OfferSlot; reward: string; terms: string }[] = [];
@@ -82,7 +84,7 @@ export async function barState(store: BarStore, input: VisitInput & { firstToday
     const [live, steps] = await Promise.all([store.liveOffers(memberId), store.stepsEarned(holderId, memberId)]);
     earnNow = earnedOnVisit(visitNumber + 1, live, steps);
   }
-  return { ...base, ...pickBarRewards({ trailAvailable: stop && pass && !trail, banked, now: at, earnNow }) };
+  return { ...base, ...pickBarRewards({ trailAvailable: stop && pass && !trail, trailOffer, banked, now: at, earnNow }) };
 }
 
 export async function checkInVisit(store: BarStore, input: VisitInput): Promise<BarState> {

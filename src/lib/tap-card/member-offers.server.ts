@@ -7,7 +7,7 @@ import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
 import { DEFAULT_EXPIRY_DAYS, EXPIRY_CHOICES, offerLabel, validateMemberOffer, type OfferSlot } from "@/lib/tap-card/loyalty";
 import { sendTransactionalEmail } from "@/lib/email/send";
 import { SLOT_ORDER, checkDraftForApproval, otherStepNumbers, sameDraft, slotViews, type OfferVersion, type SeenDraft, type SlotView } from "@/lib/tap-card/member-offers-view";
-import { STANDARD_OFFER } from "@/lib/tap-card/tap-card-copy";
+import { loadTrailOffer } from "@/lib/tap-card/trail-offer.server";
 
 /**
  * Offers (Portal/Admin > Scan Pass): the Guild's Beer Trail offer, which
@@ -45,15 +45,16 @@ export const getMemberOffers = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => ({ memberId: String(data?.memberId ?? "") }))
   .handler(async ({ data }): Promise<MemberOffersData> => {
     const { service, trailStop } = await requireTapCardEditor(data.memberId);
-    const [rows, settings, templates] = await Promise.all([
+    const [rows, settings, templates, trailOffer] = await Promise.all([
       loadRows(service, data.memberId),
       service.from("tap_card_member_settings").select("reward_expiry_days").eq("member_id", data.memberId).maybeSingle(),
       service.from("tap_card_offer_templates").select("id, title, reward, terms").eq("hidden", false).order("sort_order").order("created_at"),
+      loadTrailOffer(service),
     ]);
     if (settings.error) throw new Error(settings.error.message);
     if (templates.error) throw new Error(templates.error.message);
     return {
-      trailOffer: STANDARD_OFFER,
+      trailOffer,
       trailStop,
       slots: slotViews(rows),
       expiryDays: settings.data?.reward_expiry_days ?? DEFAULT_EXPIRY_DAYS,

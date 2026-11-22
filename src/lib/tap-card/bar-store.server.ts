@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { isTrailStop } from "@/lib/tap-card/staff-qr";
 import { holderHasTrailPass } from "@/lib/tap-card/trail-pass-store.server";
 import type { BarStore } from "@/lib/tap-card/bar-core";
+import { loadTrailOffer } from "@/lib/tap-card/trail-offer.server";
 import { DEFAULT_EXPIRY_DAYS, type LiveOffer, type OfferSlot } from "@/lib/tap-card/loyalty";
 
 /**
@@ -50,6 +51,9 @@ export function barStore(service: SupabaseClient): BarStore {
       const { data, error } = await service.from("members").select("member_type, trail_eligible").eq("id", memberId).maybeSingle();
       if (error) throw new Error(error.message);
       return data ? isTrailStop({ memberType: data.member_type, trailEligible: data.trail_eligible === true }) : false;
+    },
+    async trailOffer() {
+      return loadTrailOffer(service);
     },
     async hasTrailPass(holderId, year) {
       return holderHasTrailPass(service, holderId, year);

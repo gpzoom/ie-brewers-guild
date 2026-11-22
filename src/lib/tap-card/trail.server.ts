@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSupabaseServerClient, getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { offerLabel, type OfferSlot } from "@/lib/tap-card/loyalty";
-import { STANDARD_OFFER } from "@/lib/tap-card/tap-card-copy";
+import { loadTrailOffer } from "@/lib/tap-card/trail-offer.server";
 import { loadTrailStops, type TrailStop } from "@/lib/tap-card/trail-stops.server";
 import { loadDirectory } from "@/lib/members/directory.server";
 import type { DirectoryMember } from "@/lib/members/directory";
@@ -42,7 +42,7 @@ export const getStopTapCard = createServerFn({ method: "GET" })
     const steps = live.filter((o) => o.slot !== "repeat").sort((x, y) => x.visitNumber - y.visitNumber);
     const repeat = live.filter((o) => o.slot === "repeat");
     return {
-      trailOffer: STANDARD_OFFER,
+      trailOffer: await loadTrailOffer(service),
       memberOffers: [...steps, ...repeat].map((o) => ({ label: offerLabel(o.slot, o.visitNumber), reward: o.reward, terms: o.terms })),
     };
   });
@@ -51,19 +51,22 @@ export type TrailPageData = {
   /** For the map: directory entries, keeping only the trail-stop locations. */
   members: DirectoryMember[];
   stops: TrailStop[];
+  /** The Beer Trail offer (Guild Settings), for the page headline. */
+  trailOffer: string;
 };
 
 /** /trail: the published trail stops and their offers. */
 export const getTrailPage = createServerFn({ method: "GET" }).handler(async (): Promise<TrailPageData> => {
   const service = await getSupabaseServiceRoleClient();
-  const [stops, directory] = await Promise.all([
+  const [stops, directory, trailOffer] = await Promise.all([
     loadTrailStops(service),
     // The public directory read (anon client), so the map shows exactly what /members shows.
     getSupabaseServerClient().then((anon) => loadDirectory(anon)),
+    loadTrailOffer(service),
   ]);
   const slugs = new Set(stops.map((s) => s.slug));
   const members = directory.members
     .map((m) => ({ ...m, locations: m.locations.filter((l) => slugs.has(l.slug)) }))
     .filter((m) => m.locations.length > 0);
-  return { members, stops };
+  return { members, stops, trailOffer };
 });

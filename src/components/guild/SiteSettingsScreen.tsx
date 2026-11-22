@@ -4,6 +4,7 @@ import {
   saveCalendarSyncInterval,
   saveCarouselDwell,
   saveMaintenanceMode,
+  saveTrailOffer,
   uploadHeroImage,
 } from "@/lib/guild/site-settings.server";
 import {
@@ -26,6 +27,7 @@ import {
   type Message,
 } from "@/components/guild/settings-ui";
 import { Switch } from "@/components/ui/switch";
+import { STANDARD_OFFER, TRAIL_OFFER_MAX, normalizeTrailOffer } from "@/lib/tap-card/tap-card-copy";
 import defaultHeroImg from "@/assets/hero-home.jpg";
 
 function formatWhen(iso: string): string {
@@ -163,6 +165,7 @@ export function SiteSettingsScreen({
         </div>
       </form>
 
+      <TrailOfferCard settings={settings} onSaved={setSettings} />
       <CarouselDwellCard settings={settings} onSaved={setSettings} />
       <HeroImageCard settings={settings} onSaved={setSettings} />
       <HomepageSectionsCard initial={initialSections} />
@@ -231,6 +234,86 @@ function CarouselDwellCard({ settings, onSaved }: CardProps) {
       <p className="border-t border-canvas-2 pt-3 text-[12px] text-ink-muted">
         Shows member events from the next 14 days, taking turns between members.
       </p>
+    </form>
+  );
+}
+
+/**
+ * The Beer Trail offer (owner, 2026-11-21): one wording for every trail stop.
+ * Shows on the Trail page, stop profiles, members' Offers, and the bar screen
+ * the moment it's saved, on both sites (they share one database).
+ */
+function TrailOfferCard({ settings, onSaved }: CardProps) {
+  const [text, setText] = useState(settings.trailOffer);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<Message>(null);
+  const unchanged = normalizeTrailOffer(text) === settings.trailOffer;
+
+  async function save(offer: string) {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const saved = await saveTrailOffer({ data: { offer } });
+      onSaved(saved);
+      setText(saved.trailOffer);
+      setMessage({ kind: "ok", text: "Saved. Every trail stop shows it now." });
+    } catch (err) {
+      setMessage({ kind: "error", text: errorText(err) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        void save(text);
+      }}
+      className={cardClass}
+    >
+      <div className="flex flex-col gap-1">
+        <h2 className="text-[16px] font-semibold text-ink">Beer Trail offer</h2>
+        <p className="text-pretty text-[13px] leading-[1.5] text-ink-muted">
+          What Beer Trail Pass holders get at every stop, once per stop each year. It shows on the
+          Trail page, each stop's profile, members' Offers page and the staff screen as soon as you
+          save. Printed cards, the Member Guide and the video still say the old wording until
+          they're updated.
+        </p>
+      </div>
+      <label className="flex flex-col gap-1.5">
+        <span className="text-[13px] font-medium text-ink">Offer</span>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            type="text"
+            value={text}
+            maxLength={TRAIL_OFFER_MAX + 10}
+            disabled={saving}
+            onChange={(e) => {
+              setText(e.target.value);
+              setMessage(null);
+            }}
+            className={fieldClass}
+          />
+          <button type="submit" disabled={saving || unchanged} className={darkButtonClass}>
+            {saving ? "Saving…" : "Save"}
+          </button>
+        </div>
+        <span className="text-[12px] text-ink-muted">
+          Up to {TRAIL_OFFER_MAX} characters. Leave off the period at the end.
+        </span>
+      </label>
+      {settings.trailOffer !== STANDARD_OFFER && (
+        <button
+          type="button"
+          className={`${outlineButtonClass} self-start`}
+          disabled={saving}
+          onClick={() => void save(STANDARD_OFFER)}
+        >
+          Go back to “{STANDARD_OFFER}”
+        </button>
+      )}
+      <StatusMessage message={message} />
     </form>
   );
 }

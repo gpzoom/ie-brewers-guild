@@ -6,6 +6,7 @@ import {
   getSiteSettingsCore,
   saveCarouselDwellCore,
   saveMaintenanceModeCore,
+  saveTrailOfferCore,
   setHeroImageCore,
   toSiteSettingsView,
 } from "./site-settings";
@@ -96,6 +97,7 @@ function fakeSession(isSuperAdmin: boolean) {
                     hero_image_path:
                       "hero_image_path" in values ? values.hero_image_path : "hero/old-photo.jpg",
                     maintenance_mode: values.maintenance_mode ?? false,
+                    trail_offer: values.trail_offer ?? "Your first beer for a nickel",
                     updated_at: values.updated_at,
                   },
                 ],
@@ -299,5 +301,36 @@ describe("claimScheduledCalendarSync", () => {
     const service = fakeService({ interval: 15, lastRunAt: null }, 1);
     expect(await claimScheduledCalendarSync(service.client, now)).toBe(true);
     expect(service.claimFilters).toEqual([["calendar_sync_last_run_at", null]]);
+  });
+});
+
+describe("Beer Trail offer", () => {
+  it("defaults to the nickel offer for a missing row or a blank value", () => {
+    expect(toSiteSettingsView(null).trailOffer).toBe("Your first beer for a nickel");
+    expect(
+      toSiteSettingsView({
+        calendar_sync_interval_minutes: 15,
+        calendar_sync_last_run_at: null,
+        trail_offer: "   ",
+        updated_at: null,
+      }).trailOffer,
+    ).toBe("Your first beer for a nickel");
+  });
+
+  it("the super admin saves new wording, tidied: spaces collapsed, closing period dropped", async () => {
+    const session = fakeSession(true);
+    const saved = await saveTrailOfferCore(session.client, "  Your first   pint for a dime. ", now);
+    expect(saved.trailOffer).toBe("Your first pint for a dime");
+    expect(session.updates[0]).toMatchObject({ trail_offer: "Your first pint for a dime", updated_by_user_id: "user-1" });
+  });
+
+  it("refuses blank or over-long wording, and a Guild admin can't change it", async () => {
+    const session = fakeSession(true);
+    await expect(saveTrailOfferCore(session.client, " . ", now)).rejects.toThrow("Type the offer");
+    await expect(saveTrailOfferCore(session.client, "x".repeat(81), now)).rejects.toThrow("80 characters");
+    expect(session.updates).toHaveLength(0);
+    const admin = fakeSession(false);
+    await expect(saveTrailOfferCore(admin.client, "Free flight", now)).rejects.toThrow("Only the super admin");
+    expect(admin.updates).toHaveLength(0);
   });
 });

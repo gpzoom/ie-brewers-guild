@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSuperAdmin } from "@/lib/auth/super-admin";
+import { STANDARD_OFFER, normalizeTrailOffer, validateTrailOffer } from "@/lib/tap-card/tap-card-copy";
 
 /**
  * Site settings (docs/member-profiles.md, "Super admin" > "Settings"): the
@@ -72,6 +73,8 @@ export type SiteSettingsView = {
   heroImagePath: string | null;
   /** The public sees the maintenance page (src/lib/site/maintenance.ts). */
   maintenanceMode: boolean;
+  /** The Beer Trail offer every trail stop shows (src/lib/tap-card/trail-offer.server.ts). */
+  trailOffer: string;
   updatedAt: string | null;
 };
 
@@ -81,6 +84,7 @@ export type SiteSettingsRow = {
   carousel_dwell_seconds?: number | null;
   hero_image_path?: string | null;
   maintenance_mode?: boolean | null;
+  trail_offer?: string | null;
   updated_at: string | null;
 };
 
@@ -99,12 +103,13 @@ export function toSiteSettingsView(row: SiteSettingsRow | null): SiteSettingsVie
         ? row.hero_image_path
         : null,
     maintenanceMode: row?.maintenance_mode === true,
+    trailOffer: normalizeTrailOffer(row?.trail_offer) || STANDARD_OFFER,
     updatedAt: row?.updated_at ?? null,
   };
 }
 
 export const SITE_SETTINGS_COLUMNS =
-  "calendar_sync_interval_minutes, calendar_sync_last_run_at, carousel_dwell_seconds, hero_image_path, maintenance_mode, updated_at";
+  "calendar_sync_interval_minutes, calendar_sync_last_run_at, carousel_dwell_seconds, hero_image_path, maintenance_mode, trail_offer, updated_at";
 
 /** Reads the settings as the super admin (the table's select policy allows no one else). */
 export async function getSiteSettingsCore(
@@ -183,6 +188,18 @@ export async function saveMaintenanceModeCore(
   const actor = await requireSuperAdmin(sessionClient, "change the site settings");
   if (typeof enabled !== "boolean") throw new Error("Choose on or off.");
   return updateSiteSettings(sessionClient, actor.userId, { maintenance_mode: enabled }, now);
+}
+
+/** Saves the Beer Trail offer's wording; every trail stop shows it right away. */
+export async function saveTrailOfferCore(
+  sessionClient: SupabaseClient,
+  offer: unknown,
+  now: Date,
+): Promise<SiteSettingsView> {
+  const actor = await requireSuperAdmin(sessionClient, "change the site settings");
+  const checked = validateTrailOffer(offer);
+  if (!checked.ok) throw new Error(checked.message);
+  return updateSiteSettings(sessionClient, actor.userId, { trail_offer: checked.value }, now);
 }
 
 /**

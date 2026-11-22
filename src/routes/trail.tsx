@@ -3,6 +3,7 @@ import { getTrailPage } from "@/lib/tap-card/trail.server";
 import { SectionHeader } from "@/components/site/SectionHeader";
 import { MembersMap } from "@/components/site/MembersMap";
 import { Button } from "@/components/ui/button";
+import { trailOfferHeadline } from "@/lib/tap-card/tap-card-copy";
 
 /**
  * /trail: the Inland Scan Pass for the public -- how it works, the stops on a
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/trail")({
       { title: "Inland Scan Pass — Inland Southern California Brewers Guild" },
       {
         name: "description",
-        content: "Get an Inland Scan Pass on your phone, scan in at every new taproom on the trail, and get each stop's first-beer offer.",
+        content: "Get an Inland Scan Pass on your phone, scan in at every new taproom on the trail, and get the Beer Trail offer at each stop.",
       },
       { property: "og:title", content: "Inland Scan Pass" },
     ],
@@ -25,7 +26,7 @@ export const Route = createFileRoute("/trail")({
 });
 
 function TrailPage() {
-  const { members, stops } = Route.useLoaderData();
+  const { members, stops, trailOffer } = Route.useLoaderData();
   const steps = [
     {
       title: "Get your pass",
@@ -43,7 +44,7 @@ function TrailPage() {
       <section className="mx-auto max-w-7xl px-4 pt-16 md:px-6">
         <SectionHeader
           eyebrow="Inland Scan Pass"
-          title="Your first beer for a nickel."
+          title={trailOfferHeadline(trailOffer)}
           subtitle="One pass for every independent taproom on the trail. Discover a brewery you've never been to."
           align="center"
         />

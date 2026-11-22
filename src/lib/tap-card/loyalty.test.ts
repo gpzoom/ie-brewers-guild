@@ -100,20 +100,20 @@ describe("pickBarRewards", () => {
   const member = (r: typeof a) => ({ kind: "member", id: r.id, reward: r.reward, terms: r.terms, expiresAt: r.expiresAt });
 
   it("features the Beer Trail offer first", () => {
-    expect(pickBarRewards({ trailAvailable: true, banked: [a, b, c], now })).toEqual({
+    expect(pickBarRewards({ trailAvailable: true, trailOffer: STANDARD_OFFER, banked: [a, b, c], now })).toEqual({
       featured: { kind: "trail", reward: STANDARD_OFFER },
       others: [member(c), member(b), member(a)],
     });
   });
   it("features the soonest-expiring reward when the Beer Trail offer is used", () => {
-    expect(pickBarRewards({ trailAvailable: false, banked: [a, b], now })).toEqual({ featured: member(b), others: [member(a)] });
+    expect(pickBarRewards({ trailAvailable: false, trailOffer: STANDARD_OFFER, banked: [a, b], now })).toEqual({ featured: member(b), others: [member(a)] });
   });
   it("pickBarRewards drops expired rewards", () => {
     const old = { ...a, id: "old", expiresAt: "2026-06-01T20:00:00Z" };
-    expect(pickBarRewards({ trailAvailable: false, banked: [old, b], now })).toEqual({ featured: member(b), others: [] });
+    expect(pickBarRewards({ trailAvailable: false, trailOffer: STANDARD_OFFER, banked: [old, b], now })).toEqual({ featured: member(b), others: [] });
   });
   it("has nothing when nothing is waiting", () => {
-    expect(pickBarRewards({ trailAvailable: false, banked: [], now })).toEqual({ featured: null, others: [] });
+    expect(pickBarRewards({ trailAvailable: false, trailOffer: STANDARD_OFFER, banked: [], now })).toEqual({ featured: null, others: [] });
   });
 });
 
