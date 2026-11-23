@@ -58,8 +58,17 @@ export function PrivacyPolicy() {
               we never see your card number. If you check the box to let a Guild member email you, we keep
               that choice. When you check in, the staff member sees your first name, whether you've used that
               stop's Beer Trail offer this year, and any rewards waiting for you there. Guild members see how
-              many passes were sold at their counter and how many customers agreed to their emails, but not
-              your name, email address or visits. A taproom's counter plate records your visits there.
+              many passes were sold at their counter and how many customers agreed to their emails. A
+              taproom's owner, co-owners and Guild admins can also see visits, rewards used and wrong staff
+              code tries at that taproom, to help spot misuse. They see them under a made-up label, not your
+              name or email address. We record which staff code confirmed each visit, reward or undo, and
+              scans of staff QR codes that were turned off. A taproom's counter plate records your visits
+              there.
+            </>,
+            <>
+              <strong>If a taproom gives you a staff code:</strong> the name the taproom typed for you, and
+              the visits, rewards and undos confirmed with your codes. The taproom's owner, co-owners and
+              Guild admins can see them.
             </>,
             <>
               <strong>Email:</strong> members' email addresses for Guild emails, and whether you have

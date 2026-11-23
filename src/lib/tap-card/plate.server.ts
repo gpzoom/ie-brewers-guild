@@ -149,11 +149,7 @@ export const confirmAtPlate = createServerFn({ method: "POST" })
   .inputValidator((data: { code: string; staffCode: string; choice: PlateChoice }) => ({
     code: String(data?.code ?? ""),
     staffCode: String(data?.staffCode ?? ""),
-    choice: (data?.choice?.kind === "member"
-      ? { kind: "member", id: String(data.choice.id ?? "") }
-      : data?.choice?.kind === "trail"
-        ? { kind: "trail" }
-        : { kind: "none" }) as PlateChoice,
+    choice: parsePendingChoice(data?.choice) ?? ({ kind: "none" } as PlateChoice),
   }))
   .handler(async ({ data }): Promise<PlateResult> => {
     const ctx = await plateContext(data.code, data.staffCode);

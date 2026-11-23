@@ -63,7 +63,8 @@ describe("Privacy Policy", () => {
   it("member email opt-ins: kept per member, sent through the site, addresses never given out", () => {
     expect(t).toContain("check the box to let a Guild member email you");
     expect(t).toContain("We never give members your email address");
-    expect(t).toContain("how many customers agreed to their emails, but not your name, email address or visits");
+    expect(t).toContain("how many customers agreed to their emails.");
+    expect(t).toContain("under a made-up label, not your name or email address");
   });
 
   it("sign-in works with email links or codes", () => {
