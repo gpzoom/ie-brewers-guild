@@ -87,7 +87,7 @@ export type DemoResetResult = { members: number; visits: number; earned: number;
 
 /**
  * Demo kit "Reset demo visits" (same as `node scripts/demo-kit.mjs reset --yes`):
- * clears visits, earned rewards and staff-code misses at the DRAFT members named
+ * clears visits, earned rewards, staff activity and staff-code misses at the DRAFT members named
  * "Sample …", plus this year's Guild milestone rewards of customers who were only
  * ever active at those members. Passes, sign-ups and opt-ins are kept. Published
  * members are never touched, so real customers' visits are safe.
@@ -120,6 +120,8 @@ export const resetDemoVisits = createServerFn({ method: "POST" }).handler(async 
   }
 
   must(await service.from("tap_card_earned_rewards").delete().in("member_id", ids));
+  // Staff activity first (it points at visits). Staff names and codes stay.
+  must(await service.from("tap_card_staff_activity").delete().in("member_id", ids));
   must(await service.from("tap_card_visits").delete().in("member_id", ids));
   must(await service.from("tap_card_plate_misses").delete().in("member_id", ids));
   let milestoneRewards = 0;
