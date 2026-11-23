@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getCounterPlate } from "@/lib/tap-card/plate.server";
+import { getStaffCodes } from "@/lib/tap-card/staff-codes.server";
 import { getPrintKitInfo } from "@/lib/tap-card/print-kit.server";
 import { kitErrorMessage, kitFileName, type KitPiece } from "@/lib/tap-card/print-kit/copy";
 
@@ -37,9 +38,11 @@ export function PrintKitCard({ memberId }: { memberId: string }) {
     setBusy(piece);
     setError(null);
     try {
-      const [plate, info, render, assets] = await Promise.all([
+      const [plate, info, staffCodes, render, assets] = await Promise.all([
         getCounterPlate({ data: { memberId } }),
         getPrintKitInfo({ data: { memberId } }),
+        // Owners only: the counter card and table tent never need it.
+        piece === "staff-cards" ? getStaffCodes({ data: { memberId } }) : null,
         import("@/lib/tap-card/print-kit/render"),
         import("@/lib/tap-card/print-kit/assets"),
       ]);
@@ -55,8 +58,8 @@ export function PrintKitCard({ memberId }: { memberId: string }) {
         logoTileColor: info.logoTileColor,
         plateUrl: plate.url,
         printedCode: plate.printedCode,
-        staffQrUrl: plate.staffQrUrl,
-        staffQrPrinted: plate.staffQrPrinted,
+        staffQrUrl: staffCodes?.counter.url ?? "",
+        staffQrPrinted: staffCodes?.counter.printed ?? "",
       };
       const images = { guildLogoPng, memberLogoPng };
       const build =

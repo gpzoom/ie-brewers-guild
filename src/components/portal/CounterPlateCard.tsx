@@ -1,5 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { getCounterPlate, resetPlateLink, resetStaffQr, saveStaffCode, type CounterPlate } from "@/lib/tap-card/plate.server";
+import { getCounterPlate, resetPlateLink, type CounterPlate } from "@/lib/tap-card/plate.server";
+import { getStaffCodes, resetCounterQr, saveSharedCode, type StaffCodesView } from "@/lib/tap-card/staff-codes.server";
+import { STAFF_CODES_OWNER_ONLY } from "@/lib/tap-card/staff-codes";
 import { CAPTIONED_QR_HEIGHT, SETUP_QR_SIZE, captionedQrDataUrl, qrCaptionLines } from "@/lib/tap-card/setup-qr";
 import { REPRINT_NOTICE } from "@/lib/tap-card/print-kit/copy";
 
@@ -17,6 +19,8 @@ function errorText(err: unknown) {
 /** Portal/Admin > Scan Pass: the brewery's counter plate (customers check in with their own phones). */
 export function CounterPlateCard({ memberId }: { memberId: string }) {
   const [plate, setPlate] = useState<CounterPlate | null>(null);
+  /** Null for a full editor, who can't see staff codes. */
+  const [staff, setStaff] = useState<StaffCodesView | null>(null);
   const [qr, setQr] = useState<string | null>(null);
   const [staffQr, setStaffQr] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -28,11 +32,16 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
 
   useEffect(() => {
     getCounterPlate({ data: { memberId } })
-      .then((p) => {
-        setPlate(p);
-        setCode(p.staffCode ?? "");
-      })
+      .then(setPlate)
       .catch((err) => setError(errorText(err)));
+    getStaffCodes({ data: { memberId } })
+      .then((v) => {
+        setStaff(v);
+        setCode(v.shared.code ?? "");
+      })
+      .catch((err) => {
+        if (errorText(err) !== STAFF_CODES_OWNER_ONLY) setError(errorText(err));
+      });
   }, [memberId]);
 
   useEffect(() => {
@@ -49,22 +58,22 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
 
   useEffect(() => {
     setStaffQr(null);
-    if (!plate) return;
+    if (!staff) return;
     let current = true;
-    captionedQrDataUrl(plate.staffQrUrl, qrCaptionLines("staff", plate.staffQrPrinted))
+    captionedQrDataUrl(staff.counter.url, qrCaptionLines("staff", staff.counter.printed))
       .then((d) => current && setStaffQr(d))
       .catch(() => undefined);
     return () => {
       current = false;
     };
-  }, [plate?.staffQrUrl, plate?.staffQrPrinted]);
+  }, [staff?.counter.url, staff?.counter.printed]);
 
   async function onResetStaffQr() {
     if (!window.confirm("Make a new staff QR code? The one you have now will stop working right away.")) return;
     setBusy(true);
     setError(null);
     try {
-      setPlate(await resetStaffQr({ data: { memberId } }));
+      setStaff(await resetCounterQr({ data: { memberId } }));
       setReprint("staff");
     } catch (err) {
       setError(errorText(err));
@@ -79,8 +88,8 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
     setError(null);
     setSaved(false);
     try {
-      await saveStaffCode({ data: { memberId, staffCode: code } });
-      setPlate((p) => (p ? { ...p, staffCode: code } : p));
+      setStaff(await saveSharedCode({ data: { memberId, code } }));
+      setPlate((p) => (p ? { ...p, plateOn: true } : p));
       setSaved(true);
     } catch (err) {
       setError(errorText(err));
@@ -137,6 +146,10 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
               Make a new plate link
             </button>
           </div>
+        </>
+      )}
+      {staff && (
+        <>
           <h3 className="mt-2 font-display text-[16px] font-bold text-ink">Staff QR code</h3>
           <p className="text-[13px] text-ink-muted">
             Print this and keep it behind the counter, out of customers&rsquo; reach. After a customer chooses at the plate, your
@@ -148,12 +161,12 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
               src={staffQr}
               width={SETUP_QR_SIZE}
               height={CAPTIONED_QR_HEIGHT}
-              alt={`Staff QR code, code ${plate.staffQrPrinted}`}
+              alt={`Staff QR code, code ${staff.counter.printed}`}
               className="h-auto w-[220px] max-w-full rounded-md border border-canvas-border bg-white"
             />
           )}
           <div className="text-[13px] text-ink">
-            Staff QR code <span className="font-semibold">{plate.staffQrPrinted}</span>
+            Staff QR code <span className="font-semibold">{staff.counter.printed}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {staffQr && (
@@ -190,7 +203,7 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
             </button>
           </form>
           <p className="text-[12px] text-ink-muted">
-            {plate.staffCode
+            {staff.shared.code
               ? saved
                 ? "Saved. Share the new code with your staff."
                 : "Your plate is on. Change the code whenever staff change."

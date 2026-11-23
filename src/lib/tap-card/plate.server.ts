@@ -9,12 +9,14 @@ import { barState, checkInVisit, undoBarReward, useBarReward, type BarState, typ
 import { barStore } from "@/lib/tap-card/bar-store.server";
 import { awardMilestones } from "@/lib/tap-card/tap-card-store.server";
 import { claimPlatePending, onStagingSite, readHolderId, readPlatePending, setPlatePending } from "@/lib/tap-card/tap-card-cookies.server";
-import { decideStaffQrView, isStaffQrToken, isTrailStop, memberTakesCheckIns, parsePendingChoice, staffQrUrl, type PendingChoice } from "@/lib/tap-card/staff-qr";
+import { decideStaffQrView, isStaffQrToken, isTrailStop, memberTakesCheckIns, parsePendingChoice, type PendingChoice } from "@/lib/tap-card/staff-qr";
+import { activePinCount, ensurePlate } from "@/lib/tap-card/plate-store.server";
+import { plateIsOn } from "@/lib/tap-card/staff-codes";
 import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
 import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
 import { tapCardDay, tapCardYear } from "@/lib/tap-card/tap-card-time";
 import { canJoinTrail } from "@/lib/tap-card/trail-pass-store.server";
-import { PLATE_LOCK_MINUTES, plateUrl, staffCodeGate, staffCodeMatches, validateStaffCode, type AttemptStore } from "@/lib/tap-card/plate";
+import { PLATE_LOCK_MINUTES, plateUrl, staffCodeGate, staffCodeMatches, type AttemptStore } from "@/lib/tap-card/plate";
 
 /**
  * Counter plate (/t/<code>): the customer's own phone, signed in to their
@@ -45,30 +47,6 @@ async function loadPlate(service: SupabaseClient, rawCode: string): Promise<Plat
     // The staff code still turns the plate on (it's the backup to the staff QR).
     open: memberTakesCheckIns({ status: m.status, memberType: m.member_type, trailEligible: m.trail_eligible }, onStagingSite()) && data.staff_code !== null,
   };
-}
-
-/** A brewery's plate, made on first use (codes are random; a clash just tries again). */
-async function ensurePlate(service: SupabaseClient, memberId: string): Promise<{ code: string; staffCode: string | null; staffQr: string }> {
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const { data, error } = await service.from("tap_card_plates").select("code, staff_code, staff_qr").eq("member_id", memberId).maybeSingle();
-    if (error) throw new Error(error.message);
-    if (data?.staff_qr) return { code: data.code, staffCode: data.staff_code, staffQr: data.staff_qr };
-    if (data) {
-      // A plate made before the staff QR (or before 8-character codes): give it one now.
-      const { error: qrError } = await service
-        .from("tap_card_plates")
-        .update({ staff_qr: generateCardCode() })
-        .eq("member_id", memberId)
-        .is("staff_qr", null);
-      if (qrError && qrError.code !== "23505") throw new Error(qrError.message);
-      continue;
-    }
-    const { error: insertError } = await service
-      .from("tap_card_plates")
-      .insert({ member_id: memberId, code: generateCardCode(), staff_qr: generateCardCode() });
-    if (insertError && insertError.code !== "23505") throw new Error(insertError.message);
-  }
-  throw new Error("Couldn't make the plate link. Try again.");
 }
 
 /** Staff-code tries for one customer at one plate (rows in tap_card_plate_misses). */
@@ -283,51 +261,23 @@ export const undoAtPlate = createServerFn({ method: "POST" })
 
 // ---- The brewery's Counter plate box (Portal/Admin > Scan Pass) ----
 
-export type CounterPlate = { url: string; printedCode: string; staffCode: string | null; staffQrUrl: string; staffQrPrinted: string };
+/** No staff QR and no 4-digit code: full editors see this box. Those are in staff-codes.server.ts. */
+export type CounterPlate = { url: string; printedCode: string; plateOn: boolean };
 
-function counterPlate(plate: { code: string; staffCode: string | null; staffQr: string }): CounterPlate {
+async function counterPlate(service: SupabaseClient, memberId: string, plate: { code: string; staffCode: string | null }): Promise<CounterPlate> {
   const site = resolveEmailSiteUrl(currentRequestUrl());
-  return { url: plateUrl(site, plate.code), printedCode: formatCardCode(plate.code), staffCode: plate.staffCode, staffQrUrl: staffQrUrl(site, plate.staffQr), staffQrPrinted: formatCardCode(plate.staffQr) };
+  const plateOn = plateIsOn({ shared: plate.staffCode, personalActive: await activePinCount(service, memberId) });
+  return { url: plateUrl(site, plate.code), printedCode: formatCardCode(plate.code), plateOn };
 }
 
 export const getCounterPlate = createServerFn({ method: "GET" })
   .inputValidator((data: { memberId: string }) => ({ memberId: String(data?.memberId ?? "") }))
   .handler(async ({ data }): Promise<CounterPlate> => {
     const { service } = await requireTapCardEditor(data.memberId);
-    return counterPlate(await ensurePlate(service, data.memberId));
+    return counterPlate(service, data.memberId, await ensurePlate(service, data.memberId));
   });
 
-/** A copied or lost staff QR: a new one; the old one stops working at once. */
-export const resetStaffQr = createServerFn({ method: "POST" })
-  .inputValidator((data: { memberId: string }) => ({ memberId: String(data?.memberId ?? "") }))
-  .handler(async ({ data }): Promise<CounterPlate> => {
-    const { service } = await requireTapCardEditor(data.memberId);
-    const current = await ensurePlate(service, data.memberId);
-    const staffQr = generateCardCode();
-    const { error } = await service
-      .from("tap_card_plates")
-      .update({ staff_qr: staffQr, updated_at: new Date().toISOString() })
-      .eq("member_id", data.memberId);
-    if (error) throw new Error(error.message);
-    return counterPlate({ ...current, staffQr });
-  });
-
-export const saveStaffCode = createServerFn({ method: "POST" })
-  .inputValidator((data: { memberId: string; staffCode: string }) => ({ memberId: String(data?.memberId ?? ""), staffCode: String(data?.staffCode ?? "") }))
-  .handler(async ({ data }): Promise<{ ok: true }> => {
-    const checked = validateStaffCode(data.staffCode);
-    if (!checked.ok) throw new Error(checked.message);
-    const { service } = await requireTapCardEditor(data.memberId);
-    await ensurePlate(service, data.memberId);
-    const { error } = await service
-      .from("tap_card_plates")
-      .update({ staff_code: checked.code, updated_at: new Date().toISOString() })
-      .eq("member_id", data.memberId);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-/** A lost or stolen plate: a new link; the old plate stops working. The staff code stays. */
+/** A lost or stolen plate: a new link; the old plate stops working. The staff codes stay. */
 export const resetPlateLink = createServerFn({ method: "POST" })
   .inputValidator((data: { memberId: string }) => ({ memberId: String(data?.memberId ?? "") }))
   .handler(async ({ data }): Promise<CounterPlate> => {
@@ -339,7 +289,7 @@ export const resetPlateLink = createServerFn({ method: "POST" })
         .from("tap_card_plates")
         .update({ code, updated_at: new Date().toISOString() })
         .eq("member_id", data.memberId);
-      if (!error) return counterPlate({ ...current, code });
+      if (!error) return counterPlate(service, data.memberId, { ...current, code });
       if (error.code !== "23505") throw new Error(error.message);
     }
     throw new Error("Couldn't make a new plate link. Try again.");

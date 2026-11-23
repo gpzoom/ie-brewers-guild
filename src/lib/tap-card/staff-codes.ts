@@ -4,6 +4,9 @@
  * brewery's shared code keeps working (and can be turned off).
  */
 
+/** requireTapCardOwner's refusal; the screens hide the staff boxes on it. */
+export const STAFF_CODES_OWNER_ONLY = "Only the owner or a co-owner can manage staff codes.";
+
 const NAME_ERROR = "Type a name of 1 to 40 characters.";
 
 /** A staff name: 1 to 40 characters, extra spaces squeezed; `key` ignores case, for the unique-per-member check. */
