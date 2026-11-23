@@ -45,17 +45,17 @@ export type AttemptStore = {
  * guesses sent all at once each see the others and can't slip past the limit
  * (final review, Important 1). A right code (within the limit) erases its try.
  */
-export async function staffCodeGate(
+export async function staffCodeGate<M>(
   store: AttemptStore,
-  entered: string,
-  stored: string | null,
-): Promise<{ kind: "ok" } | { kind: "wrong-code"; triesLeft: number } | { kind: "locked" }> {
+  match: () => M | null,
+): Promise<{ kind: "ok"; match: M } | { kind: "wrong-code"; triesLeft: number } | { kind: "locked" }> {
   const id = await store.record();
   const tries = await store.recent();
   if (tries > PLATE_MAX_MISSES) return { kind: "locked" };
-  if (staffCodeMatches(entered, stored)) {
+  const found = match();
+  if (found !== null) {
     await store.clear(id);
-    return { kind: "ok" };
+    return { kind: "ok", match: found };
   }
   const left = triesLeft(tries);
   return left === 0 ? { kind: "locked" } : { kind: "wrong-code", triesLeft: left };

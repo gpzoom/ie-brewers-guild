@@ -14,7 +14,7 @@ import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
 import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
 import { tapCardDay, tapCardYear } from "@/lib/tap-card/tap-card-time";
 import { canJoinTrail } from "@/lib/tap-card/trail-pass-store.server";
-import { PLATE_LOCK_MINUTES, plateUrl, staffCodeGate, validateStaffCode, type AttemptStore } from "@/lib/tap-card/plate";
+import { PLATE_LOCK_MINUTES, plateUrl, staffCodeGate, staffCodeMatches, validateStaffCode, type AttemptStore } from "@/lib/tap-card/plate";
 
 /**
  * Counter plate (/t/<code>): the customer's own phone, signed in to their
@@ -149,7 +149,7 @@ async function plateContext(rawCode: string, staffCode: string) {
   if (!plate?.open) return { refuse: { kind: "closed" } as PlateResult };
   const holderId = await readHolderId();
   if (!holderId) return { refuse: { kind: "signed-out" } as PlateResult };
-  const gate = await staffCodeGate(attemptStore(service, holderId, plate.memberId), staffCode, plate.staffCode);
+  const gate = await staffCodeGate(attemptStore(service, holderId, plate.memberId), () => (staffCodeMatches(staffCode, plate.staffCode) ? true : null));
   if (gate.kind !== "ok") return { refuse: gate as PlateResult };
   return { service, input: { holderId, memberId: plate.memberId, cardId: null, deviceId: null, at: new Date() } };
 }

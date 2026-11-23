@@ -73,31 +73,45 @@ describe("staffCodeGate", () => {
     return { store, rows };
   }
 
-  it("lets the right code through and forgets the try", async () => {
+  const matcher = (entered: string, stored: string | null) => () => (staffCodeMatches(entered, stored) ? "yes" : null);
+
+  it("lets the right code through, hands back the match and forgets the try", async () => {
     const { store, rows } = attempts();
-    expect(await staffCodeGate(store, "0420", "0420")).toEqual({ kind: "ok" });
+    expect(await staffCodeGate(store, matcher("0420", "0420"))).toEqual({ kind: "ok", match: "yes" });
     expect(rows).toHaveLength(0);
   });
 
   it("counts wrong codes down, then locks", async () => {
     const { store } = attempts();
-    expect(await staffCodeGate(store, "1111", "0420")).toEqual({ kind: "wrong-code", triesLeft: 4 });
-    for (let i = 0; i < 3; i++) await staffCodeGate(store, "1111", "0420");
-    expect(await staffCodeGate(store, "1111", "0420")).toEqual({ kind: "locked" });
-    expect(await staffCodeGate(store, "0420", "0420")).toEqual({ kind: "locked" });
+    expect(await staffCodeGate(store, matcher("1111", "0420"))).toEqual({ kind: "wrong-code", triesLeft: 4 });
+    for (let i = 0; i < 3; i++) await staffCodeGate(store, matcher("1111", "0420"));
+    expect(await staffCodeGate(store, matcher("1111", "0420"))).toEqual({ kind: "locked" });
+    expect(await staffCodeGate(store, matcher("0420", "0420"))).toEqual({ kind: "locked" });
+  });
+
+  it("does not call match when locked", async () => {
+    const { store } = attempts();
+    for (let i = 0; i < 5; i++) await staffCodeGate(store, () => null);
+    let calls = 0;
+    const result = await staffCodeGate(store, () => {
+      calls++;
+      return "yes";
+    });
+    expect(result).toEqual({ kind: "locked" });
+    expect(calls).toBe(0);
   });
 
   it("guesses sent all at once can't slip past the limit", async () => {
     const { store } = attempts();
     const guesses = Array.from({ length: 50 }, (_, i) => String(i).padStart(4, "0"));
     guesses.push("0420");
-    const results = await Promise.all(guesses.map((g) => staffCodeGate(store, g, "0420")));
+    const results = await Promise.all(guesses.map((g) => staffCodeGate(store, matcher(g, "0420"))));
     expect(results.filter((r) => r.kind === "ok")).toHaveLength(0);
   });
 
   it("refuses everything when the brewery has no code", async () => {
     const { store } = attempts();
-    expect(await staffCodeGate(store, "0420", null)).toEqual({ kind: "wrong-code", triesLeft: 4 });
+    expect(await staffCodeGate(store, matcher("0420", null))).toEqual({ kind: "wrong-code", triesLeft: 4 });
   });
 });
 
