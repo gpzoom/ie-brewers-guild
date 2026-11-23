@@ -2,6 +2,7 @@ import { useState } from "react";
 import { TapCardOffersSection } from "@/components/portal/TapCardOffersSection";
 import { CounterPlateCard } from "@/components/portal/CounterPlateCard";
 import { StaffCodesCard } from "@/components/portal/StaffCodesCard";
+import { StaffActivityCard } from "@/components/portal/StaffActivityCard";
 import { PrintKitCard } from "@/components/portal/PrintKitCard";
 import { TapCardPassesCard } from "@/components/portal/TapCardPassesCard";
 import { TrailOptInCard } from "@/components/portal/TrailOptInCard";
@@ -34,6 +35,8 @@ export function TapCardSection({ memberId }: { memberId: string }) {
       <CounterPlateCard key={`plate-${memberId}`} memberId={memberId} staffVersion={staffVersion} />
 
       <StaffCodesCard memberId={memberId} onChanged={() => setStaffVersion((n) => n + 1)} />
+
+      <StaffActivityCard key={`activity-${memberId}`} memberId={memberId} staffVersion={staffVersion} />
 
       <TapCardPassesCard memberId={memberId} />
 
