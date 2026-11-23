@@ -3,11 +3,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { toSpecialHoursDay, toWeekdayHours } from "@/lib/hours/hours-rows";
 import type { HoursRow, SpecialHoursRow } from "@/lib/supabase/types";
 import { dbFailed, readAllRows } from "@/lib/tap-card/plate-store.server";
-import { customerLabels, type ActivityRow, type MemberHours } from "@/lib/tap-card/staff-activity";
+import type { ActivityRow, MemberHours } from "@/lib/tap-card/staff-activity";
 import {
   buildPage,
   buildSummary,
   countBeforeTracking,
+  labelsFor,
   parseRange,
   rangeStart,
   type ActivityItem,
@@ -61,9 +62,25 @@ async function loadHours(service: SupabaseClient, memberId: string): Promise<Mem
   return { timezone, hours: toWeekdayHours(hours as HoursRow[]), specialHours: toSpecialHoursDay(special as SpecialHoursRow[]) };
 }
 
-/** The member's activity and wrong tries in range, with anonymous customer labels over both. */
+/**
+ * Anonymous labels over every customer the member has ever had in the log or
+ * the wrong-try list, whatever the range, so a label never changes with it.
+ */
+async function loadLabels(service: SupabaseClient, memberId: string): Promise<Map<string, string>> {
+  const [activity, misses] = await Promise.all([
+    readAllRows<{ holder_id: string }>((from, to) =>
+      service.from("tap_card_staff_activity").select("holder_id, at, id").eq("member_id", memberId).order("at").order("id").range(from, to),
+    ),
+    readAllRows<{ holder_id: string }>((from, to) =>
+      service.from("tap_card_plate_misses").select("holder_id, missed_at, id").eq("member_id", memberId).order("missed_at").order("id").range(from, to),
+    ),
+  ]);
+  return labelsFor(memberId, [activity.map((r) => r.holder_id), misses.map((r) => r.holder_id)]);
+}
+
+/** The member's activity and wrong tries in range. */
 async function loadActivity(service: SupabaseClient, memberId: string, start: string | null) {
-  const [activity, missRows] = await Promise.all([
+  const [activity, missRows, labels] = await Promise.all([
     readAllRows<ActivityDbRow>((from, to) => {
       let query = service
         .from("tap_card_staff_activity")
@@ -77,6 +94,7 @@ async function loadActivity(service: SupabaseClient, memberId: string, start: st
       if (start) query = query.gte("missed_at", start);
       return query.order("missed_at").order("id").range(from, to);
     }),
+    loadLabels(service, memberId),
   ]);
   const rows: ActivityRow[] = activity.map((r) => ({
     id: r.id,
@@ -90,7 +108,6 @@ async function loadActivity(service: SupabaseClient, memberId: string, start: st
     reward: r.reward,
   }));
   const misses = missRows.map((m) => ({ holderId: m.holder_id, at: m.missed_at }));
-  const labels = await customerLabels(memberId, [...rows.map((r) => r.holderId), ...misses.map((m) => m.holderId)]);
   return { rows, misses, labels };
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPage, buildSummary, countBeforeTracking, isRowKey, parseRange, rangeStart } from "./staff-activity-view";
+import { buildPage, buildSummary, countBeforeTracking, isRowKey, labelsFor, parseRange, rangeStart } from "./staff-activity-view";
 import type { ActivityRow, MemberHours } from "./staff-activity";
 
 const TZ = "America/Los_Angeles";
@@ -156,5 +156,19 @@ describe("buildPage", () => {
   it("finds Removed staff rows by their key", () => {
     const p = buildPage({ rows: [row({ staffId: null }), row()], hours: noHours, labels, key: "staff:removed", offset: 0 });
     expect(p.items).toHaveLength(1);
+  });
+});
+
+describe("labelsFor", () => {
+  it("gives the same customer the same label whichever range is shown", async () => {
+    // Enough customers that some share their first three digits and get longer labels.
+    const everyone = Array.from({ length: 6000 }, (_, i) => `holder-${i}`);
+    const labelsAll = await labelsFor("m1", [everyone, everyone.slice(0, 10)]);
+    const inRange = (ids: string[]) => ids.map((id, i) => row({ holderId: id, staffId: "maria", at: new Date(Date.UTC(2026, 8, 2, 20, 0, i)).toISOString() }));
+    const short = buildPage({ rows: inRange(everyone.slice(0, 20)), hours: noHours, labels: labelsAll, key: "staff:maria", offset: 0 }).items;
+    const long = buildPage({ rows: inRange(everyone.slice(0, 40)), hours: noHours, labels: labelsAll, key: "staff:maria", offset: 0 }).items;
+    const byTime = (items: typeof short) => items.map((i) => i.customer);
+    expect(byTime(long).slice(-20).sort()).toEqual(byTime(short).sort());
+    expect(new Set(labelsAll.values()).size).toBe(6000);
   });
 });

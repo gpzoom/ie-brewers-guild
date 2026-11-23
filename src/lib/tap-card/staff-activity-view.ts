@@ -3,6 +3,7 @@
  * summary and list pages out. No holder id and no visit id ever leave here.
  */
 import {
+  customerLabels,
   flagRows,
   rowKey,
   totals,
@@ -60,6 +61,11 @@ export function countBeforeTracking(visitIds: string[], activityVisitIds: (strin
   let count = 0;
   for (const id of visitIds) if (!logged.has(id)) count++;
   return count;
+}
+
+/** Labels over all of a member's customers (not just a range), so they stay put when the range changes. */
+export function labelsFor(memberId: string, holderIdLists: string[][]): Promise<Map<string, string>> {
+  return customerLabels(memberId, holderIdLists.flat());
 }
 
 const byName = (a: { name: string }, b: { name: string }) =>
