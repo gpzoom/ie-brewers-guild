@@ -40,9 +40,12 @@ export type SourceTotal = {
 
 const MINUTE_MS = 60_000;
 
-/** "staff:<id>" for a named person, otherwise "counter" or "staff-code" (shared). */
+/**
+ * "staff:<id>" for a named person, "staff:removed" for a staff event whose
+ * person was deleted, otherwise "counter" or "staff-code" (shared).
+ */
 export function rowKey(r: ActivityRow): string {
-  if (r.source === "staff" && r.staffId) return `staff:${r.staffId}`;
+  if (r.source === "staff") return r.staffId ? `staff:${r.staffId}` : "staff:removed";
   return r.source === "counter" ? "counter" : "staff-code";
 }
 

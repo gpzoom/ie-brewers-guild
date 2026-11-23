@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveEmailSiteUrl } from "@/lib/email/build-email-content";
 import { currentRequestUrl } from "@/lib/request-url.server";
-import { dbFailed, ensurePlate, qrTaken } from "@/lib/tap-card/plate-store.server";
+import { dbFailed, ensurePlate, qrTaken, readAllRows } from "@/lib/tap-card/plate-store.server";
 import {
   makeStaffCodesCore,
   removeStaffCore,
@@ -27,7 +27,6 @@ export type { StaffCodesView } from "@/lib/tap-card/staff-codes-core";
  */
 
 const CLASH = "23505";
-const PAGE = 1000;
 
 /** "ok", or "clash" for a unique violation. */
 function saved(error: { code?: string; message: string } | null): "ok" | "clash" {
@@ -49,34 +48,17 @@ function staffCodesStore(service: SupabaseClient, memberId: string): StaffCodesS
   return {
     plate: () => ensurePlate(service, memberId),
     async listStaff() {
-      const rows: { id: string; name: string; name_key: string; removed_at: string | null }[] = [];
-      for (let from = 0; ; from += PAGE) {
-        const { data, error } = await staffTable()
-          .select("id, name, name_key, removed_at")
-          .eq("member_id", memberId)
-          .order("created_at")
-          .order("id")
-          .range(from, from + PAGE - 1);
-        if (error) throw dbFailed(error);
-        rows.push(...data);
-        if (data.length < PAGE) break;
-      }
+      const rows = await readAllRows<{ id: string; name: string; name_key: string; removed_at: string | null }>((from, to) =>
+        staffTable().select("id, name, name_key, removed_at").eq("member_id", memberId).order("created_at").order("id").range(from, to),
+      );
       return rows.map((r) => ({ id: r.id, name: r.name, key: r.name_key, removed: r.removed_at !== null }));
     },
     async listCodes() {
       // Paged: every code ever issued has to be seen, or an old one could be reused.
-      const rows: CodeRow[] = [];
-      for (let from = 0; ; from += PAGE) {
-        const { data, error } = await codeTable()
-          .select("staff_id, kind, code, turned_off_at")
-          .eq("member_id", memberId)
-          .order("created_at")
-          .order("id")
-          .range(from, from + PAGE - 1);
-        if (error) throw dbFailed(error);
-        rows.push(...data.map((r) => ({ staffId: r.staff_id, kind: r.kind, code: r.code, active: r.turned_off_at === null })));
-        if (data.length < PAGE) return rows;
-      }
+      const rows = await readAllRows<{ staff_id: string | null; kind: "qr" | "pin"; code: string; turned_off_at: string | null }>((from, to) =>
+        codeTable().select("staff_id, kind, code, turned_off_at").eq("member_id", memberId).order("created_at").order("id").range(from, to),
+      );
+      return rows.map((r): CodeRow => ({ staffId: r.staff_id, kind: r.kind, code: r.code, active: r.turned_off_at === null }));
     },
     async insertStaff(name, key) {
       const { error } = await staffTable().insert({ member_id: memberId, name, name_key: key });

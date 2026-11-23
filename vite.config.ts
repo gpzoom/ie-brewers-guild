@@ -562,6 +562,8 @@ export default defineConfig(async ({ command, mode }) => {
             "src/lib/tap-card/print-kit.server.ts",
             // Staff codes (2026-11-23): requireTapCardOwner first in every handler.
             "src/lib/tap-card/staff-codes.server.ts",
+            // Staff activity (2026-11-23): requireTapCardOwner first; anonymous customer labels only.
+            "src/lib/tap-card/staff-activity.server.ts",
           ],
           specifiers: ["server-only"],
         },

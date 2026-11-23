@@ -308,3 +308,9 @@ describe("FLAG_LIMITS", () => {
     expect(FLAG_LIMITS).toEqual({ graceMinutes: 60, burstCustomers: 4, burstMinutes: 5, sameVisits: 5, sameShare: 0.8, wrongTries: 5 });
   });
 });
+
+describe("rowKey for a deleted person", () => {
+  it("groups staff events with no staff id as staff:removed, not the shared code", () => {
+    expect(rowKey(row({ source: "staff", staffId: null }))).toBe("staff:removed");
+  });
+});

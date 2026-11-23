@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateCardCode } from "@/lib/tap-card/card-code";
 import type { PersonalPin } from "@/lib/tap-card/staff-codes";
+import { readAll } from "@/lib/tap-card/read-all";
 import { freshQr } from "@/lib/tap-card/staff-codes-core";
 
 /**
@@ -12,6 +13,15 @@ import { freshQr } from "@/lib/tap-card/staff-codes-core";
 export function dbFailed(error: { message: string }): Error {
   console.error("Scan Pass plate: database error", error.message);
   return new Error("That didn't work. Try again.");
+}
+
+/** Every row of a paged query (see readAll); a failure is logged and shown as dbFailed. */
+export async function readAllRows<T>(page: Parameters<typeof readAll<T>>[0]): Promise<T[]> {
+  try {
+    return await readAll(page);
+  } catch (error) {
+    throw dbFailed(error as Error);
+  }
 }
 
 /** Whether any named code (working or not) or any member's counter QR has this code. */
