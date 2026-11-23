@@ -10,9 +10,10 @@ export type PrintKitInput = {
   logoTileColor: string;
   plateUrl: string;
   printedCode: string;
-  staffQrUrl: string;
-  staffQrPrinted: string;
 };
+
+/** A staff card: the behind-the-counter QR (no name) or one person's. */
+export type StaffCardInput = PrintKitInput & { staffQrUrl: string; staffQrPrinted: string; staffName: string | null };
 
 export type KitFontBytes = { heading: Uint8Array; body: Uint8Array; bodySemi: Uint8Array };
 

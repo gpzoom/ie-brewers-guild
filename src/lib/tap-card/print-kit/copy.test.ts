@@ -31,6 +31,8 @@ describe("print-kit copy", () => {
     expect(kitFileName("table-tent", "sample-brewery-1")).toBe("scan-pass-table-tent-sample-brewery-1.pdf");
     expect(kitFileName("staff-cards", "sample-brewery-1")).toBe("scan-pass-staff-cards-sample-brewery-1.pdf");
     expect(kitFileName("counter-card", "")).toBe("scan-pass-counter-card.pdf");
+    expect(kitFileName("staff-cards", "sample-brewery-1", "José / O'Neil")).toBe("scan-pass-staff-cards-jose-o-neil-sample-brewery-1.pdf");
+    expect(kitFileName("staff-cards", "sample-brewery-1", "../..")).toBe("scan-pass-staff-cards-named-sample-brewery-1.pdf");
   });
 
   it("has the reprint notices", () => {
@@ -38,7 +40,7 @@ describe("print-kit copy", () => {
       "New plate link made. Your printed counter cards and table tents no longer work: use Print kit above to print new ones.",
     );
     expect(REPRINT_NOTICE.staff).toBe(
-      "New staff QR made. Your printed staff cards no longer work: use Print kit above to print new ones.",
+      "New staff QR made. Printed staff cards with the old QR no longer work: use Print kit above to print new ones.",
     );
   });
 
@@ -47,6 +49,10 @@ describe("print-kit copy", () => {
     expect(kitErrorMessage(new Error("Only the owner or a full editor can manage the Scan Pass."))).toBe(
       "Only the owner or a full editor can manage the Scan Pass.",
     );
+    expect(kitErrorMessage(new Error("Only the owner or a co-owner can manage staff codes."))).toBe(
+      "Only the owner or a co-owner can manage staff codes.",
+    );
+    expect(kitErrorMessage(new Error("That staff QR was turned off. Choose another."))).toBe("That staff QR was turned off. Choose another.");
     expect(kitErrorMessage(new Error("Couldn't load /fonts/print-kit/Chivo-Regular.ttf"))).toBe("Couldn't make the PDF. Try again.");
     expect(kitErrorMessage("boom")).toBe("Couldn't make the PDF. Try again.");
     expect(kitErrorMessage(null)).toBe("Couldn't make the PDF. Try again.");

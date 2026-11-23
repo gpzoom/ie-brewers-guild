@@ -16,7 +16,7 @@ import {
   type Rect,
 } from "./layout";
 import { drawQr } from "./qr-vector";
-import type { KitFontBytes, KitImageBytes, PrintKitInput } from "./types";
+import type { KitFontBytes, KitImageBytes, PrintKitInput, StaffCardInput } from "./types";
 
 /** Site tokens (docs/design/README.md). */
 const BRAND = hex("#B3591F");
@@ -240,17 +240,21 @@ function tentFace(s: Surface, kit: Kit, input: PrintKitInput) {
 
 /**
  * One portrait staff card in its own coordinates (144 x 252), centered top to
- * bottom: STAFF ONLY, the staff QR, its printed code, the member name, how to use it.
+ * bottom: STAFF ONLY, the staff QR, its printed code, the staff
+ * member's name (a named card), the member name, how to use it.
  */
-function staffCard(s: Surface, kit: Kit, input: PrintKitInput) {
+function staffCard(s: Surface, kit: Kit, input: StaffCardInput) {
   const pad = 10;
   const colW = s.w - 2 * pad;
   const cx = s.w / 2;
   const eyebrow = wrap(STAFF_COPY.eyebrow, kit.semi, 7.5, colW);
   const name = fitName(input.memberName, kit.semi, colW, 11, 6.5);
+  const staff = input.staffName === null ? null : fitName(input.staffName, kit.semi, colW, 13, 6.5);
+  const names = staff ? [staff, name] : [name];
+  const namesH = names.reduce((h, n) => h + n.lines.length * (n.size + 2), 0);
   const howTo = wrap(STAFF_COPY.howTo, kit.body, 7, colW);
   // Block height from the first baseline down to the last, so it sits centered on the card.
-  const block = eyebrow.length * 9.5 + 2 + colW + 9 + 16 + name.lines.length * (name.size + 2) + 4 + (howTo.length - 1) * 9;
+  const block = eyebrow.length * 9.5 + 2 + colW + 9 + 16 + namesH + 4 + (howTo.length - 1) * 9;
   let y = Math.min(s.h - pad - 8, (s.h + block) / 2);
   for (const line of eyebrow) {
     s.centered(line, cx, y, 7.5, kit.semi, INK);
@@ -262,9 +266,11 @@ function staffCard(s: Surface, kit: Kit, input: PrintKitInput) {
   y = qrY - 9;
   s.centered(input.staffQrPrinted, cx, y, 7, kit.body, MUTED);
   y -= 16;
-  for (const line of name.lines) {
-    s.centered(line, cx, y, name.size, kit.semi, INK);
-    y -= name.size + 2;
+  for (const n of names) {
+    for (const line of n.lines) {
+      s.centered(line, cx, y, n.size, kit.semi, INK);
+      y -= n.size + 2;
+    }
   }
   y -= 4;
   for (const line of howTo) {
@@ -296,7 +302,7 @@ export async function buildTableTentPdf(input: PrintKitInput, fonts: KitFontByte
 }
 
 /** Four staff cards on portrait letter, with cut lines. Never the 4-digit staff code. */
-export async function buildStaffCardsPdf(input: PrintKitInput, fonts: KitFontBytes, _images: KitImageBytes): Promise<Uint8Array> {
+export async function buildStaffCardsPdf(input: StaffCardInput, fonts: KitFontBytes, _images: KitImageBytes): Promise<Uint8Array> {
   // The staff card is plain: no logos (spec). `_images` keeps the three builders' signatures alike.
   const kit = await startKit(fonts, { guildLogoPng: null, memberLogoPng: null });
   const page = kit.doc.addPage([STAFF_PAGE.width, STAFF_PAGE.height]);

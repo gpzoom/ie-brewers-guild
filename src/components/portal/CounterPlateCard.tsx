@@ -1,14 +1,8 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getCounterPlate, resetPlateLink, type CounterPlate } from "@/lib/tap-card/plate.server";
-import { getStaffCodes, resetCounterQr, saveSharedCode, type StaffCodesView } from "@/lib/tap-card/staff-codes.server";
-import { STAFF_CODES_OWNER_ONLY } from "@/lib/tap-card/staff-codes";
 import { CAPTIONED_QR_HEIGHT, SETUP_QR_SIZE, captionedQrDataUrl, qrCaptionLines } from "@/lib/tap-card/setup-qr";
 import { REPRINT_NOTICE } from "@/lib/tap-card/print-kit/copy";
 
-const fieldClass =
-  "h-11 w-full min-w-0 rounded-[9px] border border-canvas-border bg-white px-3 text-[14px] text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
-const buttonClass =
-  "inline-flex h-11 shrink-0 items-center justify-center rounded-[9px] border border-ink bg-ink px-[17px] text-[13px] font-semibold text-canvas hover:bg-ink/85 disabled:opacity-60";
 const outlineClass =
   "inline-flex h-11 shrink-0 items-center justify-center rounded-[9px] border border-[#D3CBBD] bg-canvas px-[15px] text-[13px] font-medium text-ink hover:bg-canvas-2 disabled:opacity-60";
 
@@ -16,33 +10,27 @@ function errorText(err: unknown) {
   return err instanceof Error ? err.message : "That didn't work. Try again.";
 }
 
-/** Portal/Admin > Scan Pass: the brewery's counter plate (customers check in with their own phones). */
-export function CounterPlateCard({ memberId }: { memberId: string }) {
+/**
+ * Portal/Admin > Scan Pass: the brewery's counter plate (customers check in
+ * with their own phones). Full editors see it too, so no staff codes here.
+ * Give it a key of the member; `staffVersion` changes when staff codes do.
+ */
+export function CounterPlateCard({ memberId, staffVersion }: { memberId: string; staffVersion: number }) {
   const [plate, setPlate] = useState<CounterPlate | null>(null);
-  /** Null for a full editor, who can't see staff codes. */
-  const [staff, setStaff] = useState<StaffCodesView | null>(null);
   const [qr, setQr] = useState<string | null>(null);
-  const [staffQr, setStaffQr] = useState<string | null>(null);
-  const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   /** After a code is replaced, the printed kit is out of date (spec 2026-11-21). */
-  const [reprint, setReprint] = useState<keyof typeof REPRINT_NOTICE | null>(null);
+  const [reprint, setReprint] = useState(false);
+  /** Goes up with each load and reset, so a late answer never replaces a newer one. */
+  const latest = useRef(0);
 
   useEffect(() => {
+    const load = ++latest.current;
     getCounterPlate({ data: { memberId } })
-      .then(setPlate)
-      .catch((err) => setError(errorText(err)));
-    getStaffCodes({ data: { memberId } })
-      .then((v) => {
-        setStaff(v);
-        setCode(v.shared.code ?? "");
-      })
-      .catch((err) => {
-        if (errorText(err) !== STAFF_CODES_OWNER_ONLY) setError(errorText(err));
-      });
-  }, [memberId]);
+      .then((p) => load === latest.current && setPlate(p))
+      .catch((err) => load === latest.current && setError(errorText(err)));
+  }, [memberId, staffVersion]);
 
   useEffect(() => {
     setQr(null);
@@ -56,55 +44,15 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
     };
   }, [plate?.url, plate?.printedCode]);
 
-  useEffect(() => {
-    setStaffQr(null);
-    if (!staff) return;
-    let current = true;
-    captionedQrDataUrl(staff.counter.url, qrCaptionLines("staff", staff.counter.printed))
-      .then((d) => current && setStaffQr(d))
-      .catch(() => undefined);
-    return () => {
-      current = false;
-    };
-  }, [staff?.counter.url, staff?.counter.printed]);
-
-  async function onResetStaffQr() {
-    if (!window.confirm("Make a new staff QR code? The one you have now will stop working right away.")) return;
-    setBusy(true);
-    setError(null);
-    try {
-      setStaff(await resetCounterQr({ data: { memberId } }));
-      setReprint("staff");
-    } catch (err) {
-      setError(errorText(err));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onSave(event: FormEvent) {
-    event.preventDefault();
-    setBusy(true);
-    setError(null);
-    setSaved(false);
-    try {
-      setStaff(await saveSharedCode({ data: { memberId, code } }));
-      setPlate((p) => (p ? { ...p, plateOn: true } : p));
-      setSaved(true);
-    } catch (err) {
-      setError(errorText(err));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function onReset() {
     if (!window.confirm("Make a new plate link? Your current plate will stop working.")) return;
     setBusy(true);
     setError(null);
     try {
-      setPlate(await resetPlateLink({ data: { memberId } }));
-      setReprint("plate");
+      const next = await resetPlateLink({ data: { memberId } });
+      latest.current++;
+      setPlate(next);
+      setReprint(true);
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -118,8 +66,8 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
         Counter plate
       </h2>
       <p className="text-[13px] text-ink-muted">
-        Customers scan this plate with their phones at your bar and choose a check-in or a reward. Then they scan your
-        staff QR code (below) to confirm.
+        Customers scan this plate with their phones at your bar and choose a check-in or a reward. Then they scan a
+        staff QR code to confirm.
       </p>
       {plate && (
         <>
@@ -135,6 +83,7 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
           <div className="text-[13px] text-ink">
             Plate code <span className="font-semibold">{plate.printedCode}</span>
           </div>
+          {!plate.plateOn && <p className="text-[13px] font-medium text-ink">Set up a staff code to turn your plate on.</p>}
           <code className="break-all text-[12px] text-ink">{plate.url}</code>
           <div className="flex flex-wrap gap-2">
             {qr && (
@@ -148,72 +97,9 @@ export function CounterPlateCard({ memberId }: { memberId: string }) {
           </div>
         </>
       )}
-      {staff && (
-        <>
-          <h3 className="mt-2 font-display text-[16px] font-bold text-ink">Staff QR code</h3>
-          <p className="text-[13px] text-ink-muted">
-            Print this and keep it behind the counter, out of customers&rsquo; reach. After a customer chooses at the plate, your
-            staff member holds it up and the customer scans it to confirm. If you think someone has copied it, make a new one: the old
-            one stops working right away.
-          </p>
-          {staffQr && (
-            <img
-              src={staffQr}
-              width={SETUP_QR_SIZE}
-              height={CAPTIONED_QR_HEIGHT}
-              alt={`Staff QR code, code ${staff.counter.printed}`}
-              className="h-auto w-[220px] max-w-full rounded-md border border-canvas-border bg-white"
-            />
-          )}
-          <div className="text-[13px] text-ink">
-            Staff QR code <span className="font-semibold">{staff.counter.printed}</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {staffQr && (
-              <a href={staffQr} download="staff-qr.png" className={outlineClass}>
-                Download staff QR
-              </a>
-            )}
-            <button type="button" className={outlineClass} disabled={busy} onClick={onResetStaffQr}>
-              Make a new staff QR
-            </button>
-          </div>
-          <h3 className="mt-2 font-display text-[16px] font-bold text-ink">Staff code (backup)</h3>
-          <p className="text-[13px] text-ink-muted">
-            If the staff QR code isn&rsquo;t handy, a staff member can type this code on the customer&rsquo;s phone instead. It&rsquo;s
-            also needed to undo a reward.
-          </p>
-          <form onSubmit={onSave} className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <label className="flex flex-col gap-1.5 text-[13px] font-medium text-ink">
-              Staff code (4 digits)
-              <input
-                className={`${fieldClass} max-w-[140px] tracking-[0.3em]`}
-                inputMode="numeric"
-                autoComplete="off"
-                maxLength={4}
-                value={code}
-                onChange={(e) => {
-                  setSaved(false);
-                  setCode(e.target.value.replace(/\D/g, "").slice(0, 4));
-                }}
-              />
-            </label>
-            <button type="submit" className={buttonClass} disabled={busy}>
-              Save
-            </button>
-          </form>
-          <p className="text-[12px] text-ink-muted">
-            {staff.shared.code
-              ? saved
-                ? "Saved. Share the new code with your staff."
-                : "Your plate is on. Change the code whenever staff change."
-              : "Set a staff code to turn your plate on."}
-          </p>
-        </>
-      )}
       {reprint && (
         <p role="status" className="rounded-[9px] border border-canvas-border bg-canvas-2 px-3 py-2 text-[13px] font-medium text-ink">
-          {REPRINT_NOTICE[reprint]}
+          {REPRINT_NOTICE.plate}
         </p>
       )}
       {error && (

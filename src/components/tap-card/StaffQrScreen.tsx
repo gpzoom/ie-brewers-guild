@@ -14,6 +14,8 @@ export function StaffQrScreen({ token, view }: { token: string; view: StaffQrPag
   const [done, setDone] = useState<PlateOk | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Turned off between showing the question and the answer. */
+  const [turnedOff, setTurnedOff] = useState(false);
   const started = useRef(false);
 
   async function confirm(skipReward: boolean) {
@@ -22,6 +24,7 @@ export function StaffQrScreen({ token, view }: { token: string; view: StaffQrPag
     try {
       const result = await confirmByStaffQr({ data: { token, skipReward } });
       if (result.kind === "ok") setDone(result);
+      else if (result.kind === "turned-off") setTurnedOff(true);
       else setError(plateRefusal(result));
     } catch {
       setError("That didn't save. Check the connection and try again.");
@@ -48,6 +51,15 @@ export function StaffQrScreen({ token, view }: { token: string; view: StaffQrPag
   }
   if (done && (view.view === "check-in" || view.view === "confirm")) {
     return <PlateSuccess memberName={view.memberName} memberSlug={view.memberSlug} plateCode={view.plateCode} initial={done} />;
+  }
+
+  if (turnedOff) {
+    return (
+      <div role="alert" className="flex flex-col gap-4">
+        <Eyebrow>{view.memberName}</Eyebrow>
+        <CanvasHeading size="md">{STAFF_QR_TURNED_OFF}</CanvasHeading>
+      </div>
+    );
   }
 
   return (

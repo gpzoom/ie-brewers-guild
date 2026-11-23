@@ -16,6 +16,12 @@ export function cleanStaffName(raw: string): { ok: true; name: string; key: stri
   return { ok: true, name, key: name.toLowerCase() };
 }
 
+/** A staff name as part of a file name: plain letters, digits and dashes, never empty. */
+export function staffNameSlug(name: string): string {
+  const plain = name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return plain.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "named";
+}
+
 /** A whole number from 0 to n-1 from crypto randomness, with no modulo bias (rejects the uneven tail). */
 function cryptoIndex(n: number): number {
   const limit = Math.floor(0x100000000 / n) * n;

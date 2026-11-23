@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SETUP_QR_SIZE, qrCaptionLines, setupQrDataUrl, setupQrFilename } from "@/lib/tap-card/setup-qr";
+import { SETUP_QR_SIZE, qrCaptionLines, setupQrDataUrl, setupQrFilename, staffQrFilename } from "@/lib/tap-card/setup-qr";
 
 function pngSize(dataUrl: string) {
   const bytes = Buffer.from(dataUrl.replace(/^data:image\/png;base64,/, ""), "base64");
@@ -30,9 +30,18 @@ describe("setupQrFilename", () => {
   });
 });
 
+describe("staffQrFilename", () => {
+  it("is safe for any name", () => {
+    expect(staffQrFilename(null)).toBe("staff-qr.png");
+    expect(staffQrFilename("José / O'Neil")).toBe("staff-qr-jose-o-neil.png");
+    expect(staffQrFilename("李")).toBe("staff-qr-named.png");
+  });
+});
+
 describe("qrCaptionLines", () => {
   it("names the QR and shows its code", () => {
     expect(qrCaptionLines("plate", "ABCD-1234")).toEqual(["Counter plate", "ABCD-1234"]);
     expect(qrCaptionLines("staff", "WXYZ-5678")).toEqual(["Staff QR", "WXYZ-5678"]);
+    expect(qrCaptionLines("staff", "WXYZ-5678", "Maria")).toEqual(["Staff QR: Maria", "WXYZ-5678"]);
   });
 });

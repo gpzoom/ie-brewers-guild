@@ -5,7 +5,7 @@ import QRCode from "qrcode";
 import { PDFDocument, PDFPage, rgb, type PDFFont } from "pdf-lib";
 import { buildCounterCardsPdf, buildStaffCardsPdf, buildTableTentPdf } from "./render";
 import { counterCardSlots, staffCardSlots, tentFaces } from "./layout";
-import type { KitFontBytes, KitImageBytes, PrintKitInput } from "./types";
+import type { KitFontBytes, KitImageBytes, StaffCardInput } from "./types";
 
 const dir = join(process.cwd(), "public", "fonts", "print-kit");
 const fonts: KitFontBytes = {
@@ -14,7 +14,7 @@ const fonts: KitFontBytes = {
   bodySemi: readFileSync(join(dir, "Chivo-SemiBold.ttf")),
 };
 const TILE = "#123456";
-const input: PrintKitInput = {
+const input: StaffCardInput = {
   memberName: "Sample Brewery #1",
   memberSlug: "sample-brewery-1",
   trailStop: true,
@@ -23,6 +23,7 @@ const input: PrintKitInput = {
   printedCode: "68JJ-PT27",
   staffQrUrl: "https://example.com/s/Y77AQ0GA",
   staffQrPrinted: "Y77A-Q0GA",
+  staffName: null,
 };
 const noImages: KitImageBytes = { guildLogoPng: null, memberLogoPng: null };
 let pngLogo: Uint8Array;
@@ -175,6 +176,48 @@ describe("print-kit PDFs", () => {
     const all = texts(spy);
     expect(all).toContain("Y77A-Q0GA");
     for (const t of all) expect(t).not.toMatch(/\b\d{4}\b/);
+  });
+
+  it("a named card prints the staff name above the member name; a counter card has no name", async () => {
+    const spy = vi.spyOn(PDFPage.prototype, "drawText");
+    await buildStaffCardsPdf({ ...input, staffName: "Maria" }, fonts, noImages);
+    const at = (t: string) => spy.mock.calls.filter((c) => c[0] === t).map((c) => c[1]!.y!);
+    expect(at("Maria")).toHaveLength(4);
+    for (const [i, y] of at("Maria").entries()) expect(y).toBeGreaterThan(at(input.memberName)[i]);
+    for (const t of texts(spy)) expect(t).not.toMatch(/\b\d{4}\b/);
+    spy.mockClear();
+    await buildStaffCardsPdf(input, fonts, noImages);
+    const printed = texts(spy);
+    expect(printed).not.toContain("Maria");
+    expect(printed).not.toContain("null");
+  });
+
+  it("a 40-character staff name stays inside the card, clear of the QR, which stays at least 1.6 in", async () => {
+    for (const staffName of ["W".repeat(40), "Maria Guadalupe Hernandez-Villanueva Jrr"]) {
+      expect(staffName).toHaveLength(40);
+      const rects = vi.spyOn(PDFPage.prototype, "drawRectangle");
+      const spy = vi.spyOn(PDFPage.prototype, "drawText");
+      await buildStaffCardsPdf({ ...input, staffName, memberName: "MOUNTAIN WOLF WORLDWIDE BREWING AND WINERY COMPANY" }, fonts, noImages);
+      const white = JSON.stringify(rgb(1, 1, 1));
+      const qrs = rects.mock.calls.map((c) => c[0]!).filter((o) => JSON.stringify(o.color) === white && o.width === o.height);
+      expect(qrs).toHaveLength(4);
+      for (const q of qrs) expect(q.width!).toBeGreaterThanOrEqual(115.2);
+      const slots = staffCardSlots();
+      const drawn = spy.mock.calls.filter((c) => !(c[0] as string).startsWith("Print at"));
+      expect(drawn.some((c) => staffName.startsWith((c[0] as string).slice(0, 5)))).toBe(true);
+      for (const call of drawn) {
+        const o = call[1]!;
+        const w = (o.font as PDFFont).widthOfTextAtSize(call[0] as string, o.size!);
+        const bottom = o.y! - o.size! * 0.25;
+        const top = o.y! + o.size! * 0.8;
+        const s = slots.find((r) => o.x! >= r.x - 0.01 && o.x! + w <= r.x + r.w + 0.01 && bottom >= r.y && top <= r.y + r.h);
+        expect(s, `${call[0]} inside a card`).toBeDefined();
+        const q = qrs.find((b) => b.x! >= s!.x && b.x! < s!.x + s!.w && b.y! >= s!.y && b.y! < s!.y + s!.h)!;
+        expect(bottom >= q.y! + q.height! - 2 || top <= q.y! + 2, `${call[0]} clear of the QR`).toBe(true);
+      }
+      rects.mockRestore();
+      spy.mockRestore();
+    }
   });
 
   it("prints the trail badge only for trail stops", async () => {

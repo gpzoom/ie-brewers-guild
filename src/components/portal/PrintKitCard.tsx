@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getCounterPlate } from "@/lib/tap-card/plate.server";
-import { getStaffCodes } from "@/lib/tap-card/staff-codes.server";
+import { getStaffCodes, type StaffCodesView } from "@/lib/tap-card/staff-codes.server";
+import { STAFF_CODES_OWNER_ONLY } from "@/lib/tap-card/staff-codes";
+import { staffCardChoice } from "@/lib/tap-card/staff-codes-screen";
 import { getPrintKitInfo } from "@/lib/tap-card/print-kit.server";
 import { kitErrorMessage, kitFileName, type KitPiece } from "@/lib/tap-card/print-kit/copy";
 
@@ -10,8 +12,18 @@ const outlineClass =
 const PIECES: { piece: KitPiece; label: string }[] = [
   { piece: "counter-card", label: "4×6 counter card" },
   { piece: "table-tent", label: "Table tent" },
-  { piece: "staff-cards", label: "Staff cards" },
 ];
+
+type Person = { id: string; name: string };
+
+/** Only names are kept for the list: the codes are fetched when one is printed. */
+function withQr(view: StaffCodesView): Person[] {
+  return view.staff.filter((p) => p.qr !== null).map(({ id, name }) => ({ id, name }));
+}
+
+function isOwnerOnly(err: unknown) {
+  return err instanceof Error && err.message === STAFF_CODES_OWNER_ONLY;
+}
 
 function saveFile(bytes: Uint8Array, name: string) {
   const url = URL.createObjectURL(new Blob([bytes as Uint8Array<ArrayBuffer>], { type: "application/pdf" }));
@@ -28,16 +40,35 @@ function saveFile(bytes: Uint8Array, name: string) {
  * Portal/Admin > Scan Pass > Print kit (spec 2026-11-21): print-ready PDFs of
  * the counter plate and staff QR, made in the browser so the codes never
  * leave this computer. Codes and branding are fetched fresh on every click,
- * so a kit downloaded right after "Make a new plate link" has the new code.
+ * so a kit downloaded right after a code is replaced has the new code. Staff
+ * cards are for owners only. Give it a key of the member; `staffVersion`
+ * changes when staff codes do.
  */
-export function PrintKitCard({ memberId }: { memberId: string }) {
+export function PrintKitCard({ memberId, staffVersion }: { memberId: string; staffVersion: number }) {
   const [busy, setBusy] = useState<KitPiece | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Whose QR can be printed; null hides "Staff cards" (still loading, or a full editor). */
+  const [people, setPeople] = useState<Person[] | null>(null);
+  const [staffId, setStaffId] = useState("");
+  const chosenId = people?.some((p) => p.id === staffId) ? staffId : "";
+
+  useEffect(() => {
+    let current = true;
+    getStaffCodes({ data: { memberId } })
+      .then((v) => current && setPeople(withQr(v)))
+      // Not a permission problem: still offer the button, which says what's wrong.
+      .catch((err) => current && setPeople((now) => (isOwnerOnly(err) ? null : (now ?? []))));
+    return () => {
+      current = false;
+    };
+  }, [memberId, staffVersion]);
 
   async function onDownload(piece: KitPiece) {
     setBusy(piece);
     setError(null);
     try {
+      // Fixed now, so the card printed is the one chosen when clicked.
+      const printFor = chosenId;
       const [plate, info, staffCodes, render, assets] = await Promise.all([
         getCounterPlate({ data: { memberId } }),
         getPrintKitInfo({ data: { memberId } }),
@@ -58,18 +89,18 @@ export function PrintKitCard({ memberId }: { memberId: string }) {
         logoTileColor: info.logoTileColor,
         plateUrl: plate.url,
         printedCode: plate.printedCode,
-        staffQrUrl: staffCodes?.counter.url ?? "",
-        staffQrPrinted: staffCodes?.counter.printed ?? "",
       };
       const images = { guildLogoPng, memberLogoPng };
-      const build =
-        piece === "counter-card"
-          ? render.buildCounterCardsPdf
-          : piece === "table-tent"
-            ? render.buildTableTentPdf
-            : render.buildStaffCardsPdf;
-      saveFile(await build(input, fonts, images), kitFileName(piece, info.memberSlug));
+      if (staffCodes) {
+        setPeople(withQr(staffCodes));
+        const card = staffCardChoice(staffCodes, printFor);
+        saveFile(await render.buildStaffCardsPdf({ ...input, ...card }, fonts, images), kitFileName(piece, info.memberSlug, card.staffName));
+      } else {
+        const build = piece === "counter-card" ? render.buildCounterCardsPdf : render.buildTableTentPdf;
+        saveFile(await build(input, fonts, images), kitFileName(piece, info.memberSlug));
+      }
     } catch (err) {
+      if (isOwnerOnly(err)) setPeople(null);
       setError(kitErrorMessage(err));
     } finally {
       setBusy(null);
@@ -91,6 +122,33 @@ export function PrintKitCard({ memberId }: { memberId: string }) {
           </button>
         ))}
       </div>
+      {people && (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <label className="flex min-w-0 flex-col gap-1.5 text-[13px] font-medium text-ink sm:w-[260px]">
+            Staff cards for
+            <select
+              className="h-11 w-full min-w-0 rounded-[9px] border border-canvas-border bg-white px-3 text-[14px] text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              value={chosenId}
+              onChange={(e) => setStaffId(e.target.value)}
+            >
+              <option value="">Behind the counter</option>
+              {people.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            className={`${outlineClass} self-start sm:self-auto`}
+            disabled={busy !== null}
+            onClick={() => void onDownload("staff-cards")}
+          >
+            {busy === "staff-cards" ? "Making your PDF…" : "Staff cards"}
+          </button>
+        </div>
+      )}
       {error && (
         <p role="alert" className="text-[13px] text-danger">
           {error}

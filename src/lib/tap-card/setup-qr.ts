@@ -1,4 +1,5 @@
 import QRCode from "qrcode";
+import { staffNameSlug } from "@/lib/tap-card/staff-codes";
 
 /**
  * The bar-device setup link as a QR code, so a member can print it in the
@@ -16,9 +17,15 @@ export function setupQrFilename(label: string): string {
   return slug ? `bar-device-${slug}-qr.png` : "bar-device-qr.png";
 }
 
+/** The behind-the-counter staff QR has no name. */
+export function staffQrFilename(name: string | null): string {
+  return name === null ? "staff-qr.png" : `staff-qr-${staffNameSlug(name)}.png`;
+}
+
 /** The two lines printed under a counter plate or staff QR image. */
-export function qrCaptionLines(kind: "plate" | "staff", printed: string): [string, string] {
-  return [kind === "plate" ? "Counter plate" : "Staff QR", printed];
+export function qrCaptionLines(kind: "plate" | "staff", printed: string, staffName: string | null = null): [string, string] {
+  if (kind === "plate") return ["Counter plate", printed];
+  return [staffName === null ? "Staff QR" : `Staff QR: ${staffName}`, printed];
 }
 
 export const CAPTIONED_QR_HEIGHT = 370;
@@ -43,7 +50,8 @@ export async function captionedQrDataUrl(url: string, lines: [string, string]): 
   ctx.fillStyle = "#000000";
   ctx.textAlign = "center";
   ctx.font = "14px sans-serif";
-  ctx.fillText(lines[0], SETUP_QR_SIZE / 2, SETUP_QR_SIZE + 18);
+  // A long name is squeezed to fit rather than cut off.
+  ctx.fillText(lines[0], SETUP_QR_SIZE / 2, SETUP_QR_SIZE + 18, SETUP_QR_SIZE - 16);
   ctx.font = "bold 26px monospace";
   ctx.fillText(lines[1], SETUP_QR_SIZE / 2, SETUP_QR_SIZE + 52);
   return canvas.toDataURL("image/png");
