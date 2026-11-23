@@ -295,6 +295,16 @@ describe("buildEmailContent: Join application emails", () => {
     expect(change.html).toContain("Sample &lt;b&gt;");
   });
 
+  it("beer_trail_joined tells the Guild who joined and whether it's on the map yet", () => {
+    const payload = { trigger: "beer_trail_joined" as const, memberId: "m1", businessName: "Sample <b>", city: "Riverside", published: true };
+    const content = buildEmailContent(payload, site);
+    expect(content.subject).toBe("Beer Trail: Sample <b> (Riverside) joined the trail");
+    expect(content.text).toContain("It's on the Beer Trail map now.");
+    expect(content.html).toContain("Sample &lt;b&gt;");
+    expect(content.html).toContain(`href="${site}/guild/roster"`);
+    expect(buildEmailContent({ ...payload, city: null, published: false }, site).text).toContain("isn't published yet");
+  });
+
   it("join_draft_link carries the one-time link and the sign-in fallback", () => {
     const content = buildEmailContent(
       { trigger: "join_draft_link", email: "sam@example.com", businessName: "Hop House", link: "https://x.test/join/abc" },

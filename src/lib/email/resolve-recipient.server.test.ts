@@ -243,6 +243,12 @@ describe("resolveRecipient: Join application emails", () => {
     ).resolves.toEqual([STAGING_GUILD_NOTIFICATION_EMAIL]);
   });
 
+  it("a Beer Trail opt-in goes to the Guild inbox", async () => {
+    const supabase = fakeSupabase({ memberUser: null, userEmail: null });
+    const payload = { trigger: "beer_trail_joined" as const, memberId: "m", businessName: "B", city: null, published: true };
+    await expect(resolveRecipient(payload, supabase)).resolves.toEqual([GUILD_NOTIFICATION_EMAIL]);
+  });
+
   it("the draft link and approval go to the applicant's own address", async () => {
     const supabase = fakeSupabase({ memberUser: null, userEmail: null });
     await expect(

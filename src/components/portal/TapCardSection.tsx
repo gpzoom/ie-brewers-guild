@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { TapCardOffersSection } from "@/components/portal/TapCardOffersSection";
 import { CounterPlateCard } from "@/components/portal/CounterPlateCard";
 import { PrintKitCard } from "@/components/portal/PrintKitCard";
 import { TapCardPassesCard } from "@/components/portal/TapCardPassesCard";
+import { TrailOptInCard } from "@/components/portal/TrailOptInCard";
 
 /**
  * Portal > Scan Pass and /admin/scan-pass: the brewery's counter plate and
@@ -10,6 +12,8 @@ import { TapCardPassesCard } from "@/components/portal/TapCardPassesCard";
  * The device code in brewery-tap-card.server.ts is kept for later.)
  */
 export function TapCardSection({ memberId }: { memberId: string }) {
+  // Joining the trail adds the Guild's offer to the Offers card, so it reloads.
+  const [joins, setJoins] = useState(0);
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1.5">
@@ -20,13 +24,15 @@ export function TapCardSection({ memberId }: { memberId: string }) {
         </p>
       </header>
 
+      <TrailOptInCard memberId={memberId} onJoined={() => setJoins((n) => n + 1)} />
+
       <PrintKitCard memberId={memberId} />
 
       <CounterPlateCard memberId={memberId} />
 
       <TapCardPassesCard memberId={memberId} />
 
-      <TapCardOffersSection memberId={memberId} />
+      <TapCardOffersSection key={joins} memberId={memberId} />
     </div>
   );
 }

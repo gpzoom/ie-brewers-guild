@@ -63,6 +63,7 @@ export async function resolveRecipient(
     case "membership_application":
     case "application_details_added":
     case "tap_card_offer_submitted":
+    case "beer_trail_joined":
       return [guildInboxFor(siteUrl)];
     case "creator_upload_pending":
     case "hours_stale":

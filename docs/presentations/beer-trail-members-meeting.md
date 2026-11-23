@@ -1,6 +1,6 @@
 # Beer Trail presentation for the Guild members' meeting: planning notes
 
-*Started 2026-11-22. Status: **planning only, not built yet**. The owner will pick this up later.*
+*Started 2026-11-22. Status: **first draft built 2026-11-23** (12 slides, with a printed-passport comparison added after the Beer Trail slide): https://claude.ai/artifact/WJTCZH9uPQHaayZcETj18N*
 
 ## Brief (owner's answers)
 

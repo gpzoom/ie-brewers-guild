@@ -145,6 +145,15 @@ export type TransactionalEmailPayload =
       change: boolean;
     }
   | {
+      /** Beer Trail: a member checked "Beer Trail stop" on its Scan Pass page; to the Guild. */
+      trigger: "beer_trail_joined";
+      memberId: string;
+      businessName: string;
+      city: string | null;
+      /** False: on the trail, but not on the map until the profile is published. */
+      published: boolean;
+    }
+  | {
       /** Join the Guild: the applicant added details to a pending application; to the Guild. */
       trigger: "application_details_added";
       memberId: string;
@@ -603,6 +612,23 @@ ${signInUrl}`,
         subject: `Scan Pass: ${payload.businessName} sent ${what} for approval`,
         text: `${lines.join("\n")}\n\nReview offers: ${reviewUrl}`,
         html: wrapHtml([...lines.map(escapeHtml), `<a href="${reviewUrl}">Review offers</a>`]),
+      };
+    }
+
+    case "beer_trail_joined": {
+      const rosterUrl = `${siteUrl}/guild/roster`;
+      const name = payload.city ? `${payload.businessName} (${payload.city})` : payload.businessName;
+      const lines = [
+        `${name} joined the Beer Trail from its Scan Pass page.`,
+        payload.published
+          ? "It's on the Beer Trail map now."
+          : "Its profile isn't published yet, so it will show on the Beer Trail map once it is.",
+        "To take it off the trail, use its menu on the Roster.",
+      ];
+      return {
+        subject: `Beer Trail: ${name} joined the trail`,
+        text: `${lines.join("\n")}\n\nOpen the Roster: ${rosterUrl}`,
+        html: wrapHtml([...lines.map(escapeHtml), `<a href="${rosterUrl}">Open the Roster</a>`]),
       };
     }
 
