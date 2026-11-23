@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateCardCode } from "@/lib/tap-card/card-code";
+import type { PersonalPin } from "@/lib/tap-card/staff-codes";
 import { freshQr } from "@/lib/tap-card/staff-codes-core";
 
 /**
@@ -24,16 +25,30 @@ export async function qrTaken(service: SupabaseClient, code: string): Promise<bo
   return named.data !== null || counter.data !== null;
 }
 
-/** How many of the member's personal 4-digit codes work now. */
-export async function activePinCount(service: SupabaseClient, memberId: string): Promise<number> {
-  const { count, error } = await service
+/** The member's personal 4-digit codes that work now (at most one per person; never a removed person's). */
+export async function loadPersonalPins(service: SupabaseClient, memberId: string): Promise<PersonalPin[]> {
+  const codes = await service
     .from("tap_card_staff_codes")
-    .select("id", { count: "exact", head: true })
+    .select("id, staff_id, code")
     .eq("member_id", memberId)
     .eq("kind", "pin")
     .is("turned_off_at", null);
-  if (error) throw dbFailed(error);
-  return count ?? 0;
+  if (codes.error) throw dbFailed(codes.error);
+  if (codes.data.length === 0) return [];
+  const people = await service
+    .from("tap_card_staff")
+    .select("id")
+    .eq("member_id", memberId)
+    .in("id", codes.data.map((c) => c.staff_id))
+    .is("removed_at", null);
+  if (people.error) throw dbFailed(people.error);
+  const here = new Set(people.data.map((p) => p.id));
+  return codes.data.filter((c) => here.has(c.staff_id)).map((c) => ({ codeId: c.id, staffId: c.staff_id, code: c.code, active: true }));
+}
+
+/** How many of the member's personal 4-digit codes work now. */
+export async function activePinCount(service: SupabaseClient, memberId: string): Promise<number> {
+  return (await loadPersonalPins(service, memberId)).length;
 }
 
 export type PlateRow = { code: string; staffCode: string | null; staffQr: string; sharedOff: boolean };

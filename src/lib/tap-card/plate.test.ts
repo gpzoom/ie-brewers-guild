@@ -5,7 +5,6 @@ import {
   plateUrl,
   safeHolderNext,
   staffCodeGate,
-  staffCodeMatches,
   triesLeft,
   validateStaffCode,
   type AttemptStore,
@@ -15,15 +14,6 @@ describe("validateStaffCode", () => {
   it("takes exactly 4 digits", () => {
     expect(validateStaffCode(" 0420 ")).toEqual({ ok: true, code: "0420" });
     for (const bad of ["420", "12a4", "12345", ""]) expect(validateStaffCode(bad)).toEqual({ ok: false, message: "Use 4 digits." });
-  });
-});
-
-describe("staffCodeMatches", () => {
-  it("matches only the stored code", () => {
-    expect(staffCodeMatches("0420", "0420")).toBe(true);
-    expect(staffCodeMatches(" 0420", "0420")).toBe(true);
-    expect(staffCodeMatches("0421", "0420")).toBe(false);
-    expect(staffCodeMatches("0420", null)).toBe(false);
   });
 });
 
@@ -73,7 +63,7 @@ describe("staffCodeGate", () => {
     return { store, rows };
   }
 
-  const matcher = (entered: string, stored: string | null) => () => (staffCodeMatches(entered, stored) ? "yes" : null);
+  const matcher = (entered: string, stored: string | null) => () => (entered === stored ? "yes" : null);
 
   it("lets the right code through, hands back the match and forgets the try", async () => {
     const { store, rows } = attempts();
@@ -99,6 +89,12 @@ describe("staffCodeGate", () => {
     });
     expect(result).toEqual({ kind: "locked" });
     expect(calls).toBe(0);
+  });
+
+  it("doesn't take undefined as a match", async () => {
+    const { store, rows } = attempts();
+    expect(await staffCodeGate(store, () => undefined as unknown as string | null)).toEqual({ kind: "wrong-code", triesLeft: 4 });
+    expect(rows).toHaveLength(1);
   });
 
   it("guesses sent all at once can't slip past the limit", async () => {

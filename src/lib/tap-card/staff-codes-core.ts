@@ -33,7 +33,8 @@ export type StaffCodesStore = {
   swapCounterQr(from: string, to: string): Promise<"ok" | "clash" | "changed">;
   /** Used by any named code or any member's counter QR. */
   qrTaken(code: string): Promise<boolean>;
-  setSharedCode(code: string): Promise<void>;
+  /** With `onlyIfNow`, does nothing unless that's the shared code at the moment. */
+  setSharedCode(code: string | null, onlyIfNow?: string): Promise<void>;
   setSharedOff(off: boolean): Promise<void>;
 };
 
@@ -88,6 +89,11 @@ async function replaceCode(store: StaffCodesStore, staffId: string, kind: CodeKi
     if ((await findStaff(store, staffId, true)).removed) {
       await store.turnOffCodes(staffId);
       throw new Error(NOT_FOUND);
+    }
+    // The shared code was saved as this same code while this ran: make another.
+    if (kind === "pin" && (await store.plate()).staffCode === code) {
+      await store.turnOffCodes(staffId, kind);
+      continue;
     }
     return;
   }
@@ -157,11 +163,17 @@ export async function resetCounterQrCore(store: StaffCodesStore): Promise<void> 
 export async function saveSharedCodeCore(store: StaffCodesStore, rawCode: string): Promise<void> {
   const checked = validateStaffCode(rawCode);
   if (!checked.ok) throw new Error(checked.message);
-  await store.plate(); // makes the plate on first use
-  const issued = new Set((await store.listCodes()).filter((c) => c.kind === "pin").map((c) => c.code));
-  const refused = sharedPinSaveError(checked.code, issued);
+  const { staffCode: before } = await store.plate(); // makes the plate on first use
+  const refusal = async () => sharedPinSaveError(checked.code, new Set((await store.listCodes()).filter((c) => c.kind === "pin").map((c) => c.code)));
+  const refused = await refusal();
   if (refused) throw new Error(refused);
   await store.setSharedCode(checked.code);
+  // Issued to someone while this saved: put the old shared code back.
+  const issuedSince = await refusal();
+  if (issuedSince) {
+    await store.setSharedCode(before, checked.code);
+    throw new Error(issuedSince);
+  }
 }
 
 export async function setSharedCodeOffCore(store: StaffCodesStore, off: boolean): Promise<void> {

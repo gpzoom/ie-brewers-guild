@@ -9,6 +9,8 @@ import type { RewardChoice } from "@/lib/tap-card/bar-core";
  */
 export const PENDING_MINUTES = 10;
 
+export const STAFF_QR_TURNED_OFF = "This staff code no longer works. Ask the staff for the current one.";
+
 export type PendingChoice = { kind: "none" } | RewardChoice;
 export type Pending = { memberId: string; plateCode: string; choice: PendingChoice; at: string };
 
@@ -33,13 +35,21 @@ export function parsePendingChoice(raw: unknown): PendingChoice | null {
 
 export type StaffQrView =
   | { kind: "unknown" }
+  | { kind: "turned-off" }
   | { kind: "scan-plate-first" }
   | { kind: "wrong-brewery" }
   | { kind: "check-in"; plateCode: string }
   | { kind: "confirm"; plateCode: string; choice: RewardChoice };
 
-export function decideStaffQrView(i: { qrMemberId: string | null; signedIn: boolean; pending: Pending | null; now: Date }): StaffQrView {
+export function decideStaffQrView(i: {
+  qrMemberId: string | null;
+  qrActive: boolean;
+  signedIn: boolean;
+  pending: Pending | null;
+  now: Date;
+}): StaffQrView {
   if (!i.qrMemberId) return { kind: "unknown" };
+  if (!i.qrActive) return { kind: "turned-off" };
   const p = i.pending;
   if (!i.signedIn || !p || i.now.getTime() - new Date(p.at).getTime() > PENDING_MINUTES * 60 * 1000) return { kind: "scan-plate-first" };
   if (p.memberId !== i.qrMemberId) return { kind: "wrong-brewery" };

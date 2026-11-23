@@ -3,6 +3,7 @@ import { undoAtPlate, type PlateResult } from "@/lib/tap-card/plate.server";
 import { CanvasHeading, fieldErrorClass, inputClass, labelClass, leadClass, primaryButtonClass, secondaryButtonClass } from "@/components/public-forms/PublicFormParts";
 import { outcomeMessage } from "@/components/tap-card/CheckInScreen";
 import { successLinks } from "@/lib/tap-card/card-app";
+import { STAFF_QR_TURNED_OFF } from "@/lib/tap-card/staff-qr";
 
 export type PlateOk = Extract<PlateResult, { kind: "ok" }>;
 
@@ -30,6 +31,8 @@ export function plateRefusal(result: Exclude<PlateResult, PlateOk> | { kind: "sc
       return "Too many tries. Ask a staff member to try again in 15 minutes.";
     case "signed-out":
       return "You've been signed out. Scan the counter plate again to sign in.";
+    case "turned-off":
+      return STAFF_QR_TURNED_OFF;
     case "closed":
       return "This plate isn't taking check-ins right now. Ask a staff member for help.";
     case "scan-plate-first":

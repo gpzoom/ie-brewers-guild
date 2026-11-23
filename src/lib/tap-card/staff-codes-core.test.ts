@@ -87,7 +87,8 @@ function memoryDb() {
         return "ok";
       },
       qrTaken: async (code) => codes.some((c) => c.kind === "qr" && c.code === code) || Object.values(plates).some((p) => p.staffQr === code),
-      setSharedCode: async (code) => {
+      setSharedCode: async (code, onlyIfNow) => {
+        if (onlyIfNow !== undefined && plates[memberId].staffCode !== onlyIfNow) return;
         plates[memberId].staffCode = code;
       },
       setSharedOff: async (off) => {
@@ -384,6 +385,70 @@ describe("the shared 4-digit code", () => {
     await removeStaffCore(s, db.staff[0].id);
     await expect(saveSharedCodeCore(s, pin)).rejects.toThrow("That code belongs to a staff member. Choose another.");
     expect(db.plates.m1.staffCode).toBe("2580");
+  });
+});
+
+describe("a shared code saved while a personal code is being made", () => {
+  it("makes another personal code when the shared code became the same", async () => {
+    const insert = s.insertCode;
+    let clashed = "";
+    s.insertCode = async (staffId, kind, code) => {
+      if (kind === "pin" && !clashed) {
+        clashed = code;
+        db.plates.m1.staffCode = code;
+      }
+      return insert(staffId, kind, code);
+    };
+    await makeStaffCodesCore(s, "Maria");
+    const pins = db.active(db.staff[0].id, "pin");
+    expect(pins).toHaveLength(1);
+    expect(pins[0].code).not.toBe(clashed);
+    expect(db.active(db.staff[0].id, "qr")).toHaveLength(1);
+  });
+
+  it("leaves no matching personal code working when it can't make a different one", async () => {
+    const insert = s.insertCode;
+    s.insertCode = async (staffId, kind, code) => {
+      if (kind === "pin") db.plates.m1.staffCode = code;
+      return insert(staffId, kind, code);
+    };
+    await expect(makeStaffCodesCore(s, "Maria")).rejects.toThrow("Couldn't make the code. Try again.");
+    expect(db.active(db.staff[0].id, "pin")).toHaveLength(0);
+  });
+
+  const issueDuringSave = (code: string) => {
+    const save = s.setSharedCode;
+    let done = false;
+    s.setSharedCode = async (...args) => {
+      await save(...args);
+      if (!done) db.codes.push({ memberId: M, staffId: "s9", kind: "pin", code, active: true });
+      done = true;
+    };
+  };
+
+  it.each(["2580", null])("puts back the shared code (%s) and refuses when it became a person's", async (before) => {
+    db.plates.m1.staffCode = before;
+    issueDuringSave("1234");
+    await expect(saveSharedCodeCore(s, "1234")).rejects.toThrow("That code belongs to a staff member. Choose another.");
+    expect(db.plates.m1.staffCode).toBe(before);
+  });
+
+  it("doesn't undo another owner's newer shared code", async () => {
+    const save = s.setSharedCode;
+    s.setSharedCode = async (...args) => {
+      await save(...args);
+      if (args[1] !== undefined) return;
+      db.codes.push({ memberId: M, staffId: "s9", kind: "pin", code: "1234", active: true });
+      db.plates.m1.staffCode = "8888";
+    };
+    await expect(saveSharedCodeCore(s, "1234")).rejects.toThrow("That code belongs to a staff member.");
+    expect(db.plates.m1.staffCode).toBe("8888");
+  });
+
+  it("keeps the new shared code when nothing matches", async () => {
+    issueDuringSave("9999");
+    await saveSharedCodeCore(s, "1234");
+    expect(db.plates.m1.staffCode).toBe("1234");
   });
 });
 

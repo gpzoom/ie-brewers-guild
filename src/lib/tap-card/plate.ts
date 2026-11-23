@@ -14,10 +14,6 @@ export function validateStaffCode(raw: string): { ok: true; code: string } | { o
   return /^[0-9]{4}$/.test(code) ? { ok: true, code } : { ok: false, message: "Use 4 digits." };
 }
 
-export function staffCodeMatches(entered: string, stored: string | null): boolean {
-  return stored !== null && String(entered ?? "").trim() === stored;
-}
-
 export function plateUrl(siteUrl: string, code: string): string {
   return `${siteUrl}/t/${code}`;
 }
@@ -53,7 +49,7 @@ export async function staffCodeGate<M>(
   const tries = await store.recent();
   if (tries > PLATE_MAX_MISSES) return { kind: "locked" };
   const found = match();
-  if (found !== null) {
+  if (found != null) {
     await store.clear(id);
     return { kind: "ok", match: found };
   }

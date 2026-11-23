@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { confirmByStaffQr, type StaffQrPage } from "@/lib/tap-card/plate.server";
+import { STAFF_QR_TURNED_OFF } from "@/lib/tap-card/staff-qr";
 import { CanvasHeading, fieldErrorClass, leadClass, primaryButtonClass, secondaryButtonClass } from "@/components/public-forms/PublicFormParts";
 import { Eyebrow } from "@/components/tap-card/TapCardShell";
 import { PlateSuccess, plateRefusal, type PlateOk } from "@/components/tap-card/PlateSuccess";
@@ -53,6 +54,7 @@ export function StaffQrScreen({ token, view }: { token: string; view: StaffQrPag
     <div className="flex flex-col gap-4">
       <Eyebrow>{view.memberName}</Eyebrow>
       {view.view === "closed" && <CanvasHeading size="md">This taproom isn&rsquo;t taking Scan Pass check-ins right now.</CanvasHeading>}
+      {view.view === "turned-off" && <CanvasHeading size="md">{STAFF_QR_TURNED_OFF}</CanvasHeading>}
       {view.view === "scan-plate-first" && (
         <>
           <CanvasHeading size="md">Scan the counter plate first</CanvasHeading>

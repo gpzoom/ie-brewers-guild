@@ -117,8 +117,10 @@ function staffCodesStore(service: SupabaseClient, memberId: string): StaffCodesS
       return (data ?? []).length === 1 ? "ok" : "changed";
     },
     qrTaken: (code) => qrTaken(service, code),
-    async setSharedCode(code) {
-      const { error } = await plateTable().update({ staff_code: code, updated_at: now() }).eq("member_id", memberId);
+    async setSharedCode(code, onlyIfNow) {
+      let query = plateTable().update({ staff_code: code, updated_at: now() }).eq("member_id", memberId);
+      if (onlyIfNow !== undefined) query = query.eq("staff_code", onlyIfNow);
+      const { error } = await query;
       mustSave(error);
     },
     async setSharedOff(off) {
