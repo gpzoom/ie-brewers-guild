@@ -61,6 +61,13 @@ describe("StaffCodesBox", () => {
     expect(render({ shared: { code: "2580", off: true }, canTurnSharedOff: false })).toContain(NOBODY_CAN_TYPE_NOW);
   });
 
+  it("says the plate is off while there's no 4-digit code at all", () => {
+    const off = "Your plate is off: no check-ins until you set up a staff code.";
+    expect(render({ shared: { code: null, off: false }, canTurnSharedOff: false })).toContain(off);
+    expect(render({ shared: { code: null, off: false } })).not.toContain(off);
+    expect(render()).not.toContain(off);
+  });
+
   it("locks the shared code while something is saving", () => {
     const input = (html: string) => /<input[^>]*inputMode="numeric"[^>]*>/i.exec(html)![0];
     expect(input(render())).not.toContain("disabled");

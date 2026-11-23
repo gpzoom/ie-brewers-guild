@@ -72,6 +72,8 @@ create table public.tap_card_staff_activity (
 );
 create index tap_card_staff_activity_recent
   on public.tap_card_staff_activity (member_id, at desc);
+create index tap_card_staff_activity_holder
+  on public.tap_card_staff_activity (holder_id);
 create index tap_card_staff_activity_visit
   on public.tap_card_staff_activity (visit_id);
 -- One "turned off code" entry per customer, code and day.

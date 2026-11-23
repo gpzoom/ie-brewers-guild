@@ -363,6 +363,14 @@ describe("the shared 4-digit code", () => {
     expect(db.plates.m1.sharedOff).toBe(false);
   });
 
+  it("can't be turned off before there is one", async () => {
+    db.plates.m1.staffCode = null;
+    await makeStaffCodesCore(s, "Maria");
+    await expect(setSharedCodeOffCore(s, true)).rejects.toThrow("Set a shared code first.");
+    expect(db.plates.m1.sharedOff).toBe(false);
+    await setSharedCodeOffCore(s, false);
+  });
+
   it("turns off with one, keeping the stored code, and on at any time", async () => {
     await makeStaffCodesCore(s, "Maria");
     await setSharedCodeOffCore(s, true);

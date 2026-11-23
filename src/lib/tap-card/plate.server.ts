@@ -26,7 +26,7 @@ import { PLATE_LOCK_MINUTES, plateUrl, staffCodeGate, type AttemptStore } from "
  * page only looks.
  */
 
-type Plate = { memberId: string; memberName: string; memberSlug: string; staffCode: string | null; staffCodeOff: boolean; open: boolean; trailStop: boolean };
+type Plate = { memberId: string; memberName: string; memberSlug: string; staffCode: string | null; staffCodeOff: boolean; takesCheckIns: boolean; open: boolean; trailStop: boolean };
 
 async function loadPlate(service: SupabaseClient, rawCode: string): Promise<Plate | null> {
   const code = normalizeCardCode(rawCode);
@@ -52,6 +52,7 @@ async function loadPlateBy(service: SupabaseClient, column: "code" | "member_id"
     staffCode: data.staff_code,
     staffCodeOff: data.staff_code_off === true,
     trailStop: isTrailStop({ memberType: m.member_type, trailEligible: m.trail_eligible === true }),
+    takesCheckIns,
     open: takesCheckIns && plateIsOn({ shared: data.staff_code, personalActive }),
   };
 }
@@ -237,12 +238,20 @@ export const getStaffQrView = createServerFn({ method: "GET" })
     const found = await plateByStaffQr(service, data.token);
     if (!found) return { view: "unknown" };
     const { plate, qr } = found;
-    if (!plate.open) return { view: "closed", memberName: plate.memberName };
     const holderId = await readHolderId();
     const pending = holderId ? await readPlatePending(holderId) : null;
-    const decided = decideStaffQrView({ qrMemberId: plate.memberId, qrActive: qr.active, signedIn: holderId !== null, pending, now: new Date() });
+    const decided = decideStaffQrView({
+      qrMemberId: plate.memberId,
+      takesCheckIns: plate.takesCheckIns,
+      plateOpen: plate.open,
+      qrActive: qr.active,
+      signedIn: holderId !== null,
+      pending,
+      now: new Date(),
+    });
     const { memberName, memberSlug } = plate;
     if (decided.kind === "unknown") return { view: "unknown" };
+    if (decided.kind === "closed") return { view: "closed", memberName };
     if (decided.kind === "turned-off") {
       if (holderId) await logTurnedOff(service, { holderId, memberId: plate.memberId, token: data.token, source: qr.source, at: new Date() });
       return { view: "turned-off", memberName };
@@ -279,13 +288,25 @@ export const confirmByStaffQr = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<PlateResult | { kind: "scan-plate-first" }> => {
     const service = await getSupabaseServiceRoleClient();
     const found = await plateByStaffQr(service, data.token);
-    if (!found?.plate.open) return { kind: "closed" };
+    if (!found) return { kind: "closed" };
     const { plate, qr } = found;
     const holderId = await readHolderId();
+    const pending = holderId ? await readPlatePending(holderId) : null;
+    const decided = decideStaffQrView({
+      qrMemberId: plate.memberId,
+      takesCheckIns: plate.takesCheckIns,
+      plateOpen: plate.open,
+      qrActive: qr.active,
+      signedIn: holderId !== null,
+      pending,
+      now: new Date(),
+    });
+    if (decided.kind === "closed") return { kind: "closed" };
+    if (decided.kind === "turned-off") {
+      if (holderId) await logTurnedOff(service, { holderId, memberId: plate.memberId, token: data.token, source: qr.source, at: new Date() });
+      return { kind: "turned-off" };
+    }
     if (!holderId) return { kind: "signed-out" };
-    const pending = await readPlatePending(holderId);
-    const decided = decideStaffQrView({ qrMemberId: plate.memberId, qrActive: qr.active, signedIn: true, pending, now: new Date() });
-    if (decided.kind === "turned-off") return { kind: "turned-off" };
     if (decided.kind !== "check-in" && decided.kind !== "confirm") return { kind: "scan-plate-first" };
     if (!(await claimPlatePending(pending!))) return { kind: "scan-plate-first" };
     const choice: PlateChoice = decided.kind === "confirm" && !data.skipReward ? decided.choice : { kind: "none" };

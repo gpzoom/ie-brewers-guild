@@ -177,7 +177,8 @@ export async function saveSharedCodeCore(store: StaffCodesStore, rawCode: string
 }
 
 export async function setSharedCodeOffCore(store: StaffCodesStore, off: boolean): Promise<void> {
-  await store.plate();
+  const { staffCode } = await store.plate();
+  if (off && staffCode === null) throw new Error("Set a shared code first.");
   if (off && !(await store.listCodes()).some((c) => c.kind === "pin" && c.active)) {
     throw new Error("Give at least one staff member their own code first.");
   }

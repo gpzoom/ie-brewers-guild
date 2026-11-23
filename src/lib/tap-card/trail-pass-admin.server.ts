@@ -120,7 +120,7 @@ export const resetDemoVisits = createServerFn({ method: "POST" }).handler(async 
   }
 
   must(await service.from("tap_card_earned_rewards").delete().in("member_id", ids));
-  // Staff activity first (it points at visits). Staff names and codes stay.
+  // Staff activity too: deleting visits only unlinks it. Staff names and codes stay.
   must(await service.from("tap_card_staff_activity").delete().in("member_id", ids));
   must(await service.from("tap_card_visits").delete().in("member_id", ids));
   must(await service.from("tap_card_plate_misses").delete().in("member_id", ids));

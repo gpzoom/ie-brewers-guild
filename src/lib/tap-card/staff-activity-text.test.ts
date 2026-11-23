@@ -5,6 +5,7 @@ import {
   flagText,
   formatActivityDay,
   formatActivityTime,
+  isActivityEmpty,
   methodLabel,
   personName,
   totalsText,
@@ -58,14 +59,38 @@ describe("labels", () => {
 });
 
 describe("dates", () => {
+  const now = new Date("2026-11-23T22:30:00Z");
   it("shows Pacific time", () => {
-    expect(formatActivityTime("2026-11-23T22:14:00Z")).toBe("Nov 23, 2:14 PM");
-    expect(formatActivityTime("2026-07-04T07:05:00Z")).toBe("Jul 4, 12:05 AM");
+    expect(formatActivityTime("2026-11-23T22:14:00Z", now)).toBe("Nov 23, 2:14 PM");
+    expect(formatActivityTime("2026-07-04T07:05:00Z", now)).toBe("Jul 4, 12:05 AM");
   });
   it("shows a day", () => {
-    expect(formatActivityDay("2026-11-22")).toBe("Nov 22");
+    expect(formatActivityDay("2026-11-22", now)).toBe("Nov 22");
+  });
+  it("adds the year when it isn't this year, by Pacific time", () => {
+    expect(formatActivityTime("2025-11-23T22:14:00Z", now)).toBe("Nov 23, 2025, 2:14 PM");
+    expect(formatActivityDay("2025-11-22", now)).toBe("Nov 22, 2025");
+    const newYearsEve = new Date("2027-01-01T05:00:00Z"); // still Dec 31, 2026 in Pacific
+    expect(formatActivityTime("2026-12-31T22:14:00Z", newYearsEve)).toBe("Dec 31, 2:14 PM");
+    expect(formatActivityTime("2027-01-01T05:00:00Z", new Date("2027-01-01T20:00:00Z"))).toBe("Dec 31, 2026, 9:00 PM");
+    expect(formatActivityDay("2026-12-31", newYearsEve)).toBe("Dec 31");
   });
   it("survives a bad value", () => {
-    expect(formatActivityTime("nope")).toBe("");
+    expect(formatActivityTime("nope", now)).toBe("");
+  });
+});
+
+describe("isActivityEmpty", () => {
+  const row = { checkIns: 0, rewards: 0, undone: 0, flags: {} };
+  it("is empty with no counts and no flags", () => {
+    expect(isActivityEmpty({ rows: [row, { ...row, flags: { burst: 0 } }], beforeTracking: 0 })).toBe(true);
+    expect(isActivityEmpty({ rows: [], beforeTracking: 0 })).toBe(true);
+  });
+  it("isn't with a turned-off QR scan alone", () => {
+    expect(isActivityEmpty({ rows: [{ ...row, flags: { "turned-off-code": 1 } }], beforeTracking: 0 })).toBe(false);
+  });
+  it("isn't with any count or a visit before tracking", () => {
+    for (const k of ["checkIns", "rewards", "undone"]) expect(isActivityEmpty({ rows: [{ ...row, [k]: 1 }], beforeTracking: 0 })).toBe(false);
+    expect(isActivityEmpty({ rows: [row], beforeTracking: 1 })).toBe(false);
   });
 });

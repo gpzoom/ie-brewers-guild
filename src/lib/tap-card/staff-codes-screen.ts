@@ -9,6 +9,9 @@ export const COUNTER_REPLACE_CONFIRM = "Make a new staff QR code? The one you ha
 export const NOBODY_CAN_TYPE = "After this, nobody can type a code or undo a reward. Staff QR codes will still work.";
 /** The same, while it lasts. */
 export const NOBODY_CAN_TYPE_NOW = "Nobody can type a code or undo a reward right now. Staff QR codes still work.";
+/** With no shared code stored, the last personal code is what keeps the plate on. */
+export const PLATE_WILL_BE_OFF = "After this, your plate will be off: no check-ins until you set up a staff code.";
+export const PLATE_IS_OFF = "Your plate is off: no check-ins until you set up a staff code.";
 export const SHARED_OFF_LIVE_NOTE = "The live site keeps accepting the shared code until this feature goes live.";
 export const STAFF_QR_GONE = "That staff QR was turned off. Choose another.";
 
@@ -32,11 +35,18 @@ export function endCodesConfirm(view: StaffCodesView, person: Person): string | 
   const stops = makeConfirm(person);
   if (!stops) return null;
   const last = person.pin !== null && !view.staff.some((p) => p.id !== person.id && p.pin !== null);
-  return view.shared.off && last ? `${stops}\n\n${NOBODY_CAN_TYPE}` : stops;
+  if (!last) return stops;
+  if (view.shared.code === null) return `${stops}\n\n${PLATE_WILL_BE_OFF}`;
+  return view.shared.off ? `${stops}\n\n${NOBODY_CAN_TYPE}` : stops;
 }
 
 export function nobodyCanType(view: StaffCodesView): boolean {
-  return view.shared.off && !view.canTurnSharedOff;
+  return view.shared.code !== null && view.shared.off && !view.canTurnSharedOff;
+}
+
+/** No shared code and no active personal code. */
+export function plateIsOff(view: StaffCodesView): boolean {
+  return view.shared.code === null && !view.canTurnSharedOff;
 }
 
 /** The listed person a typed name belongs to. */

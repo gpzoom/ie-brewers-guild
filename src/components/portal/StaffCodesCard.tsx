@@ -15,11 +15,13 @@ import { STAFF_CODES_OWNER_ONLY } from "@/lib/tap-card/staff-codes";
 import {
   COUNTER_REPLACE_CONFIRM,
   NOBODY_CAN_TYPE_NOW,
+  PLATE_IS_OFF,
   SHARED_OFF_LIVE_NOTE,
   endCodesConfirm,
   findByTypedName,
   makeConfirm,
   nobodyCanType,
+  plateIsOff,
   replaceConfirm,
 } from "@/lib/tap-card/staff-codes-screen";
 import { captionedQrDataUrl, qrCaptionLines, staffQrFilename } from "@/lib/tap-card/setup-qr";
@@ -348,6 +350,7 @@ function SharedCodeRow({ memberId, view, busy, run }: Omit<BoxProps, "onDownload
         <p className="text-[12px] text-ink-muted">To turn the shared code off, give at least one staff member their own code first.</p>
       )}
       {shared.off && <p className="text-[12px] text-ink-muted">{SHARED_OFF_LIVE_NOTE}</p>}
+      {plateIsOff(view) && <p className={noticeClass}>{PLATE_IS_OFF}</p>}
       {nobodyCanType(view) && <p className={noticeClass}>{NOBODY_CAN_TYPE_NOW}</p>}
     </div>
   );

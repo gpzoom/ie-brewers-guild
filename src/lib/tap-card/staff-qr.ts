@@ -35,21 +35,29 @@ export function parsePendingChoice(raw: unknown): PendingChoice | null {
 
 export type StaffQrView =
   | { kind: "unknown" }
+  | { kind: "closed" }
   | { kind: "turned-off" }
   | { kind: "scan-plate-first" }
   | { kind: "wrong-brewery" }
   | { kind: "check-in"; plateCode: string }
   | { kind: "confirm"; plateCode: string; choice: RewardChoice };
 
+/** A turned-off code is told apart from a closed plate, unless the member takes no check-ins at all. */
 export function decideStaffQrView(i: {
   qrMemberId: string | null;
+  /** memberTakesCheckIns */
+  takesCheckIns: boolean;
+  /** Takes check-ins and has a 4-digit code. */
+  plateOpen: boolean;
   qrActive: boolean;
   signedIn: boolean;
   pending: Pending | null;
   now: Date;
 }): StaffQrView {
   if (!i.qrMemberId) return { kind: "unknown" };
+  if (!i.takesCheckIns) return { kind: "closed" };
   if (!i.qrActive) return { kind: "turned-off" };
+  if (!i.plateOpen) return { kind: "closed" };
   const p = i.pending;
   if (!i.signedIn || !p || i.now.getTime() - new Date(p.at).getTime() > PENDING_MINUTES * 60 * 1000) return { kind: "scan-plate-first" };
   if (p.memberId !== i.qrMemberId) return { kind: "wrong-brewery" };

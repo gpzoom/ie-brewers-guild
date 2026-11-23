@@ -5,7 +5,7 @@
 //   node scripts/demo-kit.mjs                 status: the cast, plates, rewards, demo data
 //   node scripts/demo-kit.mjs setup [--yes]   plates + staff code 2468 + demo rewards (approved)
 //   node scripts/demo-kit.mjs print           print sheet: one 6x4 stand card per member, counter plate + staff QR (staging links)
-//   node scripts/demo-kit.mjs reset [--yes]   between demos: clear visits and rewards at the Sample members
+//   node scripts/demo-kit.mjs reset [--yes]   between demos: clear visits, rewards and staff activity at the Sample members
 //   node scripts/demo-kit.mjs teardown [--yes] [--passes]
 //                                             reset, plus demo customers, sign-ups and email opt-ins;
 //                                             --passes also deletes Beer Trail Passes credited to Samples
@@ -80,8 +80,17 @@ async function cast() {
 const label = (m) => `${m.business_name} — ${m.member_type}${m.trailStop ? ", Beer Trail stop" : ""}`;
 
 async function plates(ids) {
-  const rows = must(await db.from("tap_card_plates").select("member_id, code, staff_code, staff_qr").in("member_id", ids), "plates");
+  const rows = must(await db.from("tap_card_plates").select("member_id, code, staff_code, staff_code_off, staff_qr").in("member_id", ids), "plates");
   return Object.fromEntries(rows.map((p) => [p.member_id, p]));
+}
+
+/** Sample members where the demo code was ever issued to a person (working or not): it can't be their shared code. */
+async function demoCodeIssued(ids) {
+  const rows = must(
+    await db.from("tap_card_staff_codes").select("member_id").eq("kind", "pin").eq("code", DEMO_STAFF_CODE).in("member_id", ids),
+    "personal codes",
+  );
+  return new Set(rows.map((r) => r.member_id));
 }
 
 async function liveRewards(ids) {
@@ -123,7 +132,8 @@ async function demoData(ids) {
     const elsewherePasses = must(await db.from("tap_card_trail_passes").select("id").eq("holder_id", id).not("member_id", "in", `(${ids.join(",")})`).limit(1), "other passes");
     (elsewhereVisits.length || elsewherePasses.length ? realHolders : demoHolders).push(id);
   }
-  return { visits, earned, subs, joins, passes, misses, demoHolders, realHolders };
+  const activity = must(await db.from("tap_card_staff_activity").select("id").in("member_id", ids), "staff activity");
+  return { visits, earned, subs, joins, passes, misses, activity, demoHolders, realHolders };
 }
 
 async function status() {
@@ -133,7 +143,7 @@ async function status() {
   console.log("Demo cast (draft, names start with \"Sample \"):");
   for (const m of members) {
     const plate = p[m.id];
-    const state = !plate ? "no plate yet" : plate.staff_code ? `plate ON (staff code ${plate.staff_code})` : "plate OFF (no staff code)";
+    const state = !plate ? "no plate yet" : plate.staff_code ? `plate ON (shared code ${plate.staff_code}${plate.staff_code_off ? ", turned off" : ""})` : "no shared code (the plate is on only if a person has a 4-digit code)";
     console.log(`  ${label(m)}\n    ${state}`);
     for (const r of rewards[m.id] ?? []) console.log(`    reward ${rewardLine(r)}`);
   }
@@ -152,14 +162,19 @@ async function setup() {
   const members = await cast();
   const ids = members.map((m) => m.id);
   const p = await plates(ids);
+  const issued = await demoCodeIssued(ids);
   const rewards = await liveRewards(ids);
   const steps = [];
   for (const m of members) {
     const plate = p[m.id];
-    if (!plate) steps.push({ say: `${m.business_name}: make plate + staff QR, staff code ${DEMO_STAFF_CODE}`, run: () => db.from("tap_card_plates").insert({ member_id: m.id, code: newCode(), staff_qr: newCode(), staff_code: DEMO_STAFF_CODE }) });
+    const codeFree = !issued.has(m.id);
+    if (!codeFree) console.log(`  ${m.business_name}: ${DEMO_STAFF_CODE} is (or was) a staff member's own code, so it isn't written as the shared code`);
+    if (!plate) steps.push({ say: `${m.business_name}: make plate + staff QR${codeFree ? `, staff code ${DEMO_STAFF_CODE}` : ""}`, run: () => db.from("tap_card_plates").insert({ member_id: m.id, code: newCode(), staff_qr: newCode(), ...(codeFree ? { staff_code: DEMO_STAFF_CODE } : {}) }) });
     else {
       if (!plate.staff_qr) steps.push({ say: `${m.business_name}: add a staff QR`, run: () => db.from("tap_card_plates").update({ staff_qr: newCode() }).eq("member_id", m.id) });
-      if (plate.staff_code !== DEMO_STAFF_CODE)
+      if (plate.staff_code_off)
+        steps.push({ say: `${m.business_name}: turn the shared code back on`, run: () => db.from("tap_card_plates").update({ staff_code_off: false, updated_at: new Date().toISOString() }).eq("member_id", m.id) });
+      if (codeFree && plate.staff_code !== DEMO_STAFF_CODE)
         steps.push({ say: `${m.business_name}: staff code ${plate.staff_code ?? "(none)"} → ${DEMO_STAFF_CODE}`, run: () => db.from("tap_card_plates").update({ staff_code: DEMO_STAFF_CODE, updated_at: new Date().toISOString() }).eq("member_id", m.id) });
     }
     const wanted = DEMO_REWARDS[m.slug];
@@ -197,6 +212,8 @@ async function reset() {
   // Earned rewards go with their visit (cascade), but delete them first anyway: a reward row never outlives the reset.
   if (data.earned.length) steps.push({ say: `delete ${data.earned.length} earned rewards at the Sample members`, run: () => db.from("tap_card_earned_rewards").delete().in("member_id", ids) });
   if (data.visits.length) steps.push({ say: `delete ${data.visits.length} visits at the Sample members (Beer Trail offers can be used again)`, run: () => db.from("tap_card_visits").delete().in("member_id", ids) });
+  // Deleting visits only unlinks their activity. Staff names and codes stay.
+  if (data.activity.length) steps.push({ say: `delete ${data.activity.length} staff activity entries at the Sample members`, run: () => db.from("tap_card_staff_activity").delete().in("member_id", ids) });
   if (data.misses.length) steps.push({ say: `clear ${data.misses.length} staff-code misses`, run: () => db.from("tap_card_plate_misses").delete().in("member_id", ids) });
   if (data.demoHolders.length) {
     const year = Number(new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" }).slice(0, 4));

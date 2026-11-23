@@ -38,38 +38,52 @@ describe("parsePendingChoice", () => {
 });
 
 describe("decideStaffQrView", () => {
+  const on = { takesCheckIns: true, plateOpen: true };
   const pending = { memberId: "m1", plateCode: "ABCD2345", choice: { kind: "none" } as const, at: minutesAgo(2) };
 
   it("doesn't know a token that matches no plate", () => {
-    expect(decideStaffQrView({ qrMemberId: null, qrActive: true, signedIn: true, pending, now })).toEqual({ kind: "unknown" });
+    expect(decideStaffQrView({ ...on, qrMemberId: null, qrActive: true, signedIn: true, pending, now })).toEqual({ kind: "unknown" });
   });
   it("sends a signed-out phone back to the plate", () => {
-    expect(decideStaffQrView({ qrMemberId: "m1", qrActive: true, signedIn: false, pending: null, now })).toEqual({ kind: "scan-plate-first" });
+    expect(decideStaffQrView({ ...on, qrMemberId: "m1", qrActive: true, signedIn: false, pending: null, now })).toEqual({ kind: "scan-plate-first" });
   });
   it("refuses a turned-off code, whatever else is true", () => {
     for (const signedIn of [true, false]) {
       for (const waiting of [pending, null]) {
-        expect(decideStaffQrView({ qrMemberId: "m1", qrActive: false, signedIn, pending: waiting, now })).toEqual({ kind: "turned-off" });
+        expect(decideStaffQrView({ ...on, qrMemberId: "m1", qrActive: false, signedIn, pending: waiting, now })).toEqual({ kind: "turned-off" });
       }
     }
     expect(STAFF_QR_TURNED_OFF).toBe("This staff code no longer works. Ask the staff for the current one.");
   });
+  it("still says turned off when the plate is off", () => {
+    expect(decideStaffQrView({ takesCheckIns: true, plateOpen: false, qrMemberId: "m1", qrActive: false, signedIn: true, pending, now })).toEqual({ kind: "turned-off" });
+  });
+  it("is closed when the plate is off and the code works", () => {
+    for (const signedIn of [true, false]) {
+      expect(decideStaffQrView({ takesCheckIns: true, plateOpen: false, qrMemberId: "m1", qrActive: true, signedIn, pending, now })).toEqual({ kind: "closed" });
+    }
+  });
+  it("is closed for a member that doesn't take check-ins, even with a turned-off code", () => {
+    for (const qrActive of [true, false]) {
+      expect(decideStaffQrView({ takesCheckIns: false, plateOpen: false, qrMemberId: "m1", qrActive, signedIn: true, pending, now })).toEqual({ kind: "closed" });
+    }
+  });
   it("needs a plate scan first", () => {
-    expect(decideStaffQrView({ qrMemberId: "m1", qrActive: true, signedIn: true, pending: null, now })).toEqual({ kind: "scan-plate-first" });
+    expect(decideStaffQrView({ ...on, qrMemberId: "m1", qrActive: true, signedIn: true, pending: null, now })).toEqual({ kind: "scan-plate-first" });
   });
   it(`needs the plate scan within ${PENDING_MINUTES} minutes`, () => {
     const stale = { ...pending, at: minutesAgo(PENDING_MINUTES + 1) };
-    expect(decideStaffQrView({ qrMemberId: "m1", qrActive: true, signedIn: true, pending: stale, now })).toEqual({ kind: "scan-plate-first" });
+    expect(decideStaffQrView({ ...on, qrMemberId: "m1", qrActive: true, signedIn: true, pending: stale, now })).toEqual({ kind: "scan-plate-first" });
   });
   it("refuses another brewery's staff QR", () => {
-    expect(decideStaffQrView({ qrMemberId: "m2", qrActive: true, signedIn: true, pending, now })).toEqual({ kind: "wrong-brewery" });
+    expect(decideStaffQrView({ ...on, qrMemberId: "m2", qrActive: true, signedIn: true, pending, now })).toEqual({ kind: "wrong-brewery" });
   });
   it("records a plain check-in straight away", () => {
-    expect(decideStaffQrView({ qrMemberId: "m1", qrActive: true, signedIn: true, pending, now })).toEqual({ kind: "check-in", plateCode: "ABCD2345" });
+    expect(decideStaffQrView({ ...on, qrMemberId: "m1", qrActive: true, signedIn: true, pending, now })).toEqual({ kind: "check-in", plateCode: "ABCD2345" });
   });
   it("asks before using a reward", () => {
     const reward = { ...pending, choice: { kind: "member", id: "r1" } as const };
-    expect(decideStaffQrView({ qrMemberId: "m1", qrActive: true, signedIn: true, pending: reward, now })).toEqual({
+    expect(decideStaffQrView({ ...on, qrMemberId: "m1", qrActive: true, signedIn: true, pending: reward, now })).toEqual({
       kind: "confirm",
       plateCode: "ABCD2345",
       choice: { kind: "member", id: "r1" },

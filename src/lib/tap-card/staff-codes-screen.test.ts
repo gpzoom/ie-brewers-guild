@@ -3,6 +3,8 @@ import type { StaffCodesView } from "@/lib/tap-card/staff-codes-core";
 import {
   NOBODY_CAN_TYPE,
   NOBODY_CAN_TYPE_NOW,
+  PLATE_WILL_BE_OFF,
+  plateIsOff,
   STAFF_QR_GONE,
   endCodesConfirm,
   findByTypedName,
@@ -55,6 +57,31 @@ describe("the last active person with the shared code off", () => {
     expect(nobodyCanType(view({ ...sharedOff, canTurnSharedOff: false }))).toBe(true);
     expect(nobodyCanType(view(sharedOff))).toBe(false);
     expect(nobodyCanType(view({ canTurnSharedOff: false }))).toBe(false);
+  });
+});
+
+describe("the last active person with no shared code", () => {
+  const none = { shared: { code: null, off: false } };
+  it("is warned that the plate goes off", () => {
+    expect(PLATE_WILL_BE_OFF).toBe("After this, your plate will be off: no check-ins until you set up a staff code.");
+    for (const off of [false, true]) {
+      const ask = endCodesConfirm(view({ shared: { code: null, off } }), maria);
+      expect(ask).toBe(`Maria's current QR and 4-digit code will stop working right away.
+
+${PLATE_WILL_BE_OFF}`);
+    }
+  });
+  it("is not warned about when the plate stays on", () => {
+    expect(endCodesConfirm(view(), maria)).not.toContain(PLATE_WILL_BE_OFF);
+    expect(endCodesConfirm(view(sharedOff), maria)).not.toContain(PLATE_WILL_BE_OFF);
+    expect(endCodesConfirm(view({ ...none, staff: [{ ...jake, pin: "1111" }, maria] }), maria)).not.toContain(PLATE_WILL_BE_OFF);
+    expect(endCodesConfirm(view({ ...none, staff: [{ ...maria, pin: null }] }), { ...maria, pin: null })).not.toContain(PLATE_WILL_BE_OFF);
+  });
+  it("keeps showing while true, instead of the nobody-can-type note", () => {
+    expect(plateIsOff(view({ ...none, canTurnSharedOff: false }))).toBe(true);
+    expect(plateIsOff(view(none))).toBe(false);
+    expect(plateIsOff(view({ ...sharedOff, canTurnSharedOff: false }))).toBe(false);
+    expect(nobodyCanType(view({ shared: { code: null, off: true }, canTurnSharedOff: false }))).toBe(false);
   });
 });
 

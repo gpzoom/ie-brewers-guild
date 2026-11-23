@@ -33,6 +33,17 @@ export function totalsText(t: { checkIns: number; rewards: number; undone: numbe
   return parts.join(" · ");
 }
 
+/** Nothing to list. A turned-off QR scan has no counts, so flags keep a row too. */
+export function isActivityEmpty(s: {
+  rows: { checkIns: number; rewards: number; undone: number; flags: Partial<Record<FlagKind, number>> }[];
+  beforeTracking: number;
+}): boolean {
+  return (
+    s.beforeTracking === 0 &&
+    s.rows.every((r) => r.checkIns + r.rewards + r.undone === 0 && Object.values(r.flags).every((n) => n === 0))
+  );
+}
+
 export type ActivityEvent = "check-in" | "reward-used" | "reward-undone" | "turned-off-code";
 
 export function eventLabel(event: ActivityEvent): string {
@@ -58,12 +69,17 @@ export function personName(name: string, removed: boolean): string {
   return removed && name !== "Removed staff" ? `${name} (removed)` : name;
 }
 
-/** "Nov 23, 2:14 PM" in Pacific; "" if the value isn't a date. */
-export function formatActivityTime(iso: string): string {
+function pacificYear(at: Date): string {
+  return new Intl.DateTimeFormat("en-US", { timeZone: TAP_CARD_TZ, year: "numeric" }).format(at);
+}
+
+/** "Nov 23, 2:14 PM" in Pacific, with the year when it isn't this one; "" if the value isn't a date. */
+export function formatActivityTime(iso: string, now: Date): string {
   const ms = Date.parse(iso);
   if (Number.isNaN(ms)) return "";
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: TAP_CARD_TZ,
+    year: "numeric",
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -71,13 +87,16 @@ export function formatActivityTime(iso: string): string {
     hour12: true,
   }).formatToParts(new Date(ms));
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
-  return `${get("month")} ${get("day")}, ${get("hour")}:${get("minute")} ${get("dayPeriod")}`;
+  const year = get("year") === pacificYear(now) ? "" : ` ${get("year")},`;
+  return `${get("month")} ${get("day")},${year} ${get("hour")}:${get("minute")} ${get("dayPeriod")}`;
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** "2026-11-22" -> "Nov 22". */
-export function formatActivityDay(day: string): string {
-  const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(day);
-  return m ? `${MONTHS[Number(m[1]) - 1] ?? ""} ${Number(m[2])}` : day;
+/** "2026-11-22" -> "Nov 22", or "Nov 22, 2026" in another year. */
+export function formatActivityDay(day: string, now: Date): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
+  if (!m) return day;
+  const shown = `${MONTHS[Number(m[2]) - 1] ?? ""} ${Number(m[3])}`;
+  return m[1] === pacificYear(now) ? shown : `${shown}, ${m[1]}`;
 }

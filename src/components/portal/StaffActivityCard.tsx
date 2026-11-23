@@ -14,6 +14,7 @@ import {
   flagText,
   formatActivityDay,
   formatActivityTime,
+  isActivityEmpty,
   methodLabel,
   personName,
   totalsText,
@@ -31,6 +32,8 @@ function errorText(err: unknown) {
   return err instanceof Error ? err.message : "That didn't load. Refresh the page.";
 }
 
+/** An answer, and the range and version it was for. */
+type Answer = { range: ActivityRange; staffVersion: number; summary: ActivitySummary | null; error: string | null };
 type Open = { key: string; items: ActivityItem[]; more: boolean; loading: boolean; error: string | null };
 
 /**
@@ -41,15 +44,14 @@ type Open = { key: string; items: ActivityItem[]; more: boolean; loading: boolea
  */
 export function StaffActivityCard({ memberId, staffVersion }: { memberId: string; staffVersion: number }) {
   const [range, setRange] = useState<ActivityRange>(30);
-  const [summary, setSummary] = useState<ActivitySummary | null>(null);
+  const [answer, setAnswer] = useState<Answer | null>(null);
   const [refused, setRefused] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<Open | null>(null);
   /** Goes up whenever the open row, range or member changes, so a late list never lands on the wrong row. */
   const listToken = useRef(0);
 
   function refuse() {
-    setSummary(null);
+    setAnswer(null);
     setOpen(null);
     setRefused(true);
   }
@@ -60,15 +62,13 @@ export function StaffActivityCard({ memberId, staffVersion }: { memberId: string
     setOpen(null);
     getStaffActivity({ data: { memberId, range } })
       .then((s) => {
-        if (!current) return;
-        setSummary(s);
-        setError(null);
+        if (current) setAnswer({ range, staffVersion, summary: s, error: null });
       })
       .catch((err) => {
         if (!current) return;
         const message = errorText(err);
         if (message === STAFF_CODES_OWNER_ONLY) refuse();
-        else setError(message);
+        else setAnswer({ range, staffVersion, summary: null, error: message });
       });
     return () => {
       current = false;
@@ -114,9 +114,15 @@ export function StaffActivityCard({ memberId, staffVersion }: { memberId: string
     setRange(value === "all" ? "all" : (Number(value) as ActivityRange));
   }
 
-  if (refused || (!summary && !error)) return null;
+  // Hidden until the first answer, in case it's a refusal.
+  if (refused || !answer) return null;
 
-  const empty = summary && summary.rows.every((r) => r.checkIns + r.rewards + r.undone === 0) && summary.beforeTracking === 0;
+  // Never show one range's answer under another.
+  const shown = answer.range === range && answer.staffVersion === staffVersion ? answer : null;
+  const summary = shown?.summary ?? null;
+  const error = shown?.error ?? null;
+  const empty = summary !== null && isActivityEmpty(summary);
+  const now = new Date();
 
   return (
     <section className="flex flex-col gap-4 rounded-[14px] border border-canvas-border bg-white px-4 py-5 md:px-6" aria-labelledby="staff-activity">
@@ -136,6 +142,11 @@ export function StaffActivityCard({ memberId, staffVersion }: { memberId: string
         A flag means it's worth a look. It isn't proof of anything. Busy nights and private events can cause one. Open hours use your
         hours as posted now, so changing them can change older flags.
       </p>
+      {!shown && (
+        <p role="status" className="text-[13px] text-ink-muted">
+          Loading...
+        </p>
+      )}
       {error && (
         <p role="alert" className="text-[13px] text-danger">
           {error}
@@ -149,7 +160,7 @@ export function StaffActivityCard({ memberId, staffVersion }: { memberId: string
             const panelId = `staff-activity-${i}`;
             return (
               <li key={row.key} className="border-t border-canvas-border pt-1">
-                <button type="button" className={rowButtonClass} aria-expanded={isOpen} aria-controls={panelId} onClick={() => toggle(row.key)}>
+                <button type="button" className={rowButtonClass} aria-expanded={isOpen} aria-controls={isOpen ? panelId : undefined} onClick={() => toggle(row.key)}>
                   <span className="min-w-[10rem] text-[14px] font-semibold text-ink">{personName(row.name, row.removed)}</span>
                   <span className="text-[13px] text-ink">{totalsText(row)}</span>
                   <FlagCounts flags={row.flags} />
@@ -178,7 +189,7 @@ export function StaffActivityCard({ memberId, staffVersion }: { memberId: string
           <ul className="flex flex-col gap-1">
             {summary.wrongTries.map((w) => (
               <li key={`${w.customer}|${w.day}`} className="text-[13px] text-ink">
-                {w.customer} · {formatActivityDay(w.day)} · {w.tries} tries
+                {w.customer} · {formatActivityDay(w.day, now)} · {w.tries} tries
               </li>
             ))}
           </ul>
@@ -204,6 +215,7 @@ function FlagCounts({ flags }: { flags: Partial<Record<FlagKind, number>> }) {
 }
 
 function ActivityList({ open, rowKey, onMore }: { open: Open; rowKey: string; onMore: () => void }) {
+  const now = new Date();
   return (
     <div className="flex flex-col gap-2">
       {open.items.length === 0 && !open.loading && !open.error && <p className="text-[13px] text-ink-muted">Nothing to show.</p>}
@@ -212,7 +224,7 @@ function ActivityList({ open, rowKey, onMore }: { open: Open; rowKey: string; on
           const method = methodLabel(item.method, item.event, rowKey);
           return (
             <li key={item.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-t border-canvas-border py-2 text-[13px] text-ink">
-              <span className="font-medium">{formatActivityTime(item.at)}</span>
+              <span className="font-medium">{formatActivityTime(item.at, now)}</span>
               <span>{item.customer}</span>
               <span>{eventLabel(item.event)}</span>
               {method && <span className="text-ink-muted">{method}</span>}
@@ -227,7 +239,7 @@ function ActivityList({ open, rowKey, onMore }: { open: Open; rowKey: string; on
           );
         })}
       </ul>
-      {open.loading && <p className="text-[13px] text-ink-muted">Loading...</p>}
+      {open.loading && <p role="status" className="text-[13px] text-ink-muted">Loading...</p>}
       {open.error && (
         <p role="alert" className="text-[13px] text-danger">
           {open.error}
