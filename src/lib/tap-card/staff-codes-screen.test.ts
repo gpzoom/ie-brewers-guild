@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { StaffCodesView } from "@/lib/tap-card/staff-codes-core";
 import {
   NOBODY_CAN_TYPE,
+  NOBODY_CAN_TYPE_NOW,
   STAFF_QR_GONE,
   endCodesConfirm,
   findByTypedName,
@@ -50,6 +51,7 @@ describe("the last active person with the shared code off", () => {
     expect(endCodesConfirm(view(sharedOff), jake)).toBeNull();
   });
   it("keeps showing while true", () => {
+    expect(NOBODY_CAN_TYPE_NOW).toBe("Nobody can type a code or undo a reward right now. Staff QR codes still work.");
     expect(nobodyCanType(view({ ...sharedOff, canTurnSharedOff: false }))).toBe(true);
     expect(nobodyCanType(view(sharedOff))).toBe(false);
     expect(nobodyCanType(view({ canTurnSharedOff: false }))).toBe(false);

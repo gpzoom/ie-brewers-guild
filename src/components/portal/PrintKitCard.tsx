@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getCounterPlate } from "@/lib/tap-card/plate.server";
 import { getStaffCodes, type StaffCodesView } from "@/lib/tap-card/staff-codes.server";
 import { STAFF_CODES_OWNER_ONLY } from "@/lib/tap-card/staff-codes";
@@ -47,17 +47,34 @@ function saveFile(bytes: Uint8Array, name: string) {
 export function PrintKitCard({ memberId, staffVersion }: { memberId: string; staffVersion: number }) {
   const [busy, setBusy] = useState<KitPiece | null>(null);
   const [error, setError] = useState<string | null>(null);
-  /** Whose QR can be printed; null hides "Staff cards" (still loading, or a full editor). */
+  /** Whose QR can be printed; null hides "Staff cards" (not loaded, or a full editor). */
   const [people, setPeople] = useState<Person[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [staffId, setStaffId] = useState("");
   const chosenId = people?.some((p) => p.id === staffId) ? staffId : "";
+
+  /** False once this card is gone (left the page, or another member chosen): nothing is saved after that. */
+  const shown = useRef(true);
+  useEffect(() => {
+    shown.current = true;
+    return () => {
+      shown.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     let current = true;
     getStaffCodes({ data: { memberId } })
-      .then((v) => current && setPeople(withQr(v)))
-      // Not a permission problem: still offer the button, which says what's wrong.
-      .catch((err) => current && setPeople((now) => (isOwnerOnly(err) ? null : (now ?? []))));
+      .then((v) => {
+        if (!current) return;
+        setPeople(withQr(v));
+        setLoadError(null);
+      })
+      .catch((err) => {
+        if (!current) return;
+        setPeople(null);
+        setLoadError(isOwnerOnly(err) ? null : err instanceof Error ? err.message : "That didn't load. Refresh the page.");
+      });
     return () => {
       current = false;
     };
@@ -92,18 +109,22 @@ export function PrintKitCard({ memberId, staffVersion }: { memberId: string; sta
       };
       const images = { guildLogoPng, memberLogoPng };
       if (staffCodes) {
+        if (!shown.current) return;
         setPeople(withQr(staffCodes));
         const card = staffCardChoice(staffCodes, printFor);
-        saveFile(await render.buildStaffCardsPdf({ ...input, ...card }, fonts, images), kitFileName(piece, info.memberSlug, card.staffName));
+        const pdf = await render.buildStaffCardsPdf({ ...input, ...card }, fonts, images);
+        if (shown.current) saveFile(pdf, kitFileName(piece, info.memberSlug, card.staffName));
       } else {
         const build = piece === "counter-card" ? render.buildCounterCardsPdf : render.buildTableTentPdf;
-        saveFile(await build(input, fonts, images), kitFileName(piece, info.memberSlug));
+        const pdf = await build(input, fonts, images);
+        if (shown.current) saveFile(pdf, kitFileName(piece, info.memberSlug));
       }
     } catch (err) {
+      if (!shown.current) return;
       if (isOwnerOnly(err)) setPeople(null);
       setError(kitErrorMessage(err));
     } finally {
-      setBusy(null);
+      if (shown.current) setBusy(null);
     }
   }
 
@@ -148,6 +169,11 @@ export function PrintKitCard({ memberId, staffVersion }: { memberId: string; sta
             {busy === "staff-cards" ? "Making your PDF…" : "Staff cards"}
           </button>
         </div>
+      )}
+      {loadError && (
+        <p role="alert" className="text-[13px] text-danger">
+          {loadError}
+        </p>
       )}
       {error && (
         <p role="alert" className="text-[13px] text-danger">

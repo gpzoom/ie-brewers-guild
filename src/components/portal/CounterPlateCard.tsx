@@ -28,7 +28,11 @@ export function CounterPlateCard({ memberId, staffVersion }: { memberId: string;
   useEffect(() => {
     const load = ++latest.current;
     getCounterPlate({ data: { memberId } })
-      .then((p) => load === latest.current && setPlate(p))
+      .then((p) => {
+        if (load !== latest.current) return;
+        setPlate(p);
+        setError(null);
+      })
       .catch((err) => load === latest.current && setError(errorText(err)));
   }, [memberId, staffVersion]);
 
@@ -83,7 +87,7 @@ export function CounterPlateCard({ memberId, staffVersion }: { memberId: string;
           <div className="text-[13px] text-ink">
             Plate code <span className="font-semibold">{plate.printedCode}</span>
           </div>
-          {!plate.plateOn && <p className="text-[13px] font-medium text-ink">Set up a staff code to turn your plate on.</p>}
+          {!plate.plateOn && <p className="text-[13px] font-medium text-ink">Your plate is off until the owner or a co-owner sets up a staff code.</p>}
           <code className="break-all text-[12px] text-ink">{plate.url}</code>
           <div className="flex flex-wrap gap-2">
             {qr && (

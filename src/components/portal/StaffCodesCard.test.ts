@@ -5,7 +5,7 @@ import type { StaffCodesView } from "@/lib/tap-card/staff-codes-core";
 
 vi.mock("@/lib/tap-card/staff-codes.server", () => ({}));
 const { StaffCodesBox } = await import("./StaffCodesCard");
-const { NOBODY_CAN_TYPE } = await import("@/lib/tap-card/staff-codes-screen");
+const { NOBODY_CAN_TYPE_NOW } = await import("@/lib/tap-card/staff-codes-screen");
 
 const LIVE_NOTE = "The live site keeps accepting the shared code until this feature goes live.";
 const qr = (printed: string) => ({ url: `https://example.com/s/${printed}`, printed });
@@ -18,12 +18,12 @@ const view: StaffCodesView = {
   ],
   canTurnSharedOff: true,
 };
-const render = (over: Partial<StaffCodesView> = {}) =>
+const render = (over: Partial<StaffCodesView> = {}, busy = false) =>
   renderToStaticMarkup(
     createElement(StaffCodesBox, {
       memberId: "x",
       view: { ...view, ...over },
-      busy: false,
+      busy,
       run: async () => true,
       onDownload: () => undefined,
     }),
@@ -56,8 +56,14 @@ describe("StaffCodesBox", () => {
     expect(render()).not.toContain(LIVE_NOTE);
     const off = render({ shared: { code: "2580", off: true } });
     expect(off).toContain(LIVE_NOTE);
-    expect(off).not.toContain(NOBODY_CAN_TYPE);
+    expect(off).not.toContain(NOBODY_CAN_TYPE_NOW);
     expect(off).toContain("Turn on");
-    expect(render({ shared: { code: "2580", off: true }, canTurnSharedOff: false })).toContain(NOBODY_CAN_TYPE);
+    expect(render({ shared: { code: "2580", off: true }, canTurnSharedOff: false })).toContain(NOBODY_CAN_TYPE_NOW);
+  });
+
+  it("locks the shared code while something is saving", () => {
+    const input = (html: string) => /<input[^>]*inputMode="numeric"[^>]*>/i.exec(html)![0];
+    expect(input(render())).not.toContain("disabled");
+    expect(input(render({}, true))).toContain("disabled");
   });
 });

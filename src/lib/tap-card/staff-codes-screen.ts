@@ -7,6 +7,8 @@ type Person = StaffCodesView["staff"][number];
 
 export const COUNTER_REPLACE_CONFIRM = "Make a new staff QR code? The one you have now will stop working right away.";
 export const NOBODY_CAN_TYPE = "After this, nobody can type a code or undo a reward. Staff QR codes will still work.";
+/** The same, while it lasts. */
+export const NOBODY_CAN_TYPE_NOW = "Nobody can type a code or undo a reward right now. Staff QR codes still work.";
 export const SHARED_OFF_LIVE_NOTE = "The live site keeps accepting the shared code until this feature goes live.";
 export const STAFF_QR_GONE = "That staff QR was turned off. Choose another.";
 

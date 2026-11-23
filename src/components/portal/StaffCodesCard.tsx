@@ -14,7 +14,7 @@ import {
 import { STAFF_CODES_OWNER_ONLY } from "@/lib/tap-card/staff-codes";
 import {
   COUNTER_REPLACE_CONFIRM,
-  NOBODY_CAN_TYPE,
+  NOBODY_CAN_TYPE_NOW,
   SHARED_OFF_LIVE_NOTE,
   endCodesConfirm,
   findByTypedName,
@@ -318,6 +318,7 @@ function SharedCodeRow({ memberId, view, busy, run }: Omit<BoxProps, "onDownload
             inputMode="numeric"
             autoComplete="off"
             maxLength={4}
+            disabled={busy}
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
           />
@@ -347,7 +348,7 @@ function SharedCodeRow({ memberId, view, busy, run }: Omit<BoxProps, "onDownload
         <p className="text-[12px] text-ink-muted">To turn the shared code off, give at least one staff member their own code first.</p>
       )}
       {shared.off && <p className="text-[12px] text-ink-muted">{SHARED_OFF_LIVE_NOTE}</p>}
-      {nobodyCanType(view) && <p className={noticeClass}>{NOBODY_CAN_TYPE}</p>}
+      {nobodyCanType(view) && <p className={noticeClass}>{NOBODY_CAN_TYPE_NOW}</p>}
     </div>
   );
 }
