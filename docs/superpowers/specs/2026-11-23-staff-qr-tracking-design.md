@@ -1,6 +1,6 @@
 # Named staff QR codes with activity tracking: design
 
-Owner request 2026-11-23. Status: draft for owner approval.
+Owner request 2026-11-23. Status: approved by the owner 2026-11-23.
 
 ## Why
 
