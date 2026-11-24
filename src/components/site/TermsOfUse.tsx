@@ -62,7 +62,10 @@ export function TermsOfUse() {
       <LegalSection title="Your content">
         <p>
           <strong>You keep ownership</strong> of everything you add to your profile: your logo, photos,
-          descriptions, events, discounts and job postings ("your content").
+          descriptions, events, discounts, job postings and marketplace listings ("your content").
+        </p>
+        <p>
+          The Guild won't feature marketplace listings outside the marketplace.
         </p>
         <p>
           You give the Guild permission, free of charge, to store, display, resize and format your
@@ -87,14 +90,16 @@ export function TermsOfUse() {
 
       <LegalSection title="Keeping it accurate and lawful">
         <p>
-          You are responsible for keeping your hours, events, discounts and job postings accurate and up
+          You are responsible for keeping your hours, events, discounts, job postings and marketplace
+          listings accurate and up
           to date. Your content must not be false or misleading, must not infringe anyone's rights, and
           must follow the law, including the rules on advertising alcohol and not appealing to people
           under 21. Beer-related content must also follow the Brewers Association Advertising and
           Marketing Code.
         </p>
         <p>
-          The Guild monitors member content, including photos, events and job postings, for these rules
+          The Guild monitors member content, including photos, events, job postings and marketplace
+          listings, for these rules
           after it's posted.
           We may edit, hide, unpublish or remove content that breaks these terms, or that we reasonably
           believe could harm the Guild, its members or the public.
@@ -114,6 +119,15 @@ export function TermsOfUse() {
           Job postings come from members. The Guild isn't the employer and isn't part of hiring: job
           seekers apply to, and deal directly with, the member who posted the job. Members who post jobs
           are responsible for following employment laws.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="Marketplace">
+        <p>
+          Marketplace listings come from Producer members and are seen only by Producers and the Guild. The
+          Guild isn't the buyer, seller or broker, doesn't handle payment, and doesn't inspect or guarantee
+          anything listed. Members deal directly with each other and are responsible for their own listings,
+          sales and taxes. Alcohol can't be listed.
         </p>
       </LegalSection>
 
