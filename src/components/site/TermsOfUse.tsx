@@ -65,14 +65,14 @@ export function TermsOfUse() {
           descriptions, events, discounts, job postings and marketplace listings ("your content").
         </p>
         <p>
-          The Guild won't feature marketplace listings outside the marketplace.
-        </p>
-        <p>
           You give the Guild permission, free of charge, to store, display, resize and format your
           content on the website, and to feature it on the Guild's social media, in its newsletters and
           emails, and in event promotion, always with credit to your business. This permission lasts
           while your profile is on the site. Things already shared before your profile was removed, such
           as a past newsletter, may stay where they are.
+        </p>
+        <p>
+          The Guild won't feature marketplace listings outside the marketplace.
         </p>
         <p>
           You can opt out of uses beyond the website at any time by emailing <LegalEmail />. We'll stop
