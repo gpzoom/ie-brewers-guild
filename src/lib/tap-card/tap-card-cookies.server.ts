@@ -182,11 +182,11 @@ export function setTrailJoinCookie(value: string): void {
 }
 
 /** The sign-up this browser started (cookie), if any. */
-export async function readTrailJoin(service: SupabaseClient): Promise<{ id: string; email: string; memberId: string | null; plateCode: string | null; createdAt: Date } | null> {
+export async function readTrailJoin(service: SupabaseClient): Promise<{ id: string; email: string; memberId: string | null; plateCode: string | null; optIn: boolean; createdAt: Date } | null> {
   const raw = getCookie(TRAIL_JOIN_COOKIE);
   const [id, plateCode] = (raw ?? "").split(".");
   if (!id || !/^[0-9a-f-]{36}$/.test(id)) return null;
-  const { data, error } = await service.from("tap_card_trail_joins").select("id, email, member_id, created_at").eq("id", id).maybeSingle();
+  const { data, error } = await service.from("tap_card_trail_joins").select("id, email, member_id, opt_in, created_at").eq("id", id).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
   return {
@@ -194,6 +194,7 @@ export async function readTrailJoin(service: SupabaseClient): Promise<{ id: stri
     email: data.email as string,
     memberId: (data.member_id as string | null) ?? null,
     plateCode: plateCode && normalizeCardCode(plateCode) ? normalizeCardCode(plateCode) : null,
+    optIn: data.opt_in === true,
     createdAt: new Date(data.created_at as string),
   };
 }

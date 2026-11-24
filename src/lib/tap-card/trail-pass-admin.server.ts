@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
 import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
 import { monthlyCommission, type CommissionRow, type PassRow } from "@/lib/tap-card/trail-pass-report";
-import { emptyCard } from "@/lib/tap-card/trail-pass-core";
+import { removeCardIfEmpty } from "@/lib/tap-card/trail-repair.server";
 
 /** Beer Trail Pass sales and commission (spec 2026-11-19). Guild sees everything; a brewery sees its own counts. */
 
@@ -218,30 +218,5 @@ export const movePassToCard = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const old = pass.holder_id as string | null;
     if (!old) return { ok: true, removedOldCard: false };
-    const count = async (table: string) => {
-      const { count: n, error: e } = await service.from(table).select("holder_id", { count: "exact", head: true }).eq("holder_id", old);
-      if (e) throw new Error(e.message);
-      return n ?? 0;
-    };
-    const [visits, cards, passes, earned, milestones] = await Promise.all([
-      count("tap_card_visits"),
-      count("tap_cards"),
-      count("tap_card_trail_passes"),
-      count("tap_card_earned_rewards"),
-      count("tap_card_rewards"),
-    ]);
-    if (!emptyCard({ visits, cards, passes, earned, milestones })) return { ok: true, removedOldCard: false };
-    // Keep any "email me" opt-ins: they belong to the person, now on the right card.
-    const { data: subs, error: sError } = await service.from("tap_card_member_subscribers").select("member_id, opted_in_at").eq("holder_id", old);
-    if (sError) throw new Error(sError.message);
-    if ((subs ?? []).length > 0) {
-      const { error: uError } = await service.from("tap_card_member_subscribers").upsert(
-        (subs ?? []).map((s) => ({ member_id: s.member_id, holder_id: target.id, opted_in_at: s.opted_in_at })),
-        { onConflict: "member_id,holder_id", ignoreDuplicates: true },
-      );
-      if (uError) throw new Error(uError.message);
-    }
-    const { error: dError } = await service.from("tap_card_holders").delete().eq("id", old);
-    if (dError) throw new Error(dError.message);
-    return { ok: true, removedOldCard: true };
+    return { ok: true, removedOldCard: await removeCardIfEmpty(service, old, target.id as string) };
   });

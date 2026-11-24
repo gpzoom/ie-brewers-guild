@@ -3,6 +3,7 @@ import { safeHolderNext } from "@/lib/tap-card/plate";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { hashUploadToken } from "@/lib/media/upload-tokens";
 import { sendHolderSignInLink, signInCodeStore } from "@/lib/tap-card/holder-signin.server";
+import { repairTrailJoin } from "@/lib/tap-card/trail-repair.server";
 import { SIGNIN_CODE_MAX_TRIES, normalizeSignInCode, verifySignInCode } from "@/lib/tap-card/signin-code";
 import { isHoneypotTripped } from "@/lib/contact/contact-form-validation";
 import { SOMETHING_WRONG, rateLimitMessage } from "@/lib/join/join-guards.server";
@@ -74,7 +75,7 @@ export const signInWithCode = createServerFn({ method: "POST" })
       const result = await verifySignInCode(signInCodeStore(service, holder.id), data.code);
       switch (result.kind) {
         case "ok":
-          await startHolderSession(holder.id);
+          await startHolderSession(await repairTrailJoin(service, holder.id));
           return { kind: "ok" };
         case "wrong":
           return { kind: "error", message: `That code isn't right. ${result.triesLeft} ${result.triesLeft === 1 ? "try" : "tries"} left.` };
@@ -109,7 +110,7 @@ export const consumeHolderLogin = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const holderId = rows?.[0]?.holder_id;
     if (!holderId) return { ok: false };
-    await startHolderSession(holderId);
+    await startHolderSession(await repairTrailJoin(service, holderId));
     return { ok: true };
   });
 
