@@ -14,7 +14,7 @@ describe("Privacy Policy", () => {
     expect(t).toContain("Inland Southern California Brewers Guild");
     expect(t).toContain("501(c)(6)");
     expect(html).toContain("mailto:legal@iscbrewersguild.org");
-    expect(t).toContain("Effective November 17, 2026");
+    expect(t).toContain("Effective November 24, 2026");
   });
 
   it("covers what California's CalOPPA asks for", () => {
@@ -60,7 +60,7 @@ describe("Terms of Use", () => {
     expect(t).toContain("21");
     expect(html).toContain("mailto:legal@iscbrewersguild.org");
     expect(t).toContain("San Bernardino County");
-    expect(t).toContain("Effective November 17, 2026");
+    expect(t).toContain("Effective November 24, 2026");
   });
 
   it("member content: ownership, reuse beyond the website with credit, and the opt-out (decision B)", () => {
