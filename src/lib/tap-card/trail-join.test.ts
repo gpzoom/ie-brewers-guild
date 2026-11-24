@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeCampaignYear, joinPageUrl, validateTrailJoin } from "@/lib/tap-card/trail-join";
+import { activeCampaignYear, joinedWaitStep, joinPageUrl, validateTrailJoin } from "@/lib/tap-card/trail-join";
 
 describe("joinPageUrl", () => {
   it("carries the plate so the sale is credited to that brewery", () => {
@@ -13,6 +13,15 @@ describe("validateTrailJoin", () => {
     expect(validateTrailJoin({ email: "pat@example.test", ageConfirmed: true })).toEqual({});
     expect(validateTrailJoin({ email: "nope", ageConfirmed: true })).toEqual({ email: "Enter a valid email address." });
     expect(validateTrailJoin({ email: "pat@example.test", ageConfirmed: false })).toEqual({ ageConfirmed: "You must be 21 or older to join." });
+  });
+});
+
+describe("joinedWaitStep", () => {
+  it("offers the different-email help at 15 seconds, and stops checking at 55", () => {
+    expect(joinedWaitStep(3)).toEqual({ checkAgain: true, emailHelp: false });
+    expect(joinedWaitStep(4)).toEqual({ checkAgain: true, emailHelp: true });
+    expect(joinedWaitStep(11)).toEqual({ checkAgain: true, emailHelp: true });
+    expect(joinedWaitStep(12)).toEqual({ checkAgain: false, emailHelp: true });
   });
 });
 

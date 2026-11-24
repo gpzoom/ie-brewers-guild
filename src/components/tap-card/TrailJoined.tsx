@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { finishTrailJoin, type TrailJoinedResult } from "@/lib/tap-card/trail-join.server";
+import { JOINED_EVERY_MS, joinedWaitStep } from "@/lib/tap-card/trail-join";
 import { requestHolderSignIn } from "@/lib/tap-card/holder.server";
 import { CanvasHeading, fieldErrorClass, inputClass, labelClass, leadClass, primaryButtonClass } from "@/components/public-forms/PublicFormParts";
 import { SignInCodeForm } from "@/components/tap-card/SignInCodeForm";
 
-const TRIES = 12;
-const EVERY_MS = 5000;
-
 /** Email a sign-in code, then type it in. */
-export function CodeSignIn({ initialEmail, next, intro }: { initialEmail: string; next: string; intro: string }) {
+export function CodeSignIn({ initialEmail, next, intro, onSent }: { initialEmail: string; next: string; intro: string; onSent?: () => void }) {
   const [email, setEmail] = useState(initialEmail);
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -20,8 +18,11 @@ export function CodeSignIn({ initialEmail, next, intro }: { initialEmail: string
     setError(null);
     try {
       const result = await requestHolderSignIn({ data: { email, website: "", next } });
-      if (result.kind === "check-email") setSent(true);
-      else setError(result.message);
+      if (result.kind === "check-email") {
+        setSent(true);
+        onSent?.();
+      }
+      if (result.kind === "error") setError(result.message);
     } catch {
       setError("That didn't work. Try again.");
     } finally {
@@ -29,7 +30,16 @@ export function CodeSignIn({ initialEmail, next, intro }: { initialEmail: string
     }
   }
 
-  if (sent) return <SignInCodeForm email={email} onSignedIn={() => window.location.assign(next)} />;
+  if (sent) {
+    return (
+      <>
+        <SignInCodeForm email={email} onSignedIn={() => window.location.assign(next)} />
+        <button type="button" className="mt-3 w-fit text-[14px] font-medium text-ink-muted underline underline-offset-2" onClick={() => setSent(false)}>
+          Send a new code or use a different email
+        </button>
+      </>
+    );
+  }
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3">
       <p className={leadClass}>{intro}</p>
@@ -51,8 +61,10 @@ export function CodeSignIn({ initialEmail, next, intro }: { initialEmail: string
 
 /** /trail/joined: back from Zeffy. Finishes the sign-up, then opens the brewery's plate. */
 export function TrailJoined() {
-  const [state, setState] = useState<TrailJoinedResult | { kind: "gave-up" } | { kind: "error" } | null>(null);
+  const [state, setState] = useState<TrailJoinedResult | { kind: "email-help"; next: string } | { kind: "error" } | null>(null);
   const tries = useRef(0);
+  // Once a code is on its way, the form stays put while they type it (a late payment still signs them in).
+  const codeSent = useRef(false);
 
   useEffect(() => {
     let stopped = false;
@@ -67,16 +79,15 @@ export function TrailJoined() {
           return;
         }
         if (result.kind === "waiting") {
-          if (tries.current >= TRIES) setState({ kind: "gave-up" });
-          else {
-            setState(result);
-            timer = window.setTimeout(attempt, EVERY_MS);
-          }
+          const step = joinedWaitStep(tries.current);
+          if (!codeSent.current) setState(step.emailHelp ? { kind: "email-help", next: result.next } : result);
+          if (step.checkAgain) timer = window.setTimeout(attempt, JOINED_EVERY_MS);
           return;
         }
-        setState(result);
+        if (!codeSent.current) setState(result);
       } catch {
-        if (!stopped) setState({ kind: "error" });
+        // Once the email form is up, a failed check leaves it alone.
+        if (!stopped) setState((s) => (s?.kind === "email-help" ? s : { kind: "error" }));
       }
     }
     void attempt();
@@ -108,14 +119,17 @@ export function TrailJoined() {
       </>
     );
   }
-  if (state.kind === "gave-up" || state.kind === "error") {
+  if (state.kind === "email-help" || state.kind === "error") {
     return (
       <>
-        <CanvasHeading size="md">Thanks for joining!</CanvasHeading>
+        <CanvasHeading size="md">Did you use a different email on the payment page?</CanvasHeading>
         <CodeSignIn
           initialEmail=""
-          next="/card"
-          intro="We haven't heard back from the payment page yet. Enter the email you paid with and we'll email you a sign-in code. If it doesn't arrive, wait a minute and try again."
+          next={state.kind === "email-help" ? state.next : "/card"}
+          intro="If you already paid, there's no need to pay again. Enter the email you used on the payment page and we'll email you a sign-in code. If it doesn't arrive, wait a minute and try again."
+          onSent={() => {
+            codeSent.current = true;
+          }}
         />
       </>
     );

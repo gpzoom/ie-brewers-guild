@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { startTrailJoin, type TrailJoinPage } from "@/lib/tap-card/trail-join.server";
 import { CanvasHeading, fieldErrorClass, inputClass, labelClass, leadClass, primaryButtonClass } from "@/components/public-forms/PublicFormParts";
 import { Eyebrow } from "@/components/tap-card/TapCardShell";
+import { PaymentEmailStep } from "@/components/tap-card/PaymentEmailStep";
 import { LegalNotice } from "@/components/site/LegalNotice";
 
 /** /trail/join: email, 21+, and (from a brewery's plate) that brewery's email opt-in; then on to Zeffy to pay. */
@@ -12,6 +13,12 @@ export function TrailJoinForm({ page }: { page: TrailJoinPage }) {
   const [website, setWebsite] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ message: string; field?: "email" | "ageConfirmed" } | null>(null);
+
+  const [payment, setPayment] = useState<{ url: string; email: string } | null>(null);
+
+  if (payment) {
+    return <PaymentEmailStep email={payment.email} url={payment.url} emailLocked={page.emailLocked} onChangeEmail={() => setPayment(null)} />;
+  }
 
   if (!page.open) {
     return (
@@ -29,7 +36,8 @@ export function TrailJoinForm({ page }: { page: TrailJoinPage }) {
     try {
       const result = await startTrailJoin({ data: { plateCode: page.plateCode, email, ageConfirmed, optIn, website } });
       if (result.kind === "go") {
-        window.location.assign(result.url);
+        setPayment({ url: result.url, email: result.email });
+        setBusy(false);
         return;
       }
       setError({ message: result.message, field: result.field });

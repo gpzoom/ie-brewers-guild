@@ -37,7 +37,7 @@ export const startTrailJoin = createServerFn({ method: "POST" })
     optIn: data?.optIn === true,
     website: String(data?.website ?? ""),
   }))
-  .handler(async ({ data }): Promise<{ kind: "go"; url: string } | { kind: "error"; message: string; field?: "email" | "ageConfirmed" }> => {
+  .handler(async ({ data }): Promise<{ kind: "go"; url: string; email: string } | { kind: "error"; message: string; field?: "email" | "ageConfirmed" }> => {
     try {
       // Signed in: the pass goes on this card, whatever was typed.
       const holderId = await readHolderId();
@@ -54,7 +54,7 @@ export const startTrailJoin = createServerFn({ method: "POST" })
       const service = await getSupabaseServiceRoleClient();
       const campaign = await activeCampaign(service);
       if (!campaign) return { kind: "error", message: "The Beer Trail isn't taking sign-ups right now." };
-      if (isHoneypotTripped(data.website)) return { kind: "go", url: campaign.formUrl };
+      if (isHoneypotTripped(data.website)) return { kind: "go", url: campaign.formUrl, email: data.email };
       const plate = await plateMember(service, data.plateCode);
       const { data: join, error } = await service
         .from("tap_card_trail_joins")
@@ -64,14 +64,14 @@ export const startTrailJoin = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       // Names this browser's sign-up, so the return page can finish it. A random id: the key to auto sign-in.
       setTrailJoinCookie(`${join.id}.${plate?.code ?? ""}`);
-      return { kind: "go", url: campaign.formUrl };
+      return { kind: "go", url: campaign.formUrl, email: data.email };
     } catch (err) {
       console.error("startTrailJoin failed", err instanceof Error ? err.message : String(err));
       return { kind: "error", message: SOMETHING_WRONG };
     }
   });
 
-export type TrailJoinedResult = { kind: "no-join" } | { kind: "waiting" } | { kind: "signed-in"; next: string } | { kind: "need-code"; email: string; next: string };
+export type TrailJoinedResult = { kind: "no-join" } | { kind: "waiting"; next: string } | { kind: "signed-in"; next: string } | { kind: "need-code"; email: string; next: string };
 
 /**
  * /trail/joined: finish this browser's sign-up. Doesn't wait for the webhook --
@@ -112,5 +112,7 @@ export const finishTrailJoin = createServerFn({ method: "POST" }).handler(async 
     clearTrailJoin();
     return { kind: "signed-in", next: view.next };
   }
+  // They may have paid with another email: after that sign-in, back to the brewery's plate.
+  if (view.kind === "waiting") return { kind: "waiting", next: join.plateCode ? `/t/${join.plateCode}` : "/card" };
   return view;
 });
