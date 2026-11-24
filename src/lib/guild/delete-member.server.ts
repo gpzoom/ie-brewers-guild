@@ -4,8 +4,8 @@ import { getSupabaseServerClientForRequest, getSupabaseServiceRoleClient } from 
 import { clearImpersonationCookie, readImpersonationState } from "@/lib/guild/impersonation.server";
 import { requireSuperAdmin } from "@/lib/auth/super-admin";
 
-/** Both buckets store a member's files under `{member_id}/...`. */
-export const MEMBER_STORAGE_BUCKETS = ["member-media", "member-logos"] as const;
+/** These buckets store a member's files under `{member_id}/...`. */
+export const MEMBER_STORAGE_BUCKETS = ["member-media", "member-logos", "marketplace-photos"] as const;
 
 const STORAGE_PAGE_SIZE = 100;
 const STORAGE_REMOVE_BATCH = 100;

@@ -100,6 +100,7 @@ export function GuildShell({
   const membersActive = isActivePath(pathname, "/guild/roster");
   const brandActive = isActivePath(pathname, "/guild/brand");
   const categoriesActive = isActivePath(pathname, "/guild/categories");
+  const marketplaceActive = isActivePath(pathname, "/guild/marketplace");
   const adminsActive = isActivePath(pathname, "/guild/admins");
   const broadcastActive = isActivePath(pathname, "/guild/broadcast");
   const auditActive = isActivePath(pathname, "/guild/audit");
@@ -191,6 +192,14 @@ export function GuildShell({
             className={sidebarItemClass(categoriesActive)}
           >
             Categories
+          </Link>
+
+          <Link
+            to="/guild/marketplace"
+            aria-current={marketplaceActive ? "page" : undefined}
+            className={sidebarItemClass(marketplaceActive)}
+          >
+            Marketplace
           </Link>
 
           {isSuperAdmin && (

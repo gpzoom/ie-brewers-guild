@@ -26,6 +26,7 @@ import {
   isPortalSection,
   type PortalSection,
 } from "@/lib/portal/portal-sections";
+import { loadMarketplaceSection } from "@/lib/marketplace/marketplace.server";
 import { supabasePeopleStore } from "@/lib/portal/people-store.server";
 import { loadPeople } from "@/lib/portal/people";
 import { actorFor } from "@/lib/portal/portal-people.server";
@@ -148,6 +149,7 @@ export type PortalSectionData =
     })
   | ({ section: "food" } & Loaded<typeof loadFoodSection>)
   | ({ section: "jobs" } & Loaded<typeof loadJobsSection>)
+  | { section: "marketplace"; marketplace: Awaited<ReturnType<typeof loadMarketplaceSection>> }
   | ({ section: "discount" } & Loaded<typeof loadDiscountSection>)
   | ({ section: "people" } & Loaded<typeof loadPeople>);
 
@@ -203,6 +205,8 @@ export const getPortalSectionData = createServerFn({ method: "GET" })
         return { section: "food", ...(await loadFoodSection(supabase, id)) };
       case "jobs":
         return { section: "jobs", ...(await loadJobsSection(supabase, id)) };
+      case "marketplace":
+        return { section: "marketplace", marketplace: await loadMarketplaceSection(supabase, id) };
       case "discount":
         return { section: "discount", ...(await loadDiscountSection(supabase, id)) };
       case "people": {

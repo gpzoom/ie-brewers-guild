@@ -12,6 +12,7 @@ import { DiscountEditor } from "@/components/admin/DiscountEditor";
 import { SupplyCategoriesPicker } from "@/components/admin/SupplyCategoriesPicker";
 import { ThemePicker } from "@/components/admin/ThemePicker";
 import { JobsEditor } from "@/components/admin/JobsEditor";
+import { MarketplaceSection } from "@/components/marketplace/MarketplaceSection";
 import { SaveNoteText } from "@/components/admin/SaveNote";
 import { InfoBox } from "@/components/admin/basics/ui";
 import { canConnectCalendar } from "@/components/portal/setup/SectionSteps";
@@ -205,6 +206,15 @@ export function PortalSectionView({
 
     case "jobs":
       return <JobsEditor memberId={shell.memberId} initialJobs={data.jobs} />;
+
+    case "marketplace":
+      return (
+        <MarketplaceSection
+          memberId={shell.memberId}
+          isPublished={shell.status === "published"}
+          initial={data.marketplace}
+        />
+      );
 
     case "discount":
       return (

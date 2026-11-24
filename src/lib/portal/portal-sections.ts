@@ -16,6 +16,7 @@ import type { CompletenessStep } from "@/lib/portal/section-completeness";
  *   food         yes    yes       yes     --        (Producers only: the food truck calendar)
  *   links        yes    yes       yes     --
  *   jobs         yes    yes       yes     yes       (every member type: the Jobs board)
+ *   marketplace  yes    yes       yes     --        (Producers only: classified ads between Producers)
  *   discount     yes    yes       yes     --        (Affiliate Members only)
  *   theme        yes    yes       yes     --
  *   people       yes    yes       --      --        (also the business manager on a handed-off location)
@@ -33,6 +34,7 @@ export const PORTAL_SECTIONS = [
   "food",
   "links",
   "jobs",
+  "marketplace",
   "discount",
   "theme",
   "people",
@@ -52,6 +54,7 @@ export const PORTAL_SECTION_LABELS: Record<PortalSection, { label: string; short
   food: { label: "Food", short: "Food" },
   links: { label: "Links & contact", short: "Links" },
   jobs: { label: "Jobs", short: "Jobs" },
+  marketplace: { label: "Marketplace", short: "Market" },
   discount: { label: "Discount & supplies", short: "Discount" },
   theme: { label: "Theme", short: "Theme" },
   people: { label: "People", short: "People" },
@@ -68,6 +71,7 @@ export function canOpenPortalSection(
 ): boolean {
   if (section === "discount" && viewer.memberType !== "allied") return false;
   if (section === "food" && viewer.memberType !== "producer") return false;
+  if (section === "marketplace" && viewer.memberType !== "producer") return false;
   if (viewer.role === "media_events") return MEDIA_EVENTS_SECTIONS.includes(section);
   if (section === "people") return isOwnerLevel(viewer.role) || viewer.isBusinessManager === true;
   return true;

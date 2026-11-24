@@ -149,6 +149,7 @@ const ADMIN_PATHS: Record<string, string> = {
   food: "/admin/food",
   links: "/admin/links",
   jobs: "/admin/jobs",
+  marketplace: "/admin/marketplace",
   discount: "/admin/discount",
   theme: "/admin/theme",
   notifications: "/admin/notifications",

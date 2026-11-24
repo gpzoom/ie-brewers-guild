@@ -51,6 +51,14 @@ const FOOD_NAV_ITEM: ShellNavItem = {
   match: ["/admin/food"],
 };
 
+// Producers only: classified ads between Producers, after Jobs.
+const MARKETPLACE_NAV_ITEM: ShellNavItem = {
+  to: "/admin/marketplace",
+  label: "Marketplace",
+  short: "Market",
+  match: ["/admin/marketplace"],
+};
+
 // /admin has no People page of its own; this goes to the portal's, which
 // opens for the owner and for a Guild admin editing as the member.
 const PEOPLE_NAV_ITEM: ShellNavItem = {
@@ -62,7 +70,7 @@ const PEOPLE_NAV_ITEM: ShellNavItem = {
 
 /**
  * /admin's sections for this member: a producer also gets Food, after
- * Events; `people` (canInvitePeople) adds People at the end.
+ * Events, and Marketplace, after Jobs; `people` (canInvitePeople) adds People at the end.
  */
 export function adminNavItemsFor(
   memberType: MemberType | null | undefined,
@@ -71,7 +79,14 @@ export function adminNavItemsFor(
   let items: readonly ShellNavItem[] = NAV_ITEMS;
   if (memberType === "producer") {
     const events = NAV_ITEMS.findIndex((item) => item.to === "/admin/events");
-    items = [...NAV_ITEMS.slice(0, events + 1), FOOD_NAV_ITEM, ...NAV_ITEMS.slice(events + 1)];
+    const jobs = NAV_ITEMS.findIndex((item) => item.to === "/admin/jobs");
+    items = [
+      ...NAV_ITEMS.slice(0, events + 1),
+      FOOD_NAV_ITEM,
+      ...NAV_ITEMS.slice(events + 1, jobs + 1),
+      MARKETPLACE_NAV_ITEM,
+      ...NAV_ITEMS.slice(jobs + 1),
+    ];
   }
   return people ? [...items, PEOPLE_NAV_ITEM] : items;
 }

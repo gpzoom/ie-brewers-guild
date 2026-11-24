@@ -20,6 +20,7 @@ describe("portalSectionsFor", () => {
       "food",
       "links",
       "jobs",
+      "marketplace",
       "theme",
       "people",
     ]);
@@ -69,6 +70,17 @@ describe("Jobs section", () => {
     const sections = portalSectionsFor({ role: "owner", memberType: "allied" });
     expect(sections.indexOf("jobs")).toBe(sections.indexOf("links") + 1);
     expect(sections.indexOf("discount")).toBe(sections.indexOf("jobs") + 1);
+  });
+});
+
+describe("Marketplace section", () => {
+  it("opens for Producers only, and not for a Photos & events editor", () => {
+    for (const role of ["owner", "co_owner", "editor"] as const) {
+      expect(canOpenPortalSection("marketplace", { role, memberType: "producer" })).toBe(true);
+      expect(canOpenPortalSection("marketplace", { role, memberType: "mobile" })).toBe(false);
+      expect(canOpenPortalSection("marketplace", { role, memberType: "allied" })).toBe(false);
+    }
+    expect(canOpenPortalSection("marketplace", { role: "media_events", memberType: "producer" })).toBe(false);
   });
 });
 
