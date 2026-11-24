@@ -10,5 +10,5 @@ export const LEGAL = {
   email: "legal@iscbrewersguild.org",
   county: "San Bernardino County",
   website: "iscbrewersguild.org",
-  effectiveDate: "November 17, 2026",
+  effectiveDate: "November 24, 2026",
 } as const;
