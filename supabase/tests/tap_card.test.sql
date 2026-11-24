@@ -4,7 +4,7 @@
 begin;
 \ir _fixtures.psql
 
-insert into _tap (line) select plan(24);
+insert into _tap (line) select plan(33);
 
 insert into _tap (line) select has_table('public', t, t || ' exists')
 from unnest(array['tap_card_batches', 'tap_cards', 'tap_card_holders', 'tap_card_visits', 'scanner_devices',
@@ -77,6 +77,25 @@ reset role;
 set local role anon;
 insert into _tap (line) select throws_ok(
   $q$ select count(*) from public.tap_card_holders $q$, '42501', null, 'anon: cannot read holders');
+reset role;
+
+-- One-scan check-in and location (2026-11-24).
+insert into _tap (line) select has_column('public', 'tap_card_sessions', 'pending_staff_code', 'a session can hold a scanned staff code');
+insert into _tap (line) select has_column('public', 'tap_card_staff_activity', 'location', 'activity can hold a location word');
+insert into _tap (line) select lives_ok(
+  format($q$ insert into public.tap_card_staff_activity (member_id, holder_id, day, event, source, location)
+    values ('f1000000-0000-4000-8000-000000000001', 'f4100000-0000-4000-8000-000000000001', '2026-06-01', 'check-in', 'counter', %L) $q$, w),
+  'location takes ' || coalesce(w, 'null'))
+from unnest(array[null, 'near', 'far', 'none']) as w;
+insert into _tap (line) select throws_ok(
+  $q$ insert into public.tap_card_staff_activity (member_id, holder_id, day, event, source, location)
+    values ('f1000000-0000-4000-8000-000000000001', 'f4100000-0000-4000-8000-000000000001', '2026-06-01', 'check-in', 'counter', 'home') $q$,
+  '23514', null, 'location takes nothing else');
+set local role authenticated;
+insert into _tap (line) select throws_ok($q$ select location from public.tap_card_staff_activity $q$, '42501', null, 'signed-in: cannot read activity');
+reset role;
+set local role anon;
+insert into _tap (line) select throws_ok($q$ select pending_staff_code from public.tap_card_sessions $q$, '42501', null, 'anon: cannot read sessions');
 reset role;
 
 select line from _tap order by n;
