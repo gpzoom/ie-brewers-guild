@@ -135,6 +135,27 @@ describe("recordZeffyPayment", () => {
     expect(second.kind === "recorded" && second.passes[0].holderId).toBe(first.kind === "recorded" && first.passes[0].holderId);
   });
 
+  it("a brand-new card stays brand-new when the webhook recorded it before the return page", async () => {
+    const f = fakeStore({ joins: [join()] });
+    await recordZeffyPayment(f.store, pay(), PAID);
+    f.holders[0].createdAt = new Date(PAID.getTime() + 3000).toISOString();
+    const again = await recordZeffyPayment(f.store, pay(), PAID);
+    expect(again.kind === "recorded" && again.passes[0].holderExisted).toBe(false);
+    f.holders[0].createdAt = new Date(PAID.getTime() - 3000).toISOString();
+    const older = await recordZeffyPayment(f.store, pay(), PAID);
+    expect(older.kind === "recorded" && older.passes[0].holderExisted).toBe(true);
+  });
+
+  it("a pass moved to a card with another email never counts as that buyer's new card", async () => {
+    const f = fakeStore({ joins: [join()] });
+    await recordZeffyPayment(f.store, pay(), PAID);
+    f.holders[0].createdAt = new Date(PAID.getTime() + 3000).toISOString();
+    f.holders.push({ id: "other", email: "other@example.test", createdAt: new Date(PAID.getTime() + 3000).toISOString() });
+    f.passes[0].holderId = "other";
+    const again = await recordZeffyPayment(f.store, pay(), PAID);
+    expect(again.kind === "recorded" && again.passes[0]).toMatchObject({ holderId: "other", holderExisted: true });
+  });
+
   it("ignores other campaigns and unfinished payments", async () => {
     const f = fakeStore();
     expect(await recordZeffyPayment(f.store, pay({ campaignId: "other" }), PAID)).toEqual({ kind: "ignored" });

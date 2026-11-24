@@ -59,17 +59,19 @@ export async function recordZeffyPayment(store: TrailPassStore, p: ZeffyPayment,
   for (const line of lines) {
     // Already recorded (webhook retry or the return page): keep it on the card it's on now.
     const recordedOn = await store.passHolder(p.id, line.itemId);
+    const found = await store.findHolderByEmail(line.email);
+    const existedBefore = found !== null && new Date(found.createdAt).getTime() < p.createdAt.getTime();
     if (recordedOn) {
-      passes.push({ itemId: line.itemId, holderId: recordedOn, email: line.email, holderExisted: true, memberId });
+      // Still new if this payment made the card for this email (the webhook usually gets here first).
+      const holderExisted = found?.id !== recordedOn || existedBefore;
+      passes.push({ itemId: line.itemId, holderId: recordedOn, email: line.email, holderExisted, memberId });
       continue;
     }
-    const found = await store.findHolderByEmail(line.email);
     const holderId = found?.id ?? (await store.createHolder({ name: line.name || line.email, email: line.email })).id;
-    const holderExisted = found !== null && new Date(found.createdAt).getTime() < p.createdAt.getTime();
     await store.insertPass({ paymentId: p.id, itemId: line.itemId, holderId, memberId, year: campaign.year, amountCents: line.amountCents, paidAt: p.createdAt });
     // Only the person who checked the box on the sign-up page is subscribed.
     if (join?.optIn && memberId && join.email === line.email.toLowerCase()) await store.addSubscriber(memberId, holderId, now);
-    passes.push({ itemId: line.itemId, holderId, email: line.email, holderExisted, memberId });
+    passes.push({ itemId: line.itemId, holderId, email: line.email, holderExisted: existedBefore, memberId });
   }
   return { kind: "recorded", passes };
 }
