@@ -101,6 +101,7 @@ export function GuildShell({
   const brandActive = isActivePath(pathname, "/guild/brand");
   const categoriesActive = isActivePath(pathname, "/guild/categories");
   const tapCardActive = isActivePath(pathname, "/guild/scan-pass");
+  const marketplaceActive = isActivePath(pathname, "/guild/marketplace");
   const adminsActive = isActivePath(pathname, "/guild/admins");
   const broadcastActive = isActivePath(pathname, "/guild/broadcast");
   const auditActive = isActivePath(pathname, "/guild/audit");
@@ -200,6 +201,14 @@ export function GuildShell({
             className={sidebarItemClass(tapCardActive)}
           >
             Scan Pass
+          </Link>
+
+          <Link
+            to="/guild/marketplace"
+            aria-current={marketplaceActive ? "page" : undefined}
+            className={sidebarItemClass(marketplaceActive)}
+          >
+            Marketplace
           </Link>
 
           {isSuperAdmin && (

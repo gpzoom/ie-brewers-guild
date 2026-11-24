@@ -229,6 +229,9 @@ export default defineConfig(async ({ command, mode }) => {
             // src/lib/jobs/jobs.server.ts -- createServerFns only, called
             // from JobsEditor and the public /jobs route's loader.
             "src/lib/jobs/jobs.server.ts",
+            // Producer marketplace: createServerFns on the caller's own
+            // session (RLS decides), plus the portal's section loader.
+            "src/lib/marketplace/marketplace.server.ts",
             "src/lib/hours/confirm-token.server.ts",
             // src/lib/email/unsubscribe.server.ts -- both exports are createServerFns called from the unsubscribe page.
             "src/lib/email/unsubscribe.server.ts",

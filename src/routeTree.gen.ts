@@ -51,6 +51,7 @@ import { Route as GuildTapCardRouteImport } from './routes/guild.tap-card'
 import { Route as GuildSettingsRouteImport } from './routes/guild.settings'
 import { Route as GuildScanPassRouteImport } from './routes/guild.scan-pass'
 import { Route as GuildRosterRouteImport } from './routes/guild.roster'
+import { Route as GuildMarketplaceRouteImport } from './routes/guild.marketplace'
 import { Route as GuildInquiriesRouteImport } from './routes/guild.inquiries'
 import { Route as GuildHelpRouteImport } from './routes/guild.help'
 import { Route as GuildCategoriesRouteImport } from './routes/guild.categories'
@@ -69,6 +70,7 @@ import { Route as AdminTapCardRouteImport } from './routes/admin.tap-card'
 import { Route as AdminScanPassRouteImport } from './routes/admin.scan-pass'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
+import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace'
 import { Route as AdminLinksRouteImport } from './routes/admin.links'
 import { Route as AdminJobsRouteImport } from './routes/admin.jobs'
 import { Route as AdminHoursRouteImport } from './routes/admin.hours'
@@ -296,6 +298,11 @@ const GuildRosterRoute = GuildRosterRouteImport.update({
   path: '/roster',
   getParentRoute: () => GuildRoute,
 } as any)
+const GuildMarketplaceRoute = GuildMarketplaceRouteImport.update({
+  id: '/marketplace',
+  path: '/marketplace',
+  getParentRoute: () => GuildRoute,
+} as any)
 const GuildInquiriesRoute = GuildInquiriesRouteImport.update({
   id: '/inquiries',
   path: '/inquiries',
@@ -384,6 +391,11 @@ const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
 const AdminMediaRoute = AdminMediaRouteImport.update({
   id: '/media',
   path: '/media',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMarketplaceRoute = AdminMarketplaceRouteImport.update({
+  id: '/marketplace',
+  path: '/marketplace',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminLinksRoute = AdminLinksRouteImport.update({
@@ -495,6 +507,7 @@ export interface FileRoutesByFullPath {
   '/admin/hours': typeof AdminHoursRoute
   '/admin/jobs': typeof AdminJobsRoute
   '/admin/links': typeof AdminLinksRoute
+  '/admin/marketplace': typeof AdminMarketplaceRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/scan-pass': typeof AdminScanPassRoute
@@ -513,6 +526,7 @@ export interface FileRoutesByFullPath {
   '/guild/categories': typeof GuildCategoriesRoute
   '/guild/help': typeof GuildHelpRoute
   '/guild/inquiries': typeof GuildInquiriesRoute
+  '/guild/marketplace': typeof GuildMarketplaceRoute
   '/guild/roster': typeof GuildRosterRoute
   '/guild/scan-pass': typeof GuildScanPassRoute
   '/guild/settings': typeof GuildSettingsRoute
@@ -571,6 +585,7 @@ export interface FileRoutesByTo {
   '/admin/hours': typeof AdminHoursRoute
   '/admin/jobs': typeof AdminJobsRoute
   '/admin/links': typeof AdminLinksRoute
+  '/admin/marketplace': typeof AdminMarketplaceRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/scan-pass': typeof AdminScanPassRoute
@@ -589,6 +604,7 @@ export interface FileRoutesByTo {
   '/guild/categories': typeof GuildCategoriesRoute
   '/guild/help': typeof GuildHelpRoute
   '/guild/inquiries': typeof GuildInquiriesRoute
+  '/guild/marketplace': typeof GuildMarketplaceRoute
   '/guild/roster': typeof GuildRosterRoute
   '/guild/scan-pass': typeof GuildScanPassRoute
   '/guild/settings': typeof GuildSettingsRoute
@@ -648,6 +664,7 @@ export interface FileRoutesById {
   '/admin/hours': typeof AdminHoursRoute
   '/admin/jobs': typeof AdminJobsRoute
   '/admin/links': typeof AdminLinksRoute
+  '/admin/marketplace': typeof AdminMarketplaceRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/scan-pass': typeof AdminScanPassRoute
@@ -666,6 +683,7 @@ export interface FileRoutesById {
   '/guild/categories': typeof GuildCategoriesRoute
   '/guild/help': typeof GuildHelpRoute
   '/guild/inquiries': typeof GuildInquiriesRoute
+  '/guild/marketplace': typeof GuildMarketplaceRoute
   '/guild/roster': typeof GuildRosterRoute
   '/guild/scan-pass': typeof GuildScanPassRoute
   '/guild/settings': typeof GuildSettingsRoute
@@ -728,6 +746,7 @@ export interface FileRouteTypes {
     | '/admin/hours'
     | '/admin/jobs'
     | '/admin/links'
+    | '/admin/marketplace'
     | '/admin/media'
     | '/admin/notifications'
     | '/admin/scan-pass'
@@ -746,6 +765,7 @@ export interface FileRouteTypes {
     | '/guild/categories'
     | '/guild/help'
     | '/guild/inquiries'
+    | '/guild/marketplace'
     | '/guild/roster'
     | '/guild/scan-pass'
     | '/guild/settings'
@@ -804,6 +824,7 @@ export interface FileRouteTypes {
     | '/admin/hours'
     | '/admin/jobs'
     | '/admin/links'
+    | '/admin/marketplace'
     | '/admin/media'
     | '/admin/notifications'
     | '/admin/scan-pass'
@@ -822,6 +843,7 @@ export interface FileRouteTypes {
     | '/guild/categories'
     | '/guild/help'
     | '/guild/inquiries'
+    | '/guild/marketplace'
     | '/guild/roster'
     | '/guild/scan-pass'
     | '/guild/settings'
@@ -880,6 +902,7 @@ export interface FileRouteTypes {
     | '/admin/hours'
     | '/admin/jobs'
     | '/admin/links'
+    | '/admin/marketplace'
     | '/admin/media'
     | '/admin/notifications'
     | '/admin/scan-pass'
@@ -898,6 +921,7 @@ export interface FileRouteTypes {
     | '/guild/categories'
     | '/guild/help'
     | '/guild/inquiries'
+    | '/guild/marketplace'
     | '/guild/roster'
     | '/guild/scan-pass'
     | '/guild/settings'
@@ -1277,6 +1301,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuildRosterRouteImport
       parentRoute: typeof GuildRoute
     }
+    '/guild/marketplace': {
+      id: '/guild/marketplace'
+      path: '/marketplace'
+      fullPath: '/guild/marketplace'
+      preLoaderRoute: typeof GuildMarketplaceRouteImport
+      parentRoute: typeof GuildRoute
+    }
     '/guild/inquiries': {
       id: '/guild/inquiries'
       path: '/inquiries'
@@ -1403,6 +1434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMediaRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/marketplace': {
+      id: '/admin/marketplace'
+      path: '/marketplace'
+      fullPath: '/admin/marketplace'
+      preLoaderRoute: typeof AdminMarketplaceRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/links': {
       id: '/admin/links'
       path: '/links'
@@ -1526,6 +1564,7 @@ interface AdminRouteChildren {
   AdminHoursRoute: typeof AdminHoursRoute
   AdminJobsRoute: typeof AdminJobsRoute
   AdminLinksRoute: typeof AdminLinksRoute
+  AdminMarketplaceRoute: typeof AdminMarketplaceRoute
   AdminMediaRoute: typeof AdminMediaRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminScanPassRoute: typeof AdminScanPassRoute
@@ -1542,6 +1581,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminHoursRoute: AdminHoursRoute,
   AdminJobsRoute: AdminJobsRoute,
   AdminLinksRoute: AdminLinksRoute,
+  AdminMarketplaceRoute: AdminMarketplaceRoute,
   AdminMediaRoute: AdminMediaRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminScanPassRoute: AdminScanPassRoute,
@@ -1561,6 +1601,7 @@ interface GuildRouteChildren {
   GuildCategoriesRoute: typeof GuildCategoriesRoute
   GuildHelpRoute: typeof GuildHelpRoute
   GuildInquiriesRoute: typeof GuildInquiriesRoute
+  GuildMarketplaceRoute: typeof GuildMarketplaceRoute
   GuildRosterRoute: typeof GuildRosterRoute
   GuildScanPassRoute: typeof GuildScanPassRoute
   GuildSettingsRoute: typeof GuildSettingsRoute
@@ -1577,6 +1618,7 @@ const GuildRouteChildren: GuildRouteChildren = {
   GuildCategoriesRoute: GuildCategoriesRoute,
   GuildHelpRoute: GuildHelpRoute,
   GuildInquiriesRoute: GuildInquiriesRoute,
+  GuildMarketplaceRoute: GuildMarketplaceRoute,
   GuildRosterRoute: GuildRosterRoute,
   GuildScanPassRoute: GuildScanPassRoute,
   GuildSettingsRoute: GuildSettingsRoute,
