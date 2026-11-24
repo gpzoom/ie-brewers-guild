@@ -76,6 +76,11 @@ describe("Privacy Policy", () => {
     expect(t).toContain("counter plate");
   });
 
+  it("marketplace listings aren't public", () => {
+    expect(t).toContain("marketplace listings, including the contact name, email address and phone number");
+    expect(t).toContain("Marketplace listings aren't public.");
+  });
+
   it("lists the Help button's form, which also notes the page and browser", () => {
     expect(t).toContain("the Help button");
     expect(t).toContain("which page you were on");
@@ -100,6 +105,12 @@ describe("Terms of Use", () => {
     expect(t).toContain("newsletters");
     expect(t).toContain("credit");
     expect(t).toContain("opt out");
+  });
+
+  it("marketplace: members only, no alcohol, the Guild isn't part of the sale, never featured elsewhere", () => {
+    expect(t).toContain("The Guild isn't the buyer, seller or broker");
+    expect(t).toContain("Alcohol can't be listed.");
+    expect(t).toContain("won't feature marketplace listings outside the marketplace");
   });
 
   it("the Guild monitors member content against the Brewers Association code", () => {

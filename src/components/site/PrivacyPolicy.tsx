@@ -41,7 +41,8 @@ export function PrivacyPolicy() {
             <>
               <strong>Members and the people who edit a profile:</strong> your sign-in email address;
               everything you add to your profile, such as your business details, hours, links, events,
-              discounts and job postings; your logo and photos; any calendar link you connect (we only
+              discounts and job postings; marketplace listings, including the contact name, email address and
+              phone number you put on them; your logo and photos; any calendar link you connect (we only
               bring in the events you tag for the Guild); and a record of who changed what and when.
             </>,
             <>
@@ -121,6 +122,10 @@ export function PrivacyPolicy() {
           description, logo, photos, events and job postings. Nothing is public until the profile is
           published. Sign-in email addresses are never shown publicly, unless you also list one as your
           business's contact email.
+        </p>
+        <p>
+          Marketplace listings aren't public. Only people who manage a published Producer profile, and Guild
+          admins, can see them.
         </p>
       </LegalSection>
 
