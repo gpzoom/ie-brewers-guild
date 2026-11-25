@@ -19,3 +19,8 @@ export function tapCardDay(at: Date): string {
 export function tapCardYear(at: Date): number {
   return new TZDate(at.getTime(), TAP_CARD_TZ).getFullYear();
 }
+
+/** "Your Scan Pass is ready" shows only on the day the pass was made, until its first visit. */
+export function isNewPass(createdAt: string, hasVisits: boolean, now: Date): boolean {
+  return !hasVisits && tapCardDay(new Date(createdAt)) === tapCardDay(now);
+}

@@ -17,7 +17,7 @@ import { matchPin, plateIsOn } from "@/lib/tap-card/staff-codes";
 import { logTurnedOff, logVisitActivity, pinSource, sourceByQr, type Source, type VisitResult } from "@/lib/tap-card/staff-source.server";
 import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
 import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
-import { tapCardDay, tapCardYear } from "@/lib/tap-card/tap-card-time";
+import { isNewPass, tapCardDay, tapCardYear } from "@/lib/tap-card/tap-card-time";
 import { canJoinTrail } from "@/lib/tap-card/trail-pass-store.server";
 import { PLATE_LOCK_MINUTES, plateUrl, staffCodeGate, type AttemptStore } from "@/lib/tap-card/plate";
 
@@ -89,11 +89,11 @@ function attemptStore(service: SupabaseClient, holderId: string, memberId: strin
   };
 }
 
-/** A pass that has never checked in anywhere: just enrolled. */
-async function hasNoVisits(service: SupabaseClient, holderId: string): Promise<boolean> {
+/** Has this pass ever checked in, anywhere? */
+async function hasVisits(service: SupabaseClient, holderId: string): Promise<boolean> {
   const { data, error } = await service.from("tap_card_visits").select("id").eq("holder_id", holderId).limit(1);
   if (error) throw new Error(error.message);
-  return (data ?? []).length === 0;
+  return (data ?? []).length > 0;
 }
 
 export type PlateView =
@@ -112,7 +112,7 @@ export const getPlateView = createServerFn({ method: "GET" })
     const code = normalizeCardCode(data.code)!;
     const holderId = await readHolderId();
     if (!holderId) return { view: "signed-out", code, memberName: plate.memberName, canJoinTrail: await canJoinTrail(service, null), trailStop: plate.trailStop };
-    const { data: holder, error } = await service.from("tap_card_holders").select("name").eq("id", holderId).maybeSingle();
+    const { data: holder, error } = await service.from("tap_card_holders").select("name, created_at").eq("id", holderId).maybeSingle();
     if (error) throw new Error(error.message);
     if (!holder) return { view: "signed-out", code, memberName: plate.memberName, canJoinTrail: await canJoinTrail(service, null), trailStop: plate.trailStop };
     const store = barStore(service);
@@ -128,7 +128,7 @@ export const getPlateView = createServerFn({ method: "GET" })
       nextVisitNumber: today ? state.visitNumber : state.visitNumber + 1,
       checkedInToday: today !== null,
       canJoinTrail: await canJoinTrail(service, holderId),
-      newPass: await hasNoVisits(service, holderId),
+      newPass: isNewPass(holder.created_at, await hasVisits(service, holderId), at),
       trailStop: plate.trailStop,
       state,
     };
