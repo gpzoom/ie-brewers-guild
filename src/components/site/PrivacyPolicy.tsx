@@ -66,7 +66,9 @@ export function PrivacyPolicy() {
               scans of staff QR codes that were turned off. When you check in, we ask your phone for its
               location. You can say no and still check in. We use it once to tell whether you were near the
               taproom and don't keep it. We keep only the result: near, far or no location. The taproom's
-              owner, co-owners and Guild admins can see that result under the made-up label.
+              owner, co-owners and Guild admins can see that result under the made-up label. The check-in screen you
+              show staff may have a red dot. It means you weren&rsquo;t near the taproom, we had no location, or it
+              was outside open hours. It doesn&rsquo;t say which.
             </>,
             <>
               <strong>If a taproom gives you a staff code:</strong> the name the taproom typed for you, and
