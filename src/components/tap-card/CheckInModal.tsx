@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { AgeGateShown } from "@/components/site/age-gate-context";
 import { confirmPendingCheckIn, type PendingCheckIn } from "@/lib/tap-card/plate.server";
 import { getPosition } from "@/lib/tap-card/get-position";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -12,6 +13,7 @@ import { RewardChoices, choiceOf, keyOf, waitingRewards } from "@/components/tap
  * the customer taps here. Give it a key that changes with each scan.
  */
 export function CheckInModal({ pending, onDone, onClose }: { pending: PendingCheckIn; onDone: (ok: PlateOk) => void; onClose: () => void }) {
+  const ageGateShown = useContext(AgeGateShown);
   const waiting = waitingRewards(pending.state);
   const [choice, setChoice] = useState(waiting[0] ? keyOf(waiting[0]) : "none");
   const [asking, setAsking] = useState(false);
@@ -43,6 +45,9 @@ export function CheckInModal({ pending, onDone, onClose }: { pending: PendingChe
       ? `Checked in today — visit #${pending.nextVisitNumber}`
       : `Hi ${pending.firstName} — this will be visit #${pending.nextVisitNumber}`;
   const buttonLabel = picked ? "Use my reward" : pending.checkedInToday ? "Show my confirmation" : "Check in";
+
+  // The 21+ check comes first; this opens once it's answered.
+  if (ageGateShown) return null;
 
   return (
     <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>

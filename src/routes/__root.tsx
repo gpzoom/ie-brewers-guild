@@ -23,6 +23,7 @@ import { getMaintenanceMode } from "@/lib/site/maintenance.server";
 import { showsMaintenance } from "@/lib/site/maintenance";
 import { MaintenanceMode } from "@/components/site/MaintenanceMode";
 import { useState } from "react";
+import { AgeGateShown } from "@/components/site/age-gate-context";
 import { AgeGate } from "@/components/site/AgeGate";
 import { getAgeGateState } from "@/lib/site/age-gate.server";
 import { ageGateApplies } from "@/lib/site/age-gate";
@@ -246,7 +247,9 @@ function RootComponent() {
         )}
         {!isBare && <Header />}
         <main className="flex-1">
-          <Outlet />
+          <AgeGateShown.Provider value={showAgeGate}>
+            <Outlet />
+          </AgeGateShown.Provider>
         </main>
         {!isBare && <Footer />}
         {/* The Help button: member portal, /admin and Guild screens only. */}
