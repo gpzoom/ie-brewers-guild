@@ -36,7 +36,7 @@ export function plateRefusal(result: Exclude<PlateResult, PlateOk> | { kind: "sc
     case "closed":
       return "This taproom isn't taking check-ins right now. Ask a staff member for help.";
     case "scan-again":
-      return "Scan the staff QR code again.";
+      return "Finish your check-in within 5 minutes of scanning the staff QR code.";
   }
 }
 

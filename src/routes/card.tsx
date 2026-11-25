@@ -39,6 +39,7 @@ function CardPage() {
   const router = useRouter();
   const [done, setDone] = useState<{ at: PendingCheckIn; ok: PlateOk } | null>(null);
   const [closedScan, setClosedScan] = useState<string | null>(null);
+  const [scanAgain, setScanAgain] = useState(0);
 
   // A page brought back from the phone's memory must not keep an old check-in on screen.
   useEffect(() => {
@@ -64,6 +65,10 @@ function CardPage() {
           key={pending.scanAt}
           pending={pending}
           onDone={(ok) => setDone({ at: pending, ok })}
+          onScanAgain={() => {
+            setClosedScan(pending.scanAt);
+            setScanAgain((n) => n + 1);
+          }}
           onClose={async () => {
             setClosedScan(pending.scanAt);
             try {
@@ -78,6 +83,7 @@ function CardPage() {
       <Eyebrow>Inland Scan Pass · {view.year}</Eyebrow>
       <CanvasHeading size="md">{view.firstName}&rsquo;s Inland Scan Pass</CanvasHeading>
       <CardScanner
+        openSignal={scanAgain}
         onNoted={() => void router.invalidate({ sync: true })}
       />
       <SaveToHomeScreen />

@@ -38,11 +38,18 @@ async function makeReader(): Promise<(video: HTMLVideoElement, canvas: HTMLCanva
  * reaching the address bar; the check-in opens on the pass page. A card saved to the
  * Home Screen never has to hand off to the browser.
  */
-export function CardScanner({ label = "Scan the staff QR code", onNoted }: { label?: string; onNoted?: () => void }) {
+export function CardScanner({ label = "Scan the staff QR code", onNoted, openSignal = 0 }: { label?: string; onNoted?: () => void; openSignal?: number }) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Another button on the page opens the camera by raising this number.
+  useEffect(() => {
+    if (openSignal === 0) return;
+    setMessage(null);
+    setOpen(true);
+  }, [openSignal]);
 
   // Read through a ref, so a new handler doesn't restart the camera.
   const notedRef = useRef(onNoted);

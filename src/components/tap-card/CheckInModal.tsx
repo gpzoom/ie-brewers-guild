@@ -12,13 +12,24 @@ import { RewardChoices, choiceOf, keyOf, waitingRewards } from "@/components/tap
  * A staff QR was just scanned (spec 2026-11-24): nothing is recorded until
  * the customer taps here. Key it by pending.scanAt.
  */
-export function CheckInModal({ pending, onDone, onClose }: { pending: PendingCheckIn; onDone: (ok: PlateOk) => void; onClose: () => void }) {
+export function CheckInModal({
+  pending,
+  onDone,
+  onClose,
+  onScanAgain,
+}: {
+  pending: PendingCheckIn;
+  onDone: (ok: PlateOk) => void;
+  onClose: () => void;
+  onScanAgain: () => void;
+}) {
   const ageGateShown = useContext(AgeGateShown);
   const waiting = waitingRewards(pending.state);
   const [choice, setChoice] = useState(waiting[0] ? keyOf(waiting[0]) : "none");
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lapsed, setLapsed] = useState(false);
 
   const picked = waiting.find((r) => keyOf(r) === choice) ?? null;
 
@@ -33,13 +44,16 @@ export function CheckInModal({ pending, onDone, onClose }: { pending: PendingChe
         return;
       }
       setError(plateRefusal(result));
+      if (result.kind === "scan-again") setLapsed(true);
     } catch {
       setError("That didn't save. Check the connection and try again.");
     }
     setBusy(false);
   }
 
-  const heading = asking
+  const heading = lapsed
+    ? "Scan the staff QR code again"
+    : asking
     ? "Use your reward now?"
     : pending.checkedInToday
       ? `Checked in today — visit #${pending.nextVisitNumber}`
@@ -54,7 +68,19 @@ export function CheckInModal({ pending, onDone, onClose }: { pending: PendingChe
       <DialogContent onInteractOutside={(e) => e.preventDefault()} className="max-h-[92dvh] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-[18px] border-canvas-border bg-canvas sm:max-w-[440px]">
         <Eyebrow>{pending.memberName}</Eyebrow>
         <DialogTitle className="font-display text-[22px] font-bold leading-tight text-ink">{heading}</DialogTitle>
-        {asking && picked ? (
+        {lapsed ? (
+          <div key="lapsed" className="grid gap-4">
+            <DialogDescription role="alert" className={fieldErrorClass}>
+              {error}
+            </DialogDescription>
+            <button type="button" autoFocus className={`${primaryButtonClass} min-h-14 text-[17px]`} onClick={onScanAgain}>
+              Scan QR again
+            </button>
+            <button type="button" className={secondaryButtonClass} onClick={onClose}>
+              Not now
+            </button>
+          </div>
+        ) : asking && picked ? (
           <div key="ask" className="grid gap-4">
             <p className="text-[20px] font-semibold text-ink">{picked.reward}</p>
             <DialogDescription className={leadClass}>This can&rsquo;t be undone without a staff member.</DialogDescription>
@@ -80,7 +106,7 @@ export function CheckInModal({ pending, onDone, onClose }: { pending: PendingChe
             </button>
           </div>
         )}
-        {error && (
+        {error && !lapsed && (
           <p role="alert" className={fieldErrorClass}>
             {error}
           </p>
