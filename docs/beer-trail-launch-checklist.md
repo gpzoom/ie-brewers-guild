@@ -10,6 +10,10 @@ Inland Scan Pass: universal loyalty pass + Beer Trail Pass through Zeffy. Everyt
 - [ ] **Owner:** in Zeffy, create a **100% discount code** for one test purchase on the live campaign (so the live test costs nothing).
 - [ ] **Owner:** decide which producers are Beer Trail stops (**Guild → Members → Add to Scan Pass trail**).
 
+- [x] **Owner:** one-scan check-in tested on a phone on staging (17 steps, 2026-11-25), including the red dot and **Scan QR again**.
+- [ ] **Claude:** remove the note in the Staff QR codes box that the live site keeps accepting the shared code.
+- [ ] **Owner:** reprint every counter card and table tent made before 2026-11-24 (they describe the old two-scan check-in).
+
 ## Launch day, in this order
 
 1. [ ] **Owner:** say **"go"**.
@@ -28,14 +32,14 @@ Inland Scan Pass: universal loyalty pass + Beer Trail Pass through Zeffy. Everyt
 ## Live test (right after launch)
 
 9. [ ] **Owner:** at a published Beer Trail stop's counter plate (Sample Brewery only works on staging), in a private tab with an email that has no Scan Pass:
-   tap **Join the Beer Trail** → pay with the 100% discount code → you land back signed in → check in.
+   tap **Join the Beer Trail** → pay with the 100% discount code → you land back signed in → scan the staff QR → **Check in**.
 10. [ ] **Owner:** **Guild → Scan Pass → Passes** shows the pass credited to that stop.
 11. [ ] **Claude:** delete the live test Scan Pass, Beer Trail Pass and sign-up (shown to you first), and you delete or disable the discount code in Zeffy.
 
 ## Tell people
 
 12. [ ] **Owner + Claude:** the members' notice of the Privacy Policy and Terms changes (Zeffy payments, free pass, member email opt-ins). Claude drafts; nothing is sent without your go.
-13. [ ] **Owner:** tell members how to start: open **Scan Pass** in the menu, set a staff code, print the **counter plate** and the **staff QR code**. The Member Guide pages "The Inland Scan Pass", "Staff codes and activity" and "Rewards and passes" walk them through it.
+13. [ ] **Owner:** tell members how to start: open **Scan Pass** in the menu, set a staff code, print the **counter card** (customers get their pass from it) and the **staff QR code** (scanned on every visit). Explain the **red dot** on the green screen. The Member Guide pages "The Inland Scan Pass", "Staff codes and activity" and "Rewards and passes" walk them through it.
 
 ## Afterward
 
