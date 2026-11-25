@@ -31,4 +31,10 @@ describe("successUsedLine", () => {
     expect(successUsedLine("used")).toBe("Used just now. Staff member: please pour.");
     for (const o of [undefined, "already-used-today", "not-available"] as const) expect(successUsedLine(o)).toBe("Already used earlier today.");
   });
+  it("says when it was used, in Pacific time", () => {
+    expect(successUsedLine(undefined, "2026-11-25T22:05:30Z")).toBe("Already used earlier today at 2:05 PM.");
+    expect(successUsedLine("already-used-today", "2026-11-26T04:40:00Z")).toBe("Already used earlier today at 8:40 PM.");
+    expect(successUsedLine("used", "2026-11-25T22:05:30Z")).toBe("Used just now. Staff member: please pour.");
+    expect(successUsedLine(undefined, null)).toBe("Already used earlier today.");
+  });
 });

@@ -41,8 +41,12 @@ export function plateRefusal(result: Exclude<PlateResult, PlateOk> | { kind: "sc
 }
 
 /** Only a reward used on this very tap asks staff to pour; showing the screen again doesn't. */
-export function successUsedLine(outcome: PlateOk["outcome"]): string {
-  return outcome === "used" ? "Used just now. Staff member: please pour." : "Already used earlier today.";
+export function successUsedLine(outcome: PlateOk["outcome"], usedAt?: string | null): string {
+  if (outcome === "used") return "Used just now. Staff member: please pour.";
+  if (!usedAt) return "Already used earlier today.";
+  const time = new Date(usedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" });
+  // Some browsers put a narrow no-break space before AM/PM.
+  return `Already used earlier today at ${time.replace(/s/g, " ")}.`;
 }
 
 function StaffCodeField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -127,7 +131,7 @@ export function PlateSuccess({
         <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#05603A]">{memberName}</p>
         <CanvasHeading size="md">{state.firstToday ? `Visit #${state.visitNumber} recorded` : `Checked in today — visit #${state.visitNumber}`}</CanvasHeading>
         {state.used && <p className="text-[22px] font-bold text-ink">{state.used.reward}</p>}
-        {state.used && <p className="text-[14px] text-ink">{successUsedLine(done.outcome)}</p>}
+        {state.used && <p className="text-[14px] text-ink">{successUsedLine(done.outcome, done.usedAt)}</p>}
         <LiveClock />
         <p className="text-[12px] text-ink-muted">Confirmed at {clock(confirmedAt)}</p>
       </div>

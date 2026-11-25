@@ -127,6 +127,34 @@ export async function logVisitActivity(
   );
 }
 
+/**
+ * When today's reward was used, for the confirmation screen. A loyalty reward
+ * keeps its own time; the Beer Trail offer's is in the activity log. Never
+ * throws: null just leaves the time off.
+ */
+export async function rewardUsedAt(service: SupabaseClient, store: Pick<BarStore, "findVisit">, input: VisitInput): Promise<string | null> {
+  try {
+    const visit = await store.findVisit(input.holderId, input.memberId, tapCardDay(input.at));
+    if (!visit) return null;
+    const loyalty = await service.from("tap_card_earned_rewards").select("used_at").eq("used_visit_id", visit.id).maybeSingle();
+    if (loyalty.error) throw new Error(loyalty.error.message);
+    if (loyalty.data) return loyalty.data.used_at;
+    const logged = await service
+      .from("tap_card_staff_activity")
+      .select("at")
+      .eq("visit_id", visit.id)
+      .eq("event", "reward-used")
+      .order("at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (logged.error) throw new Error(logged.error.message);
+    return logged.data?.at ?? null;
+  } catch (error) {
+    console.error("Scan Pass: couldn't read when the reward was used", error);
+    return null;
+  }
+}
+
 /** A signed-in customer scanned a turned-off QR: once per customer, code and day. Never throws. */
 export async function logTurnedOff(
   service: SupabaseClient,
