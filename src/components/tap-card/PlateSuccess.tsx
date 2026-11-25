@@ -123,7 +123,9 @@ export function PlateSuccess({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col items-center gap-3 rounded-[18px] border-2 border-[#12B76A] bg-[#ECFDF3] px-5 py-6 text-center">
+      <div className="relative flex flex-col items-center gap-3 rounded-[18px] border-2 border-[#12B76A] bg-[#ECFDF3] px-5 py-6 text-center">
+        {/* Far away, no location or outside open hours at the check-in or reward. */}
+        {done.flagged && <span role="img" aria-label="Flagged" className="absolute right-3 top-3 size-6 rounded-full border-2 border-white bg-[#FF0000]" />}
         <span className="relative flex size-16 items-center justify-center" aria-hidden="true">
           <span className="absolute inline-flex size-full rounded-full bg-[#12B76A] opacity-40 motion-safe:animate-ping" />
           <span className="relative inline-flex size-16 items-center justify-center rounded-full bg-[#12B76A] text-[34px] font-bold text-white">✓</span>
@@ -149,7 +151,7 @@ export function PlateSuccess({
             onSubmit={async (staffCode) => {
               const result = await undoAtPlate({ data: { code: plateCode, staffCode } });
               if (result.kind === "ok") {
-                setDone(result);
+                setDone({ ...result, flagged: done.flagged });
                 setUndoing(false);
               }
               return result;

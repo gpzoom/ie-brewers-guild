@@ -112,6 +112,10 @@ Removed: the plate's Continue step, the held choice, and the
   - **Far from the taproom:** any `far` check-in.
   - **No location:** a customer with 3 or more check-ins at this member in
     the range, none of them `near`.
+- **Red dot** (owner, 2026-11-25): the green confirmation screen shows a red
+  dot in its upper right corner when the visit's check-in or reward was far
+  away, had no location (one is enough here), or was outside open hours. It
+  never stops the check-in.
 - The activity list shows near / far / no location on each row. The existing
   line above it stays: a flag means it's worth a look, not proof.
 - "Outside open hours" already exists; add a test that a check-in on a

@@ -2,9 +2,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BarState, BarStore, VisitInput } from "@/lib/tap-card/bar-core";
 import type { BarReward } from "@/lib/tap-card/loyalty";
 import { dbFailed } from "@/lib/tap-card/plate-store.server";
+import { loadMemberHours } from "@/lib/tap-card/member-hours.server";
+import { visitFlagged, type ActivityRow, type MemberHours } from "@/lib/tap-card/staff-activity";
 import type { PinMatch } from "@/lib/tap-card/staff-codes";
 import type { LocationWord } from "@/lib/tap-card/location";
-import { tapCardDay } from "@/lib/tap-card/tap-card-time";
+import { TAP_CARD_TZ, tapCardDay } from "@/lib/tap-card/tap-card-time";
 
 /**
  * Which staff code confirmed a visit, and the activity log (spec 2026-11-23
@@ -125,6 +127,41 @@ export async function logVisitActivity(
     service,
     events.map((e) => ({ ...e, location: e.event === "reward-undone" ? null : location, member_id: input.memberId, holder_id: input.holderId, visit_id: visitId, at: input.at.toISOString(), day })),
   );
+}
+
+/**
+ * Whether this visit gets the red dot: what's just been done (`now`, null when
+ * nothing new was recorded) plus what today's log already has. Never throws.
+ */
+export async function visitIsFlagged(
+  service: SupabaseClient,
+  store: Pick<BarStore, "findVisit">,
+  input: VisitInput,
+  now: { location: LocationWord | null } | null,
+): Promise<boolean> {
+  const events: Pick<ActivityRow, "at" | "location">[] = now ? [{ at: input.at.toISOString(), location: now.location }] : [];
+  let hours: MemberHours = { timezone: TAP_CARD_TZ, hours: [], specialHours: [] };
+  const [logged, posted] = await Promise.allSettled([
+    loggedToday(service, store, input),
+    loadMemberHours(service, input.memberId),
+  ]);
+  if (logged.status === "fulfilled") events.push(...logged.value);
+  else console.error("Scan Pass flag: couldn't read the log", logged.reason);
+  if (posted.status === "fulfilled") hours = posted.value;
+  else console.error("Scan Pass flag: couldn't read the hours", posted.reason);
+  return visitFlagged(events, hours);
+}
+
+async function loggedToday(service: SupabaseClient, store: Pick<BarStore, "findVisit">, input: VisitInput): Promise<Pick<ActivityRow, "at" | "location">[]> {
+  const visit = await store.findVisit(input.holderId, input.memberId, tapCardDay(input.at));
+  if (!visit) return [];
+  const { data, error } = await service
+    .from("tap_card_staff_activity")
+    .select("at, location")
+    .eq("visit_id", visit.id)
+    .in("event", ["check-in", "reward-used"]);
+  if (error) throw new Error(error.message);
+  return data ?? [];
 }
 
 /**

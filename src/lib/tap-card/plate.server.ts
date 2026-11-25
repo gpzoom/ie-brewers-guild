@@ -14,7 +14,7 @@ import { activePinCount, ensurePlate, loadPersonalPins } from "@/lib/tap-card/pl
 import { locationWord, parsePosition, type LocationWord, type Position } from "@/lib/tap-card/location";
 import { confirmScanCore } from "@/lib/tap-card/scan-core";
 import { matchPin, plateIsOn } from "@/lib/tap-card/staff-codes";
-import { logTurnedOff, logVisitActivity, pinSource, rewardUsedAt, sourceByQr, type Source, type VisitResult } from "@/lib/tap-card/staff-source.server";
+import { logTurnedOff, logVisitActivity, pinSource, rewardUsedAt, sourceByQr, visitIsFlagged, type Source, type VisitResult } from "@/lib/tap-card/staff-source.server";
 import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
 import { requireTapCardGuildAdmin } from "@/lib/tap-card/guild-admin.server";
 import { isNewPass, tapCardDay, tapCardYear } from "@/lib/tap-card/tap-card-time";
@@ -136,7 +136,7 @@ export const getPlateView = createServerFn({ method: "GET" })
 
 export type PlateChoice = { kind: "none" } | RewardChoice;
 export type PlateResult =
-  | { kind: "ok"; state: BarState; milestoneRewards: string[]; usedAt?: string | null; outcome?: "used" | "already-used-today" | "not-available" | "undone" | "nothing-to-undo" }
+  | { kind: "ok"; state: BarState; milestoneRewards: string[]; usedAt?: string | null; flagged?: boolean; outcome?: "used" | "already-used-today" | "not-available" | "undone" | "nothing-to-undo" }
   | { kind: "wrong-code"; triesLeft: number }
   | { kind: "locked" }
   | { kind: "signed-out" }
@@ -196,8 +196,12 @@ async function recordVisit(
   try {
     const result = await finishVisit(service, store, input, choice, checkedIn);
     logged = result;
-    if (!result.state.used || result.outcome === "used") return result;
-    return { ...result, usedAt: await rewardUsedAt(service, store, input) };
+    const recorded = result.state.firstToday || result.outcome === "used";
+    const [flagged, usedAt] = await Promise.all([
+      visitIsFlagged(service, store, input, recorded ? { location } : null),
+      result.state.used && result.outcome !== "used" ? rewardUsedAt(service, store, input) : null,
+    ]);
+    return { ...result, flagged, usedAt };
   } finally {
     // Even when the rest fails, the check-in happened, so it's in the log.
     await logVisitActivity(service, store, input, null, logged, source, location);

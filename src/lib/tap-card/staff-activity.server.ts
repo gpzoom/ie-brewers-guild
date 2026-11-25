@@ -1,9 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { toSpecialHoursDay, toWeekdayHours } from "@/lib/hours/hours-rows";
-import type { HoursRow, SpecialHoursRow } from "@/lib/supabase/types";
 import { dbFailed, readAllRows } from "@/lib/tap-card/plate-store.server";
-import type { ActivityRow, MemberHours } from "@/lib/tap-card/staff-activity";
+import type { ActivityRow } from "@/lib/tap-card/staff-activity";
 import {
   buildPage,
   buildSummary,
@@ -15,6 +13,7 @@ import {
   type ActivityRange,
   type ActivitySummary,
 } from "@/lib/tap-card/staff-activity-view";
+import { loadMemberHours } from "@/lib/tap-card/member-hours.server";
 import { requireTapCardOwner } from "@/lib/tap-card/tap-card-editor.server";
 
 export type { ActivityItem, ActivityRange, ActivitySummary } from "@/lib/tap-card/staff-activity-view";
@@ -26,7 +25,6 @@ export type { ActivityItem, ActivityRange, ActivitySummary } from "@/lib/tap-car
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const DEFAULT_TZ = "America/Los_Angeles";
 
 type ActivityDbRow = {
   id: string;
@@ -39,29 +37,6 @@ type ActivityDbRow = {
   reward: string | null;
   location: ActivityRow["location"];
 };
-
-async function loadHours(service: SupabaseClient, memberId: string): Promise<MemberHours> {
-  const [member, hours, special] = await Promise.all([
-    service.from("members").select("timezone").eq("id", memberId).maybeSingle(),
-    readAllRows<Omit<HoursRow, "id" | "member_id">>((from, to) =>
-      service.from("hours").select("weekday, opens_at, closes_at, closes_next_day, is_closed").eq("member_id", memberId).order("weekday").order("id").range(from, to),
-    ),
-    readAllRows<Omit<SpecialHoursRow, "id" | "member_id">>((from, to) =>
-      service
-        .from("special_hours")
-        .select("date, is_closed, opens_at, closes_at, closes_next_day, note")
-        .eq("member_id", memberId)
-        .order("date")
-        .order("id")
-        .range(from, to),
-    ),
-  ]);
-  if (member.error) throw dbFailed(member.error);
-  const timezone = member.data?.timezone || DEFAULT_TZ;
-  // No weekly hours posted: nothing is ever "outside hours", special days included.
-  if (hours.length === 0) return { timezone, hours: [], specialHours: [] };
-  return { timezone, hours: toWeekdayHours(hours as HoursRow[]), specialHours: toSpecialHoursDay(special as SpecialHoursRow[]) };
-}
 
 /**
  * Anonymous labels over every customer the member has ever had in the log or
@@ -143,7 +118,7 @@ export const getStaffActivity = createServerFn({ method: "GET" })
     const { service } = await requireTapCardOwner(data.memberId);
     const start = rangeStart(data.range, new Date());
     const [hours, staff, { rows, misses, labels }, beforeTracking] = await Promise.all([
-      loadHours(service, data.memberId),
+      loadMemberHours(service, data.memberId),
       readAllRows<{ id: string; name: string; removed_at: string | null }>((from, to) =>
         service.from("tap_card_staff").select("id, name, removed_at").eq("member_id", data.memberId).order("created_at").order("id").range(from, to),
       ),
@@ -170,6 +145,6 @@ export const getStaffActivityList = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<{ items: ActivityItem[]; more: boolean }> => {
     const { service } = await requireTapCardOwner(data.memberId);
     const start = rangeStart(data.range, new Date());
-    const [hours, { rows, labels }] = await Promise.all([loadHours(service, data.memberId), loadActivity(service, data.memberId, start)]);
+    const [hours, { rows, labels }] = await Promise.all([loadMemberHours(service, data.memberId), loadActivity(service, data.memberId, start)]);
     return buildPage({ rows, hours, labels, key: data.key, offset: data.offset });
   });
