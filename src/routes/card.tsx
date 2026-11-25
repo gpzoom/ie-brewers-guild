@@ -16,7 +16,14 @@ import { CARD_APP_HEAD_LINKS, CARD_APP_HEAD_META } from "@/lib/tap-card/card-app
 export const Route = createFileRoute("/card")({
   staleTime: 0,
   loader: async () => {
-    const [view, pending] = await Promise.all([getHolderCard(), getPendingCheckIn()]);
+    const [view, pending] = await Promise.all([
+      getHolderCard(),
+      // A check-in that can't be read must not take the whole pass page down.
+      getPendingCheckIn().catch((error) => {
+        console.error("Scan Pass: couldn't read the waiting check-in", error instanceof Error ? error.message : "");
+        return null;
+      }),
+    ]);
     if (!view) throw redirect({ to: "/card/signin" });
     return { view, pending };
   },
@@ -31,8 +38,7 @@ function CardPage() {
   const { view, pending } = Route.useLoaderData();
   const router = useRouter();
   const [done, setDone] = useState<{ at: PendingCheckIn; ok: PlateOk } | null>(null);
-  const [closed, setClosed] = useState(false);
-  const [scans, setScans] = useState(0);
+  const [closedScan, setClosedScan] = useState<string | null>(null);
 
   // A page brought back from the phone's memory must not keep an old check-in on screen.
   useEffect(() => {
@@ -53,16 +59,16 @@ function CardPage() {
 
   return (
     <TapCardShell>
-      {pending && !closed && (
+      {pending && pending.scanAt !== closedScan && (
         <CheckInModal
-          key={scans}
+          key={pending.scanAt}
           pending={pending}
           onDone={(ok) => setDone({ at: pending, ok })}
           onClose={async () => {
-            setClosed(true);
+            setClosedScan(pending.scanAt);
             try {
-              await cancelPendingCheckIn();
-              await router.invalidate();
+              await cancelPendingCheckIn({ data: { scanAt: pending.scanAt } });
+              await router.invalidate({ sync: true });
             } catch {
               // it lapses by itself in a few minutes
             }
@@ -72,11 +78,7 @@ function CardPage() {
       <Eyebrow>Inland Scan Pass · {view.year}</Eyebrow>
       <CanvasHeading size="md">{view.firstName}&rsquo;s Inland Scan Pass</CanvasHeading>
       <CardScanner
-        onNoted={async () => {
-          await router.invalidate();
-          setScans((n) => n + 1);
-          setClosed(false);
-        }}
+        onNoted={() => void router.invalidate({ sync: true })}
       />
       <SaveToHomeScreen />
       <Waiting view={view} />

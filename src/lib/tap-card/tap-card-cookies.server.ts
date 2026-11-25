@@ -154,12 +154,12 @@ export async function claimPendingScan(scan: { sessionId: string; at: string }):
   return (data ?? []).length > 0;
 }
 
-/** The customer closed the check-in. */
-export async function dropPendingScan(): Promise<void> {
+/** The customer closed this check-in; a newer scan stays. */
+export async function dropPendingScan(at: string): Promise<void> {
   const raw = getCookie(HOLDER_COOKIE);
   if (!raw) return;
   const service = await getSupabaseServiceRoleClient();
-  const { error } = await service.from("tap_card_sessions").update(NO_SCAN).eq("token_hash", await hashUploadToken(raw));
+  const { error } = await service.from("tap_card_sessions").update(NO_SCAN).eq("token_hash", await hashUploadToken(raw)).eq("pending_at", at);
   if (error) throw new Error(error.message);
 }
 

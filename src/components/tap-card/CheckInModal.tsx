@@ -10,7 +10,7 @@ import { RewardChoices, choiceOf, keyOf, waitingRewards } from "@/components/tap
 
 /**
  * A staff QR was just scanned (spec 2026-11-24): nothing is recorded until
- * the customer taps here. Give it a key that changes with each scan.
+ * the customer taps here. Key it by pending.scanAt.
  */
 export function CheckInModal({ pending, onDone, onClose }: { pending: PendingCheckIn; onDone: (ok: PlateOk) => void; onClose: () => void }) {
   const ageGateShown = useContext(AgeGateShown);
@@ -27,7 +27,7 @@ export function CheckInModal({ pending, onDone, onClose }: { pending: PendingChe
     setError(null);
     try {
       const position = await getPosition(navigator.geolocation);
-      const result = await confirmPendingCheckIn({ data: { choice: choiceOf(key), position } });
+      const result = await confirmPendingCheckIn({ data: { scanAt: pending.scanAt, choice: choiceOf(key), position } });
       if (result.kind === "ok") {
         onDone(result);
         return;
@@ -51,22 +51,22 @@ export function CheckInModal({ pending, onDone, onClose }: { pending: PendingChe
 
   return (
     <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
-      <DialogContent className="max-h-[92dvh] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-[18px] border-canvas-border bg-canvas sm:max-w-[440px]">
+      <DialogContent onInteractOutside={(e) => e.preventDefault()} className="max-h-[92dvh] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-[18px] border-canvas-border bg-canvas sm:max-w-[440px]">
         <Eyebrow>{pending.memberName}</Eyebrow>
         <DialogTitle className="font-display text-[22px] font-bold leading-tight text-ink">{heading}</DialogTitle>
         {asking && picked ? (
-          <>
+          <div key="ask" className="grid gap-4">
             <p className="text-[20px] font-semibold text-ink">{picked.reward}</p>
             <DialogDescription className={leadClass}>This can&rsquo;t be undone without a staff member.</DialogDescription>
             <button type="button" className={primaryButtonClass} disabled={busy} onClick={() => confirm(choice)}>
               {busy ? "Saving…" : "Yes, use it"}
             </button>
-            <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => confirm("none")}>
+            <button type="button" autoFocus className={secondaryButtonClass} disabled={busy} onClick={() => confirm("none")}>
               No, just check in
             </button>
-          </>
+          </div>
         ) : (
-          <>
+          <div key="choose" className="grid gap-4">
             {pending.state.used && <p className={leadClass}>You&rsquo;ve used today&rsquo;s reward here: {pending.state.used.reward}.</p>}
             <RewardChoices waiting={waiting} choice={choice} onChange={setChoice} />
             <button type="button" className={`${primaryButtonClass} min-h-14 text-[17px]`} disabled={busy} onClick={() => (picked ? setAsking(true) : confirm("none"))}>
@@ -75,7 +75,10 @@ export function CheckInModal({ pending, onDone, onClose }: { pending: PendingChe
             <DialogDescription className={hintClass}>
               We&rsquo;ll ask for your location to help the taproom spot misuse. You can say no.
             </DialogDescription>
-          </>
+            <button type="button" className={secondaryButtonClass} disabled={busy} onClick={onClose}>
+              Not now
+            </button>
+          </div>
         )}
         {error && (
           <p role="alert" className={fieldErrorClass}>

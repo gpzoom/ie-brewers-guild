@@ -279,6 +279,8 @@ export const openStaffQr = createServerFn({ method: "POST" })
   });
 
 export type PendingCheckIn = {
+  /** When it was scanned: names this scan in the confirm and cancel calls. */
+  scanAt: string;
   memberName: string;
   memberSlug: string;
   plateCode: string;
@@ -302,6 +304,7 @@ export const getPendingCheckIn = createServerFn({ method: "GET" }).handler(async
   const today = await store.findVisit(holder.id, plate.memberId, tapCardDay(at));
   const state = await barState(store, { holderId: holder.id, memberId: plate.memberId, cardId: null, deviceId: null, at, firstToday: false, newlyEarned: [] });
   return {
+    scanAt: scan.at,
     memberName: plate.memberName,
     memberSlug: plate.memberSlug,
     plateCode: plate.code,
@@ -314,7 +317,8 @@ export const getPendingCheckIn = createServerFn({ method: "GET" }).handler(async
 
 /** The customer's tap: uses up the scan and records the visit. */
 export const confirmPendingCheckIn = createServerFn({ method: "POST" })
-  .inputValidator((data: { choice: PlateChoice; position: unknown }) => ({
+  .inputValidator((data: { scanAt: string; choice: PlateChoice; position: unknown }) => ({
+    scanAt: String(data?.scanAt ?? ""),
     choice: parsePendingChoice(data?.choice) ?? ({ kind: "none" } as PlateChoice),
     position: parsePosition(data?.position),
   }))
@@ -334,6 +338,7 @@ export const confirmPendingCheckIn = createServerFn({ method: "POST" })
         claim: claimPendingScan,
       },
       at,
+      data.scanAt,
     );
     if (outcome.kind === "closed") return { kind: "closed" };
     if (outcome.kind === "scan-again" || !checked.found) return { kind: "scan-again" };
@@ -347,10 +352,12 @@ export const confirmPendingCheckIn = createServerFn({ method: "POST" })
   });
 
 /** The customer closed the check-in without tapping. */
-export const cancelPendingCheckIn = createServerFn({ method: "POST" }).handler(async (): Promise<{ ok: true }> => {
-  await dropPendingScan();
-  return { ok: true };
-});
+export const cancelPendingCheckIn = createServerFn({ method: "POST" })
+  .inputValidator((data: { scanAt: string }) => ({ scanAt: String(data?.scanAt ?? "") }))
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    if (!Number.isNaN(Date.parse(data.scanAt))) await dropPendingScan(data.scanAt);
+    return { ok: true };
+  });
 
 /** The reward about to be undone, for the activity log only: a failed read doesn't stop the undo. */
 async function rewardInUse(store: BarStore, input: VisitInput): Promise<BarState["used"]> {

@@ -34,12 +34,17 @@ describe("confirmScanCore", () => {
   ];
   it.each(cases)("%s: not used up", async (_, over, kind) => {
     const { s, claim } = store(over);
-    expect((await confirmScanCore(s, now)).kind).toBe(kind);
+    expect((await confirmScanCore(s, now, scan.at)).kind).toBe(kind);
+    expect(claim).not.toHaveBeenCalled();
+  });
+  it.each(["2026-11-24T19:57:00Z", "", "nope"])("a tap on another check-in's screen (%s) never confirms this scan", async (shown) => {
+    const { s, claim } = store();
+    expect((await confirmScanCore(s, now, shown)).kind).toBe("scan-again");
     expect(claim).not.toHaveBeenCalled();
   });
   it("one scan is good for one confirm", async () => {
     const { s } = store();
-    const kinds = (await Promise.all([confirmScanCore(s, now), confirmScanCore(s, now)])).map((r) => r.kind);
+    const kinds = (await Promise.all([confirmScanCore(s, now, scan.at), confirmScanCore(s, now, scan.at)])).map((r) => r.kind);
     expect(kinds.sort()).toEqual(["ok", "scan-again"]);
   });
 });
