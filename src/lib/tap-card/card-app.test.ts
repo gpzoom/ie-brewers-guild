@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { homeScreenKind, scannedTapCardPath, successLinks } from "@/lib/tap-card/card-app";
+import { homeScreenKind, scannedTapCardPath, staffQrTokenFrom, successLinks } from "@/lib/tap-card/card-app";
 
 const TOKEN = "ABCD1234";
 
@@ -13,6 +13,13 @@ describe("scannedTapCardPath", () => {
     for (const bad of ["https://example.com/", "https://iscbrewersguild.org/card", "https://iscbrewersguild.org/t/abc", "hello", "", `/s/${TOKEN}X`, `/s/${"a".repeat(40)}_-9`, "javascript:alert(1)"]) {
       expect(scannedTapCardPath(bad)).toBeNull();
     }
+  });
+});
+
+describe("staffQrTokenFrom", () => {
+  it("finds a staff QR's code only", () => {
+    expect(staffQrTokenFrom(`/s/${TOKEN}`)).toBe(TOKEN);
+    for (const other of ["/t/ABCD2345", "/card", `/s/${TOKEN}X`]) expect(staffQrTokenFrom(other)).toBeNull();
   });
 });
 

@@ -13,6 +13,7 @@ import {
   type MemberHours,
   type SourceTotal,
 } from "@/lib/tap-card/staff-activity";
+import type { LocationWord } from "@/lib/tap-card/location";
 
 export type ActivityRange = 7 | 30 | 90 | "all";
 export type SummaryRow = SourceTotal & { name: string; removed: boolean };
@@ -28,6 +29,7 @@ export type ActivityItem = {
   event: ActivityRow["event"];
   method: "qr" | "pin";
   reward: string | null;
+  location: LocationWord | null;
   flags: FlagKind[];
 };
 export type StaffPerson = { id: string; name: string; removed: boolean };
@@ -132,6 +134,7 @@ export function buildPage(input: {
       event: r.event,
       method: r.method,
       reward: r.reward,
+      location: r.location,
       flags: flags.get(r.id) ?? [],
     }),
   );

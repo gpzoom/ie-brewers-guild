@@ -8,9 +8,11 @@ import { firstNameOf } from "@/lib/tap-card/card-view";
 import { barState, checkInVisit, undoBarReward, useBarReward, type BarState, type BarStore, type RewardChoice, type VisitInput } from "@/lib/tap-card/bar-core";
 import { barStore } from "@/lib/tap-card/bar-store.server";
 import { awardMilestones } from "@/lib/tap-card/tap-card-store.server";
-import { claimPlatePending, onStagingSite, readHolderId, readPlatePending, setPlatePending } from "@/lib/tap-card/tap-card-cookies.server";
-import { decideStaffQrView, isStaffQrToken, isTrailStop, memberTakesCheckIns, parsePendingChoice, type PendingChoice } from "@/lib/tap-card/staff-qr";
+import { claimPendingScan, dropPendingScan, notePendingScan, onStagingSite, readHolderId, readPendingScan } from "@/lib/tap-card/tap-card-cookies.server";
+import { decideStaffQrView, isStaffQrToken, isTrailStop, memberTakesCheckIns, parsePendingChoice, scanIsFresh } from "@/lib/tap-card/staff-qr";
 import { activePinCount, ensurePlate, loadPersonalPins } from "@/lib/tap-card/plate-store.server";
+import { locationWord, parsePosition, type LocationWord, type Position } from "@/lib/tap-card/location";
+import { confirmScanCore } from "@/lib/tap-card/scan-core";
 import { matchPin, plateIsOn } from "@/lib/tap-card/staff-codes";
 import { logTurnedOff, logVisitActivity, pinSource, sourceByQr, type Source, type VisitResult } from "@/lib/tap-card/staff-source.server";
 import { requireTapCardEditor } from "@/lib/tap-card/tap-card-editor.server";
@@ -26,7 +28,7 @@ import { PLATE_LOCK_MINUTES, plateUrl, staffCodeGate, type AttemptStore } from "
  * page only looks.
  */
 
-type Plate = { memberId: string; memberName: string; memberSlug: string; staffCode: string | null; staffCodeOff: boolean; takesCheckIns: boolean; open: boolean; trailStop: boolean };
+type Plate = { code: string; memberType: string; lat: number | null; lng: number | null; memberId: string; memberName: string; memberSlug: string; staffCode: string | null; staffCodeOff: boolean; takesCheckIns: boolean; open: boolean; trailStop: boolean };
 
 async function loadPlate(service: SupabaseClient, rawCode: string): Promise<Plate | null> {
   const code = normalizeCardCode(rawCode);
@@ -36,16 +38,20 @@ async function loadPlate(service: SupabaseClient, rawCode: string): Promise<Plat
 async function loadPlateBy(service: SupabaseClient, column: "code" | "member_id", value: string): Promise<Plate | null> {
   const { data, error } = await service
     .from("tap_card_plates")
-    .select("member_id, staff_code, staff_code_off, members!inner(business_name, slug, status, member_type, trail_eligible)")
+    .select("code, member_id, staff_code, staff_code_off, members!inner(business_name, slug, status, member_type, trail_eligible, latitude, longitude)")
     .eq(column, value)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
-  const m = data.members as unknown as { business_name: string; slug: string; status: string; member_type: string; trail_eligible: boolean };
+  const m = data.members as unknown as { business_name: string; slug: string; status: string; member_type: string; trail_eligible: boolean; latitude: number | null; longitude: number | null };
   // A 4-digit code turns the plate on: the shared one (even switched off) or a person's.
   const takesCheckIns = memberTakesCheckIns({ status: m.status, memberType: m.member_type, trailEligible: m.trail_eligible }, onStagingSite());
   const personalActive = takesCheckIns && data.staff_code === null ? await activePinCount(service, data.member_id) : 0;
   return {
+    code: data.code,
+    memberType: m.member_type,
+    lat: m.latitude === null ? null : Number(m.latitude),
+    lng: m.longitude === null ? null : Number(m.longitude),
     memberId: data.member_id,
     memberName: m.business_name,
     memberSlug: m.slug,
@@ -83,11 +89,18 @@ function attemptStore(service: SupabaseClient, holderId: string, memberId: strin
   };
 }
 
+/** A pass that has never checked in anywhere: just enrolled. */
+async function hasNoVisits(service: SupabaseClient, holderId: string): Promise<boolean> {
+  const { data, error } = await service.from("tap_card_visits").select("id").eq("holder_id", holderId).limit(1);
+  if (error) throw new Error(error.message);
+  return (data ?? []).length === 0;
+}
+
 export type PlateView =
   | { view: "unknown" }
   | { view: "closed"; memberName: string }
   | { view: "signed-out"; code: string; memberName: string; canJoinTrail: boolean; trailStop: boolean }
-  | { view: "ready"; code: string; memberName: string; memberSlug: string; firstName: string; nextVisitNumber: number; checkedInToday: boolean; canJoinTrail: boolean; trailStop: boolean; state: BarState };
+  | { view: "ready"; code: string; memberName: string; memberSlug: string; firstName: string; nextVisitNumber: number; checkedInToday: boolean; canJoinTrail: boolean; trailStop: boolean; newPass: boolean; state: BarState };
 
 export const getPlateView = createServerFn({ method: "GET" })
   .inputValidator((data: { code: string }) => ({ code: String(data?.code ?? "") }))
@@ -115,6 +128,7 @@ export const getPlateView = createServerFn({ method: "GET" })
       nextVisitNumber: today ? state.visitNumber : state.visitNumber + 1,
       checkedInToday: today !== null,
       canJoinTrail: await canJoinTrail(service, holderId),
+      newPass: await hasNoVisits(service, holderId),
       trailStop: plate.trailStop,
       state,
     };
@@ -142,20 +156,31 @@ async function plateContext(rawCode: string, staffCode: string) {
     pinSource(matchPin(staffCode, { shared: plate.staffCode, sharedOff: plate.staffCodeOff, personal })),
   );
   if (gate.kind !== "ok") return { refuse: gate as PlateResult };
-  return { service, source: gate.match, input: { holderId, memberId: plate.memberId, cardId: null, deviceId: null, at: new Date() } };
+  return { service, plate, source: gate.match, input: { holderId, memberId: plate.memberId, cardId: null, deviceId: null, at: new Date() } };
 }
 
 export const confirmAtPlate = createServerFn({ method: "POST" })
-  .inputValidator((data: { code: string; staffCode: string; choice: PlateChoice }) => ({
+  .inputValidator((data: { code: string; staffCode: string; choice: PlateChoice; position: unknown }) => ({
     code: String(data?.code ?? ""),
     staffCode: String(data?.staffCode ?? ""),
     choice: parsePendingChoice(data?.choice) ?? ({ kind: "none" } as PlateChoice),
+    position: parsePosition(data?.position),
   }))
   .handler(async ({ data }): Promise<PlateResult> => {
     const ctx = await plateContext(data.code, data.staffCode);
     if ("refuse" in ctx) return ctx.refuse!;
-    return recordVisit(ctx.service, ctx.input, data.choice, ctx.source);
+    return recordVisit(ctx.service, ctx.input, data.choice, ctx.source, wordFor(ctx.plate, data.position));
   });
+
+/** Never stops a check-in; the position itself goes no further than here. */
+function wordFor(plate: Plate, position: Position | null): LocationWord | null {
+  try {
+    return locationWord(position, plate);
+  } catch {
+    console.error("Scan Pass location: couldn't be worked out");
+    return null;
+  }
+}
 
 /** Records today's visit and, if chosen, uses a reward (both ways of confirming end here). */
 async function recordVisit(
@@ -163,6 +188,7 @@ async function recordVisit(
   input: { holderId: string; memberId: string; cardId: null; deviceId: null; at: Date },
   choice: PlateChoice,
   source: Source,
+  location: LocationWord | null,
 ): Promise<PlateResult> {
   const store = barStore(service);
   const checkedIn = await checkInVisit(store, input);
@@ -173,7 +199,7 @@ async function recordVisit(
     return result;
   } finally {
     // Even when the rest fails, the check-in happened, so it's in the log.
-    await logVisitActivity(service, store, input, null, logged, source);
+    await logVisitActivity(service, store, input, null, logged, source, location);
   }
 }
 
@@ -195,119 +221,136 @@ async function finishVisit(
 
 // ---- The staff QR (/s/<token>) ----
 
-/** The plate's Continue: hold the customer's choice for the staff QR. */
-export const choosePlateAction = createServerFn({ method: "POST" })
-  .inputValidator((data: { code: string; choice: PendingChoice }) => ({
-    code: String(data?.code ?? ""),
-    choice: parsePendingChoice(data?.choice) ?? ({ kind: "none" } as PendingChoice),
-  }))
-  .handler(async ({ data }): Promise<{ kind: "ok" } | { kind: "signed-out" } | { kind: "closed" }> => {
-    const service = await getSupabaseServiceRoleClient();
-    const plate = await loadPlate(service, data.code);
-    if (!plate?.open) return { kind: "closed" };
-    if (!(await readHolderId())) return { kind: "signed-out" };
-    const saved = await setPlatePending({ memberId: plate.memberId, plateCode: normalizeCardCode(data.code)!, choice: data.choice });
-    return saved ? { kind: "ok" } : { kind: "signed-out" };
-  });
-
 /** The plate a staff QR belongs to, and whose code it is (working or turned off). */
-async function plateByStaffQr(service: SupabaseClient, token: string): Promise<{ plate: Plate; qr: { active: boolean; source: Source } } | null> {
+async function plateByStaffQr(service: SupabaseClient, token: string): Promise<FoundQr | null> {
   if (!isStaffQrToken(token)) return null;
   const qr = await sourceByQr(service, token);
   const plate = qr && (await loadPlateBy(service, "member_id", qr.memberId));
   return plate ? { plate, qr } : null;
 }
 
+type FoundQr = { plate: Plate; qr: { active: boolean; source: Source } };
+
+function qrView(found: FoundQr, signedIn: boolean) {
+  return decideStaffQrView({
+    qrMemberId: found.plate.memberId,
+    takesCheckIns: found.plate.takesCheckIns,
+    plateOpen: found.plate.open,
+    qrActive: found.qr.active,
+    signedIn,
+  });
+}
+
 export type StaffQrPage =
   | { view: "unknown" }
   | { view: "closed"; memberName: string }
   | { view: "turned-off"; memberName: string }
-  | { view: "scan-plate-first"; memberName: string }
-  | { view: "wrong-brewery"; memberName: string }
-  | { view: "check-in"; memberName: string; memberSlug: string; plateCode: string }
-  | { view: "confirm"; memberName: string; memberSlug: string; plateCode: string; rewardText: string };
+  | { view: "sign-in"; memberName: string; plateCode: string; canJoinTrail: boolean; trailStop: boolean }
+  | { view: "noted" };
 
-export const getStaffQrView = createServerFn({ method: "GET" })
+/** A pass that still exists, on this phone's session. */
+async function readHolder(service: SupabaseClient): Promise<{ id: string; firstName: string } | null> {
+  const id = await readHolderId();
+  if (!id) return null;
+  const { data, error } = await service.from("tap_card_holders").select("name").eq("id", id).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? { id, firstName: firstNameOf(data.name) } : null;
+}
+
+/** A staff QR was scanned: note it on this phone's session. Nothing is recorded until the customer taps. */
+export const openStaffQr = createServerFn({ method: "POST" })
   .inputValidator((data: { token: string }) => ({ token: String(data?.token ?? "") }))
   .handler(async ({ data }): Promise<StaffQrPage> => {
     const service = await getSupabaseServiceRoleClient();
     const found = await plateByStaffQr(service, data.token);
     if (!found) return { view: "unknown" };
     const { plate, qr } = found;
-    const holderId = await readHolderId();
-    const pending = holderId ? await readPlatePending(holderId) : null;
-    const decided = decideStaffQrView({
-      qrMemberId: plate.memberId,
-      takesCheckIns: plate.takesCheckIns,
-      plateOpen: plate.open,
-      qrActive: qr.active,
-      signedIn: holderId !== null,
-      pending,
-      now: new Date(),
-    });
-    const { memberName, memberSlug } = plate;
-    if (decided.kind === "unknown") return { view: "unknown" };
-    if (decided.kind === "closed") return { view: "closed", memberName };
-    if (decided.kind === "turned-off") {
-      if (holderId) await logTurnedOff(service, { holderId, memberId: plate.memberId, token: data.token, source: qr.source, at: new Date() });
+    const { memberName } = plate;
+    const holder = await readHolder(service);
+    const { kind } = qrView(found, holder !== null);
+    if (kind === "turned-off") {
+      if (holder) await logTurnedOff(service, { holderId: holder.id, memberId: plate.memberId, token: data.token, source: qr.source, at: new Date() });
       return { view: "turned-off", memberName };
     }
-    if (decided.kind === "scan-plate-first" || decided.kind === "wrong-brewery") return { view: decided.kind, memberName };
-    if (decided.kind === "check-in") return { view: "check-in", memberName, memberSlug, plateCode: decided.plateCode };
-    const state = await barState(barStore(service), {
-      holderId: holderId!,
-      memberId: plate.memberId,
-      cardId: null,
-      deviceId: null,
-      at: new Date(),
-      firstToday: false,
-      newlyEarned: [],
-    });
-    const wanted = decided.choice;
-    const reward = [state.featured, ...state.others].find(
-      (r) =>
-        r !== null &&
-        (wanted.kind === "trail"
-          ? r.kind === "trail"
-          : wanted.kind === "earn"
-            ? r.kind === "earn" && r.slot === wanted.slot
-            : r.kind === "member" && r.id === wanted.id),
-    );
-    // The reward is gone (used or expired since the plate): a plain check-in is still fine.
-    if (!reward || state.used) return { view: "check-in", memberName, memberSlug, plateCode: decided.plateCode };
-    return { view: "confirm", memberName, memberSlug, plateCode: decided.plateCode, rewardText: reward.reward };
+    if (kind === "unknown") return { view: "unknown" };
+    if (kind === "closed") return { view: "closed", memberName };
+    if (kind === "note-scan" && (await notePendingScan({ memberId: plate.memberId, staffCode: data.token }))) return { view: "noted" };
+    return { view: "sign-in", memberName, plateCode: plate.code, canJoinTrail: await canJoinTrail(service, null), trailStop: plate.trailStop };
   });
 
-/** The customer confirmed on the staff QR page: record the waiting choice once. */
-export const confirmByStaffQr = createServerFn({ method: "POST" })
-  .inputValidator((data: { token: string; skipReward?: boolean }) => ({ token: String(data?.token ?? ""), skipReward: data?.skipReward === true }))
-  .handler(async ({ data }): Promise<PlateResult | { kind: "scan-plate-first" }> => {
+export type PendingCheckIn = {
+  memberName: string;
+  memberSlug: string;
+  plateCode: string;
+  firstName: string;
+  nextVisitNumber: number;
+  checkedInToday: boolean;
+  state: BarState;
+};
+
+/** What the check-in modal shows, while this phone has a fresh scan. Never the staff code. */
+export const getPendingCheckIn = createServerFn({ method: "GET" }).handler(async (): Promise<PendingCheckIn | null> => {
+  const scan = await readPendingScan();
+  const at = new Date();
+  if (!scan || !scanIsFresh(scan.at, at)) return null;
+  const service = await getSupabaseServiceRoleClient();
+  const found = await plateByStaffQr(service, scan.staffCode);
+  const holder = await readHolder(service);
+  if (!found || !holder || found.plate.memberId !== scan.memberId || qrView(found, true).kind !== "note-scan") return null;
+  const { plate } = found;
+  const store = barStore(service);
+  const today = await store.findVisit(holder.id, plate.memberId, tapCardDay(at));
+  const state = await barState(store, { holderId: holder.id, memberId: plate.memberId, cardId: null, deviceId: null, at, firstToday: false, newlyEarned: [] });
+  return {
+    memberName: plate.memberName,
+    memberSlug: plate.memberSlug,
+    plateCode: plate.code,
+    firstName: holder.firstName,
+    nextVisitNumber: today ? state.visitNumber : state.visitNumber + 1,
+    checkedInToday: today !== null,
+    state,
+  };
+});
+
+/** The customer's tap: uses up the scan and records the visit. */
+export const confirmPendingCheckIn = createServerFn({ method: "POST" })
+  .inputValidator((data: { choice: PlateChoice; position: unknown }) => ({
+    choice: parsePendingChoice(data?.choice) ?? ({ kind: "none" } as PlateChoice),
+    position: parsePosition(data?.position),
+  }))
+  .handler(async ({ data }): Promise<PlateResult | { kind: "scan-again" }> => {
     const service = await getSupabaseServiceRoleClient();
-    const found = await plateByStaffQr(service, data.token);
-    if (!found) return { kind: "closed" };
-    const { plate, qr } = found;
-    const holderId = await readHolderId();
-    const pending = holderId ? await readPlatePending(holderId) : null;
-    const decided = decideStaffQrView({
-      qrMemberId: plate.memberId,
-      takesCheckIns: plate.takesCheckIns,
-      plateOpen: plate.open,
-      qrActive: qr.active,
-      signedIn: holderId !== null,
-      pending,
-      now: new Date(),
-    });
-    if (decided.kind === "closed") return { kind: "closed" };
-    if (decided.kind === "turned-off") {
-      if (holderId) await logTurnedOff(service, { holderId, memberId: plate.memberId, token: data.token, source: qr.source, at: new Date() });
+    const holder = await readHolder(service);
+    if (!holder) return { kind: "signed-out" };
+    const at = new Date();
+    const checked: { found: FoundQr | null } = { found: null };
+    const outcome = await confirmScanCore(
+      {
+        pending: readPendingScan,
+        async codeState(staffCode) {
+          checked.found = await plateByStaffQr(service, staffCode);
+          return checked.found && { memberId: checked.found.plate.memberId, view: qrView(checked.found, true) };
+        },
+        claim: claimPendingScan,
+      },
+      at,
+    );
+    if (outcome.kind === "closed") return { kind: "closed" };
+    if (outcome.kind === "scan-again" || !checked.found) return { kind: "scan-again" };
+    const { plate, qr } = checked.found;
+    if (outcome.kind === "turned-off") {
+      await logTurnedOff(service, { holderId: holder.id, memberId: plate.memberId, token: outcome.scan.staffCode, source: qr.source, at });
       return { kind: "turned-off" };
     }
-    if (!holderId) return { kind: "signed-out" };
-    if (decided.kind !== "check-in" && decided.kind !== "confirm") return { kind: "scan-plate-first" };
-    if (!(await claimPlatePending(pending!))) return { kind: "scan-plate-first" };
-    const choice: PlateChoice = decided.kind === "confirm" && !data.skipReward ? decided.choice : { kind: "none" };
-    return recordVisit(service, { holderId, memberId: plate.memberId, cardId: null, deviceId: null, at: new Date() }, choice, qr.source);
+    const input = { holderId: holder.id, memberId: plate.memberId, cardId: null, deviceId: null, at };
+    return recordVisit(service, input, data.choice, qr.source, wordFor(plate, data.position));
   });
+
+/** The customer closed the check-in without tapping. */
+export const cancelPendingCheckIn = createServerFn({ method: "POST" }).handler(async (): Promise<{ ok: true }> => {
+  await dropPendingScan();
+  return { ok: true };
+});
 
 /** The reward about to be undone, for the activity log only: a failed read doesn't stop the undo. */
 async function rewardInUse(store: BarStore, input: VisitInput): Promise<BarState["used"]> {

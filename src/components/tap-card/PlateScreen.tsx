@@ -1,12 +1,11 @@
 import { useState, type FormEvent } from "react";
-import { choosePlateAction, confirmAtPlate, type PlateChoice, type PlateView } from "@/lib/tap-card/plate.server";
+import { confirmAtPlate, type PlateView } from "@/lib/tap-card/plate.server";
 import { requestHolderSignIn } from "@/lib/tap-card/holder.server";
-import type { BarReward, OfferSlot } from "@/lib/tap-card/loyalty";
-import { PENDING_MINUTES } from "@/lib/tap-card/staff-qr";
-import { CanvasHeading, cardLinkClass, fieldErrorClass, inputClass, labelClass, leadClass, primaryButtonClass, secondaryButtonClass } from "@/components/public-forms/PublicFormParts";
+import { getPosition } from "@/lib/tap-card/get-position";
+import { CanvasHeading, cardLinkClass, fieldErrorClass, hintClass, inputClass, labelClass, leadClass, primaryButtonClass, secondaryButtonClass } from "@/components/public-forms/PublicFormParts";
 import { Eyebrow } from "@/components/tap-card/TapCardShell";
-import { useByDate } from "@/components/tap-card/CheckInScreen";
-import { PlateSuccess, StaffCodeForm, plateRefusal, type PlateOk } from "@/components/tap-card/PlateSuccess";
+import { RewardChoices, choiceOf, keyOf, waitingRewards } from "@/components/tap-card/RewardChoices";
+import { PlateSuccess, StaffCodeForm, type PlateOk } from "@/components/tap-card/PlateSuccess";
 import { SignInCodeForm } from "@/components/tap-card/SignInCodeForm";
 import { CardScanner } from "@/components/tap-card/CardScanner";
 import { joinPageUrl } from "@/lib/tap-card/trail-join";
@@ -15,119 +14,66 @@ import { signedOutButtons, type SignUpChoice } from "@/lib/tap-card/plate";
 
 type Ready = Extract<PlateView, { view: "ready" }>;
 
-function rewardLine(r: BarReward): string {
-  if (r.kind === "trail") return `Use my Beer Trail offer: ${r.reward}`;
-  if (r.kind === "earn") return `Use my reward: ${r.reward} (earned with this visit)`;
-  return `Use my reward: ${r.reward} (use by ${useByDate(r.expiresAt)})`;
-}
-const keyOf = (r: BarReward) => (r.kind === "trail" ? "trail" : r.kind === "earn" ? `earn:${r.slot}` : r.id);
-const choiceOf = (key: string): PlateChoice =>
-  key === "none"
-    ? { kind: "none" }
-    : key === "trail"
-      ? { kind: "trail" }
-      : key.startsWith("earn:")
-        ? { kind: "earn", slot: key.slice(5) as OfferSlot }
-        : { kind: "member", id: key };
-
 /**
- * The customer picks, taps Continue, then scans the staff QR code
- * (spec 2026-11-18 staff QR). The staff code is the backup.
+ * A pass holder at the counter plate: check-ins are by staff QR (spec
+ * 2026-11-24). The 4-digit staff code is the backup.
  */
 function ReadyScreen({ view }: { view: Ready }) {
-  const waiting = view.state.used ? [] : [view.state.featured, ...view.state.others].filter((r): r is BarReward => r !== null);
+  const waiting = waitingRewards(view.state);
   const [choice, setChoice] = useState(waiting[0] ? keyOf(waiting[0]) : "none");
-  const [step, setStep] = useState<"choose" | "scan" | "code">("choose");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [typing, setTyping] = useState(false);
   const [done, setDone] = useState<PlateOk | null>(null);
-
-  async function onContinue(event: FormEvent) {
-    event.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      const result = await choosePlateAction({ data: { code: view.code, choice: choiceOf(choice) } });
-      if (result.kind === "ok") setStep("scan");
-      else setError(plateRefusal(result));
-    } catch {
-      setError("That didn't work. Check the connection and try again.");
-    } finally {
-      setBusy(false);
-    }
-  }
 
   if (done) return <PlateSuccess memberName={view.memberName} memberSlug={view.memberSlug} plateCode={view.code} initial={done} />;
 
-  const picked = choice === "none" ? "Just check in" : rewardLine(waiting.find((r) => keyOf(r) === choice)!);
-
-  if (step === "scan" || step === "code") {
-    return (
-      <div className="flex flex-col gap-4">
-        <Eyebrow>{view.memberName}</Eyebrow>
-        <CanvasHeading size="md">Now scan the staff QR code</CanvasHeading>
-        <p className={leadClass}>
-          Ask a staff member for the Scan Pass QR code they keep behind the counter, and scan it with your camera within {PENDING_MINUTES}{" "}
-          minutes.
-        </p>
-        <p className="rounded-xl border border-canvas-border bg-white px-4 py-3 text-[15px] text-ink">{picked}</p>
-        {step === "scan" && <CardScanner label="Scan the staff QR code" />}
-        {step === "code" ? (
+  return (
+    <div className="flex flex-col gap-4">
+      <Eyebrow>{view.memberName}</Eyebrow>
+      <CanvasHeading size="md">
+        {view.newPass ? `Your Scan Pass is ready, ${view.firstName}.` : `Hi ${view.firstName}, you already have a Scan Pass.`}
+      </CanvasHeading>
+      {typing ? (
+        <>
+          <RewardChoices waiting={waiting} choice={choice} onChange={setChoice} />
           <StaffCodeForm
-            label="Confirm"
+            label={choice === "none" ? "Check in" : "Use my reward"}
             onSubmit={async (staffCode) => {
-              const result = await confirmAtPlate({ data: { code: view.code, staffCode, choice: choiceOf(choice) } });
+              const position = await getPosition(navigator.geolocation);
+              const result = await confirmAtPlate({ data: { code: view.code, staffCode, choice: choiceOf(choice), position } });
               if (result.kind === "ok") setDone(result);
               return result;
             }}
           />
-        ) : (
-          <button type="button" className="w-fit text-[14px] font-medium text-brand underline underline-offset-2" onClick={() => setStep("code")}>
+          <p className={hintClass}>We&rsquo;ll ask for your location to help the taproom spot misuse. You can say no.</p>
+          <button type="button" className="w-fit text-[14px] font-medium text-ink-muted underline underline-offset-2" onClick={() => setTyping(false)}>
+            Scan the staff QR code instead
+          </button>
+        </>
+      ) : (
+        <>
+          <p className={leadClass}>To check in, scan the staff QR code. Ask a staff member for it.</p>
+          <CardScanner label="Scan the staff QR code" />
+          {waiting.length > 0 && (
+            <section className="flex flex-col gap-1 rounded-xl border border-canvas-border bg-white px-4 py-3" aria-label="Waiting for you here">
+              <h2 className="text-[14px] font-semibold text-ink">Waiting for you here</h2>
+              <ul className="flex flex-col gap-1 text-[15px] text-ink">
+                {waiting.map((r) => (
+                  <li key={keyOf(r)}>{r.reward}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <button type="button" className="w-fit text-[14px] font-medium text-brand underline underline-offset-2" onClick={() => setTyping(true)}>
             Enter the staff code instead
           </button>
-        )}
-        <button type="button" className="w-fit text-[14px] font-medium text-ink-muted underline underline-offset-2" onClick={() => setStep("choose")}>
-          Change my choice
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <form onSubmit={onContinue} className="flex flex-col gap-4">
-      <Eyebrow>{view.memberName}</Eyebrow>
-      <CanvasHeading size="md">
-        {view.checkedInToday ? `Checked in today — visit #${view.nextVisitNumber}` : `Hi ${view.firstName} — this will be visit #${view.nextVisitNumber}`}
-      </CanvasHeading>
-      {view.state.used ? (
-        <p className={leadClass}>You&rsquo;ve used today&rsquo;s reward here: {view.state.used.reward}.</p>
-      ) : (
-        waiting.length > 0 && (
-          <fieldset className="flex flex-col gap-2">
-            <legend className={`${labelClass} mb-1`}>Choose one:</legend>
-            {[...waiting.map((r) => ({ key: keyOf(r), label: rewardLine(r) })), { key: "none", label: "Just check in" }].map((o) => (
-              <label key={o.key} className="flex min-h-11 items-center gap-3 rounded-xl border border-canvas-border bg-white px-4 py-2 text-[15px] text-ink">
-                <input type="radio" name="choice" value={o.key} checked={choice === o.key} onChange={() => setChoice(o.key)} className="size-5" />
-                {o.label}
-              </label>
-            ))}
-          </fieldset>
-        )
+        </>
       )}
-      <button type="submit" className={primaryButtonClass} disabled={busy}>
-        {busy ? "One moment…" : waiting.length > 0 ? "Continue" : "Check in"}
-      </button>
       {view.canJoinTrail && (
         <a href={joinPageUrl(view.code)} className={`${cardLinkClass} w-fit text-[14px]`}>
           Join this year&rsquo;s Beer Trail
         </a>
       )}
-      {error && (
-        <p role="alert" className={fieldErrorClass}>
-          {error}
-        </p>
-      )}
-    </form>
+    </div>
   );
 }
 

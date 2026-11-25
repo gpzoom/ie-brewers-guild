@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { scannedTapCardPath } from "@/lib/tap-card/card-app";
+import { openStaffQr } from "@/lib/tap-card/plate.server";
+import { scannedTapCardPath, staffQrTokenFrom } from "@/lib/tap-card/card-app";
 import { primaryButtonClass, secondaryButtonClass } from "@/components/public-forms/PublicFormParts";
 
 type Detector = { detect(source: HTMLVideoElement): Promise<{ rawValue: string }[]> };
@@ -33,14 +34,38 @@ async function makeReader(): Promise<(video: HTMLVideoElement, canvas: HTMLCanva
 
 /**
  * Scan: the camera inside the card page. Reads only the Scan Pass's own codes
- * (counter plate, staff QR) and opens them here, so a card saved to the
+ * (counter plate, staff QR). A staff QR is noted here, without its code ever
+ * reaching the address bar; the check-in opens on the pass page. A card saved to the
  * Home Screen never has to hand off to the browser.
  */
-export function CardScanner({ label = "Scan the QR code" }: { label?: string }) {
+export function CardScanner({ label = "Scan the staff QR code", onNoted }: { label?: string; onNoted?: () => void }) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Read through a ref, so a new handler doesn't restart the camera.
+  const notedRef = useRef(onNoted);
+  notedRef.current = onNoted;
+
+  async function openScanned(path: string) {
+    const token = staffQrTokenFrom(path);
+    if (token) {
+      setMessage("One moment…");
+      try {
+        const result = await openStaffQr({ data: { token } });
+        if (result.view === "noted") {
+          setOpen(false);
+          if (notedRef.current) notedRef.current();
+          else window.location.assign("/card");
+          return;
+        }
+      } catch {
+        // the page itself tries again and explains
+      }
+    }
+    window.location.assign(path);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -70,12 +95,12 @@ export function CardScanner({ label = "Scan the QR code" }: { label?: string }) 
             if (path) {
               stopped = true;
               stream?.getTracks().forEach((t) => t.stop());
-              window.location.assign(path);
+              await openScanned(path);
               return;
             }
             if (text !== lastWrong) {
               lastWrong = text;
-              setMessage("That isn't a Scan Pass code. Point at the counter plate or the staff QR code.");
+              setMessage("That isn't a Scan Pass code. Point at the staff QR code.");
             }
           }
         } catch {
@@ -113,7 +138,7 @@ export function CardScanner({ label = "Scan the QR code" }: { label?: string }) 
       <video ref={videoRef} className="aspect-square w-full max-w-[420px] rounded-[18px] bg-black object-cover" playsInline muted />
       <canvas ref={canvasRef} className="hidden" />
       <p className="max-w-[420px] text-center text-[15px] text-white" aria-live="polite">
-        {message ?? "Point your camera at the counter plate or the staff QR code."}
+        {message ?? "Point your camera at the staff QR code."}
       </p>
       <button type="button" className={`${secondaryButtonClass} max-w-[420px]`} onClick={() => setOpen(false)}>
         Close

@@ -150,8 +150,7 @@ export function StaffCodesBox({ memberId, view, busy, run, onDownload }: BoxProp
   return (
     <>
       <p className="text-[13px] text-ink-muted">
-        After a customer chooses at the plate, your staff member holds up a staff QR code and the customer scans it to
-        confirm. Keep the codes out of customers&rsquo; reach. If you think one has been copied, make a new one: the old one
+        Your staff member holds up a staff QR code and the customer scans it to check in. Keep the codes out of customers&rsquo; reach. If you think one has been copied, make a new one: the old one
         stops working right away.
       </p>
       <div className={rowClass}>

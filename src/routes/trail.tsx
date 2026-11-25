@@ -34,7 +34,7 @@ function TrailPage() {
     },
     {
       title: "Scan in at every new taproom",
-      body: "Scan the counter plate, then the staff QR code. Your visit counts, and you get that stop's offer once a year.",
+      body: "Scan the staff QR code and tap Check in. Your visit counts, and you get that stop's offer once a year.",
     },
     { title: "Earn Guild rewards", body: "Visit more stops to earn rewards from the Guild. Visits count — not how much you drink." },
   ];

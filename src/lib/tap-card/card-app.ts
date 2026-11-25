@@ -20,6 +20,11 @@ export function scannedTapCardPath(text: string): string | null {
   return PLATE_PATH.test(path) || STAFF_QR_PATH.test(path) ? path : null;
 }
 
+/** The staff code in a scanned staff QR's path, or null for anything else. */
+export function staffQrTokenFrom(path: string): string | null {
+  return STAFF_QR_PATH.test(path) ? path.slice(3) : null;
+}
+
 export type HomeScreenKind = "hidden" | "prompt" | "iphone" | "menu";
 
 export function homeScreenKind(i: { userAgent: string; standalone: boolean; canPrompt: boolean }): HomeScreenKind {

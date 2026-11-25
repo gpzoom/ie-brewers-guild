@@ -12,15 +12,15 @@ export type KitPiece = "counter-card" | "table-tent" | "staff-cards";
 
 export const PLATE_COPY = {
   band: "INLAND SCAN PASS",
-  headline: "SCAN TO CHECK IN",
-  line: "Get your free Scan Pass · earn rewards here.",
+  headline: "GET YOUR SCAN PASS",
+  line: "Free on your phone · earn rewards here.",
   trailBadge: "BEER TRAIL STOP",
 } as const;
 
 /** No 4-digit staff code is ever printed (owner, 2026-11-21). */
 export const STAFF_COPY = {
   eyebrow: "STAFF ONLY · keep behind the counter",
-  howTo: "After a customer chooses at the plate, hold this up for them to scan.",
+  howTo: "Hold this up for the customer to scan, then look for the live green screen.",
 } as const;
 
 export const REPRINT_NOTICE = {

@@ -15,6 +15,7 @@ import {
   formatActivityDay,
   formatActivityTime,
   isActivityEmpty,
+  locationLabel,
   methodLabel,
   personName,
   totalsText,
@@ -140,7 +141,8 @@ export function StaffActivityCard({ memberId, staffVersion }: { memberId: string
       </div>
       <p className="text-[13px] text-ink-muted">
         A flag means it's worth a look. It isn't proof of anything. Busy nights and private events can cause one. Open hours use your
-        hours as posted now, so changing them can change older flags.
+        hours as posted now, so changing them can change older flags. Location comes from the
+        customer's phone, and they can say no.
       </p>
       {!shown && (
         <p role="status" className="text-[13px] text-ink-muted">
@@ -228,6 +230,7 @@ function ActivityList({ open, rowKey, onMore }: { open: Open; rowKey: string; on
               <span>{item.customer}</span>
               <span>{eventLabel(item.event)}</span>
               {method && <span className="text-ink-muted">{method}</span>}
+              {item.location && <span className="text-ink-muted">{locationLabel(item.location)}</span>}
               {item.reward && <span>{item.reward}</span>}
               {item.flags.map((f) => (
                 <span key={f}>

@@ -646,7 +646,7 @@ ${signInUrl}`,
     case "tap_card_welcome": {
       const first = payload.name.split(" ")[0] || payload.name;
       const hi = `Hi ${first},`;
-      const body = "Your Inland Scan Pass is ready. At every taproom on the trail, scan the counter plate with your phone to record your visit and get that stop's first-beer offer. See your progress any time:";
+      const body = "Your Inland Scan Pass is ready. At every taproom on the trail, scan the staff QR code with your phone to record your visit and get that stop's first-beer offer. See your progress any time:";
       const trail = `The stops and their offers: ${siteUrl}/trail`;
       const legal = `The Scan Pass is covered by our Terms of Use (${siteUrl}/terms) and Privacy Policy (${siteUrl}/privacy).`;
       return {

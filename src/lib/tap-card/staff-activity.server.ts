@@ -37,6 +37,7 @@ type ActivityDbRow = {
   staff_id: string | null;
   method: "qr" | "pin" | null;
   reward: string | null;
+  location: ActivityRow["location"];
 };
 
 async function loadHours(service: SupabaseClient, memberId: string): Promise<MemberHours> {
@@ -84,7 +85,7 @@ async function loadActivity(service: SupabaseClient, memberId: string, start: st
     readAllRows<ActivityDbRow>((from, to) => {
       let query = service
         .from("tap_card_staff_activity")
-        .select("id, holder_id, at, event, source, staff_id, method, reward")
+        .select("id, holder_id, at, event, source, staff_id, method, reward, location")
         .eq("member_id", memberId);
       if (start) query = query.gte("at", start);
       return query.order("at").order("id").range(from, to);
@@ -106,6 +107,7 @@ async function loadActivity(service: SupabaseClient, memberId: string, start: st
     staffId: r.staff_id,
     method: r.method === "pin" ? "pin" : "qr",
     reward: r.reward,
+    location: r.location ?? null,
   }));
   const misses = missRows.map((m) => ({ holderId: m.holder_id, at: m.missed_at }));
   return { rows, misses, labels };

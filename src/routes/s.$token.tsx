@@ -1,26 +1,30 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { getStaffQrView } from "@/lib/tap-card/plate.server";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { openStaffQr } from "@/lib/tap-card/plate.server";
 import { TapCardShell } from "@/components/tap-card/TapCardShell";
 import { StaffQrScreen } from "@/components/tap-card/StaffQrScreen";
 
 /**
- * /s/<token>: a brewery's staff QR code, kept behind the counter. The
- * customer scans it after choosing at the counter plate; opening the page
- * only looks, the screen itself confirms. (spec 2026-11-18 staff QR)
+ * /s/<token>: a staff QR code. Scanning it notes the scan on this phone and
+ * moves to /card, so the code isn't in the address of the page that checks
+ * in. Nothing is recorded here. (spec 2026-11-24 one scan)
  */
 export const Route = createFileRoute("/s/$token")({
   staleTime: 0,
-  loader: ({ params }) => getStaffQrView({ data: { token: params.token } }),
+  gcTime: 0,
+  loader: async ({ params }) => {
+    const view = await openStaffQr({ data: { token: params.token } });
+    if (view.view === "noted") throw redirect({ to: "/card", replace: true });
+    return view;
+  },
   head: () => ({ meta: [{ title: "Confirm — Inland Scan Pass" }, { name: "robots", content: "noindex, nofollow" }] }),
   component: StaffQrRoute,
 });
 
 function StaffQrRoute() {
   const view = Route.useLoaderData();
-  const { token } = Route.useParams();
   return (
     <TapCardShell>
-      <StaffQrScreen token={token} view={view} />
+      <StaffQrScreen view={view} />
     </TapCardShell>
   );
 }

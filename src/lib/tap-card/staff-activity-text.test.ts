@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   ACTIVITY_RANGES,
+  FLAG_ORDER,
   eventLabel,
   flagText,
   formatActivityDay,
   formatActivityTime,
   isActivityEmpty,
+  locationLabel,
   methodLabel,
   personName,
   totalsText,
@@ -92,5 +94,14 @@ describe("isActivityEmpty", () => {
   it("isn't with any count or a visit before tracking", () => {
     for (const k of ["checkIns", "rewards", "undone"]) expect(isActivityEmpty({ rows: [{ ...row, [k]: 1 }], beforeTracking: 0 })).toBe(false);
     expect(isActivityEmpty({ rows: [row], beforeTracking: 1 })).toBe(false);
+  });
+});
+
+describe("location wording", () => {
+  it("names the flags and words", () => {
+    expect(flagText("far", 2)).toBe("2 far from the taproom");
+    expect(flagText("no-location")).toBe("no location");
+    expect(FLAG_ORDER.slice(0, 3)).toEqual(["outside-hours", "far", "no-location"]);
+    expect([locationLabel("near"), locationLabel("far"), locationLabel("none"), locationLabel(null)]).toEqual(["Near", "Far away", "No location", null]);
   });
 });

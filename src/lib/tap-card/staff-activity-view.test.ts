@@ -28,6 +28,7 @@ function row(over: Partial<ActivityRow> = {}): ActivityRow {
     staffId: "maria",
     method: "qr",
     reward: null,
+    location: null,
     ...over,
   };
 }
@@ -150,7 +151,7 @@ describe("buildPage", () => {
 
   it("returns only the safe fields", () => {
     const [item] = buildPage({ rows: [row({ event: "reward-used", reward: "Pint" })], hours: noHours, labels, key: "staff:maria", offset: 0 }).items;
-    expect(Object.keys(item).sort()).toEqual(["at", "customer", "event", "flags", "id", "method", "reward"]);
+    expect(Object.keys(item).sort()).toEqual(["at", "customer", "event", "flags", "id", "location", "method", "reward"]);
   });
 
   it("finds Removed staff rows by their key", () => {
@@ -170,5 +171,12 @@ describe("labelsFor", () => {
     const byTime = (items: typeof short) => items.map((i) => i.customer);
     expect(byTime(long).slice(-20).sort()).toEqual(byTime(short).sort());
     expect(new Set(labelsAll.values()).size).toBe(6000);
+  });
+});
+
+describe("location", () => {
+  it("is on each list item", () => {
+    const page = buildPage({ rows: [row({ location: "near" })], hours: noHours, labels, key: "staff:maria", offset: 0 });
+    expect(page.items[0].location).toBe("near");
   });
 });

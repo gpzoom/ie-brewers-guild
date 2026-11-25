@@ -23,21 +23,26 @@ function LiveClock() {
   );
 }
 
-export function plateRefusal(result: Exclude<PlateResult, PlateOk> | { kind: "scan-plate-first" }): string {
+export function plateRefusal(result: Exclude<PlateResult, PlateOk> | { kind: "scan-again" }): string {
   switch (result.kind) {
     case "wrong-code":
       return `That code isn't right. ${result.triesLeft} ${result.triesLeft === 1 ? "try" : "tries"} left.`;
     case "locked":
       return "Too many tries. Ask a staff member to try again in 15 minutes.";
     case "signed-out":
-      return "You've been signed out. Scan the counter plate again to sign in.";
+      return "You've been signed out. Scan the staff QR code again to sign in.";
     case "turned-off":
       return STAFF_QR_TURNED_OFF;
     case "closed":
-      return "This plate isn't taking check-ins right now. Ask a staff member for help.";
-    case "scan-plate-first":
-      return "Scan the counter plate first, then the staff QR code.";
+      return "This taproom isn't taking check-ins right now. Ask a staff member for help.";
+    case "scan-again":
+      return "Scan the staff QR code again.";
   }
+}
+
+/** Only a reward used on this very tap asks staff to pour; showing the screen again doesn't. */
+export function successUsedLine(outcome: PlateOk["outcome"]): string {
+  return outcome === "used" ? "Used just now. Staff member: please pour." : "Already used earlier today.";
 }
 
 function StaffCodeField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -122,7 +127,7 @@ export function PlateSuccess({
         <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#05603A]">{memberName}</p>
         <CanvasHeading size="md">{state.firstToday ? `Visit #${state.visitNumber} recorded` : `Checked in today — visit #${state.visitNumber}`}</CanvasHeading>
         {state.used && <p className="text-[22px] font-bold text-ink">{state.used.reward}</p>}
-        {state.used && <p className="text-[14px] text-ink">Used just now. Staff member: please pour.</p>}
+        {state.used && <p className="text-[14px] text-ink">{successUsedLine(done.outcome)}</p>}
         <LiveClock />
         <p className="text-[12px] text-ink-muted">Confirmed at {clock(confirmedAt)}</p>
       </div>

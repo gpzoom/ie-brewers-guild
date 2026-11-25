@@ -182,6 +182,17 @@ describe("logVisitActivity", () => {
   });
 });
 
+describe("location on activity", () => {
+  it("goes on the check-in and the reward, never on an undo", async () => {
+    const { service, inserted } = fakeService({});
+    const input = { holderId: "h1", memberId: "m1", cardId: null, deviceId: null, at: new Date("2026-11-24T20:00:00Z") };
+    const store = { findVisit: async () => null };
+    await logVisitActivity(service, store, input, null, result(true, reward, "used"), person, "far");
+    await logVisitActivity(service, store, input, reward, result(false, null, "undone"), person, "far");
+    expect(inserted.map((r) => [r.event, r.location])).toEqual([["check-in", "far"], ["reward-used", "far"], ["reward-undone", null]]);
+  });
+});
+
 describe("logActivity", () => {
   const rows = [{ ...activityFor(null, result(true, null), counter)[0], member_id: "m1", holder_id: "h1", visit_id: null, at: at.toISOString(), day: "2026-11-22" }];
   it("swallows a returned error and a thrown one, logging both", async () => {

@@ -103,7 +103,7 @@ function CardBody({ view }: { view: CardView }) {
       return (
         <>
           <CanvasHeading size="md">This Inland Scan Pass is active</CanvasHeading>
-          <p className={leadClass}>Scan the counter plate at every new taproom on the trail.</p>
+          <p className={leadClass}>Scan the staff QR code at every new taproom on the trail.</p>
           <a href="/card" className={primaryButtonClass}>
             See my pass
           </a>

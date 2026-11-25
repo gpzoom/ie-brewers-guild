@@ -5,8 +5,8 @@ describe("print-kit copy", () => {
   it("has the plate wording", () => {
     expect(PLATE_COPY).toEqual({
       band: "INLAND SCAN PASS",
-      headline: "SCAN TO CHECK IN",
-      line: "Get your free Scan Pass · earn rewards here.",
+      headline: "GET YOUR SCAN PASS",
+      line: "Free on your phone · earn rewards here.",
       trailBadge: "BEER TRAIL STOP",
     });
   });
@@ -14,7 +14,7 @@ describe("print-kit copy", () => {
   it("has the staff wording", () => {
     expect(STAFF_COPY).toEqual({
       eyebrow: "STAFF ONLY · keep behind the counter",
-      howTo: "After a customer chooses at the plate, hold this up for them to scan.",
+      howTo: "Hold this up for the customer to scan, then look for the live green screen.",
     });
   });
 

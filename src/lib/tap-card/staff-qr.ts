@@ -2,17 +2,17 @@ import { OFFER_SLOTS, type OfferSlot } from "@/lib/tap-card/loyalty";
 import type { RewardChoice } from "@/lib/tap-card/bar-core";
 
 /**
- * The staff QR (spec 2026-11-18-tap-card-bartender-qr-design.md): a
- * brewery's second, secret QR kept behind the counter, holding `/s/<token>`.
- * The customer picks at the counter plate, then scans this to confirm --
- * nothing is recorded by either scan alone.
+ * The staff QR (spec 2026-11-24-staff-qr-one-scan-design.md): a secret QR
+ * kept behind the counter, holding `/s/<token>`. Scanning it only notes the
+ * scan on that phone's session; the customer's tap within SCAN_MINUTES
+ * records the visit.
  */
-export const PENDING_MINUTES = 10;
+export const SCAN_MINUTES = 5;
 
 export const STAFF_QR_TURNED_OFF = "This staff code no longer works. Ask the staff for the current one.";
 
 export type PendingChoice = { kind: "none" } | RewardChoice;
-export type Pending = { memberId: string; plateCode: string; choice: PendingChoice; at: string };
+export type PendingScan = { sessionId: string; memberId: string; staffCode: string; at: string };
 
 export function staffQrUrl(siteUrl: string, token: string): string {
   return `${siteUrl}/s/${token}`;
@@ -33,14 +33,7 @@ export function parsePendingChoice(raw: unknown): PendingChoice | null {
   return null;
 }
 
-export type StaffQrView =
-  | { kind: "unknown" }
-  | { kind: "closed" }
-  | { kind: "turned-off" }
-  | { kind: "scan-plate-first" }
-  | { kind: "wrong-brewery" }
-  | { kind: "check-in"; plateCode: string }
-  | { kind: "confirm"; plateCode: string; choice: RewardChoice };
+export type StaffQrView = { kind: "unknown" | "closed" | "turned-off" | "sign-in" | "note-scan" };
 
 /** A turned-off code is told apart from a closed plate, unless the member takes no check-ins at all. */
 export function decideStaffQrView(i: {
@@ -51,17 +44,18 @@ export function decideStaffQrView(i: {
   plateOpen: boolean;
   qrActive: boolean;
   signedIn: boolean;
-  pending: Pending | null;
-  now: Date;
 }): StaffQrView {
   if (!i.qrMemberId) return { kind: "unknown" };
   if (!i.takesCheckIns) return { kind: "closed" };
   if (!i.qrActive) return { kind: "turned-off" };
   if (!i.plateOpen) return { kind: "closed" };
-  const p = i.pending;
-  if (!i.signedIn || !p || i.now.getTime() - new Date(p.at).getTime() > PENDING_MINUTES * 60 * 1000) return { kind: "scan-plate-first" };
-  if (p.memberId !== i.qrMemberId) return { kind: "wrong-brewery" };
-  return p.choice.kind === "none" ? { kind: "check-in", plateCode: p.plateCode } : { kind: "confirm", plateCode: p.plateCode, choice: p.choice };
+  return { kind: i.signedIn ? "note-scan" : "sign-in" };
+}
+
+/** Within SCAN_MINUTES of the scan. A few seconds "in the future" is two servers' clocks. */
+export function scanIsFresh(at: string, now: Date): boolean {
+  const age = now.getTime() - Date.parse(at);
+  return age >= -5000 && age <= SCAN_MINUTES * 60 * 1000;
 }
 
 /** Card sessions are renewed when used, at most once a day. */

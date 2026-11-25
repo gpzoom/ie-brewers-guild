@@ -1,10 +1,14 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { cancelPendingCheckIn, getPendingCheckIn, type PendingCheckIn } from "@/lib/tap-card/plate.server";
 import { getHolderCard, signOutHolder } from "@/lib/tap-card/holder.server";
 import type { HolderCardView } from "@/lib/tap-card/holder-view";
 import { CanvasHeading, cardLinkClass, hintClass, leadClass } from "@/components/public-forms/PublicFormParts";
 import { Eyebrow, TapCardShell } from "@/components/tap-card/TapCardShell";
 import { useByDate } from "@/components/tap-card/CheckInScreen";
 import { CardScanner } from "@/components/tap-card/CardScanner";
+import { CheckInModal } from "@/components/tap-card/CheckInModal";
+import { PlateSuccess, type PlateOk } from "@/components/tap-card/PlateSuccess";
 import { SaveToHomeScreen } from "@/components/tap-card/SaveToHomeScreen";
 import { CARD_APP_HEAD_LINKS, CARD_APP_HEAD_META } from "@/lib/tap-card/card-app";
 
@@ -12,9 +16,9 @@ import { CARD_APP_HEAD_LINKS, CARD_APP_HEAD_META } from "@/lib/tap-card/card-app
 export const Route = createFileRoute("/card")({
   staleTime: 0,
   loader: async () => {
-    const view = await getHolderCard();
+    const [view, pending] = await Promise.all([getHolderCard(), getPendingCheckIn()]);
     if (!view) throw redirect({ to: "/card/signin" });
-    return view;
+    return { view, pending };
   },
   head: () => ({
     meta: [{ title: "My Inland Scan Pass" }, { name: "robots", content: "noindex, nofollow" }, ...CARD_APP_HEAD_META],
@@ -24,12 +28,56 @@ export const Route = createFileRoute("/card")({
 });
 
 function CardPage() {
-  const view = Route.useLoaderData();
+  const { view, pending } = Route.useLoaderData();
+  const router = useRouter();
+  const [done, setDone] = useState<{ at: PendingCheckIn; ok: PlateOk } | null>(null);
+  const [closed, setClosed] = useState(false);
+  const [scans, setScans] = useState(0);
+
+  // A page brought back from the phone's memory must not keep an old check-in on screen.
+  useEffect(() => {
+    const onShow = (event: PageTransitionEvent) => {
+      if (event.persisted) window.location.reload();
+    };
+    window.addEventListener("pageshow", onShow);
+    return () => window.removeEventListener("pageshow", onShow);
+  }, []);
+
+  if (done) {
+    return (
+      <TapCardShell>
+        <PlateSuccess memberName={done.at.memberName} memberSlug={done.at.memberSlug} plateCode={done.at.plateCode} initial={done.ok} />
+      </TapCardShell>
+    );
+  }
+
   return (
     <TapCardShell>
+      {pending && !closed && (
+        <CheckInModal
+          key={scans}
+          pending={pending}
+          onDone={(ok) => setDone({ at: pending, ok })}
+          onClose={async () => {
+            setClosed(true);
+            try {
+              await cancelPendingCheckIn();
+              await router.invalidate();
+            } catch {
+              // it lapses by itself in a few minutes
+            }
+          }}
+        />
+      )}
       <Eyebrow>Inland Scan Pass · {view.year}</Eyebrow>
       <CanvasHeading size="md">{view.firstName}&rsquo;s Inland Scan Pass</CanvasHeading>
-      <CardScanner />
+      <CardScanner
+        onNoted={async () => {
+          await router.invalidate();
+          setScans((n) => n + 1);
+          setClosed(false);
+        }}
+      />
       <SaveToHomeScreen />
       <Waiting view={view} />
       <JoinTrail view={view} />

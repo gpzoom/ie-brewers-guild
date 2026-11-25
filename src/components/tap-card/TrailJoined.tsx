@@ -6,7 +6,7 @@ import { CanvasHeading, fieldErrorClass, inputClass, labelClass, leadClass, prim
 import { SignInCodeForm } from "@/components/tap-card/SignInCodeForm";
 
 /** Email a sign-in code, then type it in. */
-export function CodeSignIn({ initialEmail, next, intro, onSent }: { initialEmail: string; next: string; intro: string; onSent?: () => void }) {
+export function CodeSignIn({ initialEmail, next, intro, onSent, onSignedIn }: { initialEmail: string; next: string; intro: string; onSent?: () => void; onSignedIn?: () => void }) {
   const [email, setEmail] = useState(initialEmail);
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -33,7 +33,7 @@ export function CodeSignIn({ initialEmail, next, intro, onSent }: { initialEmail
   if (sent) {
     return (
       <>
-        <SignInCodeForm email={email} onSignedIn={() => window.location.assign(next)} />
+        <SignInCodeForm email={email} onSignedIn={onSignedIn ?? (() => window.location.assign(next))} />
         <button type="button" className="mt-3 w-fit text-[14px] font-medium text-ink-muted underline underline-offset-2" onClick={() => setSent(false)}>
           Send a new code or use a different email
         </button>

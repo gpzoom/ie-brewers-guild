@@ -1,4 +1,5 @@
 /** Wording and date formats for the Staff activity box. Pure, so it's tested. */
+import type { LocationWord } from "@/lib/tap-card/location";
 import type { FlagKind } from "@/lib/tap-card/staff-activity";
 import type { ActivityRange } from "@/lib/tap-card/staff-activity-view";
 import { TAP_CARD_TZ } from "@/lib/tap-card/tap-card-time";
@@ -12,12 +13,14 @@ export const ACTIVITY_RANGES: { value: ActivityRange; label: string }[] = [
 
 const FLAG_LABELS: Record<FlagKind, string> = {
   "outside-hours": "outside open hours",
+  far: "far from the taproom",
+  "no-location": "no location",
   burst: "close together",
   "same-customer": "same customer",
   "turned-off-code": "turned-off QR used",
 };
 
-export const FLAG_ORDER: FlagKind[] = ["outside-hours", "burst", "same-customer", "turned-off-code"];
+export const FLAG_ORDER: FlagKind[] = ["outside-hours", "far", "no-location", "burst", "same-customer", "turned-off-code"];
 
 /** "6 outside open hours", or the bare label with no count. */
 export function flagText(kind: FlagKind, count?: number): string {
@@ -63,6 +66,11 @@ export function eventLabel(event: ActivityEvent): string {
 export function methodLabel(method: "qr" | "pin", event: ActivityEvent, key: string): string | null {
   if (key === "counter" || event === "turned-off-code") return null;
   return method === "pin" ? "4-digit code" : "QR";
+}
+
+/** Where the customer's phone said it was; nothing where it isn't judged. */
+export function locationLabel(word: LocationWord | null): string | null {
+  return word === null ? null : { near: "Near", far: "Far away", none: "No location" }[word];
 }
 
 export function personName(name: string, removed: boolean): string {

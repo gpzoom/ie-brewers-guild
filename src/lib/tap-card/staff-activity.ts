@@ -4,6 +4,7 @@
  * labels. Nothing here reads the database or sends anything to a browser.
  */
 import { computeOpenNow, getZonedNow, type SpecialHoursDay, type WeekdayHours } from "@/lib/hours/open-now";
+import type { LocationWord } from "@/lib/tap-card/location";
 
 export const FLAG_LIMITS = {
   graceMinutes: 60,
@@ -12,6 +13,7 @@ export const FLAG_LIMITS = {
   sameVisits: 5,
   sameShare: 0.8,
   wrongTries: 5,
+  noLocationVisits: 3,
 } as const;
 
 export type ActivityRow = {
@@ -24,9 +26,11 @@ export type ActivityRow = {
   staffId: string | null;
   method: "qr" | "pin";
   reward: string | null;
+  /** Null where it isn't judged (food trucks, no saved coordinates, undos, older rows). */
+  location: LocationWord | null;
 };
 
-export type FlagKind = "outside-hours" | "burst" | "same-customer" | "turned-off-code";
+export type FlagKind = "outside-hours" | "far" | "no-location" | "burst" | "same-customer" | "turned-off-code";
 
 export type MemberHours = { timezone: string; hours: WeekdayHours[]; specialHours: SpecialHoursDay[] };
 
@@ -172,6 +176,20 @@ export function flagRows(rows: ActivityRow[], hours: MemberHours): Map<string, F
         for (const row of list) addFlag(flags, row.id, "same-customer");
       }
     }
+  }
+
+  // Far, one at a time; no location, only as a pattern with nothing near.
+  const located = new Map<string, ActivityRow[]>();
+  for (const { row } of checkIns) {
+    if (row.location === null) continue;
+    if (row.location === "far") addFlag(flags, row.id, "far");
+    const list = located.get(row.holderId);
+    if (list) list.push(row);
+    else located.set(row.holderId, [row]);
+  }
+  for (const list of located.values()) {
+    if (list.length < FLAG_LIMITS.noLocationVisits || list.some((r) => r.location === "near")) continue;
+    for (const row of list) if (row.location === "none") addFlag(flags, row.id, "no-location");
   }
 
   return flags;

@@ -3,6 +3,7 @@ import type { BarState, BarStore, VisitInput } from "@/lib/tap-card/bar-core";
 import type { BarReward } from "@/lib/tap-card/loyalty";
 import { dbFailed } from "@/lib/tap-card/plate-store.server";
 import type { PinMatch } from "@/lib/tap-card/staff-codes";
+import type { LocationWord } from "@/lib/tap-card/location";
 import { tapCardDay } from "@/lib/tap-card/tap-card-time";
 
 /**
@@ -60,7 +61,7 @@ type ActivityEvent = {
   code_text: string | null;
   reward: string | null;
 };
-export type ActivityInsert = ActivityEvent & { member_id: string; holder_id: string; visit_id: string | null; at: string; day: string };
+export type ActivityInsert = ActivityEvent & { location?: LocationWord | null; member_id: string; holder_id: string; visit_id: string | null; at: string; day: string };
 
 function eventFrom(source: Source, event: ActivityEvent["event"], reward: string | null = null): ActivityEvent {
   return {
@@ -109,6 +110,7 @@ export async function logVisitActivity(
   before: BarReward | null,
   result: VisitResult,
   source: Source,
+  location: LocationWord | null = null,
 ): Promise<void> {
   const events = activityFor(before, result, source);
   if (events.length === 0) return;
@@ -121,7 +123,7 @@ export async function logVisitActivity(
   }
   await logActivity(
     service,
-    events.map((e) => ({ ...e, member_id: input.memberId, holder_id: input.holderId, visit_id: visitId, at: input.at.toISOString(), day })),
+    events.map((e) => ({ ...e, location: e.event === "reward-undone" ? null : location, member_id: input.memberId, holder_id: input.holderId, visit_id: visitId, at: input.at.toISOString(), day })),
   );
 }
 

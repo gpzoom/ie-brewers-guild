@@ -44,6 +44,7 @@ function row(over: Partial<ActivityRow> = {}): ActivityRow {
     staffId: "maria",
     method: "qr",
     reward: null,
+    location: null,
     ...over,
   };
 }
@@ -305,12 +306,37 @@ describe("customerLabels", () => {
 
 describe("FLAG_LIMITS", () => {
   it("holds the agreed numbers", () => {
-    expect(FLAG_LIMITS).toEqual({ graceMinutes: 60, burstCustomers: 4, burstMinutes: 5, sameVisits: 5, sameShare: 0.8, wrongTries: 5 });
+    expect(FLAG_LIMITS).toEqual({ graceMinutes: 60, burstCustomers: 4, burstMinutes: 5, sameVisits: 5, sameShare: 0.8, wrongTries: 5, noLocationVisits: 3 });
   });
 });
 
 describe("rowKey for a deleted person", () => {
   it("groups staff events with no staff id as staff:removed, not the shared code", () => {
     expect(rowKey(row({ source: "staff", staffId: null }))).toBe("staff:removed");
+  });
+});
+
+describe("location flags", () => {
+  const kinds = (rows: ActivityRow[]) => {
+    const f = flagRows(rows, plain);
+    return rows.map((r) => f.get(r.id) ?? []);
+  };
+  const at = pdt(2, "15:00");
+  it("flags a far check-in, not a far reward", () => {
+    expect(kinds([row({ at, location: "far" }), row({ at, event: "reward-used", location: "far" })])).toEqual([["far"], []]);
+  });
+  const none = () => row({ at, staffId: null, source: "counter", location: "none" });
+  it("flags no location only as a pattern", () => {
+    expect(kinds([none(), none()])).toEqual([[], []]);
+    expect(kinds([none(), none(), none()])).toEqual([["no-location"], ["no-location"], ["no-location"]]);
+    expect(kinds([none(), none(), none(), { ...none(), location: "near" }])).toEqual([[], [], [], []]);
+    expect(kinds([{ ...none(), location: "far" }, none(), none()])).toEqual([["far"], ["no-location"], ["no-location"]]);
+    expect(kinds([none(), none(), { ...none(), location: null }])).toEqual([[], [], []]);
+    expect(kinds([none(), none(), { ...none(), holderId: "h2" }])).toEqual([[], [], []]);
+  });
+  it("a closed day is outside open hours", () => {
+    const wed: MemberHours = { ...plain, hours: weekly("12:00", "21:00", { 3: { isClosed: true, opensAt: null, closesAt: null } }) };
+    const special: MemberHours = { ...plain, specialHours: [{ date: "2026-09-02", isClosed: true, opensAt: null, closesAt: null, closesNextDay: false, note: null }] };
+    for (const h of [wed, special]) expect([...flagRows([row({ at })], h).values()]).toEqual([["outside-hours"]]);
   });
 });
