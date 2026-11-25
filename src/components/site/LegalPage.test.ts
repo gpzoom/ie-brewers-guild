@@ -42,7 +42,7 @@ describe("Privacy Policy", () => {
 
   it("describes the Inland Scan Pass: what it stores, who sees it, its cookies", () => {
     expect(t).toContain("Inland Scan Pass");
-    expect(t).toContain("each visit (which Guild member and when, and the counter plate that recorded it)");
+    expect(t).toContain("each visit (which Guild member and when, and how it was recorded)");
     expect(t).toContain("the staff member sees your first name");
     expect(t).not.toContain("If a staff member turns on your pass for you");
     expect(t).toContain("which Guild member's counter you signed up at");
@@ -71,14 +71,18 @@ describe("Privacy Policy", () => {
     expect(t).toContain("one-time email links or codes");
   });
 
-  it("describes loyalty rewards and counter plates", () => {
+  it("describes loyalty rewards", () => {
     expect(t).toContain("the Guild and member rewards you earn");
-    expect(t).toContain("counter plate");
   });
 
   it("marketplace listings aren't public", () => {
     expect(t).toContain("marketplace listings, including the contact name, email address and phone number");
     expect(t).toContain("Marketplace listings aren't public.");
+  });
+
+  it("says what happens to a phone's location at check-in", () => {
+    expect(t).toContain("You can say no and still check in.");
+    expect(t).toContain("We keep only the result: near, far or no location.");
   });
 
   it("lists the Help button's form, which also notes the page and browser", () => {

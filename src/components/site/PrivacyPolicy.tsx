@@ -52,8 +52,8 @@ export function PrivacyPolicy() {
             <>
               <strong>If you have an Inland Scan Pass:</strong> your name and email address; which Guild
               member's counter you signed up at, and whether you or a staff member confirmed you're 21 or
-              older; each visit (which Guild member and when, and the counter plate that recorded
-              it); when you use the Beer Trail offer or a member's reward; and the Guild and member rewards
+              older; each visit (which Guild member and when, and how it was
+              recorded); when you use the Beer Trail offer or a member's reward; and the Guild and member rewards
               you earn. If you buy a <strong>Beer Trail Pass</strong>, we also keep the pass, its year, the
               amount paid and which Guild member's counter you bought it from. Zeffy handles the payment, and
               we never see your card number. If you check the box to let a Guild member email you, we keep
@@ -63,8 +63,10 @@ export function PrivacyPolicy() {
               taproom's owner, co-owners and Guild admins can also see visits, rewards used and wrong staff
               code tries at that taproom, to help spot misuse. They see them under a made-up label, not your
               name or email address. We record which staff code confirmed each visit, reward or undo, and
-              scans of staff QR codes that were turned off. A taproom's counter plate records your visits
-              there.
+              scans of staff QR codes that were turned off. When you check in, we ask your phone for its
+              location. You can say no and still check in. We use it once to tell whether you were near the
+              taproom and don't keep it. We keep only the result: near, far or no location. The taproom's
+              owner, co-owners and Guild admins can see that result under the made-up label.
             </>,
             <>
               <strong>If a taproom gives you a staff code:</strong> the name the taproom typed for you, and
