@@ -33,7 +33,7 @@ The owner can change these.
 1. **Title:** "What if your membership paid for itself?"
 2. **One pass, two jobs:** the paid Beer Trail Pass, and the free loyalty pass that works at every Guild member.
 3. **The Beer Trail:** a nickel first beer at each stop, Guild milestone rewards, one pass per trail year.
-4. **At the counter, in 4 steps:** screenshots of scanning the plate, checking in, scanning the staff QR, and the green screen.
+4. **At the counter (rebuilt 2026-11-25 for one-scan check-in):** get the pass once, then every visit: scan the staff QR, pick and tap, green screen. New slides: the red dot, and "Built to keep visits honest". The deck now has 17 slides.
 5. **What's in it for your business:** commission, new customers, regulars who come back, your own email list, nothing to install.
 6. **Free loyalty for every member:** breweries, food trucks and allied businesses.
 7. **How the money works:** sold through Zeffy, commission to the brewery whose counter made the sale, monthly reports.
