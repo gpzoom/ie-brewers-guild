@@ -5,6 +5,7 @@ import {
   deleteGalleryImageCore,
   listHomepageSectionsCore,
   moveSectionCore,
+  replaceGalleryFileCore,
   saveAnnouncementCore,
   saveGalleryImageCore,
   setSectionEnabledCore,
@@ -79,53 +80,74 @@ const GALLERY_MAX_BYTES = 10 * 1024 * 1024;
  * strip metadata, upload to site-images/announcements/, save the row, and
  * remove the file again if the save fails.
  */
+type Supabase = Awaited<ReturnType<typeof getSupabaseServerClientForRequest>>;
+
+/** Validates the picture, strips its metadata and uploads it to a new path. */
+async function storeGalleryFile(
+  supabase: Supabase,
+  file: FormDataEntryValue | null,
+): Promise<{ path: string; width: number | null; height: number | null }> {
+  if (!(file instanceof File)) throw new Error("No file provided.");
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const validation = await validateUploadedImage({
+    bytes,
+    claimedMimeType: file.type,
+    allowSvg: false,
+    maxBytes: GALLERY_MAX_BYTES,
+  });
+  if (!validation.valid) throw new Error(validation.reason);
+  let stripped: Uint8Array;
+  try {
+    stripped = stripImageMetadata(bytes, validation.detectedMimeType);
+  } catch {
+    throw new Error("Please upload a JPEG or PNG photo.");
+  }
+  const dimensions = readImageDimensions(stripped);
+
+  const path = `announcements/${crypto.randomUUID()}-${sanitizeFilename(file.name)}`;
+  const { error: uploadError } = await supabase.storage
+    .from("site-images")
+    .upload(path, stripped, { contentType: validation.detectedMimeType });
+  if (uploadError) throw new Error("Couldn't upload the image — try again.");
+  return { path, width: dimensions?.width ?? null, height: dimensions?.height ?? null };
+}
+
 export const uploadGalleryImage = createServerFn({ method: "POST" })
   .inputValidator((data: FormData) => data)
   .handler(async ({ data: formData }): Promise<{ id: string }> => {
     const supabase = await getSupabaseServerClientForRequest();
     await requireSuperAdmin(supabase, "change the homepage");
-    const file = formData.get("file");
-    if (!(file instanceof File)) throw new Error("No file provided.");
     const altText = String(formData.get("altText") ?? "").trim();
     if (!altText) throw new Error("Add a short description of the image.");
-
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const validation = await validateUploadedImage({
-      bytes,
-      claimedMimeType: file.type,
-      allowSvg: false,
-      maxBytes: GALLERY_MAX_BYTES,
-    });
-    if (!validation.valid) throw new Error(validation.reason);
-    let stripped: Uint8Array;
+    const stored = await storeGalleryFile(supabase, formData.get("file"));
     try {
-      stripped = stripImageMetadata(bytes, validation.detectedMimeType);
-    } catch {
-      throw new Error("Please upload a JPEG or PNG photo.");
-    }
-    const dimensions = readImageDimensions(stripped);
-
-    const path = `announcements/${crypto.randomUUID()}-${sanitizeFilename(file.name)}`;
-    const { error: uploadError } = await supabase.storage
-      .from("site-images")
-      .upload(path, stripped, { contentType: validation.detectedMimeType });
-    if (uploadError) throw new Error("Couldn't upload the image — try again.");
-
-    try {
-      return await saveGalleryImageCore(
-        supabase,
-        {
-          path,
-          altText,
-          width: dimensions?.width ?? null,
-          height: dimensions?.height ?? null,
-        },
-        new Date(),
-      );
+      return await saveGalleryImageCore(supabase, { ...stored, altText }, new Date());
     } catch (err) {
-      await supabase.storage.from("site-images").remove([path]);
+      await supabase.storage.from("site-images").remove([stored.path]);
       throw err;
     }
+  });
+
+/**
+ * Replaces the picture behind a gallery image. The description and every
+ * community event using it stay as they are; the old file is removed after.
+ */
+export const replaceGalleryImage = createServerFn({ method: "POST" })
+  .inputValidator((data: FormData) => data)
+  .handler(async ({ data: formData }): Promise<void> => {
+    const supabase = await getSupabaseServerClientForRequest();
+    await requireSuperAdmin(supabase, "change the homepage");
+    const id = String(formData.get("id") ?? "");
+    if (!id) throw new Error("Couldn't find that image.");
+    const stored = await storeGalleryFile(supabase, formData.get("file"));
+    let oldPath: string;
+    try {
+      ({ oldPath } = await replaceGalleryFileCore(supabase, id, stored, new Date()));
+    } catch (err) {
+      await supabase.storage.from("site-images").remove([stored.path]);
+      throw err;
+    }
+    await supabase.storage.from("site-images").remove([oldPath]);
   });
 
 /** Deletes an unused gallery image, then its file. */
