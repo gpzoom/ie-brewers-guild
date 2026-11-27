@@ -5,7 +5,7 @@ import {
   flagRows,
   rowKey,
   totals,
-  visitFlagged,
+  visitFlag,
   wrongTryGroups,
   type ActivityRow,
   type MemberHours,
@@ -342,26 +342,29 @@ describe("location flags", () => {
   });
 });
 
-describe("visitFlagged", () => {
+describe("visitFlag", () => {
   const inHours = pdt(2, "15:00");
-  const check = (location: ActivityRow["location"], at = inHours, hours = plain) => visitFlagged([{ at, location }], hours);
-  it("flags far away and no location, each on its own", () => {
-    expect(check("far")).toBe(true);
-    expect(check("none")).toBe(true);
-    expect(check("near")).toBe(false);
+  const check = (location: ActivityRow["location"], at = inHours, hours = plain) => visitFlag([{ at, location }], hours);
+  it("red for far away, yellow for no location", () => {
+    expect(check("far")).toBe("red");
+    expect(check("none")).toBe("yellow");
+    expect(check("near")).toBe(null);
   });
-  it("doesn't flag where location isn't judged", () => expect(check(null)).toBe(false));
-  it("flags outside open hours, with the same 60 minutes either side", () => {
-    expect(check("near", pdt(2, "22:00"))).toBe(false);
-    expect(check("near", pdt(2, "22:01"))).toBe(true);
-    expect(check("near", pdt(2, "10:59"))).toBe(true);
+  it("doesn't flag where location isn't judged", () => expect(check(null)).toBe(null));
+  it("red outside open hours, with the same 60 minutes either side", () => {
+    expect(check("near", pdt(2, "22:00"))).toBe(null);
+    expect(check("near", pdt(2, "22:01"))).toBe("red");
+    expect(check("near", pdt(2, "10:59"))).toBe("red");
+    expect(check("none", pdt(2, "22:01"))).toBe("red");
   });
-  it("flags a closed day, and never without posted hours", () => {
-    expect(check("near", inHours, { ...plain, hours: weekly("12:00", "21:00", { 3: { isClosed: true } }) })).toBe(true);
-    expect(check("near", pdt(2, "03:00"), { timezone: TZ, hours: [], specialHours: [] })).toBe(false);
+  it("red on a closed day, and never without posted hours", () => {
+    expect(check("near", inHours, { ...plain, hours: weekly("12:00", "21:00", { 3: { isClosed: true } }) })).toBe("red");
+    expect(check("near", pdt(2, "03:00"), { timezone: TZ, hours: [], specialHours: [] })).toBe(null);
   });
-  it("flags the visit when either the check-in or the reward was", () => {
-    expect(visitFlagged([{ at: inHours, location: "far" }, { at: inHours, location: "near" }], plain)).toBe(true);
-    expect(visitFlagged([], plain)).toBe(false);
+  it("flags the visit when either the check-in or the reward was, red winning over yellow", () => {
+    expect(visitFlag([{ at: inHours, location: "far" }, { at: inHours, location: "near" }], plain)).toBe("red");
+    expect(visitFlag([{ at: inHours, location: "none" }, { at: inHours, location: "near" }], plain)).toBe("yellow");
+    expect(visitFlag([{ at: inHours, location: "none" }, { at: inHours, location: "far" }], plain)).toBe("red");
+    expect(visitFlag([], plain)).toBe(null);
   });
 });

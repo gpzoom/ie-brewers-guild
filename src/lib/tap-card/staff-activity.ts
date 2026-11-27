@@ -97,14 +97,18 @@ function makeWithinHours(hours: MemberHours): (ms: number) => boolean | null {
   };
 }
 
+export type VisitFlag = "red" | "yellow";
+
 /**
- * The red dot on the confirmation screen: this visit's check-in or reward was
- * far away, had no location, or was outside open hours. Unlike the activity
- * list, one "no location" is enough (owner, 2026-11-25).
+ * The dot on the confirmation screen. Red: this visit's check-in or reward was
+ * far away or outside open hours. Yellow: the only reason is no location (owner,
+ * 2026-11-27). Unlike the activity list, one "no location" is enough.
  */
-export function visitFlagged(events: Pick<ActivityRow, "at" | "location">[], hours: MemberHours): boolean {
+export function visitFlag(events: Pick<ActivityRow, "at" | "location">[], hours: MemberHours): VisitFlag | null {
   const withinHours = makeWithinHours(hours);
-  return events.some((e) => e.location === "far" || e.location === "none" || withinHours(Date.parse(e.at)) === false);
+  if (events.some((e) => e.location === "far" || withinHours(Date.parse(e.at)) === false)) return "red";
+  if (events.some((e) => e.location === "none")) return "yellow";
+  return null;
 }
 
 export function flagRows(rows: ActivityRow[], hours: MemberHours): Map<string, FlagKind[]> {

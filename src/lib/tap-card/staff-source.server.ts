@@ -3,7 +3,7 @@ import type { BarState, BarStore, VisitInput } from "@/lib/tap-card/bar-core";
 import type { BarReward } from "@/lib/tap-card/loyalty";
 import { dbFailed } from "@/lib/tap-card/plate-store.server";
 import { loadMemberHours } from "@/lib/tap-card/member-hours.server";
-import { visitFlagged, type ActivityRow, type MemberHours } from "@/lib/tap-card/staff-activity";
+import { visitFlag, type ActivityRow, type MemberHours, type VisitFlag } from "@/lib/tap-card/staff-activity";
 import type { PinMatch } from "@/lib/tap-card/staff-codes";
 import type { LocationWord } from "@/lib/tap-card/location";
 import { TAP_CARD_TZ, tapCardDay } from "@/lib/tap-card/tap-card-time";
@@ -130,15 +130,15 @@ export async function logVisitActivity(
 }
 
 /**
- * Whether this visit gets the red dot: what's just been done (`now`, null when
+ * Which dot this visit gets, if any: what's just been done (`now`, null when
  * nothing new was recorded) plus what today's log already has. Never throws.
  */
-export async function visitIsFlagged(
+export async function visitFlagColor(
   service: SupabaseClient,
   store: Pick<BarStore, "findVisit">,
   input: VisitInput,
   now: { location: LocationWord | null } | null,
-): Promise<boolean> {
+): Promise<VisitFlag | null> {
   const events: Pick<ActivityRow, "at" | "location">[] = now ? [{ at: input.at.toISOString(), location: now.location }] : [];
   let hours: MemberHours = { timezone: TAP_CARD_TZ, hours: [], specialHours: [] };
   const [logged, posted] = await Promise.allSettled([
@@ -149,7 +149,7 @@ export async function visitIsFlagged(
   else console.error("Scan Pass flag: couldn't read the log", logged.reason);
   if (posted.status === "fulfilled") hours = posted.value;
   else console.error("Scan Pass flag: couldn't read the hours", posted.reason);
-  return visitFlagged(events, hours);
+  return visitFlag(events, hours);
 }
 
 async function loggedToday(service: SupabaseClient, store: Pick<BarStore, "findVisit">, input: VisitInput): Promise<Pick<ActivityRow, "at" | "location">[]> {

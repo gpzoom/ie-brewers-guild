@@ -39,7 +39,7 @@ Inland Scan Pass: universal loyalty pass + Beer Trail Pass through Zeffy. Everyt
 ## Tell people
 
 12. [ ] **Owner + Claude:** the members' notice of the Privacy Policy and Terms changes (Zeffy payments, free pass, member email opt-ins). Claude drafts; nothing is sent without your go.
-13. [ ] **Owner:** tell members how to start: open **Scan Pass** in the menu, set a staff code, print the **counter card** (customers get their pass from it) and the **staff QR code** (scanned on every visit). Explain the **red dot** on the green screen. The Member Guide pages "The Inland Scan Pass", "Staff codes and activity" and "Rewards and passes" walk them through it.
+13. [ ] **Owner:** tell members how to start: open **Scan Pass** in the menu, set a staff code, print the **counter card** (customers get their pass from it) and the **staff QR code** (scanned on every visit). Explain the **red and yellow dots** on the green screen. The Member Guide pages "The Inland Scan Pass", "Staff codes and activity" and "Rewards and passes" walk them through it.
 
 ## Afterward
 
