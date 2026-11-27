@@ -1,6 +1,7 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import {
   deleteGalleryImage,
+  replaceGalleryImage,
   updateGalleryAlt,
   uploadGalleryImage,
 } from "@/lib/guild/homepage-sections.server";
@@ -41,6 +42,8 @@ export function AnnouncementGallery({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAlt, setEditAlt] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const replaceRef = useRef<HTMLInputElement>(null);
+  const replacingId = useRef<string | null>(null);
 
   async function run(work: () => Promise<string | void>) {
     setBusy(true);
@@ -72,6 +75,26 @@ export function AnnouncementGallery({
       setUploadAlt("");
       onSelect?.(id);
       return "Uploaded.";
+    });
+  }
+
+  function onPickReplacement(image: GalleryImage) {
+    replacingId.current = image.id;
+    replaceRef.current?.click();
+  }
+
+  async function onReplaceFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    const id = replacingId.current;
+    replacingId.current = null;
+    if (!file || !id) return;
+    await run(async () => {
+      const form = new FormData();
+      form.append("id", id);
+      form.append("file", file);
+      await replaceGalleryImage({ data: form });
+      return "Image replaced.";
     });
   }
 
@@ -156,6 +179,15 @@ export function AnnouncementGallery({
                         type="button"
                         className={smallButtonClass}
                         disabled={busy}
+                        aria-label={`Replace image ${image.alt}`}
+                        onClick={() => onPickReplacement(image)}
+                      >
+                        Replace image
+                      </button>
+                      <button
+                        type="button"
+                        className={smallButtonClass}
+                        disabled={busy}
                         onClick={() => {
                           setEditingId(image.id);
                           setEditAlt(image.alt);
@@ -204,7 +236,7 @@ export function AnnouncementGallery({
           disabled={busy}
           onChange={(e) => void onFile(e)}
         />
-        <div>
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             className={gallery.length === 0 ? darkButtonClass : outlineButtonClass}
@@ -213,8 +245,21 @@ export function AnnouncementGallery({
           >
             {busy ? "Working…" : "Upload new"}
           </button>
+          {!uploadAlt.trim() && (
+            <span className="text-[12px] text-ink-muted">Type a description to turn on Upload new.</span>
+          )}
         </div>
       </div>
+      <input
+        ref={replaceRef}
+        type="file"
+        accept="image/jpeg,image/png"
+        aria-label="Replacement image file"
+        className="sr-only"
+        tabIndex={-1}
+        disabled={busy}
+        onChange={(e) => void onReplaceFile(e)}
+      />
       <StatusMessage message={message} />
     </div>
   );

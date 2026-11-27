@@ -5,6 +5,7 @@ import {
   deleteGalleryImageCore,
   listHomepageSectionsCore,
   moveSectionCore,
+  replaceGalleryFileCore,
   saveAnnouncementCore,
   saveGalleryImageCore,
   setSectionEnabledCore,
@@ -106,6 +107,9 @@ describe("homepage sections: super admin only", () => {
     ).rejects.toThrow(refusal);
     await expect(updateGalleryAltCore(c, "a", "A", now)).rejects.toThrow(refusal);
     await expect(deleteGalleryImageCore(c, "a")).rejects.toThrow(refusal);
+    await expect(
+      replaceGalleryFileCore(c, "a", { path: "announcements/a.jpg", width: null, height: null }, now),
+    ).rejects.toThrow(refusal);
     expect(s.writes).toEqual([]);
     expect(s.rpcs).toEqual([]);
   });
@@ -193,6 +197,30 @@ describe("gallery", () => {
     const out = await deleteGalleryImageCore(s.client, "img-1");
     expect(out).toEqual({ removedPath: "announcements/a.jpg" });
     expect(s.writes.map((w) => `${w.table}:${w.op}`)).toEqual(["announcement_images:delete"]);
+  });
+
+  it("replaces an image's file in place: same row, new path and size, description untouched", async () => {
+    const s = fakeSession(true, { announcement_images: [{ id: "img-1", image_path: "announcements/old.png" }] });
+    const out = await replaceGalleryFileCore(
+      s.client,
+      "img-1",
+      { path: "announcements/new.png", width: 2464, height: 1848 },
+      now,
+    );
+    expect(out).toEqual({ oldPath: "announcements/old.png" });
+    const update = s.writes.find((w) => w.op === "update");
+    expect(update?.table).toBe("announcement_images");
+    expect(update?.filters).toContainEqual(["id", "img-1"]);
+    expect(update?.values).toMatchObject({ image_path: "announcements/new.png", width: 2464, height: 1848 });
+    expect(update?.values).not.toHaveProperty("alt_text");
+  });
+
+  it("won't replace with a file outside the announcements folder", async () => {
+    const s = fakeSession(true, { announcement_images: [{ id: "img-1", image_path: "announcements/old.png" }] });
+    await expect(
+      replaceGalleryFileCore(s.client, "img-1", { path: "heroes/x.png", width: null, height: null }, now),
+    ).rejects.toThrow("That isn't an announcement image.");
+    expect(s.writes).toEqual([]);
   });
 
   it("requires a description", async () => {

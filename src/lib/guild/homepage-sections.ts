@@ -251,6 +251,41 @@ export async function saveGalleryImageCore(
   return { id: (data as { id: string }).id };
 }
 
+/**
+ * Swaps the file behind a gallery image, keeping its row, its description and
+ * every community event that uses it. Returns the old path so the caller can
+ * remove the old file. The new file is already uploaded to a new path, so the
+ * homepage never shows a cached copy of the old picture.
+ */
+export async function replaceGalleryFileCore(
+  c: SupabaseClient,
+  id: string,
+  input: { path: string; width: number | null; height: number | null },
+  now: Date,
+): Promise<{ oldPath: string }> {
+  const actor = await requireSuperAdmin(c, ACTION);
+  if (!GALLERY_PATH_PATTERN.test(input.path)) throw new Error("That isn't an announcement image.");
+  const { data: image, error: imageError } = await c
+    .from("announcement_images")
+    .select("image_path")
+    .eq("id", id)
+    .maybeSingle();
+  if (imageError || !image) throw new Error("Couldn't find that image.");
+  const { data, error } = await c
+    .from("announcement_images")
+    .update({
+      image_path: input.path,
+      width: input.width,
+      height: input.height,
+      updated_at: now.toISOString(),
+      updated_by_user_id: actor.userId,
+    })
+    .eq("id", id)
+    .select("id");
+  if (error || !data || data.length === 0) throw new Error("Couldn't replace the image — try again.");
+  return { oldPath: (image as { image_path: string }).image_path };
+}
+
 export async function updateGalleryAltCore(
   c: SupabaseClient,
   id: string,
