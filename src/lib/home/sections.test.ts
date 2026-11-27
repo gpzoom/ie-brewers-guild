@@ -104,15 +104,42 @@ describe("resolveLink", () => {
   });
 });
 
+const block = (kind: "events" | "spotlight" | "community", position: number, over: Partial<SectionRow> = {}) =>
+  row({ id: kind, kind, position, image_id: null, image: null, ...over });
+const events = (out: ReturnType<typeof visibleSections>) =>
+  out.flatMap((s) => (s.kind === "community" ? s.events.map((e) => e.id) : []));
+
 describe("visibleSections", () => {
-  it("orders by position and skips disabled rows", () => {
+  it("orders blocks by position and skips disabled ones", () => {
     const rows = [
-      row({ id: "b", kind: "events", position: 3, image_id: null, image: null }),
-      row({ id: "a", position: 1 }),
-      row({ id: "c", position: 2, enabled: false }),
+      block("events", 3),
+      row({ id: "a", position: 2 }),
+      block("community", 1),
+      block("spotlight", 4, { enabled: false }),
+    ];
+    expect(visibleSections(rows, ctx).map((s) => s.kind)).toEqual(["community", "events"]);
+  });
+  it("puts every showing event in the community carousel, in position order", () => {
+    const rows = [
+      block("events", 1),
+      row({ id: "late", position: 9 }),
+      block("community", 2),
+      row({ id: "early", position: 3 }),
+      row({ id: "off", position: 4, enabled: false }),
     ];
     const out = visibleSections(rows, ctx);
-    expect(out.map((s) => s.kind)).toEqual(["image", "events"]);
+    expect(out.map((s) => s.kind)).toEqual(["events", "community"]);
+    expect(events(out)).toEqual(["early", "late"]);
+  });
+  it("hides the carousel when it is off or has no showing events", () => {
+    expect(visibleSections([block("community", 1, { enabled: false }), row({ position: 2 })], ctx)).toEqual([]);
+    expect(visibleSections([block("community", 1), row({ position: 2, enabled: false })], ctx)).toEqual([]);
+    expect(visibleSections([block("community", 1)], ctx)).toEqual([]);
+  });
+  it("without a community row, the carousel takes the first event's place", () => {
+    const out = visibleSections([block("events", 2), row({ id: "a", position: 1 }), row({ id: "b", position: 3 })], ctx);
+    expect(out.map((s) => s.kind)).toEqual(["community", "events"]);
+    expect(events(out)).toEqual(["a", "b"]);
   });
   it("skips spotlight without content", () => {
     const rows = [row({ kind: "spotlight", image_id: null, image: null })];
@@ -120,8 +147,8 @@ describe("visibleSections", () => {
     expect(visibleSections(rows, ctx)).toEqual([{ kind: "spotlight" }]);
   });
   it("skips image rows with no image or out of window", () => {
-    expect(visibleSections([row({ image: null })], ctx)).toEqual([]);
-    expect(visibleSections([row({ ends_on: "2026-12-01" })], ctx)).toEqual([]);
+    expect(visibleSections([block("community", 1), row({ position: 2, image: null })], ctx)).toEqual([]);
+    expect(visibleSections([block("community", 1), row({ position: 2, ends_on: "2026-12-01" })], ctx)).toEqual([]);
   });
   it("logs an image row skipped for a missing image, but not one that is off or out of dates", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -138,8 +165,7 @@ describe("visibleSections", () => {
       [row({ alt_text: "Override", link_kind: "internal", link_target: "/members/mars" })],
       ctx,
     );
-    expect(s).toEqual({
-      kind: "image",
+    expect(s.kind === "community" && s.events[0]).toEqual({
       id: "r1",
       imageUrl: "https://cdn.test/announcements/a.jpg",
       alt: "Override",

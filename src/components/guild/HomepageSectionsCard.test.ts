@@ -25,9 +25,10 @@ const image = { image_path: "announcements/a.jpg", alt_text: "Holiday party flye
 
 const sections: SettingsSection[] = [
   row({ id: "ev", kind: "events", position: 1 }),
-  row({ id: "sp", kind: "spotlight", position: 2, enabled: false, status: "off" }),
-  row({ id: "a1", position: 3, image_id: "g1", image, imageUrl: "https://x/a.jpg", ends_on: "2026-12-20" }),
-  row({ id: "a2", position: 4, image_id: "g1", image, alt_text: "Winter market", starts_on: "2026-12-01", status: "scheduled", imageUrl: "https://x/a.jpg" }),
+  row({ id: "a1", position: 2, image_id: "g1", image, imageUrl: "https://x/a.jpg", ends_on: "2026-12-20" }),
+  row({ id: "cm", kind: "community", position: 3 }),
+  row({ id: "sp", kind: "spotlight", position: 4, enabled: false, status: "off" }),
+  row({ id: "a2", position: 5, image_id: "g1", image, alt_text: "Winter market", starts_on: "2026-12-01", status: "scheduled", imageUrl: "https://x/a.jpg" }),
 ];
 
 const html = renderToStaticMarkup(
@@ -35,8 +36,8 @@ const html = renderToStaticMarkup(
 );
 
 describe("HomepageSectionsCard", () => {
-  it("lists rows in position order with their status labels", () => {
-    const order = ["Events carousel", "spotlight", "Holiday party flyer", "Winter market"].map((t) => html.indexOf(t));
+  it("lists the blocks in order, with the events inside the Community Events carousel", () => {
+    const order = ["Member Events carousel", "Community Events carousel", "Holiday party flyer", "Winter market", "Add a community event", "spotlight"].map((t) => html.indexOf(t));
     expect(order.every((i) => i >= 0)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(html).toContain("Showing · until Dec 20");
@@ -44,20 +45,32 @@ describe("HomepageSectionsCard", () => {
     expect(html).toContain("Off");
   });
 
-  it("disables the first row's up arrow and the last row's down arrow", () => {
-    const ups = [...html.matchAll(/<button[^>]*aria-label="Move [^"]* up"[^>]*>/g)].map((m) => m[0]);
-    const downs = [...html.matchAll(/<button[^>]*aria-label="Move [^"]* down"[^>]*>/g)].map((m) => m[0]);
-    expect(ups).toHaveLength(4);
-    expect(downs).toHaveLength(4);
-    expect(ups[0]).toMatch(/ disabled(=|>| )/);
-    expect(ups[1]).not.toMatch(/ disabled(=|>| )/);
-    expect(downs[3]).toMatch(/ disabled(=|>| )/);
-    expect(downs[2]).not.toMatch(/ disabled(=|>| )/);
+  const arrow = (label: string, dir: "up" | "down") => html.match(new RegExp(`<button[^>]*aria-label="Move ${label} ${dir}"[^>]*>`))?.[0] ?? "";
+  const disabled = / disabled(=|>| )/;
+
+  it("blocks move among blocks: first can't go up, last can't go down", () => {
+    expect(arrow("Member Events carousel", "up")).toMatch(disabled);
+    expect(arrow("Member Events carousel", "down")).not.toMatch(disabled);
+    expect(arrow("Community Events carousel", "up")).not.toMatch(disabled);
+    expect(html.match(/<button[^>]*aria-label="Move [^"]*potlight down"[^>]*>/)?.[0]).toMatch(disabled);
   });
 
-  it("only announcements have Delete", () => {
+  it("events move among events: first can't go up, last can't go down", () => {
+    expect(arrow("Holiday party flyer", "up")).toMatch(disabled);
+    expect(arrow("Holiday party flyer", "down")).not.toMatch(disabled);
+    expect(arrow("Winter market", "up")).not.toMatch(disabled);
+    expect(arrow("Winter market", "down")).toMatch(disabled);
+  });
+
+  it("only community events have Edit and Delete", () => {
     expect(html.match(/aria-label="Delete [^"]*"/g)).toHaveLength(2);
-    expect(html).not.toContain('aria-label="Delete Events carousel"');
+    expect(html.match(/aria-label="Edit [^"]*"/g)).toHaveLength(2);
+    expect(html).not.toContain('aria-label="Delete Member Events carousel"');
+    expect(html).not.toContain('aria-label="Delete Community Events carousel"');
+  });
+
+  it("names the image library for community events", () => {
+    expect(html).toContain("Community event images");
   });
 });
 
@@ -75,6 +88,7 @@ describe("AnnouncementForm", () => {
       }),
     );
     const form = markup.slice(markup.indexOf("<form"), markup.indexOf("</form>"));
+    expect(markup).toContain("Add a community event");
     expect(markup).toContain("Describe the new image");
     expect(form).not.toContain("Describe the new image");
     expect(form).toContain("Description (optional)");
@@ -86,7 +100,7 @@ describe("HomepageSectionsCard when the list could not be read", () => {
     const markup = renderToStaticMarkup(createElement(HomepageSectionsCard, { initial: null }));
     expect(markup).toContain("Homepage sections");
     expect(markup).toContain("Couldn&#x27;t load the homepage sections — reload the page to try again.");
-    expect(markup).not.toContain("Add an image announcement");
+    expect(markup).not.toContain("Add a community event");
   });
 });
 

@@ -44,7 +44,8 @@ export function statusLabel(s: SettingsSection, now: Date = new Date()): string 
 }
 
 function rowLabel(s: SettingsSection): string {
-  if (s.kind === "events") return "Events carousel";
+  if (s.kind === "events") return "Member Events carousel";
+  if (s.kind === "community") return "Community Events carousel";
   if (s.kind === "spotlight") {
     return CURRENT_SPOTLIGHT ? `${CURRENT_SPOTLIGHT.eyebrow} spotlight` : "Spotlight";
   }
@@ -53,8 +54,9 @@ function rowLabel(s: SettingsSection): string {
 
 /**
  * Settings > Homepage sections: the blocks under the homepage image, in order.
- * Move, switch on or off, and add, edit or delete image announcements; the
- * announcement gallery sits below. Every action saves straight away, then the
+ * Move and switch the blocks; inside the Community Events carousel, move,
+ * switch, add, edit or delete its events (owner, 2026-11-27). The image
+ * library sits below. Every action saves straight away, then the
  * list is re-read so positions and statuses are accurate.
  */
 export function HomepageSectionsCard({ initial }: { initial: HomepageSectionsData | null }) {
@@ -90,7 +92,7 @@ export function HomepageSectionsCard({ initial }: { initial: HomepageSectionsDat
   }
 
   function onDelete(s: SettingsSection) {
-    if (!window.confirm(`Delete the announcement "${rowLabel(s)}"? The image stays in the gallery.`)) {
+    if (!window.confirm(`Delete the community event "${rowLabel(s)}"? The image stays in the library.`)) {
       return;
     }
     void act(() => deleteAnnouncement({ data: { id: s.id } }));
@@ -109,7 +111,87 @@ export function HomepageSectionsCard({ initial }: { initial: HomepageSectionsDat
     );
   }
 
-  const { sections } = data;
+  const blocks = data.sections.filter((s) => s.kind !== "image");
+  const events = data.sections.filter((s) => s.kind === "image");
+
+  function arrows(s: SettingsSection, label: string, i: number, total: number) {
+    return (
+      <>
+        <button
+          type="button"
+          className={rowButtonClass}
+          disabled={busy || i === 0}
+          aria-label={`Move ${label} up`}
+          onClick={() => void act(() => moveSection({ data: { id: s.id, direction: -1 } }))}
+        >
+          ▲
+        </button>
+        <button
+          type="button"
+          className={rowButtonClass}
+          disabled={busy || i === total - 1}
+          aria-label={`Move ${label} down`}
+          onClick={() => void act(() => moveSection({ data: { id: s.id, direction: 1 } }))}
+        >
+          ▼
+        </button>
+      </>
+    );
+  }
+
+  function onOff(s: SettingsSection, label: string) {
+    return (
+      <Switch
+        checked={s.enabled}
+        disabled={busy}
+        onCheckedChange={(enabled) => void act(() => setSectionEnabled({ data: { id: s.id, enabled } }))}
+        aria-label={`Show ${label} on the homepage`}
+      />
+    );
+  }
+
+  const eventList = (
+    <div className="flex flex-col gap-2 border-t border-canvas-2 pt-3">
+      {events.length === 0 ? (
+        <p className="text-[13px] text-ink-muted">No community events yet.</p>
+      ) : (
+        <ol className="flex flex-col gap-2">
+          {events.map((s, i) => {
+            const label = rowLabel(s);
+            return (
+              <li key={s.id} className="flex flex-col gap-2 rounded-[9px] border border-canvas-border bg-card p-2.5">
+                <div className="flex items-center gap-3">
+                  {s.imageUrl && <img src={s.imageUrl} alt="" className="h-12 w-16 shrink-0 rounded-[6px] object-cover" />}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] font-medium text-ink">{label}</p>
+                    <p className="text-[12px] text-ink-muted">{statusLabel(s)}</p>
+                  </div>
+                  {onOff(s, label)}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {arrows(s, label, i, events.length)}
+                  <button type="button" className={rowButtonClass} disabled={busy} aria-label={`Edit ${label}`} onClick={() => setForm({ editing: s })}>
+                    Edit
+                  </button>
+                  <button type="button" className={rowButtonClass} disabled={busy} aria-label={`Delete ${label}`} onClick={() => onDelete(s)}>
+                    Delete
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      {!form && (
+        <div>
+          <button type="button" className={darkButtonClass} onClick={() => setForm({ editing: null })}>
+            Add a community event
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <section aria-labelledby="homepage-sections-heading" className={cardClass}>
       <div className="flex flex-col gap-1">
@@ -118,80 +200,27 @@ export function HomepageSectionsCard({ initial }: { initial: HomepageSectionsDat
         </h2>
         <p className="text-pretty text-[13px] leading-[1.5] text-ink-muted">
           The blocks under the homepage image, top to bottom. Use the arrows to reorder, and the
-          switch to show or hide one.
+          switch to show or hide one. Community events play in the order listed.
         </p>
       </div>
 
       <ol className="flex flex-col gap-2">
-        {sections.map((s, i) => {
+        {blocks.map((s, i) => {
           const label = rowLabel(s);
           const noSpotlight = s.kind === "spotlight" && !CURRENT_SPOTLIGHT;
           return (
-            <li
-              key={s.id}
-              className="flex flex-col gap-2 rounded-[11px] border border-canvas-border bg-canvas p-3"
-            >
+            <li key={s.id} className="flex flex-col gap-2 rounded-[11px] border border-canvas-border bg-canvas p-3">
               <div className="flex items-center gap-3">
-                {s.kind === "image" && s.imageUrl && (
-                  <img src={s.imageUrl} alt="" className="h-12 w-16 shrink-0 rounded-[6px] object-cover" />
-                )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[14px] font-medium text-ink">{label}</p>
                   <p className="text-[12px] text-ink-muted">
                     {noSpotlight ? "No spotlight content right now" : statusLabel(s)}
                   </p>
                 </div>
-                <Switch
-                  checked={s.enabled}
-                  disabled={busy}
-                  onCheckedChange={(enabled) =>
-                    void act(() => setSectionEnabled({ data: { id: s.id, enabled } }))
-                  }
-                  aria-label={`Show ${label} on the homepage`}
-                />
+                {onOff(s, label)}
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  type="button"
-                  className={rowButtonClass}
-                  disabled={busy || i === 0}
-                  aria-label={`Move ${label} up`}
-                  onClick={() => void act(() => moveSection({ data: { id: s.id, direction: -1 } }))}
-                >
-                  ▲
-                </button>
-                <button
-                  type="button"
-                  className={rowButtonClass}
-                  disabled={busy || i === sections.length - 1}
-                  aria-label={`Move ${label} down`}
-                  onClick={() => void act(() => moveSection({ data: { id: s.id, direction: 1 } }))}
-                >
-                  ▼
-                </button>
-                {s.kind === "image" && (
-                  <>
-                    <button
-                      type="button"
-                      className={rowButtonClass}
-                      disabled={busy}
-                      aria-label={`Edit ${label}`}
-                      onClick={() => setForm({ editing: s })}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className={rowButtonClass}
-                      disabled={busy}
-                      aria-label={`Delete ${label}`}
-                      onClick={() => onDelete(s)}
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
-              </div>
+              <div className="flex flex-wrap gap-1.5">{arrows(s, label, i, blocks.length)}</div>
+              {s.kind === "community" && eventList}
             </li>
           );
         })}
@@ -199,7 +228,7 @@ export function HomepageSectionsCard({ initial }: { initial: HomepageSectionsDat
 
       <StatusMessage message={message} />
 
-      {form ? (
+      {form && (
         <AnnouncementForm
           key={form.editing?.id ?? "new"}
           editing={form.editing}
@@ -212,17 +241,11 @@ export function HomepageSectionsCard({ initial }: { initial: HomepageSectionsDat
           }}
           onCancel={() => setForm(null)}
         />
-      ) : (
-        <div>
-          <button type="button" className={darkButtonClass} onClick={() => setForm({ editing: null })}>
-            Add an image announcement
-          </button>
-        </div>
       )}
 
       {!form && (
         <div className="flex flex-col gap-2 border-t border-canvas-2 pt-4">
-          <h3 className="text-[15px] font-semibold text-ink">Announcement images</h3>
+          <h3 className="text-[15px] font-semibold text-ink">Community event images</h3>
           <AnnouncementGallery gallery={data.gallery} onChanged={refresh} />
         </div>
       )}

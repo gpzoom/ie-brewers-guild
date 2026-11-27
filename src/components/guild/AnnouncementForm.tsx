@@ -32,7 +32,7 @@ export function formProblem(f: {
   return checkLink(f.linkKind, f.linkTarget);
 }
 
-/** Add or edit one image announcement: image, description, link, and dates. */
+/** Add or edit one community event: image, description, link, and dates. */
 export function AnnouncementForm({
   editing,
   gallery,
@@ -102,10 +102,10 @@ export function AnnouncementForm({
   return (
     <div className="flex flex-col gap-4 rounded-[11px] border border-canvas-border bg-canvas p-3 md:p-4">
       <h3 className="text-[15px] font-semibold text-ink">
-        {editing ? "Edit announcement" : "Add an announcement"}
+        {editing ? "Edit community event" : "Add a community event"}
       </h3>
 
-      {/* Outside the <form>: pressing Enter in its inputs must not save the announcement. */}
+      {/* Outside the <form>: pressing Enter in its inputs must not save the event. */}
       <div className="flex flex-col gap-1.5">
         <span className="text-[13px] font-medium text-ink">Image</span>
         <AnnouncementGallery
@@ -126,7 +126,7 @@ export function AnnouncementForm({
             className={fieldClass}
           />
           <span className="text-[12px] text-ink-muted">
-            Only for this announcement. Leave it empty to use the image's own description.
+            Only for this event. Leave it empty to use the image's own description.
           </span>
         </label>
 
