@@ -135,7 +135,7 @@ export async function setSectionEnabledCore(
   if (error || !data || data.length === 0) throw new Error("Couldn't save the change — try again.");
 }
 
-/** Swaps a block with its neighbor above (-1) or below (1). */
+/** Swaps a block with the block above (-1) or below (1), or an event with the event above or below. */
 export async function moveSectionCore(
   c: SupabaseClient,
   id: string,
@@ -143,7 +143,7 @@ export async function moveSectionCore(
 ): Promise<void> {
   await requireSuperAdmin(c, ACTION);
   if (direction !== -1 && direction !== 1) throw new Error("Choose up or down.");
-  const { error } = await c.rpc("move_homepage_section", { p_id: id, p_direction: direction });
+  const { error } = await c.rpc("move_homepage_section_in_group", { p_id: id, p_direction: direction });
   if (error) throw new Error("Couldn't move it — try again.");
 }
 
@@ -158,7 +158,7 @@ export type AnnouncementInput = {
   enabled: boolean;
 };
 
-/** Adds or edits an image announcement; new ones go to the end of the list. */
+/** Adds or edits a community event (an image row); new ones play last. */
 export async function saveAnnouncementCore(
   c: SupabaseClient,
   input: AnnouncementInput,
@@ -197,7 +197,7 @@ export async function saveAnnouncementCore(
       .eq("id", input.id)
       .eq("kind", "image")
       .select("id");
-    if (error || !data || data.length === 0) throw new Error("Couldn't save the announcement — try again.");
+    if (error || !data || data.length === 0) throw new Error("Couldn't save the community event — try again.");
     return { id: input.id };
   }
 
@@ -207,22 +207,22 @@ export async function saveAnnouncementCore(
     .order("position", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (lastError) throw new Error("Couldn't save the announcement — try again.");
+  if (lastError) throw new Error("Couldn't save the community event — try again.");
   const position = ((last as { position: number } | null)?.position ?? 0) + 1;
   const { data, error } = await c
     .from("homepage_sections")
     .insert({ ...values, kind: "image", position })
     .select("id")
     .single();
-  if (error || !data) throw new Error("Couldn't save the announcement — try again.");
+  if (error || !data) throw new Error("Couldn't save the community event — try again.");
   return { id: (data as { id: string }).id };
 }
 
-/** Removes an image announcement. Events and Spotlight can't be deleted; the gallery is untouched. */
+/** Removes a community event. The blocks can't be deleted; the gallery is untouched. */
 export async function deleteAnnouncementCore(c: SupabaseClient, id: string): Promise<void> {
   await requireSuperAdmin(c, ACTION);
   const { error } = await c.from("homepage_sections").delete().eq("id", id).eq("kind", "image");
-  if (error) throw new Error("Couldn't delete the announcement — try again.");
+  if (error) throw new Error("Couldn't delete the community event — try again.");
 }
 
 /** Records an image already uploaded to site-images/announcements/. */
@@ -294,7 +294,7 @@ export async function deleteGalleryImageCore(
     image: { alt_text: string } | null;
   }>).map(announcementLabel);
   if (labels.length > 0) {
-    throw new Error(`In use by: ${labels.join(", ")}. Remove it from those announcements first.`);
+    throw new Error(`In use by: ${labels.join(", ")}. Remove it from those community events first.`);
   }
 
   const { error } = await c.from("announcement_images").delete().eq("id", id);

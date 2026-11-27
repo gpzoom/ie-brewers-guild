@@ -174,7 +174,7 @@ export function SiteSettingsScreen({
 }
 
 type CardProps = { settings: SiteSettingsView; onSaved: (settings: SiteSettingsView) => void };
-/** Homepage events carousel: how long each page stays up (artboard Z). */
+/** Homepage carousels (Member Events and Community Events): how long each page stays up (artboard Z). */
 function CarouselDwellCard({ settings, onSaved }: CardProps) {
   const [choice, setChoice] = useState<CarouselDwellSeconds>(settings.carouselDwellSeconds);
   const [saving, setSaving] = useState(false);
@@ -197,10 +197,10 @@ function CarouselDwellCard({ settings, onSaved }: CardProps) {
   return (
     <form onSubmit={onSubmit} className={cardClass}>
       <div className="flex flex-col gap-1">
-        <h2 className="text-[16px] font-semibold text-ink">Homepage events carousel</h2>
+        <h2 className="text-[16px] font-semibold text-ink">Homepage carousels</h2>
         <p className="text-pretty text-[13px] leading-[1.5] text-ink-muted">
-          How long each calendar page stays up before the next one tears off. Visitors can always
-          pause it or flip through by hand.
+          How long each page stays up in the Member Events and Community Events carousels before the
+          next one. Visitors can always pause them or flip through by hand.
         </p>
       </div>
       <label className="flex flex-col gap-1.5">

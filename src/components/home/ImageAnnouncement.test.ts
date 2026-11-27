@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import type { VisibleSection } from "@/lib/home/sections";
+import type { CommunityEvent } from "@/lib/home/sections";
 
 // Internal links go through the router's Link (no full page reload).
 vi.mock("@tanstack/react-router", () => ({
@@ -11,9 +11,8 @@ vi.mock("@tanstack/react-router", () => ({
 
 const { ImageAnnouncement } = await import("./ImageAnnouncement");
 
-type Img = Extract<VisibleSection, { kind: "image" }>;
+type Img = CommunityEvent;
 const section = (link: Img["link"]): Img => ({
-  kind: "image",
   id: "i1",
   imageUrl: "https://example.com/a.jpg",
   alt: "Holiday parties",

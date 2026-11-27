@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { SpotlightShowcase } from "@/components/home/SpotlightShowcase";
-import { ImageAnnouncement } from "@/components/home/ImageAnnouncement";
+import { CommunityEventsCarousel } from "@/components/home/CommunityEventsCarousel";
 import { CURRENT_SPOTLIGHT } from "@/lib/home/spotlight";
 import type { VisibleSection } from "@/lib/home/sections";
 
@@ -8,9 +8,13 @@ import type { VisibleSection } from "@/lib/home/sections";
 export function HomepageSections({
   sections,
   carousel,
+  dwellSeconds,
 }: {
   sections: VisibleSection[];
+  /** The Member Events carousel (the tear-off calendar). */
   carousel: ReactNode;
+  /** Seconds per page, shared by both carousels. */
+  dwellSeconds: number;
 }) {
   return (
     <>
@@ -33,8 +37,8 @@ export function HomepageSections({
           );
         }
         return (
-          <section key={s.id} className={`mx-auto max-w-7xl ${pad}`}>
-            <ImageAnnouncement section={s} />
+          <section key="community" className={`mx-auto max-w-7xl ${pad}`}>
+            <CommunityEventsCarousel events={s.events} dwellSeconds={dwellSeconds} />
           </section>
         );
       })}

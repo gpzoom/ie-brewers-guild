@@ -1,7 +1,10 @@
 /**
  * Homepage sections (owner, 2026-11-14; docs/superpowers/specs/2026-11-14-homepage-sections-design.md).
- * The super admin orders the blocks below the hero (Events, Spotlight, image
- * announcements) and gives image announcements optional dates and a link.
+ * The super admin orders the blocks below the hero (Member Events, Spotlight,
+ * Community Events) and gives each community event (an image row) optional
+ * dates and a link. Image rows render together in the Community Events
+ * carousel, at the 'community' row's place, in their own position order
+ * (owner, 2026-11-27; docs/superpowers/specs/2026-11-27-community-events-carousel-design.md).
  * Pure: the server loader passes in the rows it read, so the rules are tested
  * without Supabase.
  *
@@ -11,7 +14,7 @@
  *   member; external links must be http(s). Anything else renders unlinked.
  */
 
-export type SectionKind = "events" | "spotlight" | "image";
+export type SectionKind = "events" | "spotlight" | "image" | "community";
 export type LinkKind = "none" | "internal" | "external";
 
 /** A homepage_sections row, with its announcement image embedded. */
@@ -124,18 +127,20 @@ export function resolveLink(
   return INTERNAL_PAGES.some((p) => p.path === target) ? { href: target, external: false } : null;
 }
 
+/** One graphic in the Community Events carousel. */
+export type CommunityEvent = {
+  id: string;
+  imageUrl: string;
+  alt: string;
+  width: number | null;
+  height: number | null;
+  link: { href: string; external: boolean } | null;
+};
+
 export type VisibleSection =
   | { kind: "events" }
   | { kind: "spotlight" }
-  | {
-      kind: "image";
-      id: string;
-      imageUrl: string;
-      alt: string;
-      width: number | null;
-      height: number | null;
-      link: { href: string; external: boolean } | null;
-    };
+  | { kind: "community"; events: CommunityEvent[] };
 
 /** The blocks to render, in order. Bad or inactive rows are skipped. */
 export function visibleSections(
@@ -147,29 +152,39 @@ export function visibleSections(
     imageUrl: (path: string) => string;
   },
 ): VisibleSection[] {
-  const out: VisibleSection[] = [];
   const sorted = [...rows].sort((a, b) => a.position - b.position);
+  const events: CommunityEvent[] = [];
   for (const r of sorted) {
-    if (!r.enabled) continue;
-    if (r.kind === "events") {
+    if (r.kind !== "image" || !r.enabled) continue;
+    if (!r.image) {
+      console.error(`homepage sections: skipping image section ${r.id} — its image is missing`);
+      continue;
+    }
+    if (!isInDateWindow(r, ctx.today)) continue;
+    events.push({
+      id: r.id,
+      imageUrl: ctx.imageUrl(r.image.image_path),
+      alt: r.alt_text?.trim() ? r.alt_text : r.image.alt_text,
+      width: r.image.width,
+      height: r.image.height,
+      link: resolveLink(r.link_kind, r.link_target, ctx.publishedSlugs),
+    });
+  }
+
+  // Before the community row exists, the carousel sits where the first event does.
+  const hasCommunityRow = sorted.some((r) => r.kind === "community");
+  const firstImage = sorted.find((r) => r.kind === "image");
+  const out: VisibleSection[] = [];
+  for (const r of sorted) {
+    const isCarouselPlace = hasCommunityRow ? r.kind === "community" : r === firstImage;
+    if (isCarouselPlace) {
+      if ((hasCommunityRow ? r.enabled : true) && events.length > 0) out.push({ kind: "community", events });
+    } else if (!r.enabled) {
+      continue;
+    } else if (r.kind === "events") {
       out.push({ kind: "events" });
     } else if (r.kind === "spotlight") {
       if (ctx.hasSpotlight) out.push({ kind: "spotlight" });
-    } else if (r.kind === "image") {
-      if (!r.image) {
-        console.error(`homepage sections: skipping image section ${r.id} — its image is missing`);
-        continue;
-      }
-      if (!isInDateWindow(r, ctx.today)) continue;
-      out.push({
-        kind: "image",
-        id: r.id,
-        imageUrl: ctx.imageUrl(r.image.image_path),
-        alt: r.alt_text?.trim() ? r.alt_text : r.image.alt_text,
-        width: r.image.width,
-        height: r.image.height,
-        link: resolveLink(r.link_kind, r.link_target, ctx.publishedSlugs),
-      });
     }
   }
   return out;

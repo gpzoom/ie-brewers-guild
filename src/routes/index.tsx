@@ -42,10 +42,11 @@ function HomePage() {
         )}
       </PageHero>
 
-      {/* Events, the spotlight and image announcements, in the order the
+      {/* Member Events, the spotlight and Community Events, in the order the
           super admin set in Settings (src/lib/home/sections.ts). */}
       <HomepageSections
         sections={sections}
+        dwellSeconds={dwellSeconds}
         carousel={<MemberEventsCarousel cards={cards} guildEvent={guildEvent} dwellSeconds={dwellSeconds} startOffset={startOffset} />}
       />
     </>

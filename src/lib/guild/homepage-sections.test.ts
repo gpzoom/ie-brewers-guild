@@ -168,21 +168,21 @@ describe("setSectionEnabledCore", () => {
 });
 
 describe("moveSectionCore", () => {
-  it("calls the RPC", async () => {
+  it("calls the RPC that moves within a group (events among events, blocks among blocks)", async () => {
     const s = fakeSession(true);
     await moveSectionCore(s.client, "a", -1);
-    expect(s.rpcs).toEqual([{ fn: "move_homepage_section", args: { p_id: "a", p_direction: -1 } }]);
+    expect(s.rpcs).toEqual([{ fn: "move_homepage_section_in_group", args: { p_id: "a", p_direction: -1 } }]);
   });
 });
 
 describe("gallery", () => {
-  it("won't delete an image used by an announcement, and names it", async () => {
+  it("won't delete an image used by a community event, and names it", async () => {
     const s = fakeSession(true, {
       announcement_images: [{ image_path: "announcements/a.jpg" }],
       homepage_sections: [{ alt_text: "Holiday parties", image: { alt_text: "Party" } }],
     });
     await expect(deleteGalleryImageCore(s.client, "img-1")).rejects.toThrow(
-      "In use by: Holiday parties. Remove it from those announcements first.",
+      "In use by: Holiday parties. Remove it from those community events first.",
     );
     expect(s.writes).toEqual([]);
   });

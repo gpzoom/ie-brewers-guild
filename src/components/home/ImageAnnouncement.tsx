@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { MEMBER_PATH, type VisibleSection } from "@/lib/home/sections";
+import { MEMBER_PATH, type CommunityEvent } from "@/lib/home/sections";
 
-/** A super-admin image announcement on the homepage (docs/superpowers/specs/2026-11-14-homepage-sections-design.md). */
+/** One community event graphic, linked if it has a link (docs/superpowers/specs/2026-11-14-homepage-sections-design.md). */
 export function ImageAnnouncement({
   section,
 }: {
-  section: Extract<VisibleSection, { kind: "image" }>;
+  section: CommunityEvent;
 }) {
   const img = (
     <img
