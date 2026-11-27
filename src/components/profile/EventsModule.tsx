@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { EventRow, MemberType } from "@/lib/supabase/types";
 import type { ProfileEvent } from "@/lib/events/guest-display";
@@ -15,7 +16,34 @@ type EventsModuleProps = {
   // Intl fall back to the runtime's local zone, which differs between
   // server and browser and is also simply the wrong zone for the event.
   timezone: string;
+  /** For tests; defaults to the time of rendering. */
+  now?: Date;
 };
+
+const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+
+/** When the event happens: a rescheduled event's new start, else its start. */
+function shownStartOf(event: ProfileEvent): string {
+  return event.overlay_status === "rescheduled" && event.overlay_starts_at
+    ? event.overlay_starts_at
+    : event.starts_at;
+}
+
+/**
+ * The profile lists only the next 2 weeks (owner, 2026-11-27); the rest sit
+ * behind See More. With nothing in the next 2 weeks, the soonest event still
+ * shows, so the section never looks empty while dates are announced.
+ */
+export function splitTwoWeeks(events: ProfileEvent[], now: Date): { soon: ProfileEvent[]; later: ProfileEvent[] } {
+  const cutoff = now.getTime() + TWO_WEEKS_MS;
+  const soon = events.filter((e) => new Date(shownStartOf(e)).getTime() < cutoff);
+  const later = events.filter((e) => new Date(shownStartOf(e)).getTime() >= cutoff);
+  if (soon.length === 0 && later.length > 0) {
+    const first = later.reduce((a, b) => (shownStartOf(b) < shownStartOf(a) ? b : a));
+    return { soon: [first], later: later.filter((e) => e !== first) };
+  }
+  return { soon, later };
+}
 
 const HEADINGS: Record<MemberType, string> = {
   producer: "Upcoming events",
@@ -101,8 +129,11 @@ const BADGE_STYLES: Record<NonNullable<EventRow["overlay_status"]>, string> = {
  * column beside a title and a detail line, on white rows -- plus the
  * event's description from the calendar, when it has one.
  */
-export function EventsModule({ events, memberType, timezone }: EventsModuleProps) {
+export function EventsModule({ events, memberType, timezone, now }: EventsModuleProps) {
   const visibleEvents = events.filter((event) => !event.is_hidden);
+  const [showAll, setShowAll] = useState(false);
+  const { soon, later } = splitTwoWeeks(visibleEvents, now ?? new Date());
+  const listed = showAll ? visibleEvents : soon;
 
   if (visibleEvents.length === 0) {
     if (memberType === "mobile") {
@@ -135,7 +166,7 @@ export function EventsModule({ events, memberType, timezone }: EventsModuleProps
     <section className="flex flex-col gap-[9px] lg:gap-[11px]">
       <SectionLabel aside={syncedLabel(visibleEvents)}>{HEADINGS[memberType]}</SectionLabel>
       <ul className="flex flex-col gap-[9px] lg:gap-[11px]">
-        {visibleEvents.map((event) => {
+        {listed.map((event) => {
           const isPostponed = event.overlay_status === "postponed";
           const isCanceled = event.overlay_status === "canceled";
           const isRescheduled =
@@ -279,6 +310,15 @@ export function EventsModule({ events, memberType, timezone }: EventsModuleProps
           );
         })}
       </ul>
+      {!showAll && later.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowAll(true)}
+          className="self-center rounded-pill border border-canvas-border bg-white px-4 py-2 text-[13px] font-semibold text-ink hover:border-brand hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        >
+          See More
+        </button>
+      )}
     </section>
   );
 }
